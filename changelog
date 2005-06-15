@@ -1,0 +1,11 @@
+4/29/05: rng7: Collections.py
+    Cleanup of KeyedList. Optimized for quick return of keys(). This speeds
+    up network construction and cost calculation somewhat.
+
+********************************************************************************
+
+4/15/05: v9.12 sent to Sarah
+
+********************************************************************************
+
+3/28/05: v9.11 sent to Tami and Sarah
