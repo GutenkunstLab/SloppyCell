@@ -1,5 +1,5 @@
-import SloppyModels.Plotting
-PlotEigenvalueSpectrum = SloppyModels.Plotting.PlotEigenvalueSpectrum
+import SloppyCell.Plotting
+PlotEigenvalueSpectrum = SloppyCell.Plotting.PlotEigenvalueSpectrum
 
 import scipy, pylab
 
@@ -49,7 +49,7 @@ def plotTrajectoriesForVariables(traj, ids = None, showLegend = True):
     if ids is None:
         ids = traj.net.variables.keys()
 
-    cW = SloppyModels.Plotting.ColorWheel()
+    cW = SloppyCell.Plotting.ColorWheel()
 
     lines = []
     legend = []
@@ -91,7 +91,7 @@ def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=
 
     model.GetCalculationCollection().Calculate(varsByCalc, params)
     calcVals = model.GetCalculationCollection().GetResults(varsByCalc)
-    cW = SloppyModels.Plotting.ColorWheel()
+    cW = SloppyCell.Plotting.ColorWheel()
     for exptName in experiments:
         expt = exptColl[exptName]
         dataByCalc = expt.GetData()
@@ -119,7 +119,7 @@ def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=
 def PlotDataForExperiments(model, experiments, skip = 1):
     exptColl = model.GetExperimentCollection()
 
-    cW = SloppyModels.Plotting.ColorWheel()
+    cW = SloppyCell.Plotting.ColorWheel()
     for exptName in experiments:
         expt = exptColl[exptName]
         dataByCalc = expt.GetData()

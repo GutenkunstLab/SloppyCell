@@ -7,9 +7,9 @@ try:
 except ImportError:
     HAVE_FT = False
 import libsbml
-import SloppyModels.ReactionNetworks.Network as Network
-import SloppyModels.ReactionNetworks.Reactions as Reactions
-import SloppyModels.ReactionNetworks.Parsing as Parsing
+import SloppyCell.ReactionNetworks.Network as Network
+import SloppyCell.ReactionNetworks.Reactions as Reactions
+import SloppyCell.ReactionNetworks.Parsing as Parsing
 
 def toSBMLFile(net, fileName):
     sbmlStr = toSBMLString(net)

@@ -22,10 +22,10 @@ import symbolic
 # We load a dictionary of previously-taken derivatives for efficiency
 symbolic.loadDiffs(os.path.join(TEMP_DIR, 'diff.pickle'))
 
-import SloppyModels.Collections as Collections
-import SloppyModels.ReactionNetworks.Integration as Integration
-import SloppyModels.ReactionNetworks.Parsing as Parsing
-import SloppyModels.ReactionNetworks.Reactions as Reactions
+import SloppyCell.Collections as Collections
+import SloppyCell.ReactionNetworks.Integration as Integration
+import SloppyCell.ReactionNetworks.Parsing as Parsing
+import SloppyCell.ReactionNetworks.Reactions as Reactions
 
 # Expose function definitions that SBML wants to see.
 log, log10 = scipy.log, scipy.log10
@@ -176,7 +176,7 @@ class Network:
 
 
     #
-    # Methods to become a 'SloppyModels.Model'
+    # Methods to become a 'SloppyCell.Model'
     #
 
     def Calculate(self, vars, params = None):
@@ -335,7 +335,7 @@ class Network:
         traj, te, ye, ie = self.integrate(times, addTimes = False, returnEvents = True)
 
         output = file(fileName, 'w')
-        output.write("import SloppyModels.Collections as Collections\n")
+        output.write("import SloppyCell.Collections as Collections\n")
         output.write("fakedata = Collections.Experiment('fakeExpt')\n")
         output.write("fakedata.longname = 'Data generated directly from network %s'\n" % self.id)
 

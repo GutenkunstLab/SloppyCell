@@ -1,6 +1,6 @@
 import copy, sets, sys
 import scipy
-import SloppyModels.Integration as Integration
+import SloppyCell.Integration as Integration
 
 def _getIntervals(net, timepoints):
     cT = sets.Set([timepoints[0], timepoints[-1]] +
