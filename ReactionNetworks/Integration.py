@@ -23,20 +23,21 @@ def Integrate(net, timepoints, rtol = None):
     func = net.get_ddv_dt
     Dfun = net.get_d2dv_ddvdt
 
-    if getattr(net, 'integrateWithLogs', False):
-        IC = scipy.log(IC)
-        def func(logDV, time):
-            dv = scipy.exp(logDV)
-            ddv_dt = net.get_ddv_dt(dv, time)
-            return ddv_dt / dv
-        Dfun = None
-
     atol = None
     if scipy.isscalar(rtol):
         atol = [rtol*var.typicalValue for var in net.dynamicVariables.values()]
     elif rtol is not None:
         rtol = None
         print >> sys.stderr, "Non-scalar rtol passed into Integrate(). Haven't decided how to handle this yet, so we're defaulting to rtol = None, atol = None (odeint defaults)."
+
+    if getattr(net, 'integrateWithLogs', False):
+        def func(logDV, time):
+            dv = scipy.exp(logDV)
+            ddv_dt = net.get_ddv_dt(dv, time)
+            return ddv_dt / dv
+        Dfun = None
+        atol = 1e-12
+        rtol = 1e-6
         
     for (start, intervalEnd) in intervals:
         # Check whether any timeTriggered events need to fire
@@ -61,6 +62,9 @@ def Integrate(net, timepoints, rtol = None):
                                        timepoints)
             curPoints = scipy.concatenate(([start], curPoints, [end]))
 
+
+            if getattr(net, 'integrateWithLogs', False):
+                IC = scipy.log(IC)
             # Do the integration, getting initial conditions from the net
             t, odeint_array, te, ye, ie = Integration.\
                     odeintWithEvents(func, copy.copy(IC), curPoints, 
@@ -76,7 +80,7 @@ def Integrate(net, timepoints, rtol = None):
 
             outTimes.extend(t)
 
-            start, IC = outTimes[-1], odeint_array[-1]
+            start, IC = outTimes[-1], output[-1]
 
             outTE.extend(te)
             outYE.extend(ye)
