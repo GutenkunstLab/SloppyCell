@@ -13,7 +13,7 @@ import os
 
 import scipy
 
-from SloppyModels import TEMP_DIR
+from SloppyCell import TEMP_DIR
 if not os.path.isdir(TEMP_DIR): 
     os.mkdir(TEMP_DIR)
 
