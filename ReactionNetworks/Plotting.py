@@ -1,7 +1,9 @@
+
+import scipy
+from pylab import *
+
 import SloppyCell.Plotting
 PlotEigenvalueSpectrum = SloppyCell.Plotting.PlotEigenvalueSpectrum
-
-import scipy, pylab
 
 def PlotEigenvectors(eigVects, net = None, title = None):
     nEv = 3
@@ -61,11 +63,10 @@ def plotTrajectoriesForVariables(traj, ids = None, showLegend = True):
 
     if showLegend:
         pylab.legend(lines, legend)
-    
+
 
 def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=True,
                                    plotPts = 100, overlap = .1, skip = 1, showLegend=True):
-    exptColl = model.GetExperimentCollection()
 
     # First find the maximum time in our data
     maxTime = 0
@@ -134,3 +135,63 @@ def PlotDataForExperiments(model, experiments, skip = 1):
 
                 pylab.errorbar(d[:,0], d[:,1], yerr=d[:,2], fmt=fmt[:-1],
                                  ecolor=fmt, capsize=6)
+
+def plot_model_data(model, expts = None, style = 'errorbars',
+                    show_legend = True, loc = 'upper left'):
+    plot_model_results(model, expts, style, show_legend, loc, 
+                       plot_trajectories = False)
+
+def plot_model_results(model, expts = None, style='errorbars',
+                       show_legend = True, loc = 'upper left',
+                       plot_data = True, plot_trajectories = True):
+    exptColl = model.GetExperimentCollection()
+    calcColl = model.GetCalculationCollection()
+
+    lines, labels = [], []
+    cW = SloppyCell.Plotting.ColorWheel()
+    
+    if expts is None:
+        expts = exptColl.keys()
+
+    for exptId in expts:
+        expt = exptColl[exptId]
+        dataByCalc = expt.GetData()
+        sortedCalcIds = dataByCalc.keys()
+        sortedCalcIds.sort()
+        for calcId in sortedCalcIds:
+            traj = getattr(calcColl[calcId], 'trajectory', None)
+            for dataId, dataDict in dataByCalc[calcId].items():
+                fmt = cW.next()
+
+                if plot_data:
+                    # Pull the data out of the dictionary and into an array
+                    d = scipy.array([[t, v, e] for (t, (v, e))
+                                     in dataDict.items()])
+                    if style is 'errorbars':
+                        l = errorbar(d[:,0], d[:,1], yerr=d[:,2], 
+                                           fmt=fmt[:-1], ecolor=fmt, capsize=6)
+                    elif style is 'lines':
+                        order = scipy.argsort(d[:,0], 0)
+                        d = scipy.take(d, order, 0)
+                        l = plot(d[:,0], d[:,1], fmt[::2])
+
+                if plot_trajectories:
+                    if traj is None:
+                        print 'No trajectory for calculation %s!' % calcId
+                        print 'The cost must be evaluated before the results',
+                        print 'can be plotted.'
+                        return
+
+                    scaleFactor = model.GetScaleFactors()[exptId][dataId]
+                    result = scaleFactor*traj.getVariableTrajectory(dataId)
+                    plot(traj.timepoints, result, fmt[::2], linewidth=3)
+
+                    if style is 'lines':
+                        plot(traj.timepoints, result, 'k--', linewidth=3,
+                                   zorder = 10)
+                
+                lines.append(l)
+                labels.append('%s in %s for %s' % (dataId, calcId, exptId))
+
+    if show_legend:
+        legend(lines, labels, loc=loc)
