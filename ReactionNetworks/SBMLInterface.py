@@ -7,9 +7,9 @@ try:
 except ImportError:
     HAVE_FT = False
 import libsbml
-import SloppyCell.ReactionNetworks.Network as Network
-import SloppyCell.ReactionNetworks.Reactions as Reactions
-import SloppyCell.ReactionNetworks.Parsing as Parsing
+import Network
+import Reactions
+import Parsing
 
 def toSBMLFile(net, fileName):
     sbmlStr = toSBMLString(net)
@@ -71,7 +71,7 @@ def toSBMLString(net):
         ss.setCompartment(s.compartment)
         if s.initialValue is not None:
             ss.setInitialConcentration(s.initialValue)
-        ss.setBoundaryCondition(s.isBoundaryCondition)
+        ss.setBoundaryCondition(s.is_boundary_condition)
         m.addSpecies(ss)
     
     for id, p in net.parameters.items():
@@ -176,9 +176,9 @@ def fromSBMLString(sbmlStr, id = None):
         isBC, isConstant = s.getBoundaryCondition(), s.getConstant()
 
         rn.addSpecies(id = id, compartment = compartment,
-                      initialConcentration = iC,
-                      isConstant = isConstant,
-                      isBoundaryCondition = isBC,
+                      initial_conc = iC,
+                      is_constant = isConstant,
+                      is_boundary_condition = isBC,
                       name = name)
 
     for p in m.getListOfParameters():

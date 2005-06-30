@@ -13,19 +13,20 @@ import os
 
 import scipy
 
-from SloppyCell import TEMP_DIR
-if not os.path.isdir(TEMP_DIR): 
-    os.mkdir(TEMP_DIR)
+from SloppyCell import _TEMP_DIR, KeyedList
+if not os.path.isdir(_TEMP_DIR): 
+    os.mkdir(_TEMP_DIR)
 
 # This is the symbolic differentiation library
 import symbolic
 # We load a dictionary of previously-taken derivatives for efficiency
-symbolic.loadDiffs(os.path.join(TEMP_DIR, 'diff.pickle'))
+symbolic.loadDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 
-import SloppyCell.Collections as Collections
-import SloppyCell.ReactionNetworks.Integration as Integration
-import SloppyCell.ReactionNetworks.Parsing as Parsing
-import SloppyCell.ReactionNetworks.Reactions as Reactions
+import Integration
+import Parsing
+import Reactions
+from Components import *
+from Trajectory import Trajectory
 
 # Expose function definitions that SBML wants to see.
 log, log10 = scipy.log, scipy.log10
@@ -60,32 +61,32 @@ class Network:
     def __init__(self, id, name=''):
         self.id, self.name = id, name
 
-        self.functionDefinitions = Collections.KeyedList()
-        self.reactions = Collections.KeyedList()
-        self.assignmentRules = Collections.KeyedList()
-        self.rateRules = Collections.KeyedList()
-        self.events = Collections.KeyedList()
+        self.functionDefinitions = KeyedList()
+        self.reactions = KeyedList()
+        self.assignmentRules = KeyedList()
+        self.rateRules = KeyedList()
+        self.events = KeyedList()
 
         # Variables is primary storage for all compartments, species, and 
         #  parameters. We build up 'cross reference' lists for convenience.
-        self.variables = Collections.KeyedList()
+        self.variables = KeyedList()
 
         # The following are all 'cross reference' lists which are intended
         #  only to hold references to objects in self.variables
         #  (makeCrossReferences will fill them in)
-        self.assignedVars = Collections.KeyedList()
-        self.constantVars = Collections.KeyedList()
-        self.optimizableVars = Collections.KeyedList()
-        self.dynamicVars = Collections.KeyedList()
-        self.compartments = Collections.KeyedList()
-        self.parameters = Collections.KeyedList()
-        self.species = Collections.KeyedList()
+        self.assignedVars = KeyedList()
+        self.constantVars = KeyedList()
+        self.optimizableVars = KeyedList()
+        self.dynamicVars = KeyedList()
+        self.compartments = KeyedList()
+        self.parameters = KeyedList()
+        self.species = KeyedList()
 
         # These are also cross references. complexEvents for events whose
         #  firing depends on variable values, and timeTriggeredEvents for
         #  events that fire at a give time.
-        self.complexEvents = Collections.KeyedList()
-        self.timeTriggeredEvents = Collections.KeyedList()
+        self.complexEvents = KeyedList()
+        self.timeTriggeredEvents = KeyedList()
 
         # Add in the function definitions I've seen so far in SBML
         self._addStandardFunctionDefinitions()
@@ -110,18 +111,33 @@ class Network:
     #
     # Methods used to build up a network
     #
-    def addVariable(self, var):
+    def add_variable(self, var):
         self._checkIdUniqueness(var.id)
         self.variables.setByKey(var.id, var)
         self.makeCrossReferences()
 
-    def addParameter(self, *args, **kwargs):
-        parameter = apply(Parameter, args, kwargs)
-        self.addVariable(parameter)
+    def add_parameter(self, id, value=0.0, name='', is_constant=True, 
+                      typical_value=None, is_optimizable=True):
+        parameter = Parameter(id, value, name, is_constant, typical_value,
+                              is_optimizable)
+        self.add_variable(parameter)
 
-    def addCompartment(self, *args, **kwargs):
-        compartment = apply(Compartment, args, kwargs)
-        self.addVariable(compartment)
+    def add_compartment(self, id, size=1.0, name='', is_constant=True, 
+                        typical_value=None, is_optimizable=False):
+        """ Adds a compartment to the network. """
+        compartment = Compartment(id, size, name, is_constant, typical_value,
+                                  is_optimizable)
+        self.add_variable(compartment)
+
+    def add_species(self, id, compartment, initial_conc=None, 
+                    name='', typical_value=None,
+                    is_boundary_condition=False, is_constant=False, 
+                    is_optimizable=False):
+        species = Species(id, compartment, initial_conc, name, typical_value,
+                          is_boundary_condition, is_constant, is_optimizable)
+        self.add_variable(species)
+        if species.id in self.dynamicVars.keys():
+            self.dirty['ddv_dt'] = True
 
     def addEvent(self, *args, **kwargs):
         event = apply(Event, args, kwargs)
@@ -135,11 +151,6 @@ class Network:
         self._checkIdUniqueness(function.id)
         self.functionDefinitions.setByKey(function.id, function)
 
-    def addSpecies(self, *args, **kwargs):
-        species = apply(Species, args, kwargs)
-        self.addVariable(species)
-        if species.id in self.dynamicVars.keys():
-            self.dirty['ddv_dt'] = True
 
     def addReaction(self, id, *args, **kwargs):
         # Reactions can be added by (1) passing in a string representing
@@ -161,7 +172,7 @@ class Network:
         self.makeCrossReferences()
         self.dirty['ddv_dt'] = True
 
-    def addRateRule(self, lhs, rhs):
+    def add_rate_rule(self, lhs, rhs):
         self.rateRules.setByKey(lhs, rhs)
         self.makeCrossReferences()
         self.dirty['ddv_dt'] = True
@@ -197,8 +208,8 @@ class Network:
         return self.id
 
     def GetParameters(self):
-        return Collections.KeyedList([(var.id, var.value) for var in
-                                      self.optimizableVars.values()])
+        return KeyedList([(var.id, var.value) for var in
+                          self.optimizableVars.values()])
 
     def GetResult(self, vars):
         result = {}
@@ -236,8 +247,7 @@ class Network:
         t, oa, te, ye, ie = Integration.Integrate(self, times, rtol = rtol)
         
         indexKeys = self.dynamicVars.keys() + self.assignedVars.keys()
-        keyToColumn = Collections.KeyedList(zip(indexKeys, 
-                                                range(len(indexKeys))))
+        keyToColumn = KeyedList(zip(indexKeys, range(len(indexKeys))))
 
 	trajectory = Trajectory(self, keyToColumn)
         trajectory.appendFromODEINT(t, oa)
@@ -301,7 +311,7 @@ class Network:
                                          for cname in alldvs]
         keyToColumnSens = [(name, index) for index, name in
                            enumerate(keyToColumnSensNames)]
-	keyToColumnSens = Collections.KeyedList(keyToColumnSens)
+	keyToColumnSens = KeyedList(keyToColumnSens)
 
 	ddv_dpTrajectory = Trajectory(self, keyToColumnSens)
 	ddv_dpTrajectory.appendSensFromODEINT(t, oa)
@@ -421,13 +431,13 @@ class Network:
 
     def makeDiffEqRHS(self):
         # Start with all right-hand-sides set to '0'
-        self.diffEqRHS = Collections.KeyedList(zip(self.dynamicVars.keys(), 
-                                                   ['0'] * len(self.dynamicVars)))
+        self.diffEqRHS = KeyedList(zip(self.dynamicVars.keys(), 
+                                       ['0'] * len(self.dynamicVars)))
 
         for id, rxn in self.reactions.items():
             rateExpr = rxn.kineticLaw
             for reactantId, dReactant in rxn.stoichiometry.items():
-                if self.variables.getByKey(reactantId).isBoundaryCondition:
+                if self.variables.getByKey(reactantId).is_boundary_condition:
                     # Variables that are boundary conditions aren't modified by
                     #  reactions, so we move on to the next reactant.
                     continue
@@ -478,12 +488,12 @@ class Network:
 
         functionBody += '\n\n\treturn ddv_dt'
 
-        f = file(os.path.join(TEMP_DIR, 'get_ddv_dt.py'), 'w')
+        f = file(os.path.join(_TEMP_DIR, 'get_ddv_dt.py'), 'w')
         print >> f, functionBody
         f.close()
         self.get_ddv_dt_functionBody = functionBody
         self.get_ddv_dt = None
-        symbolic.saveDiffs(os.path.join(TEMP_DIR, 'diff.pickle'))
+        symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 
     def make_get_d2dv_ddvdt(self):
         self.d2dv_ddvdt = scipy.zeros((len(self.dynamicVars),
@@ -509,12 +519,12 @@ class Network:
 
         functionBody += '\n\treturn d2dv_ddvdt'
 
-        f = file(os.path.join(TEMP_DIR, 'get_d2dv_ddvdt.py'), 'w')
+        f = file(os.path.join(_TEMP_DIR, 'get_d2dv_ddvdt.py'), 'w')
         print >> f, functionBody
         f.close()
         self.get_d2dv_ddvdt_functionBody = functionBody
         self.get_d2dv_ddvdt = None
-        symbolic.saveDiffs(os.path.join(TEMP_DIR, 'diff.pickle'))
+        symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 
     def make_get_d2dv_dovdt(self):
         self.d2dv_dovdt = scipy.zeros((len(self.dynamicVars),
@@ -544,12 +554,12 @@ class Network:
 
         functionBody += '\n\treturn d2dv_dovdt'
 
-        f = file(os.path.join(TEMP_DIR, 'get_d2dv_dovdt.py'), 'w')
+        f = file(os.path.join(_TEMP_DIR, 'get_d2dv_dovdt.py'), 'w')
         print >> f, functionBody
         f.close()
         self.get_d2dv_dovdt_functionBody = functionBody
         self.get_d2dv_dvcdt = None
-        symbolic.saveDiffs(os.path.join(TEMP_DIR, 'diff.pickle'))
+        symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 
 
     #
@@ -736,7 +746,7 @@ class Network:
 
         functionBody += '\n\treturn self._eventValues, self._eventTerminals, self._eventDirections'
 
-        f = file(os.path.join(TEMP_DIR, 'get_eventValues.py'), 'w')
+        f = file(os.path.join(_TEMP_DIR, 'get_eventValues.py'), 'w')
         print >> f, functionBody
         f.close()
         self.get_eventValues_functionBody = functionBody
@@ -770,7 +780,7 @@ class Network:
 
         functionBody += '\n\treturn self._eventDerivValues'
 
-        f = file(os.path.join(TEMP_DIR, 'get_eventDerivs.py'), 'w')
+        f = file(os.path.join(_TEMP_DIR, 'get_eventDerivs.py'), 'w')
         print >> f, functionBody
         f.close()
         self.get_eventDerivs_functionBody = functionBody
@@ -781,14 +791,14 @@ class Network:
     #
 
     def makeCrossReferences(self):
-        self.assignedVars = Collections.KeyedList()
-        self.constantVars = Collections.KeyedList()
-        self.optimizableVars = Collections.KeyedList()
-        self.dynamicVars = Collections.KeyedList()
+        self.assignedVars = KeyedList()
+        self.constantVars = KeyedList()
+        self.optimizableVars = KeyedList()
+        self.dynamicVars = KeyedList()
 
-        self.compartments = Collections.KeyedList()
-        self.parameters = Collections.KeyedList()
-        self.species = Collections.KeyedList()
+        self.compartments = KeyedList()
+        self.parameters = KeyedList()
+        self.species = KeyedList()
         mapping = {Compartment: self.compartments,
                    Parameter: self.parameters,
                    Species: self.species}
@@ -807,8 +817,8 @@ class Network:
         self.constantVarValues = [var.value for var in 
                                   self.constantVars.values()]
 
-        self.complexEvents = Collections.KeyedList()
-        self.timeTriggeredEvents = Collections.KeyedList()
+        self.complexEvents = KeyedList()
+        self.timeTriggeredEvents = KeyedList()
         for id, event in self.events.items():
             if event.timeTriggered:
                 self.timeTriggeredEvents.setByKey(id, event)
@@ -955,7 +965,7 @@ class Network:
 
         # libsbml wants the MathML embedded in a MathMLDocument
         mmlDoc = libsbml.MathMLDocument()
-        eqns = Collections.KeyedList()
+        eqns = KeyedList()
         for id, rhs in self.diffEqRHS.items() + self.assignmentRules.items():
             # Convert powers from python notation to what libsbml expects
             rhs = rhs.replace('**', '^')
@@ -1054,7 +1064,7 @@ class Network:
                             'arcsech':(['x'],  'arccosh(1./x)'),
                             }
 
-        self._standardFuncDefs = Collections.KeyedList()
+        self._standardFuncDefs = KeyedList()
         for id, (vars, math) in standardFuncDefs.items():
             function = FunctionDefinition(id, vars, math)
             self._checkIdUniqueness(function.id)
@@ -1065,278 +1075,26 @@ class Network:
         #      between functions with different numbers of arguments
         #self.addFunctionDefinition('log', ['b, x'],  'log(x)/log(b)')
 
-class Trajectory:
-    def __init__(self, net, keyToColumn = None):
-        if keyToColumn is not None:
-            self.keyToColumn = keyToColumn
-        else:
-            self.keyToColumn = Collections.KeyedList(\
-                zip(net.dynamicVars.keys()
-                    + net.assignedVars.keys(),
-                    range(len(net.dynamicVars)+len(net.assignedVars))))
+    def addCompartment(self, id, size=1.0, name='', isConstant=True, 
+                       typicalValue=False, isOptimizable=False):
+        compartment = Compartment(id, size, name, isConstant, typicalValue,
+                                  isOptimizable)
+        self.addVariable(compartment)
+        #raise exceptions.DeprecationWarning('Method addCompartment is deprecated, use add_compartment instead.')
 
-        self.timepoints = scipy.zeros(0, scipy.Float)
-	self.values = scipy.zeros((0, len(keyToColumn)), scipy.Float)
-
-        self.assignedVarKeys = net.assignedVars.keys()
-        self.dynamicVarKeys = net.dynamicVars.keys()
-        self.optimizableVarKeys = net.optimizableVars.keys()
-
-        self.constantVarValues = \
-                Collections.KeyedList([(id, var.value) for (id, var) in\
-                                       net.constantVars.items()])
-        self.typicalVarValues = \
-                Collections.KeyedList([(id, var.typicalValue) for (id, var) in\
-                                       net.variables.items()])
-
-        self.make_DoAssignmentInRow(net)
-        if len(self.dynamicVarKeys + self.assignedVarKeys) < len(keyToColumn):
-            self.make_DoSensAssignmentInRow(net)
-
-    def append(self, other):
-        if self.keyToColumn != other.keyToColumn:
-            raise ValueError, 'Trajectories in append have different column keys!'
-        if self.constantVarValues != other.constantVarValues:
-            print 'WARNING: Constant variable values differ between appended trajectories!'
-
-        if self.timepoints[-1] > other.timepoints[0]:
-            print 'WARNING: Appending trajectory with earlier timepoints!'
-
-        self.timepoints = scipy.concatenate((self.timepoints, other.timepoints))
-        self.values = scipy.concatenate((self.values, other.values))
-
-    def getVariableTrajectory(self, id):
-        return self.values[:, self.keyToColumn.getByKey(id)]
-
-    def make_DoAssignmentInRow(self, net):
-        functionBody = 'def DoAssignmentInRow(self, row, time):\n\t'
-
-        if len(net.assignmentRules) > 0:
-            for id, rule in net.assignmentRules.items():
-                lhs = self.substituteVariableNames(id)
-                rhs = net.substituteFunctionDefinitions(rule)
-                rhs = self.substituteVariableNames(rhs)
-                functionBody += lhs + ' = ' + rhs + '\n\t'
-
-            functionBody = functionBody[:-2]
-        else:
-            functionBody += 'pass'
-
-        f = file(os.path.join(TEMP_DIR, 'DoAssignmentInRow.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.DoAssignmentInRow_functionBody = functionBody
-        self.DoAssignmentInRow = None
-
-    def make_DoSensAssignmentInRow(self, net):
-        functionBody = 'def DoSensAssignmentInRow(self, row, time):\n\t'
-
-        if len(net.assignmentRules) > 0:
-	    for id, rule in net.assignmentRules.items():
-                rule = net.substituteFunctionDefinitions(rule)
-                derivWRTdv = {}
-                for wrtId in net.dynamicVars.keys():
-                    deriv = net.takeDerivative(rule, wrtId)
-                    if deriv != '0':
-                        derivWRTdv[wrtId] = deriv
-
-		for optId in net.optimizableVars.keys():
-                    lhs = self.substituteVariableNames('%s__derivWRT__%s' %
-                                                           (id,optId))
-                    rhs = '0'
-                    # get derivative of assigned variable w.r.t.
-                    #  dynamic variables
-                    for wrtId, deriv in derivWRTdv.items():
-                        rhs += ' + (%s) * %s__derivWRT__%s' % \
-                                (deriv, wrtId, optId)
-
-		    # now partial derivative w.r.t. optId
-		    derivWRTp = net.takeDerivative(rule, optId)
-		    if derivWRTp != '0' :
-			rhs += ' + %s' % derivWRTp
-
-                    if rhs != '0':
-                        rhs = self.substituteVariableNames(rhs)
-                        functionBody += '%s = %s\n\t' % (lhs, rhs)
-
-            functionBody = functionBody[:-2]
-        else:
-            functionBody += 'pass'
-
-        f = file(os.path.join(TEMP_DIR, 'DoSensAssignmentInRow.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.DoSensAssignmentInRow_functionBody = functionBody
-        self.DoSensAssignmentInRow = None
-
-    def appendFromODEINT(self, timepoints, odeint_array):
-        if self.DoAssignmentInRow is None:
-            exec self.DoAssignmentInRow_functionBody
-            self.DoAssignmentInRow = types.MethodType(DoAssignmentInRow, 
-                                                      self, Trajectory)
-
-        numAdded = odeint_array.shape[0]
-        addedValues = scipy.zeros((numAdded, len(self.keyToColumn)), 
-                                  scipy.Float)
-
-        self.values = scipy.concatenate((self.values, addedValues))
-        self.timepoints = scipy.concatenate((self.timepoints, timepoints))
-
-	nDv = len(self.dynamicVarKeys)
-
-        for ii, id in enumerate(self.keyToColumn.keys()[:nDv]):
-            self.values[-numAdded:, self.keyToColumn.getByKey(id)] =\
-                    odeint_array[:, ii]
-
-        for time, row in zip(self.timepoints, self.values)[-numAdded:]:
-            self.DoAssignmentInRow(row, time)
-
-    def appendSensFromODEINT(self, timepoints, odeint_array):
-        if self.DoAssignmentInRow is None:
-            exec self.DoAssignmentInRow_functionBody
-            self.DoAssignmentInRow = types.MethodType(DoAssignmentInRow, 
-                                                      self, Trajectory)
-        if self.DoSensAssignmentInRow is None:
-            exec self.DoSensAssignmentInRow_functionBody
-            self.DoSensAssignmentInRow = types.MethodType(DoSensAssignmentInRow,
-                                                          self, Trajectory)
-
-        numAdded = odeint_array.shape[0]
-        addedValues = scipy.zeros((numAdded, len(self.keyToColumn)), 
-                                  scipy.Float)
-
-        self.values = scipy.concatenate((self.values, addedValues))
-        self.timepoints = scipy.concatenate((self.timepoints, timepoints))
-
-	nDv = len(self.dynamicVarKeys)
-
-	# fill in trajectory
-	for ii, id in enumerate(self.keyToColumn.keys()[0:nDv]):
-            self.values[-numAdded:, self.keyToColumn.getByKey(id)] = \
-                    odeint_array[:, ii]
-	# ... and sensitivities
-        for ii, dvId in enumerate(self.dynamicVarKeys):
-            for jj, ovId in enumerate(self.optimizableVarKeys):
-                self.values[-numAdded:, 
-                            self.keyToColumn.getByKey((dvId, ovId))]\
-                        = odeint_array[:, ii + (jj+1)*nDv]
-
-        for time, row in zip(self.timepoints, self.values)[-numAdded:]:
-            self.DoAssignmentInRow(row, time)
-            self.DoSensAssignmentInRow(row, time)
-
-    def __getstate__(self):
-        odict = copy.copy(self.__dict__)
-        odict['DoAssignmentInRow'] = None
-        odict['DoSensAssignmentInRow'] = None
-        return odict
-
-    def substituteVariableNames(self, input):
-	for id in Parsing.extractVariablesFromString(input):
-            # convert it back to something keyToColumn will recognize
-	    # had to use a form  dynVarName__derivWRT__optParamName for the
-	    # sensitivity variable because otherwise,
-            # Parsing.extractVariablesFromString gets confused
-            splitId = id.split('__derivWRT__')
-            if len(splitId) == 1:
-	    	idname = splitId[0]
-	    elif len(splitId) == 2:
-	    	idname = tuple(splitId)
-            else:
-                raise 'Problem with id %s in Trajectory.substituteVariableNames'
-
-	    if idname in self.keyToColumn.keys() :
-                mapping = 'row[%i]' % self.keyToColumn.getByKey(idname)
-            elif idname in self.constantVarValues.keys():
-                # It must be a constantVars variable => substitute the
-                #  value alone
-                mapping = str(self.constantVarValues.getByKey(id))
-            elif idname != 'time':
-                raise 'Problem with idname %s in Trajectory.substituteVariableNames'
-
-            input = Parsing.substituteVariableNamesInString(input, id, mapping)
-
-        return input
-
-#
-# Containers for the more complex SBML entities.
-#
-
-class FunctionDefinition:
-    def __init__(self, id, variables, math, name = ''):
-        self.id = id
-        self.variables = variables
-        self.math = math
-        self.name = name
+    addVariable = add_variable
     
-class Variable:
-    def __init__(self, id, value, 
-                 name, typicalValue, 
-                 isConstant, isOptimizable):
-        if typicalValue is None:
-            if value != 0:
-                typicalValue = value
-            else:
-                typicalValue = 1
+    def addSpecies(self, id, compartment, initialConcentration=None,
+                   name='', typicalValue=None, is_boundary_condition=False,
+                   isConstant=False, isOptimizable=False):
+        self.add_species(id, compartment, initialConcentration, name,
+                         typicalValue, is_boundary_condition, isConstant,
+                         isOptimizable)
 
-        self.id, self.name = id, name
-        self.value, self.initialValue = value, value
-        self.typicalValue = typicalValue
-        self.isConstant, self.isOptimizable = isConstant, isOptimizable
+    def addParameter(self, id, value = 0.0, 
+                     typicalValue = None, name = '',
+                     isConstant = True, isOptimizable = True):
+        self.add_parameter(id, value, name, isConstant, typicalValue,
+                           isOptimizable)
 
-class Compartment(Variable):
-    def __init__(self, id, size = 1.0, 
-                 name = '', typicalValue = None,
-                 isConstant = True, isOptimizable = False):
-        Variable.__init__(self, id, size, 
-                          name, typicalValue, 
-                          isConstant, isOptimizable)
-
-class Species(Variable):
-    def __init__(self, id, compartment, initialConcentration = None, 
-                 name = '', typicalValue = None,
-                 isBoundaryCondition = False, 
-                 isConstant = False, isOptimizable = False):
-        self.compartment = compartment
-        self.isBoundaryCondition = isBoundaryCondition
-
-        Variable.__init__(self, id, initialConcentration, 
-                          name, typicalValue,
-                          isConstant, isOptimizable)
-
-class Parameter(Variable):
-    def __init__(self, id, value = 0.0, 
-                 typicalValue = None, name = '',
-                 isConstant = True, isOptimizable = True):
-        Variable.__init__(self, id, value, 
-                          name, typicalValue,
-                          isConstant, isOptimizable)
-
-class Event:
-    def __init__(self, id, trigger, eventAssignments, delay = 0, name = '', 
-                 isTerminal = True):
-        self.id, self.name = id, name
-        self.delay = delay 
-        self.isTerminal = isTerminal
-
-        self.timeTriggered = False
-        self.parseTrigger(trigger)
-
-        self.eventAssignments = eventAssignments
-        self.newValues = {}
-        
-    def parseTrigger(self, trigger):
-        # Figures out if the event is time-triggered and parses it to niceness.
-        self.trigger = trigger
-        ast = symbolic.string2ast(trigger)
-        if Parsing.extractVariablesFromAST(ast) == sets.Set(['time']):
-            self.timeTriggered = True
-            firstArg = symbolic.ast2string(ast[2][2][1])
-            secondArg = symbolic.ast2string(ast[2][2][3])
-
-            if firstArg == 'time':
-                self.triggeringTime = eval(secondArg)
-            elif secondArg == 'time':
-                self.triggeringTime = eval(firstArg)
-            else:
-                raise 'Problem in time triggered events'
+    addRateRule = add_rate_rule

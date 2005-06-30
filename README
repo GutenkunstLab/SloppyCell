@@ -13,6 +13,12 @@ Distributed under the terms of the BSD license.
 
 See Doc/README.txt for more details.
 
-Last updated 06/15/2005.
+Last updated 06/23/2005.
 
+INSTALLATION
 
+Installation is via scipy_distutils. Simply run
+python setup.py install
+
+For information on installation options run
+python setup.py install --help

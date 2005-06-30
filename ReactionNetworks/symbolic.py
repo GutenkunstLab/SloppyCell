@@ -27,7 +27,7 @@ def loadDiffs(filename):
     try:
         __Diff_saved = cPickle.load(file(filename, 'rb'))
     except IOError:
-        print 'saved diffs not loaded'
+        pass
 
 def saveDiffs(filename):
     f = file(filename, 'wb')

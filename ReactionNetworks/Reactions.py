@@ -1,5 +1,5 @@
-import SloppyCell.ReactionNetworks.symbolic as symbolic
-import SloppyCell.ReactionNetworks.Parsing as Parsing
+import symbolic as symbolic
+import Parsing as Parsing
 
 class Reaction:
     def __init__(self, id, stoichiometry, kineticLaw = '', name = ''):
