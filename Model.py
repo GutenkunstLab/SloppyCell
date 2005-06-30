@@ -1,4 +1,6 @@
-import copy, sets
+import copy
+import exceptions
+import sets
 import scipy
 import Collections, Residuals
 
@@ -33,7 +35,7 @@ class Model:
     	c = self.Cost(scipy.exp(params))
 	return c
 
-    def Cost(self, params):
+    def cost(self, params):
         """
         Cost(parmeters) -> float
 
@@ -50,6 +52,8 @@ class Model:
                                      self.params)**2
 
         return resTotal
+
+    Cost = cost
 
     def AddResidual(self, res):
         self.residuals.setByKey(res.key, res)
@@ -156,52 +160,76 @@ class Model:
 
 
     def ComputeInternalVariables(self):
-        self.ComputeScaleFactors()
+        self.internalVars['scaleFactors'] = self.compute_scale_factors()
 
-
-    def ComputeScaleFactors(self):
+    def compute_scale_factors(self):
         """
-        ComputeScaleFactors() -> dictionary
+        Compute the scale factors for the current parameters and return a dict.
 
-        Returns the scale factors appropriate for each chemical in each
-        experiment, given the passed in parameters. The returned dictionary
-        is of the form: dict[experiment][chemical] -> scale factor.
+        The dictionary is of the form dict[exptId][varId] = scale_factor
         """
 
-        self.internalVars['scaleFactors'] = {}
-        for exptName, expt in self.GetExperimentCollection().items():
-            self.internalVars['scaleFactors'][exptName] = {}
-            exptData = expt.GetData()
+        scale_factors = {}
+        for exptId, expt in self.GetExperimentCollection().items():
+            scale_factors[exptId] = self._compute_sf_for_expt(expt)
 
-            # Get the dependent variables measured in this experiment
-            exptDepVars = sets.Set()
+        return scale_factors
+
+    def _compute_sf_for_expt(self, expt):
+        # Compute the scale factors for a given experiment
+        scale_factors = {}
+
+        exptData = expt.GetData()
+        fixed_sf = expt.GetFixedScaleFactors()
+
+        # Get the variables measured in this experiment
+        measuredVars = sets.Set()
+        for calcId in exptData:
+            measuredVars.union_update(exptData[calcId].keys())
+
+        sf_groups = map(sets.Set, expt.get_shared_scale_factors())
+        # Flatten out the list of shared scale factors.
+        flattened = []
+        for g in sf_groups:
+            flattened.extend(g)
+        # These are variables that don't share scale factors
+        unshared = [sets.Set([var]) for var in measuredVars
+                    if var not in flattened]
+        sf_groups.extend(unshared)
+
+        for group in sf_groups:
+            # Do any of the variables in this group have fixed scale factors?
+            fixed = group.intersection(fixed_sf.keys())
+            fixedAt = sets.Set([fixed_sf[var] for var in fixed])
+            if len(fixedAt) == 1:
+                value = fixedAt.pop()
+                for var in group:
+                    scale_factors[var] = value
+                continue
+            elif len(fixedAt) > 1:
+                    raise exceptions.ValueError('Shared scale factors fixed at inconsistent values in experiment %s!' % expt.GetName())
+
+            # Finally, compute the scale factor for this group
+            theoryDotData, theoryDotTheory = 0, 0
             for calc in exptData:
-                exptDepVars.union_update(expt.GetData()[calc].keys())
+                # Pull out the vars we have measured for this calculation
+                for var in group.intersection(exptData[calc].keys()):
+                    for indVar, (data, error) in exptData[calc][var].items():
+                        theory = self.calcVals[calc][var][indVar]
+                        theoryDotData += (theory * data) / error**2
+                        theoryDotTheory += theory**2 / error**2
 
-            for depVar in exptDepVars:
-                if depVar in expt.GetFixedScaleFactors():
-                    self.internalVars['scaleFactors'][exptName][depVar] =\
-                            expt.GetFixedScaleFactors()[depVar]
-                    continue
+            for var in group:
+                if theoryDotTheory is not 0:
+                    scale_factors[var] = theoryDotData/theoryDotTheory
+                else:
+                    scale_factors[var] = 1
 
-                theoryDotData, theoryDotTheory = 0, 0
-                for calc in exptData:
-                    if depVar in exptData[calc].keys():
-                        for indVar, (data, error)\
-                                in exptData[calc][depVar].items():
-                            theory = self.calcVals[calc][depVar][indVar]
-                            theoryDotData += (theory * data) / error**2
-                            theoryDotTheory += theory**2 / error**2
-
-                try:
-                    self.internalVars['scaleFactors'][exptName][depVar] = \
-                            theoryDotData/theoryDotTheory
-                except ZeroDivisionError:
-                    self.internalVars['scaleFactors'][exptName][depVar] = 1
+        return scale_factors
 
     def ComputeInternalVariableDerivs(self):
         """
-        ComputeScaleFactorsDerivs() -> dictionary
+        compute_scale_factorsDerivs() -> dictionary
 
         Returns the scale factor derivatives w.r.t. parameters
 	appropriate for each chemical in each
@@ -521,6 +549,9 @@ class Model:
 
 
     def GetExperimentCollection(self):
+        return self.exptColl
+
+    def get_experiment_collection(self):
         return self.exptColl
 
     def SetCalculationCollection(self, calcColl):

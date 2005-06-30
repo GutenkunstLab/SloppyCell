@@ -76,10 +76,11 @@ class ExperimentCollection(dict):
 
 class Experiment:
     def __init__(self, name = '', data = {}, fixedScaleFactors = {},
-                 longName = ''):
+                 longName = '', shared_sf = []):
         self.SetName(name)
         self.SetData(data)
         self.SetFixedScaleFactors(fixedScaleFactors)
+        self.set_shared_scale_factors(shared_sf)
 
     def SetName(self, name):
         self.name = name
@@ -87,7 +88,7 @@ class Experiment:
     def GetName(self):
         return self.name
 
-    def SetData(self, data):
+    def set_data(self, data):
         self.data = copy.copy(data)
 
     def UpdateData(self, newData):
@@ -96,11 +97,21 @@ class Experiment:
     def GetData(self):
         return self.data
 
-    def SetFixedScaleFactors(self, fixedScaleFactors):
-        self.fixedScaleFactors = fixedScaleFactors
+    def set_fixed_scale_factors(self, fixed_sf):
+        self.fixedScaleFactors = fixed_sf
+
+    def set_shared_scale_factors(self, shared_sf):
+        self.shared_sf = shared_sf
+
+    def get_shared_scale_factors(self):
+        return self.shared_sf
 
     def GetFixedScaleFactors(self):
         return self.fixedScaleFactors
+
+    SetData = set_data
+    SetFixedScaleFactors = set_fixed_scale_factors
+
 
 class CalculationCollection(dict):
     """
