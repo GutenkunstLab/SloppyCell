@@ -25,7 +25,7 @@ def Integrate(net, timepoints, rtol = None):
 
     atol = None
     if scipy.isscalar(rtol):
-        atol = [rtol*var.typicalValue for var in net.dynamicVariables.values()]
+        atol = [rtol*var.typicalValue for var in net.dynamicVars.values()]
     elif rtol is not None:
         rtol = None
         print >> sys.stderr, "Non-scalar rtol passed into Integrate(). Haven't decided how to handle this yet, so we're defaulting to rtol = None, atol = None (odeint defaults)."
@@ -143,7 +143,7 @@ def Integrate_Ddv_Dov(net, timepoints, rtol = None):
     atolDv = None
     if scipy.isscalar(rtol):
         atolDv = scipy.array([rtol*var.typicalValue for
-                              var in net.dynamicVariables.values()])
+                              var in net.dynamicVars.values()])
     elif rtol is not None:
         rtol = None
         print >> sys.stderr, "Non-scalar rtol passed into Integrate_Ddv_Dov(). Haven't decided how to handle this yet, so we're defaulting to rtol = None, atol = None (odeint defaults)."
