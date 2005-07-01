@@ -292,7 +292,7 @@ class Network:
                 saved = var.value
 
                 stepsize = 1.0e-6*abs(saved) + 1.0e-12
-                self.setInitialVariableValue(id, saved + stepsize)
+                self.set_initial_var_value(id, saved + stepsize)
 
 	        self.resetDynamicVariables()
                 tStepped, oaStepped, teStepped, yeStepped, ieStepped = \
@@ -301,7 +301,7 @@ class Network:
                 # oaStepped since param change might mean events fire at 
                 # different times or not at all.
 		deriv = (oaStepped - oaInitial)/stepsize
-		self.setInitialVariableValue(id, saved)
+		self.set_initial_var_value(id, saved)
 
                 oa[:, nDv + i*nDv : nDv + (i+1)*nDv] = deriv
 
@@ -374,7 +374,7 @@ class Network:
     # Methods to get and set object properties
     #
 
-    def setInitialVariableValue(self, id, value):
+    def set_initial_var_value(self, id, value):
         var = self.variables.getByKey(id)
         var.initialValue = value
         if var.isConstant:
@@ -382,13 +382,16 @@ class Network:
         self.constantVarValues = [var.value for var in
                                   self.constantVars.values()]
 
+    setInitialVariableValue = set_initial_var_value
+
+
     def setTypicalVariableValue(self, id, value):
         self.variables.getByKey(id).typicalValue = value
 
     def setOptimizables(self, params):
         # Sets all the optimizable variables from a passed-in KeyedList
         for id, value in params.items():
-            self.setInitialVariableValue(id, value)
+            self.set_initial_var_value(id, value)
 
     def getInitialVariableValue(self, id):
         return self.variables.getByKey(id).initialValue
