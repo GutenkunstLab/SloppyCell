@@ -558,8 +558,10 @@ class Model:
         self.calcColl = calcColl
         self.params = calcColl.GetParameters()
 
-    def GetCalculationCollection(self):
+    def get_calcs(self):
         return self.calcColl
+
+    GetCalculationCollection = get_calcs
 
     def GetScaleFactors(self):
         return self.internalVars['scaleFactors']
