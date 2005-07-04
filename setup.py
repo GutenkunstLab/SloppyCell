@@ -23,7 +23,7 @@ setup(name='SloppyCell',
       url='http://sloppycell.sourceforge.net',
       packages=['SloppyCell', 
                 'SloppyCell.ReactionNetworks', 
-                #'SloppyCell.Testing'
+                'SloppyCell.Testing'
                 ],
       package_dir={'SloppyCell': ''},
 
