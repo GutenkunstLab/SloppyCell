@@ -388,10 +388,19 @@ class Network:
     def setTypicalVariableValue(self, id, value):
         self.variables.getByKey(id).typicalValue = value
 
-    def setOptimizables(self, params):
-        # Sets all the optimizable variables from a passed-in KeyedList
-        for id, value in params.items():
-            self.set_initial_var_value(id, value)
+    def update_optimizable_vars(self, params):
+        """
+        Update the net's optimizable vars from a passed-in KeyedList.
+
+        Only those variables that intersect between the net and params are
+        changed.
+        """
+        inBoth = sets.Set(self.optimizableVars.keys())
+        inBoth = inBoth.intersection(params.keys())
+        for id in inBoth:
+            self.set_initial_var_value(id, params.getByKey(id))
+
+    setOptimizables = update_optimizable_vars
 
     def getInitialVariableValue(self, id):
         return self.variables.getByKey(id).initialValue
