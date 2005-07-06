@@ -6,6 +6,8 @@ ExperimentCollection = SloppyCell.Collections.ExperimentCollection
 Experiment = SloppyCell.Collections.Experiment
 CalculationCollection = SloppyCell.Collections.CalculationCollection
 
+import Plotting
+
 # This bit of voodoo is to expose the Model class while also allowing the
 #  module it's a part of to be reloaded. This preserves the convenience
 #  of reload() for debugging while also making it easier to expose the Model
