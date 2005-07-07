@@ -3,8 +3,8 @@ import unittest
 import scipy
 
 from TestNetwork import net
-net.setOptimizables({'A':1.0,
-                     'B':2.0})
+net.setInitialVariableValue('A', 1.0)
+net.setInitialVariableValue('B', 2.0)
 
 class test_scale_factors(unittest.TestCase):
     def test_default_initial_conditions(self):
