@@ -88,11 +88,11 @@ class PriorInLog(Residual):
         return {}
 
     def GetValue(self, predictions, internalVars, params):
-        return (scipy.log(params.get(self.pKey)) - self.logPVal)\
+        return (scipy.log(params.getByKey(self.pKey)) - self.logPVal)\
                 / self.sigmaLogPVal
 
     def dp(self, predictions, internalVars, params):
-        return {pKey: scipy.log(params.get(self.pKey))/self.sigmaLogPVal}
+        return {pKey: scipy.log(params.getByKey(self.pKey))/self.sigmaLogPVal}
 
     def dy(self, predictions, internalVars, params):
         return {}
