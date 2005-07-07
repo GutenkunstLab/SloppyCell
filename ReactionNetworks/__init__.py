@@ -1,3 +1,5 @@
+from SloppyCell import *
+
 import Plotting
 import Reactions
 
