@@ -1,8 +1,12 @@
 import copy
 import exceptions
 import sets
+import os
+
 import scipy
-import Collections, Residuals
+
+import SloppyCell
+import Residuals
 
 class Model:
     """
@@ -23,7 +27,7 @@ class Model:
         self.calcSensitivityVals = {}
 	self.internalVars = {}
         self.internalVarsDerivs = {}
-	self.residuals = Collections.KeyedList()
+	self.residuals = SloppyCell.KeyedList()
 
         self.SetExperimentCollection(exptColl)
         self.SetCalculationCollection(calcColl)
@@ -548,11 +552,10 @@ class Model:
                         self.residuals.setByKey(resName, res)
 
 
-    def GetExperimentCollection(self):
+    def get_expts(self):
         return self.exptColl
 
-    def get_experiment_collection(self):
-        return self.exptColl
+    GetExperimentCollection = get_expts
 
     def SetCalculationCollection(self, calcColl):
         self.calcColl = calcColl
