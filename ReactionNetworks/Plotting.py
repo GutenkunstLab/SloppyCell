@@ -70,7 +70,7 @@ def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=
     maxTime = 0
     chemsNeededByCalc = {}
     for exptName in experiments:
-        dataByCalc = exptColl[exptName].GetData()
+        dataByCalc = model.exptColl[exptName].GetData()
         for calc in dataByCalc:
             chemsNeededByCalc.setdefault(calc, [])
             for chem in dataByCalc[calc].keys():
