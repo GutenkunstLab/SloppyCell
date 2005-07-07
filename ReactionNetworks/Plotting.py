@@ -204,7 +204,7 @@ def plot_model_results(model, expts = None, style='errorbars',
                                      in dataDict.items()])
                     if style is 'errorbars':
                         l = errorbar(d[:,0], d[:,1], yerr=d[:,2], 
-                                     fmt=fmt[:-1], ecolor=fmt, capsize=6)
+                                     fmt=fmt[:-1], ecolor=fmt, capsize=6)[0]
                     elif style is 'lines':
                         # Make sure we order the data before plotting
                         order = scipy.argsort(d[:,0], 0)
