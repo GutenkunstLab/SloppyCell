@@ -198,9 +198,6 @@ class CalculationCollection(dict):
 
     def GetParameters(self):
         """
-        GetParameterNamesInOrder() -> list
-
-        Returns a list of parameter names, in the order they would be expected
-        if a list of values were passed in.
+        Return a deep copy of the collections parameter KeyedList.
         """
-        return self.params
+        return copy.deepcopy(self.params)
