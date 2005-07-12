@@ -454,7 +454,7 @@ class Model:
             eps = scipy.ones(len(params), scipy.Float) * eps
 
 	## compute residuals/cost at f(x)
-	chiSq = self.Cost(params)
+	chiSq = self.CostFromLogParams(scipy.log(params))
 
 	hess = scipy.zeros((nOv, nOv), scipy.Float)
 
