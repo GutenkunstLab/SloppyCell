@@ -99,3 +99,102 @@ class PriorInLog(Residual):
     
     def dintVar(self, predictions, internalVars, params):
     	return {}
+
+class PeriodCheckResidual(Residual):
+    def __init__(self, key, calcKey, depVarKey, indVarValue,  depVarMeasurement,
+                 depVarSigma):
+        Residual.__init__(self, key)
+        self.cKey = calcKey
+        self.yKey = depVarKey
+        self.xVal = indVarValue
+        self.yMeas = depVarMeasurement
+        self.ySigma = depVarSigma
+
+    def GetRequiredVarsByCalc(self):
+        # Need the points between xVal and xVal + 2*periods
+        return {self.cKey: {self.yKey: [self.xVal, self.xVal+2.0*self.yMeas]}}
+
+    def GetValue(self, predictions, internalVars, params):
+        # Find the period
+        traj = predictions[self.cKey][self.yKey]
+        times = traj.keys()
+        times.sort()
+
+        maximums=[]
+        for index in range(1,len(times)-1):
+            if times[index]<self.xVal or (self.xVal+2.0*self.yMeas)<times[index]: continue
+            t1,t2,t3 = times[index-1:index+2]
+            y1,y2,y3 = traj[t1], traj[t2], traj[t3]
+            if y1<y2 and y3<y2: # Use a quadratic approximation to find the maximum
+                (a,b,c)=scipy.dot(scipy.linalg.inv([[t1**2,t1,1],[t2**2,t2,1],[t3**2,t3,1]]),[y1,y2,y3])
+                maximums.append(-b/2/a)
+
+        if len(maximums)<2: theoryVal = 2*self.yMeas
+        else: theoryVal = maximums[1] - maximums[0]
+
+        return (theoryVal - self.yMeas)/self.ySigma
+
+    def dp(self, predictions, internalVars, params):
+        return {}
+
+    def dy(self, predictions, internalVars, params):
+        return {}
+
+    def Dp(self,predictions,senspredictions,internalVars,internalVarsDerivs,params):
+	""" Total derivative w.r.t p of the residual. Can be used as it stands 
+        for other residual types but v3 may have to be changed depending on how
+        it is decided to key dp """
+        raise NotImplementedError
+
+
+class AmplitudeCheckResidual(Residual):
+    def __init__(self, key, calcKey, depVarKey, indVarValue0, indVarValue1, period,
+                 depVarSigma, exptKey):
+        Residual.__init__(self, key)
+        self.cKey = calcKey
+        self.yKey = depVarKey
+        self.xVal = indVarValue0
+        self.xTestVal = indVarValue1
+        self.period = period
+        self.ySigma = depVarSigma
+        self.exptKey = exptKey
+
+    def GetRequiredVarsByCalc(self):
+        # Need the points between xVal and xVal + 2*periods
+        return {self.cKey: {self.yKey: [self.xVal, self.xVal+self.period, self.xTestVal, self.xTestVal+self.period]}}
+
+    def GetValue(self, predictions, internalVars, params):
+        times = predictions[self.cKey][self.yKey].keys()
+        scale_factor = internalVars['scaleFactors'][self.exptKey][self.yKey]
+
+        # Get the indices of the points to use and integrate the areas
+        times = predictions[self.cKey][self.yKey].keys()
+        times.sort()
+        startIndex,endStartIndex = times.index(self.xVal), times.index(self.xVal+self.period)
+        testIndex,endTestIndex = times.index(self.xTestVal), times.index(self.xTestVal+self.period)
+        
+        x,y=[],[]
+        for t in times[startIndex:endStartIndex+1]:
+            x.append(t)
+            y.append(scale_factor*predictions[self.cKey][self.yKey][t])
+        measVal = scipy.integrate.simps(y,x)
+            
+        x,y=[],[]
+        for t in times[testIndex:endTestIndex+1]:
+            x.append(t)
+            y.append(scale_factor*predictions[self.cKey][self.yKey][t])
+        theoryVal = scipy.integrate.simps(y,x)
+
+        return (theoryVal - measVal)/self.ySigma
+
+    def dp(self, predictions, internalVars, params):
+        return {}
+
+    def dy(self, predictions, internalVars, params):
+        return {}
+
+    def Dp(self,predictions,senspredictions,internalVars,internalVarsDerivs,params):
+	""" Total derivative w.r.t p of the residual. Can be used as it stands 
+        for other residual types but v3 may have to be changed depending on how
+        it is decided to key dp """
+        raise NotImplementedError

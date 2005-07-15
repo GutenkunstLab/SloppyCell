@@ -472,11 +472,31 @@ class Model:
         return hess
 
     def CalcHessian(self, params, eps, relativeScale = True, 
-                    stepSizeCutoff = 1e-6):
+                    stepSizeCutoff = 1e-6, jacobian = None):
 	nOv = len(params)
         if len(scipy.asarray(eps)) == 1:
             eps = scipy.ones(len(params), scipy.Float) * eps
 
+        if jacobian!=None:
+            jacobian = scipy.asarray(jacobian)
+            self.Cost(params) # Calculate all the internal variables
+            if len(jacobian.shape)==2: # Need to sum up the total jacobian
+                res = scipy.asarray([[self.residuals[index].GetValue(self.calcVals, self.internalVars, self.params)] \
+                                     for index in range(len(self.residuals))])
+                jacobian = 2.0*residuals*jacobian
+
+            # If parameters are independent, then
+            # epsilon should be (sqrt(2)*J[i])^-1
+            factor = 1.0/scipy.sqrt(2)
+            for i in range(nOv):
+                if jacobian[i]==0.0:
+                    eps[i] = 0.5*abs(params[i])
+                else: # larger than stepSizeCutoff, but not more that half of the original parameter value
+                    eps[i] = scipy.minimum( scipy.maximum( factor/abs(jacobian[i]), stepSizeCutoff ), 0.5*abs(params[i]) )
+
+            # Turn off the relative scaling since this will overwrite all this work
+            if relativeScale: relativeScale = False
+            
 	## compute residuals/cost at f(x)
 	chiSq = self.Cost(params)
 
@@ -532,8 +552,82 @@ class Model:
 	hess = 0.5*(scipy.transpose(jtj + secondDeriv) + (jtj + secondDeriv))
 	return hess
 
+    def CalcHessianUsingResidualsInLogParams(self,params,epsf,relativescale = True) :
+    	currParams = copy.copy(params)
+	nOp = len(currParams)
+	J,jtj = self.GetJandJtJInLogParameters(currParams)
+	self.ComputeInternalVariables()
+	localCalcVals = self.calcVals
+	localIntVars = self.internalVars
 
+	paramlist = scipy.array(currParams)
+        eps = epsf * scipy.ones(len(paramlist),scipy.Float)
 
+	secondDeriv = scipy.zeros((nOp,nOp),scipy.Float)
+	for index in range(0,len(params)) :
+            paramsPlus = currParams.__copy__()
+	    paramsPlus[index] = paramsPlus[index] + eps[index]
+	    JPlus,tmp = self.GetJandJtJInLogParameters(paramsPlus)
+
+	    for res in J.keys() :
+		resvalue = self.residuals.getByKey(res).GetValue\
+					(localCalcVals, localIntVars, currParams)
+		secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(J[res]))/ \
+					eps[index]*resvalue
+
+	self.params.update(currParams)
+	# force symmetry, because it will never be exactly symmetric.
+	# Should check that (jtj+secondDeriv) is approximately symmetric if concerned
+	# about accuracy of the calculation --- the difference between the i,j and the
+	# j,i entries should give you an indication of the accuracy
+	hess = 0.5*(scipy.transpose(jtj + secondDeriv) + (jtj + secondDeriv))
+	return hess
+        
+    def CalcResidualResponseArray(self, j, h) :
+        """
+        Calculate the Residual Response array. This array represents the change in
+        a residual obtained by a finite change in a data value.
+
+        Inputs:
+        (self, j, h)
+        j -- jacobian matrix to use
+        h -- hessian matrix to use
+
+        Outputs:
+        response -- The response array
+        """
+        j,h = scipy.asarray(j), scipy.asarray(h)
+	[m,n] = j.shape
+	response = scipy.zeros((m,m),scipy.Float)
+	ident = scipy.eye(m,typecode=scipy.Float)
+	hinv = scipy.linalg.pinv2(h,1e-40)
+	tmp = scipy.matrixmultiply(hinv,scipy.transpose(j))
+	tmp2 = scipy.matrixmultiply(j,tmp)
+	response = ident - tmp2
+
+	return response
+
+    def CalcParameterResponseToResidualArray(self,j,h):
+        """
+        Calculate the parameter response to residual array. This array represents
+        the change in parameter resulting from a change in data (residual).
+
+        Inputs:
+        (self, j, h)
+        j -- jacobian matrix to use
+        h -- hessian matrix to use
+
+        Outputs:
+        response -- The response array
+        """
+        j,h = scipy.asarray(j), scipy.asarray(h)
+	[m,n] = j.shape
+	response = scipy.zeros((n,m),scipy.Float)
+	hinv = scipy.linalg.pinv2(h,1e-40)
+	response = scipy.matrixmultiply(hinv,scipy.transpose(j))
+
+	return response
+        
     ############################################################################
     # Getting/Setting variables below
 
@@ -551,7 +645,23 @@ class Model:
                                                          uncert, exptKey)
                         self.residuals.setByKey(resName, res)
 
+            # Add in the PeriodChecks
+            for period in expt.GetPeriodChecks():
+                calcKey, depVarKey, indVarValue = period['calcKey'], period['depVarKey'], period['startTime']
+                resName = (exptKey, calcKey, depVarKey, indVarValue, 'PeriodCheck')
+                res = Residuals.PeriodCheckResidual(resName, calcKey, depVarKey, indVarValue,
+                                                    period['period'], period['sigma'])
+                self.residuals.setByKey(resName, res)
 
+            # Add in the AmplitudeChecks
+            for amplitude in expt.GetAmplitudeChecks():
+                calcKey, depVarKey = amplitude['calcKey'], amplitude['depVarKey']
+                indVarValue0, indVarValue1 = amplitude['startTime'], amplitude['testTime']
+                resName = (exptKey, calcKey, depVarKey, indVarValue0, indVarValue1, 'AmplitudeCheck')
+                res = Residuals.AmplitudeCheckResidual(resName, calcKey, depVarKey, indVarValue0, indVarValue1,
+                                                       amplitude['period'], amplitude['sigma'], exptKey)
+                self.residuals.setByKey(resName, res)
+               
     def get_expts(self):
         return self.exptColl
 

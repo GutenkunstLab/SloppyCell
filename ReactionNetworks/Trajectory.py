@@ -191,7 +191,9 @@ class Trajectory:
                 # It must be a constantVars variable => substitute the
                 #  value alone
                 mapping = str(self.constantVarValues.getByKey(id))
-            elif idname != 'time':
+            elif idname == 'time':
+                mapping = 'time'
+            else:
                 raise 'Problem with idname %s in Trajectory.substituteVariableNames'
 
             input = Parsing.substituteVariableNamesInString(input, id, mapping)

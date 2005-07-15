@@ -50,6 +50,21 @@ class ExperimentCollection(dict):
                     varsByCalc[calc][depVar].union_update(data[calc]\
                                                           [depVar].keys())
 
+            for period in expt.GetPeriodChecks():
+                calc, depVar = period['calcKey'], period['depVarKey']
+                start, period = period['startTime'], period['period']
+                if depVar not in varsByCalc[calc]:
+                    varsByCalc[calc].setdefault(depVar, sets.Set())
+                varsByCalc[calc][depVar].union_update([start, start+2.0*period])
+
+            for amplitude in expt.GetAmplitudeChecks():
+                calc, depVar = amplitude['calcKey'], amplitude['depVarKey']
+                start, test, period = amplitude['startTime'], amplitude['testTime'], amplitude['period']
+                if depVar not in varsByCalc[calc]:
+                    varsByCalc[calc].setdefault(depVar, sets.Set())
+                varsByCalc[calc][depVar].union_update([start, start+period,
+                                                       test, test+period])
+                
         # But I convert the sets back to sorted lists before returning
         for calc in varsByCalc:
             for depVar in varsByCalc[calc]:
@@ -83,7 +98,9 @@ class Experiment:
         self.SetData(data)
         self.SetFixedScaleFactors(fixedScaleFactors)
         self.set_shared_scale_factors(shared_sf)
-
+        self.periodChecks=[]
+        self.amplitudeChecks=[]
+        
     def SetName(self, name):
         self.name = name
 
@@ -114,6 +131,33 @@ class Experiment:
     SetData = set_data
     SetFixedScaleFactors = set_fixed_scale_factors
 
+    def AddPeriodCheck(self, calcKey, chemical, period, sigma, startTime=0.0):
+        """
+        Constrain the period of the oscillations to a value (period)
+        with the error (sigma). The period is found using the maximum
+        to maximum distance of the first two maxima found between
+        startTime and two periods after the startTime.
+        """
+        self.periodChecks.append({'calcKey':calcKey, 'depVarKey':chemical,
+                                  'period': period, 'sigma': sigma, 'startTime': startTime})
+
+    def GetPeriodChecks(self):
+        return self.periodChecks
+
+    def AddAmplitudeCheck(self, calcKey, chemical, startTime, testTime, period, sigma):
+        """
+        Turn on applying a constraint that the integrated
+        area in two different parts of the plot should be the
+        same. startTime and testTime are the starting points to
+        begin the integration for the period-long each.
+        """
+        self.amplitudeChecks.append({'calcKey': calcKey, 'depVarKey': chemical,
+                                   'startTime': startTime, 'testTime': testTime,
+                                   'period': period, 'sigma': sigma})
+
+    def GetAmplitudeChecks(self):
+        return self.amplitudeChecks
+        
 
 class CalculationCollection(dict):
     """
