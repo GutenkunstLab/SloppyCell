@@ -994,7 +994,7 @@ class Network:
             if id in self.assignmentRules.keys():
                 line = '\\mathrm{%s} &=& %s' % (id, texRHS[1:-1])
             else:
-                line = '{d\\mathrm{%s} \\over dt} &=& %s' % (id, texRHS[1:-1])
+                line = '{d\\mathrm{%s} \\over dt} &=& %s' % (id, texRHS[1:-1]) 
 
             # Put \times between variables for clarity
             line = line.replace('}\\mathrm', '}\\times\\mathrm')
@@ -1110,3 +1110,17 @@ class Network:
                            isOptimizable)
 
     addRateRule = add_rate_rule
+
+    def get_var_name(self, id):
+        """Return a variable's name if it exists, else just return its id.
+        """
+        var_name = self.variables.getByKey(id).name
+        if var_name:
+            return var_name
+        else:
+            # If a parameter doesn't have a name, kludge together
+            #  a TeX name by subscripting anything after the first _
+            if id.count('_') > 0:
+                sp = id.split('_')
+                id = '%s_{%s}' % (sp[0], ''.join(sp[1:]))
+            return id
