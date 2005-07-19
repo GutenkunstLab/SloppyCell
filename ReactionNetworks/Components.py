@@ -27,7 +27,8 @@ class Variable:
         self.id, self.name = id, name
         self.value, self.initialValue = value, value
         self.typicalValue = typicalValue
-        self.isConstant, self.isOptimizable = isConstant, isOptimizable
+        self.is_constant, self.isOptimizable = isConstant, isOptimizable
+        self.isConstant = self.is_constant
 
 class Compartment(Variable):
     def __init__(self, id, size, name, is_constant, 
