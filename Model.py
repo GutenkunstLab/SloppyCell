@@ -31,33 +31,60 @@ class Model:
 
         self.SetExperimentCollection(exptColl)
         self.SetCalculationCollection(calcColl)
-	
-    def CostPerResidualFromLogParams(self, params):
-        return self.Cost(scipy.exp(params))/float(len(self.residuals))
 
-    def CostFromLogParams(self, params):
-    	c = self.Cost(scipy.exp(params))
-	return c
-
-    def cost(self, params):
+    def res(self, params):
         """
-        Cost(parmeters) -> float
-
-        Returns the sum of the squares of the residuals from
-        ComputeResidualsWithScaleFactors.
+        Return the residual values of the model fit given a set of parameters
         """
         self.params.update(params)
         self.CalculateForAllDataPoints(params)
         self.ComputeInternalVariables()
 
-        resTotal = 0
-        for res in self.residuals.values():
-            resTotal += res.GetValue(self.calcVals, self.internalVars,
-                                     self.params)**2
+        resvals = [res.GetValue(self.calcVals, self.internalVars, self.params)\
+                   for res in self.residuals.values()]
 
-        return resTotal
+        return resvals
 
-    Cost = cost
+    def chisq(self, params):
+        """
+        Return the sum of the squares of the residuals for the model
+        """
+        resvals = scipy.array(self.res(params))
+        return scipy.sum(resvals**2)
+
+    def redchisq(self, params):
+        """
+        Return chi-squared divided by the number of degrees of freedom
+
+        Question: Are priors to be included in the N data points?
+                  How do scale factors change the number of d.o.f.?
+        """
+        return self.chisq(params)/(len(self.residuals) - len(self.params))
+
+    def cost(self, params):
+        """
+        Return the cost (1/2 chisq) of the model
+        """
+        return 0.5 * self.chisq(params)
+
+    def cost_log_params(self, log_params):
+        """
+        Return the cost given the logarithm of the input parameters
+        """
+        return self.cost(scipy.exp(log_params))
+
+	
+    # Deprecating...
+    def CostPerResidualFromLogParams(self, params):
+        return self.Cost(scipy.exp(params))/float(len(self.residuals))
+
+    def Cost(self, params):
+        return 2*self.cost(params)
+
+    def CostFromLogParams(self, params):
+    	return self.Cost(scipy.exp(params))
+    # ...
+
 
     def AddResidual(self, res):
         self.residuals.setByKey(res.key, res)
@@ -399,9 +426,17 @@ class Model:
 
 	return jac,jtj
 
-    def ComputeHessianElement(self, costFunc, chiSq, 
-                              params, i, j, epsi, epsj, 
-                              relativeScale, stepSizeCutoff):
+    def hessian_elem(self, func, f0, params, i, j, epsi, epsj,
+                     relativeScale, stepSizeCutoff):
+        """
+        Return the second partial derivative for func w.r.t. parameters i and j
+
+        f0: The value of the function at params
+        eps: Sets the stepsize to try
+        relativeScale: If True, step i is of size p[i] * eps, otherwise it is
+                       eps
+        stepSizeCutoff: The minimum stepsize to take
+        """
         origPi, origPj = params[i], params[j]
 
         if relativeScale:
@@ -414,38 +449,76 @@ class Model:
 
         if i == j:
             params[i] = origPi + hi
-            chiSqp = costFunc(params)
-            params[i] = origPi - hi
-            chiSqm = costFunc(params)
+            fp = func(params)
 
-            element = 0.5*(chiSqp - 2*chiSq + chiSqm)/hi**2
+            params[i] = origPi - hi
+            fm = func(params)
+
+            element = (fp - 2*f0 + fm)/hi**2
         else:
             ## f(xi + hi, xj + h)
             params[i] = origPi + hi
             params[j] = origPj + hj
-            chiSqpp = costFunc(params)
+            fpp = func(params)
 
             ## f(xi + hi, xj - hj)
             params[i] = origPi + hi
             params[j] = origPj - hj
-            chiSqpm = costFunc(params)
+            fpm = func(params)
 
             ## f(xi - hi, xj + hj)
             params[i] = origPi - hi
             params[j] = origPj + hj
-            chiSqmp = costFunc(params)
+            fmp = func(params)
 
             ## f(xi - hi, xj - hj)
             params[i] = origPi - hi
             params[j] = origPj - hj
-            chiSqmm = costFunc(params)
+            fmm = func(params)
 
-            element = 0.5*(chiSqpp - chiSqpm - chiSqmp + chiSqmm)/(4 * hi * hj)
+            element = (fpp - fpm - fmp + fmm)/(4 * hi * hj)
 
         params[i], params[j] = origPi, origPj
 
         return element
 
+    def hessian_log_params(self, params, eps,
+                           relativeScale=False, stepSizeCutoff=1e-6):
+        """
+        Returns the hessian of the model in log parameters.
+
+        eps: Sets the stepsize to try
+        relativeScale: If True, step i is of size p[i] * eps, otherwise it is
+                       eps
+        stepSizeCutoff: The minimum stepsize to take
+        """
+	nOv = len(params)
+        if len(scipy.asarray(eps)) == 1:
+            eps = scipy.ones(len(params), scipy.Float) * eps
+
+	## compute cost at f(x)
+	f0 = self.cost_log_params(scipy.log(params))
+
+	hess = scipy.zeros((nOv, nOv), scipy.Float)
+
+	## compute all (numParams*(numParams + 1))/2 unique hessian elements
+        for i in range(nOv):
+            for j in range(i, nOv):
+                hess[i][j] = self.hess_elem(self.cost_log_params, f0,
+                                            scipy.log(params), 
+                                            i, j, eps[i], eps[j], 
+                                            relativeScale, stepSizeCutoff)
+                hess[j][i] = hess[i][j]
+
+        return hess
+
+
+    def ComputeHessianElement(self, costFunc, chiSq, 
+                              params, i, j, epsi, epsj, 
+                              relativeScale, stepSizeCutoff):
+        return 0.5 * calc_hessian_elem(self, costFunc, chiSq, 
+                                       params, i, j, epsi, epsj, 
+                                       relativeScale, stepSizeCutoff)
 
     def CalcHessianInLogParameters(self, params, eps, relativeScale = False, 
                                    stepSizeCutoff = 1e-6):
