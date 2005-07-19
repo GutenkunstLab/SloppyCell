@@ -74,14 +74,14 @@ class KeyedList(list):
     def removeByKey(self, key):
         del self[self.keyToIndex[key]]
 
-    def getByKey(self, key, default = None):
-        try:
+    def get(self, key, default = None):
+        if self.keyToIndex.has_key(key):
             return self[self.keyToIndex[key]]
-        except KeyError:
-            if default is not None:
-                return default
-            else:
-                raise KeyError, key
+        else:
+            return default
+
+    def getByKey(self, key, default = None):
+        return self.get(key, default)
 
     def keys(self):
         return self.storedKeys
