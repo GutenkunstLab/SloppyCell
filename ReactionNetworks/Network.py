@@ -102,7 +102,7 @@ class Network:
         #  generates the python code for the function in fooFunc_functionBody.
         self.dynamicFunctions = ['get_ddv_dt', 'get_d2dv_ddvdt', 
                                  'get_d2dv_dovdt', 'get_eventValues', 
-                                 'get_eventDerivs']
+                                 'get_eventDerivs', 'get_res']
 
         # Should we get sensitivities via finite differences? (Faster, but less
         #  accurate.)
@@ -449,9 +449,10 @@ class Network:
         for id, rxn in self.reactions.items():
             rateExpr = rxn.kineticLaw
             for reactantId, dReactant in rxn.stoichiometry.items():
-                if self.variables.getByKey(reactantId).is_boundary_condition:
-                    # Variables that are boundary conditions aren't modified by
-                    #  reactions, so we move on to the next reactant.
+                if self.variables.getByKey(reactantId).is_boundary_condition or\
+                   self.variables.getByKey(reactantId).is_constant:
+                    # Variables that are boundary conditions or are constant
+                    #  aren't modified by reactions, so we move on to the next.
                     continue
 
                 reactantIndex = self.dynamicVars.indexByKey(reactantId)
@@ -481,6 +482,30 @@ class Network:
         # Handle the rate rules
         for id, rule in self.rateRules.items():
             self.diffEqRHS.setByKey(id, rule)
+
+    def make_get_res(self):
+        self.res = scipy.zeros(len(self.dynamicVars), scipy.Float)
+
+        functionBody = 'def get_res(self, t, dynamicVars, yp):\n\t'
+        functionBody += 'res = self.res\n\t'
+        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
+        functionBody += '\n\t'
+
+        for ii, (id, var) in enumerate(self.dynamicVars.items()):
+            rhs = self.diffEqRHS.getByKey(id)
+            if rhs != '0':
+                rhs = self.substituteFunctionDefinitions(rhs)
+                rhs = self.substituteConstantVariableValues(rhs)
+                functionBody += '# Total derivative of %s wrt time\n\t' % (id)
+                functionBody += 'res[%i] = yp[%i] - (%s)\n\t' % (ii, ii, rhs)
+
+        functionBody += '\n\n\treturn res'
+
+        f = file(os.path.join(_TEMP_DIR, 'get_res.py'), 'w')
+        print >> f, functionBody
+        f.close()
+        self.get_res_functionBody = functionBody
+        self.get_res = None
 
     def make_get_ddv_dt(self):
         self.ddv_dt = scipy.zeros(len(self.dynamicVars), scipy.Float)
@@ -844,6 +869,7 @@ class Network:
             self.make_get_ddv_dt()
             self.make_get_d2dv_ddvdt()
             self.make_get_d2dv_dovdt()
+            self.make_get_res()
             self.dirty['ddv_dt'] = False
 
         if self.dirty['events']:
