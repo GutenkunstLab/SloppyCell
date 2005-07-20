@@ -266,7 +266,7 @@ class Model:
                         theoryDotTheory += theory**2 / error**2
 
             for var in group:
-                if theoryDotTheory is not 0:
+                if theoryDotTheory != 0:
                     scale_factors[var] = theoryDotData/theoryDotTheory
                 else:
                     scale_factors[var] = 1
