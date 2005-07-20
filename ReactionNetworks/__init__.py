@@ -1,5 +1,6 @@
 from SloppyCell import *
 
+import IO
 import Plotting
 import Reactions
 
