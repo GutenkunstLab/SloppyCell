@@ -40,25 +40,18 @@ class Model:
         self.CalculateForAllDataPoints(params)
         self.ComputeInternalVariables()
 
-        resvals = [res.GetValue(self.calcVals, self.internalVars, self.params)\
+        resvals = [res.GetValue(self.calcVals, self.internalVars, self.params)
                    for res in self.residuals.values()]
 
         return resvals
 
-    def resDict(self, params):
+
+    def res_dict(self, params):
         """
         Return the residual values of the model fit given a set of parameters
         in dictionary form.
         """
-        self.params.update(params)
-        self.CalculateForAllDataPoints(params)
-        self.ComputeInternalVariables()
-
-        resvals = {}
-        for resName, resInstance in self.residuals.items():
-            resvals[resName] = resInstance.GetValue(self.calcVals, self.internalVars, self.params)
-
-        return resvals
+        return dict(zip(self.residuals.keys(), self.res(params)))
 
     def chisq(self, params):
         """
@@ -98,6 +91,8 @@ class Model:
 
     def CostFromLogParams(self, params):
     	return self.Cost(scipy.exp(params))
+
+    resDict = res_dict
     # ...
 
 
