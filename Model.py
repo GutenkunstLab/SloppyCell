@@ -45,6 +45,21 @@ class Model:
 
         return resvals
 
+    def resDict(self, params):
+        """
+        Return the residual values of the model fit given a set of parameters
+        in dictionary form.
+        """
+        self.params.update(params)
+        self.CalculateForAllDataPoints(params)
+        self.ComputeInternalVariables()
+
+        resvals = {}
+        for resName, resInstance in self.residuals.items():
+            resvals[resName] = resInstance.GetValue(self.calcVals, self.internalVars, self.params)
+
+        return resvals
+
     def chisq(self, params):
         """
         Return the sum of the squares of the residuals for the model
@@ -349,7 +364,7 @@ class Model:
                                     self.internalVars, self.internalVarsDerivs, params)
 	return deriv
     
-    def Jacobian(self, params, epsf, relativescale=True) :
+    def Jacobian(self, params, epsf, relativeScale=False, stepSizeCutoff=None):
     	"""
 	Finite difference the residual dictionary to get a dictionary
 	for the Jacobian. It will be indexed the same as the residuals.
@@ -361,18 +376,21 @@ class Model:
 	origParams = params.__copy__()
 	j = {} # will hold the result
 
-	res = self.ComputeResidualsWithScaleFactors(params)
+	res = self.resDict(params)
 
 	for ks in res.keys() :
 		j[ks] = []
 
 	params = scipy.array(params)
 
-	if relativescale is True :
+        if stepSizeCutoff==None:
+            stepSizeCutoff = scipy.sqrt(scipy.limits.double_epsilon)
+            
+	if relativeScale is True :
 	       eps = epsf * abs(params)
-	       for i in range(0,len(eps)) :
-		  if eps[i] < min(scipy.asarray(epsf)) :
-			eps[i] = min(scipy.asarray(epsf))
+ 	       for i in range(0,len(eps)):
+		  if eps[i] < stepSizeCutoff:
+			eps[i] = stepSizeCutoff
 	else :
 	       eps = epsf * scipy.ones(len(params),scipy.Float)
 
@@ -381,7 +399,7 @@ class Model:
             paramsPlus = params.copy()
             paramsPlus[index] = params[index] + eps[index]
 
-	    resPlus = self.ComputeResidualsWithScaleFactors(paramsPlus)
+	    resPlus = self.resDict(paramsPlus)
 
 	    for ks in res.keys() :
 		j[ks].append((resPlus[ks]-res[ks])/(eps[index]))
@@ -516,9 +534,9 @@ class Model:
     def ComputeHessianElement(self, costFunc, chiSq, 
                               params, i, j, epsi, epsj, 
                               relativeScale, stepSizeCutoff):
-        return 0.5 * calc_hessian_elem(self, costFunc, chiSq, 
-                                       params, i, j, epsi, epsj, 
-                                       relativeScale, stepSizeCutoff)
+        return 0.5 * self.hessian_elem(costFunc, chiSq, 
+                                  params, i, j, epsi, epsj, 
+                                  relativeScale, stepSizeCutoff)
 
     def CalcHessianInLogParameters(self, params, eps, relativeScale = False, 
                                    stepSizeCutoff = 1e-6):
@@ -583,11 +601,12 @@ class Model:
                                                         eps[i], eps[j], 
                                                         relativeScale, 
                                                         stepSizeCutoff)
+                print 'hess['+str(i)+']['+str(j)+']='+repr(hess[i][j])
                 hess[j][i] = hess[i][j]
 
         return hess
 
-    def CalcHessianUsingResiduals(self,params,epsf,relativescale = True) :
+    def CalcHessianUsingResiduals(self,params,epsf,relativeScale = True) :
     	currParams = copy.copy(params)
 	nOp = len(currParams)
 	J,jtj = self.GetJandJtJ(currParams)
@@ -597,7 +616,7 @@ class Model:
 	localIntVars = self.internalVars
 
 	paramlist = scipy.array(currParams)
-	if relativescale is True :
+	if relativeScale is True :
 	       eps = epsf * abs(paramlist)
 	       for i in range(0,len(eps)) :
 		  if eps[i] < min(scipy.asarray(epsf)) :
@@ -625,7 +644,7 @@ class Model:
 	hess = 0.5*(scipy.transpose(jtj + secondDeriv) + (jtj + secondDeriv))
 	return hess
 
-    def CalcHessianUsingResidualsInLogParams(self,params,epsf,relativescale = True) :
+    def CalcHessianUsingResidualsInLogParams(self,params,epsf,relativeScale = True) :
     	currParams = copy.copy(params)
 	nOp = len(currParams)
 	J,jtj = self.GetJandJtJInLogParameters(currParams)
@@ -697,7 +716,7 @@ class Model:
 	[m,n] = j.shape
 	response = scipy.zeros((n,m),scipy.Float)
 	hinv = scipy.linalg.pinv2(h,1e-40)
-	response = scipy.matrixmultiply(hinv,scipy.transpose(j))
+	response = -scipy.matrixmultiply(hinv,scipy.transpose(j))
 
 	return response
         
