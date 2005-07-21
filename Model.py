@@ -182,22 +182,8 @@ class Model:
     #    XXX: The structure of the return value may need to change to accomodate
     #         more general forms of residuals.
     #    """
-        self.params.update(params)
-	self.CalculateSensitivitiesForAllDataPoints(params)
-	#self.CalculateForAllDataPoints(params)
-	self.ComputeInternalVariables()
-        residuals = {}
-        dataColl = self.GetExperimentCollection().GetData()
-        for exptName in dataColl:
-            for calcName in dataColl[exptName]:
-                for depVar in dataColl[exptName][calcName]:
-                    for indVar, (data, error)\
-                            in dataColl[exptName][calcName][depVar].items():
-                        res = (self.internalVars['scaleFactors'][exptName][depVar]\
-                               *self.calcVals[calcName][depVar][indVar]-data)/error
-                        residuals[(exptName, calcName, depVar, indVar)] = res
 
-        return residuals
+        return self.resDict(params)
 
 
     def ComputeInternalVariables(self):
@@ -310,7 +296,7 @@ class Model:
 
                 # now get derivative of the scalefactor
                 for pname in p.keys() :
-                    theoryDotData, theoryDotTheory = 0, 0
+                    theorysensDotData, theorysensDotTheory = 0, 0
 
                     for calc in exptData:
                        clc = self.calcColl[calc]
@@ -349,11 +335,15 @@ class Model:
 
 	"""
 	deriv = {}
+	self.params.update(params)
+	# annoying but the resInstance.Dp function below needs parameter
+	# names aswell as values so it must be given as a KeyedList	
+	params = self.params.__copy__()
 
 	self.CalculateSensitivitiesForAllDataPoints(params)
 	self.ComputeInternalVariables()
 	self.ComputeInternalVariableDerivs()
-
+	
 	for resName, resInstance in self.residuals.items() :
 	   deriv[resName] = resInstance.Dp(self.calcVals, self.calcSensitivityVals,
                                     self.internalVars, self.internalVarsDerivs, params)
@@ -405,7 +395,7 @@ class Model:
 	return j
 
     def GetJandJtJ(self,params) :
-
+	
 	j = self.GetJacobian(params)
 	mn = scipy.zeros((len(params),len(params)),scipy.Float)
 
@@ -424,18 +414,20 @@ class Model:
 	# compute d^2(Cost)/(dlogp[i]dlogp[j]) which is
 	# sum_resname (residual[resname] * jac[resname][j] * delta_jk * p[k])
 	# but can be ignored when residuals are zeros, and maybe should be
-	# ignored altogether because it can make the Hessian non-positive
+	# ignored altogether because it can make the Hessian approximation non-positive
 	# definite
-	jac, jtj = self.GetJandJtJ(params)
+	pnolog = scipy.exp(params)	
+	jac, jtj = self.GetJandJtJ(pnolog)
 	for i in range(len(params)) :
             for j in range(len(params)) :
-                jtj[i][j] = jtj[i][j]*params[i]*params[j]
-	# extra term
-	residuals = self.ComputeResidualsWithScaleFactors(params)
-	for resname in residuals.keys() :
+                jtj[i][j] = jtj[i][j]*pnolog[i]*pnolog[j]
+
+	res = self.resDict(pnolog)	
+	for resname in self.residuals.keys() :
             for j in range(len(params)) :
-                jtj[j][j] += residuals[resname]*jac[resname][j]*params[j]
-                jac[resname][j] = jac[resname][j]*params[j]
+               	# extra term --- not including it 
+		# jtj[j][j] += res[resname]*jac[resname][j]*pnolog[j]
+                jac[resname][j] = jac[resname][j]*pnolog[j]
 
 	return jac,jtj
 
@@ -558,7 +550,7 @@ class Model:
         return hess
 
     def CalcHessian(self, params, eps, relativeScale = True, 
-                    stepSizeCutoff = 1e-6, jacobian = None):
+                    stepSizeCutoff = 1e-6, jacobian = None, verbose = False):
 	nOv = len(params)
         if len(scipy.asarray(eps)) == 1:
             eps = scipy.ones(len(params), scipy.Float) * eps
@@ -596,12 +588,13 @@ class Model:
                                                         eps[i], eps[j], 
                                                         relativeScale, 
                                                         stepSizeCutoff)
-                print 'hess['+str(i)+']['+str(j)+']='+repr(hess[i][j])
+                if verbose == True :
+			print 'hess['+str(i)+']['+str(j)+']='+repr(hess[i][j])
                 hess[j][i] = hess[i][j]
 
         return hess
 
-    def CalcHessianUsingResiduals(self,params,epsf,relativeScale = True) :
+    def CalcHessianUsingResiduals(self,params,epsf,relativeScale = True, moreAcc = False) :
     	currParams = copy.copy(params)
 	nOp = len(currParams)
 	J,jtj = self.GetJandJtJ(currParams)
@@ -620,17 +613,33 @@ class Model:
 	       eps = epsf * scipy.ones(len(paramlist),scipy.Float)
 
 	secondDeriv = scipy.zeros((nOp,nOp),scipy.Float)
-	for index in range(0,len(params)) :
-            paramsPlus = currParams.__copy__()
-	    paramsPlus[index] = paramsPlus[index] + eps[index]
-	    JPlus = self.GetJacobian(paramsPlus)
-
-	    for res in J.keys() :
-		resvalue = self.residuals.getByKey(res).GetValue\
+	
+	if moreAcc == False :
+		for index in range(0,len(params)) :
+            		paramsPlus = currParams.__copy__()
+	    		paramsPlus[index] = paramsPlus[index] + eps[index]
+	    		JPlus = self.GetJacobian(paramsPlus)
+	    		for res in J.keys() :
+				resvalue = self.residuals.getByKey(res).GetValue\
 					(localCalcVals, localIntVars, currParams)
-		secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(J[res]))/ \
+				secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(J[res]))/ \
 					eps[index]*resvalue
 
+	elif moreAcc == True :
+		for index in range(0,len(params)) :
+                        paramsPlus = currParams.__copy__()
+                        paramsPlus[index] = paramsPlus[index] + eps[index]
+                        JPlus = self.GetJacobian(paramsPlus)
+                       	paramsMinus = currParams.__copy__()
+			paramsMinus[index] = paramsMinus[index] - eps[index] 
+			JMinus =  self.GetJacobian(paramsMinus)
+	
+			for res in J.keys() :
+                                resvalue = self.residuals.getByKey(res).GetValue\
+                                        (localCalcVals, localIntVars, currParams)
+                                secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(JMinus[res]))/ \
+                                        (2.0*eps[index])*resvalue
+	
 	self.params.update(currParams)
 	# force symmetry, because it will never be exactly symmetric.
 	# Should check that (jtj+secondDeriv) is approximately symmetric if concerned
@@ -639,7 +648,7 @@ class Model:
 	hess = 0.5*(scipy.transpose(jtj + secondDeriv) + (jtj + secondDeriv))
 	return hess
 
-    def CalcHessianUsingResidualsInLogParams(self,params,epsf,relativeScale = True) :
+    def CalcHessianUsingResidualsInLogParams(self,params,epsf,relativeScale = True, moreAcc = False) :
     	currParams = copy.copy(params)
 	nOp = len(currParams)
 	J,jtj = self.GetJandJtJInLogParameters(currParams)
@@ -651,18 +660,33 @@ class Model:
         eps = epsf * scipy.ones(len(paramlist),scipy.Float)
 
 	secondDeriv = scipy.zeros((nOp,nOp),scipy.Float)
-	for index in range(0,len(params)) :
-            paramsPlus = currParams.__copy__()
-	    paramsPlus[index] = paramsPlus[index] + eps[index]
-	    JPlus,tmp = self.GetJandJtJInLogParameters(paramsPlus)
+	if moreAcc == False :	
+		for index in range(0,len(params)) :
+            		paramsPlus = currParams.__copy__()
+	    		paramsPlus[index] = paramsPlus[index] + eps[index]
+	    		JPlus,tmp = self.GetJandJtJInLogParameters(paramsPlus)
 
-	    for res in J.keys() :
-		resvalue = self.residuals.getByKey(res).GetValue\
+	    		for res in J.keys() :
+				resvalue = self.residuals.getByKey(res).GetValue\
 					(localCalcVals, localIntVars, currParams)
-		secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(J[res]))/ \
+				secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(J[res]))/ \
 					eps[index]*resvalue
 
-	self.params.update(currParams)
+	elif moreAcc == True :
+		for index in range(0,len(params)) :
+                        paramsPlus = currParams.__copy__()
+                        paramsPlus[index] = paramsPlus[index] + eps[index]
+                        JPlus,tmp = self.GetJandJtJInLogParameters(paramsPlus)
+			paramsMinus = currParams.__copy__()
+                        paramsMinus[index] = paramsMinus[index] - eps[index]
+                       	JMinus,tmp = self.GetJandJtJInLogParameters(paramsMinus) 
+			
+			for res in J.keys() :
+                                resvalue = self.residuals.getByKey(res).GetValue\
+                                        (localCalcVals, localIntVars, currParams)
+                                secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(JMinus[res]))/ \
+                                        (2.0*eps[index])*resvalue
+	self.params.update(scipy.exp(currParams))
 	# force symmetry, because it will never be exactly symmetric.
 	# Should check that (jtj+secondDeriv) is approximately symmetric if concerned
 	# about accuracy of the calculation --- the difference between the i,j and the
