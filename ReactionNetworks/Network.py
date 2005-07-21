@@ -25,7 +25,7 @@ symbolic.loadDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 import Integration
 import Parsing
 import Reactions
-import Collections
+import SloppyCell.Collections as Collections
 
 from Components import *
 from Trajectory import Trajectory
