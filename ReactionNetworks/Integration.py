@@ -205,7 +205,7 @@ def Integrate_Ddv_Dov(net, timepoints, rtol = None):
                 # Absolute tolerances for sensitivity variables
                 if atolDv is not None:
                     atolSens = atolDv/net.optimizableVars[ovIndex].typicalValue
-                    atolForThis = scipy.concatenate(atolDv, atolSens)
+		    atolForThis = scipy.concatenate((atolDv, atolSens))
                 else:
                     atolForThis = None
 
