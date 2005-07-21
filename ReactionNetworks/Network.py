@@ -25,6 +25,8 @@ symbolic.loadDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 import Integration
 import Parsing
 import Reactions
+import Collections
+
 from Components import *
 from Trajectory import Trajectory
 
@@ -203,6 +205,28 @@ class Network:
         self.compile()
 
         self.trajectory = self.integrate(t, params, addTimes = True)
+    
+    def CalculateSensitivity(self, vars, params):
+        t = sets.Set([0])
+
+        for var,times in vars.items():
+            t.union_update(times)
+
+        t = list(t)
+        t.sort()
+
+        self.compile()
+
+        self.ddv_dpTrajectory = self.integrateSensitivity(t,params, addTimes = True, rtol = 1.0e-7)
+        # we also have the normal trajectory within this trajectory
+        indexlength = len(self.dynamicVars) + len(self.assignedVars)
+        keyToColumn = Collections.KeyedList(zip(self.dynamicVars.keys()
+                                         + self.assignedVars.keys(),
+                                         range(indexlength)))
+
+        self.trajectory = Trajectory(self, keyToColumn)
+        self.trajectory.values = self.ddv_dpTrajectory.values[:,0:indexlength]
+        self.trajectory.timepoints = self.ddv_dpTrajectory.timepoints
 
     def GetName(self):
         return self.id
@@ -220,6 +244,22 @@ class Network:
 
         return result
 
+    def GetSensitivityResult(self, vars):
+       opts = self.optimizableVars
+       result = {}
+       times = self.ddv_dpTrajectory.timepoints
+       for id in vars.keys():
+           result[id] = {}
+           for tIndex,t in enumerate(times) :
+               result[id][t] = {}
+               for optparams in opts.keys() :
+                       result[id][t][optparams] = \
+                       self.ddv_dpTrajectory.getVariableTrajectory((id,optparams))[tIndex]
+       # note: returns all the timepoints we have, not just
+       # the requested ones (which should be a subset of all
+       # the timepoints)
+       return result
+    
     #
     # The actual integration
     #
