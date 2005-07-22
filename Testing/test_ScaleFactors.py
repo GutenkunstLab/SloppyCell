@@ -4,6 +4,8 @@ import unittest
 import scipy
 
 from TestNetwork import net, m, params
+net = copy.copy(net)
+net.compile()
 
 class test_ScaleFactors(unittest.TestCase):
     def test_fixed_scale_factors(self):

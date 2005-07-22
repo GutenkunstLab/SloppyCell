@@ -2,8 +2,9 @@ import unittest
 
 import scipy,copy
 from SloppyCell.ReactionNetworks import *
-import TestNetwork
-net = copy.deepcopy(TestNetwork.net)
+
+from TestNetwork import net
+net = copy.deepcopy(net)
 net.setInitialVariableValue('A', 1.0)
 net.setInitialVariableValue('B', 2.0)
 net.addParameter('xIC',4.0)
@@ -11,8 +12,6 @@ net.setInitialVariableValue('x','2.0*exp(xIC)')
 net.dirty['ddv_dt'] = True
 net.compile()
 
-expt = TestNetwork.expt1
-m = Model(ExperimentCollection([expt]),CalculationCollection([net]))
 
 class test_SensitivityIC(unittest.TestCase):
     def test_SensitivityIC(self):
