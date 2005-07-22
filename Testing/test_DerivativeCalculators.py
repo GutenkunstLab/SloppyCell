@@ -1,11 +1,13 @@
 import unittest
 
-import scipy
+import scipy,copy
 from SloppyCell.ReactionNetworks import *
 import TestNetwork
-net = TestNetwork.net
+net = copy.copy(TestNetwork.net)
 net.setInitialVariableValue('A', 1.0)
 net.setInitialVariableValue('B', 2.0)
+net.dirty['ddv_dt'] = True  # paranoia
+net.compile()
 expt = TestNetwork.expt1
 m = Model(ExperimentCollection([expt]),CalculationCollection([net]))
 
@@ -15,7 +17,7 @@ class test_DerivativeCalculators(unittest.TestCase):
        	p = m.params.__copy__()
 	j,jtj = m.GetJandJtJ(p)
 
-	# compare with finite diffences	
+	# compare with finite diffences
 	net.fdSensitivities = True
 	p = m.params.__copy__()	
 	jfd,jtjfd = m.GetJandJtJ(p) 
@@ -42,14 +44,15 @@ class test_DerivativeCalculators(unittest.TestCase):
 				maxdiff = diff	 
 	self.assertAlmostEqual(maxdiff, 0.0, 3, 'Failed on JtJ accuracy')
 
-    def test_HessianFunctions(self) :  
+    def test_HessianFunctions(self) :
 	""" Test CalcHessian against CalcHessianUsingResiduals with and without log parameters """
 	p = m.params.__copy__()
 	h = m.CalcHessianUsingResiduals(p,1.0e-6,moreAcc=False)
 	p = m.params.__copy__()	
 	hfd = m.CalcHessian(p,1.0e-5)
 	maxdiff = 0.0
-        for i in range(len(p)) :
+
+	for i in range(len(p)) :
                 for j in range(i,len(p)) :
                        	avg = .5*abs(h[i][j]) + .5*abs(hfd[i][j]) 
 			diff = abs(h[i][j]-hfd[i][j])
