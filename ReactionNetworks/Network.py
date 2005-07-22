@@ -171,6 +171,7 @@ class Network:
 
     def addAssignmentRule(self, variable, math):
         self.assignmentRules.setByKey(variable, math)
+	self.variables.get(variable).is_boundary_condition = True
         self.makeCrossReferences()
         self.dirty['ddv_dt'] = True
 
@@ -462,12 +463,15 @@ class Network:
             else:
                 var.value = var.initialValue
 
-        self.updateAssignedVars(time = 0)
+        # self.updateAssignedVars(time = 0)
 
         for id, var in pending:
             rhs = self.substituteFunctionDefinitions(var.initialValue)
             rhs = self.substituteVariableNames(rhs)
             self.dynamicVars.getByKey(id).value = eval(rhs)
+	
+	# need to put it down here, for i.c.s that are parameters
+	self.updateAssignedVars(time = 0)
 
     def updateVariablesFromDynamicVars(self, values, time):
         for ii in range(len(self.dynamicVars)):
@@ -486,12 +490,13 @@ class Network:
 
     def makeDiffEqRHS(self):
         # Start with all right-hand-sides set to '0'
-        self.diffEqRHS = KeyedList(zip(self.dynamicVars.keys(), 
+        self.diffEqRHS = KeyedList(zip(self.dynamicVars.keys(),
                                        ['0'] * len(self.dynamicVars)))
 
         for id, rxn in self.reactions.items():
             rateExpr = rxn.kineticLaw
-            for reactantId, dReactant in rxn.stoichiometry.items():
+
+	    for reactantId, dReactant in rxn.stoichiometry.items():
                 if self.variables.getByKey(reactantId).is_boundary_condition or\
                    self.variables.getByKey(reactantId).is_constant:
                     # Variables that are boundary conditions or are constant
