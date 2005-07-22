@@ -174,12 +174,17 @@ def fromSBMLString(sbmlStr, id = None):
         compartment = s.getCompartment()
         iC = s.getInitialConcentration()
         isBC, isConstant = s.getBoundaryCondition(), s.getConstant()
-
-        rn.addSpecies(id = id, compartment = compartment,
-                      initial_conc = iC,
-                      is_constant = isConstant,
+	
+	rn.addSpecies(id = id, compartment = compartment,
+                      initialConcentration = iC,
+                      isConstant = isConstant,
                       is_boundary_condition = isBC,
                       name = name)
+        #rn.addSpecies(id = id, compartment = compartment,
+        #              initial_conc = iC,
+        #              is_constant = isConstant,
+        #              is_boundary_condition = isBC,
+        #              name = name)
 
     for p in m.getListOfParameters():
         parameter = createNetworkParameter(p)
@@ -269,7 +274,9 @@ def createNetworkParameter(p):
     v = p.getValue()
     isConstant = p.getConstant()
 
-    parameter = Network.Parameter(id = id, value = v, isConstant = isConstant,
-                                  name = name)
+    parameter = Network.Parameter(id = id, value = v, is_constant = isConstant,
+                                  name = name, typical_value = v, is_optimizable = True)
+				  # optimizable by default
 
     return parameter
+
