@@ -1,6 +1,17 @@
-import copy, sets, sys
+import copy, sets, sys, types
 import scipy
 import SloppyCell.Integration as Integration
+
+# need these just for the situation that an initial condition for
+# the sensitivity equations depends on some messy function of parameters
+# Maybe the initial condition should be evaluated in Network and passed in?
+log, log10 = scipy.log, scipy.log10
+exp = scipy.exp
+cos, sin, tan = scipy.cos, scipy.sin, scipy.tan
+acos, asin, atan = scipy.arccos, scipy.arcsin, scipy.arctan
+cosh, sinh, tanh = scipy.cosh, scipy.sinh, scipy.tanh
+arccosh, arcsinh, arctanh = scipy.arccosh, scipy.arcsinh, scipy.arctanh
+exponentiale, pi = scipy.e, scipy.pi
 
 def _getIntervals(net, timepoints):
     cT = sets.Set([timepoints[0], timepoints[-1]] +
@@ -150,7 +161,21 @@ def Integrate_Ddv_Dov(net, timepoints, rtol = None):
 
     output = scipy.zeros((0, nDyn * (nOpt + 1)), scipy.Float)
     pendingEvents = {}
-    IC = scipy.zeros(nDyn * (nOpt + 1), scipy.Float)
+
+    IC = scipy.zeros(nDyn * (nOpt + 1), scipy.Float) # IC is zero unless IC is a function of parameters
+    dvInd = 0
+    for id, var in net.dynamicVars.items():
+	if type(var.initialValue) == types.StringType:
+		rule = net.substituteFunctionDefinitions(var.initialValue)
+		for ovInd,ovName in enumerate(net.optimizableVars.keys()) :
+			DwrtOV = net.takeDerivative(rule, ovName)
+			if DwrtOV != '0' :
+				DwrtOV = net.substituteFunctionDefinitions(DwrtOV)
+				DwrtOV = net.substituteVariableNames(DwrtOV)
+				DwrtOV = DwrtOV.replace('self','net')
+				IC[nDyn*(ovInd+1) + dvInd] = eval(DwrtOV)
+	dvInd = dvInd + 1
+
     IC[:nDyn] = net.getDynamicVarValues()
     outTimes, outTE, outYE, outIE = [], [], [], []
 
