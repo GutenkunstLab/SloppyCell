@@ -104,7 +104,7 @@ class Network:
         #  generates the python code for the function in fooFunc_functionBody.
         self.dynamicFunctions = ['get_ddv_dt', 'get_d2dv_ddvdt', 
                                  'get_d2dv_dovdt', 'get_eventValues', 
-                                 'get_eventDerivs', 'get_res']
+                                 'get_eventDerivs']#, 'get_res', 'get_resjac']
 
         # Should we get sensitivities via finite differences? (Faster, but less
         #  accurate.)
@@ -415,6 +415,9 @@ class Network:
     #
 
     def set_initial_var_value(self, id, value):
+        if id in self.assignedVars.keys():
+            print 'WARNING! Attempt to assign an initial condition to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the initial condition of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
+
         var = self.variables.getByKey(id)
         var.initialValue = value
         if var.isConstant:
@@ -522,6 +525,43 @@ class Network:
         # Handle the rate rules
         for id, rule in self.rateRules.items():
             self.diffEqRHS.setByKey(id, rule)
+
+    def make_get_resjac(self):
+        self.resjac = scipy.zeros((len(self.dynamicVars),)*2, scipy.Float)
+
+        functionBody = 'def get_resjac(self, t, dynamicVars, yp, cj):\n\t'
+        functionBody += 'resjac = self.resjac\n\t'
+        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
+        functionBody += '\n\t'
+
+        for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
+            rhs = self.diffEqRHS.getByKey(rhsId)
+            rhs = self.substituteFunctionDefinitions(rhs)
+            rhs = self.substituteConstantVariableValues(rhs)
+            # Take all derivatives of the rhs with respect to other 
+            #  dynamic variables
+            for wrtIndex, wrtId in enumerate(self.dynamicVars.keys()):
+                deriv = self.takeDerivative(rhs, wrtId)
+                if deriv != '0':
+                    #functionBody += '# Partial derivative of Ddv_Dt for %s wrt %s\n\t' % (rhsId, wrtId)
+                    if rhsIndex == wrtIndex:
+                        functionBody += 'resjac[%i, %i] = -(%s) + cj\n\t' % \
+                                (rhsIndex, wrtIndex, deriv)
+                    else:
+                        functionBody += 'resjac[%i, %i] = -(%s)\n\t' % \
+                                (rhsIndex, wrtIndex, deriv)
+                elif rhsIndex == wrtIndex:
+                        functionBody += 'resjac[%i, %i] = cj\n\t' % \
+                                (rhsIndex, wrtIndex)
+
+        functionBody += '\n\n\treturn resjac'
+
+        f = file(os.path.join(_TEMP_DIR, 'get_resjac.py'), 'w')
+        print >> f, functionBody
+        f.close()
+        self.get_resjac_functionBody = functionBody
+        self.get_resjac = None
+        symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 
     def make_get_res(self):
         self.res = scipy.zeros(len(self.dynamicVars), scipy.Float)
@@ -909,7 +949,8 @@ class Network:
             self.make_get_ddv_dt()
             self.make_get_d2dv_ddvdt()
             self.make_get_d2dv_dovdt()
-            self.make_get_res()
+            #self.make_get_res()
+            #self.make_get_resjac()
             self.dirty['ddv_dt'] = False
 
         if self.dirty['events']:
