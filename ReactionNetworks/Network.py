@@ -199,7 +199,7 @@ class Network:
         # Make sure we start from t = 0
         t = sets.Set([0])
         for var, times in vars.items():
-            t.union_update(times)
+            t.union_update(sets.Set(times))
         t = list(t)
         t.sort()
 
@@ -211,7 +211,7 @@ class Network:
         t = sets.Set([0])
 
         for var,times in vars.items():
-            t.union_update(times)
+            t.union_update(sets.Set(times))
 
         t = list(t)
         t.sort()
@@ -274,7 +274,7 @@ class Network:
         if addTimes:
             times = sets.Set(times)
             toAdd = scipy.linspace(min(times), max(times), 200)
-            times.union_update(toAdd)
+            times.union_update(sets.Set(toAdd))
             times = list(times)
             times.sort()
 
@@ -308,7 +308,7 @@ class Network:
         if addTimes:
             times = sets.Set(times)
             toAdd = scipy.linspace(min(times), max(times), 200)
-            times.union_update(toAdd)
+            times.union_update(sets.Set(toAdd))
             times = list(times)
             times.sort()
 
@@ -440,7 +440,7 @@ class Network:
         changed.
         """
         inBoth = sets.Set(self.optimizableVars.keys())
-        inBoth = inBoth.intersection(params.keys())
+        inBoth = inBoth.intersection(sets.Set(params.keys()))
         for id in inBoth:
             self.set_initial_var_value(id, params.getByKey(id))
 
@@ -1000,8 +1000,8 @@ class Network:
 
         # What other assigned variables does input depend on?
         otherVars = Parsing.extractVariablesFromString(input)
-        otherVars.difference_update([wrt])
-        otherVars.intersection_update(self.assignedVars.keys())
+        otherVars.difference_update(sets.Set([wrt]))
+        otherVars.intersection_update(sets.Set(self.assignedVars.keys()))
         # Do the chain rule for those variables
         if id in self.assignedVars.keys():
             rule = self.assignmentRules.getByKey(id)

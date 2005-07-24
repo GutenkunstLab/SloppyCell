@@ -47,8 +47,8 @@ class ExperimentCollection(dict):
                     # Using a set is a convenient way to make sure
                     # independent variables aren't repeated
                     varsByCalc[calc].setdefault(depVar, sets.Set())
-                    varsByCalc[calc][depVar].union_update(data[calc]\
-                                                          [depVar].keys())
+                    varsByCalc[calc][depVar].\
+                            union_update(sets.Set(data[calc][depVar].keys()))
 
             for period in expt.GetPeriodChecks():
                 calc, depVar = period['calcKey'], period['depVarKey']

@@ -212,7 +212,7 @@ class Model:
         # Get the variables measured in this experiment
         measuredVars = sets.Set()
         for calcId in exptData:
-            measuredVars.union_update(exptData[calcId].keys())
+            measuredVars.union_update(sets.Set(exptData[calcId].keys()))
 
         sf_groups = map(sets.Set, expt.get_shared_scale_factors())
         # Flatten out the list of shared scale factors.
@@ -226,7 +226,7 @@ class Model:
 
         for group in sf_groups:
             # Do any of the variables in this group have fixed scale factors?
-            fixed = group.intersection(fixed_sf.keys())
+            fixed = group.intersection(sets.Set(fixed_sf.keys()))
             fixedAt = sets.Set([fixed_sf[var] for var in fixed])
             if len(fixedAt) == 1:
                 value = fixedAt.pop()
@@ -240,7 +240,7 @@ class Model:
             theoryDotData, theoryDotTheory = 0, 0
             for calc in exptData:
                 # Pull out the vars we have measured for this calculation
-                for var in group.intersection(exptData[calc].keys()):
+                for var in group.intersection(sets.Set(exptData[calc].keys())):
                     for indVar, (data, error) in exptData[calc][var].items():
                         theory = self.calcVals[calc][var][indVar]
                         theoryDotData += (theory * data) / error**2
@@ -275,7 +275,7 @@ class Model:
             # Get the dependent variables measured in this experiment
             exptDepVars = sets.Set()
             for calc in exptData:
-                exptDepVars.union_update(expt.GetData()[calc].keys())
+                exptDepVars.union_update(sets.Set(expt.GetData()[calc].keys()))
 
             for depVar in exptDepVars:
 		self.internalVarsDerivs['scaleFactors'][exptName][depVar] = {}
