@@ -9,7 +9,8 @@ def run_all_tests():
     for file in testfiles:
         module = file[:-3]
         mod = __import__(file[:-3])
-        all_tests.addTest(mod.suite)
+        if hasattr(mod, 'suite'):
+            all_tests.addTest(mod.suite)
         if hasattr(mod, 'message'):
             mesgs.append(mod.message)
 
@@ -18,6 +19,7 @@ def run_all_tests():
     print
     for mesg in mesgs:
         print mesg
+        print
 
 if __name__ == '__main__':
     run_all_tests()
