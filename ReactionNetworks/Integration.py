@@ -91,7 +91,7 @@ def Integrate(net, timepoints, rtol = None):
 
             outTimes.extend(t)
 
-            start, IC = outTimes[-1], output[-1]
+            start, IC = outTimes[-1], copy.copy(output[-1])
 
             outTE.extend(te)
             outYE.extend(ye)
