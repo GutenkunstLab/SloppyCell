@@ -36,7 +36,7 @@ class EnsembleBuilder:
 
 
     def BuildEnsemble(_, ensSize):
-        currParams = copy.copy(origParams)
+        currParams = copy.copy(_.origParams)
 
 	currCost = _.model.Cost(currParams)
         if _.usingLogParams & _.keepParamsPositive :
