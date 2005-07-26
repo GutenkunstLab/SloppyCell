@@ -165,7 +165,11 @@ class AmplitudeCheckResidual(Residual):
 
     def GetValue(self, predictions, internalVars, params):
         times = predictions[self.cKey][self.yKey].keys()
-        scale_factor = internalVars['scaleFactors'][self.exptKey][self.yKey]
+        if self.exptKey in internalVars['scaleFactors'].keys() \
+               and self.yKey in internalVars['scaleFactors'][self.exptKey].keys():
+            scale_factor = internalVars['scaleFactors'][self.exptKey][self.yKey]
+        else:
+            scale_factor = 1.0
 
         # Get the indices of the points to use and integrate the areas
         times = predictions[self.cKey][self.yKey].keys()
