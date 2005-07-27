@@ -7,30 +7,33 @@ import scipy
 
 import SloppyCell
 import Residuals
+import SloppyCell.Collections
 
 class Model:
-    """
-    Model(experiment name list, calculation name list)
+    def __init__(self, expts, calcs):
+        """
+        Construct a model from lists of experiment and calcultion objects.
+        """
 
-    A Model unites a CalculationCollection and an ExperimentCollection. Thus
-    it can calculate a cost.
-
-    The constructor takes a list of Experiments and Calculations to include.
-
-    XXX: In the future this class should also hold interfaces to optimization
-         routines and ensemble generation. Basically anything that will work
-         independent of the form of the Calculations and Experiments.
-    """
-
-    def __init__(self, exptColl, calcColl):
         self.calcVals = {}
         self.calcSensitivityVals = {}
 	self.internalVars = {}
         self.internalVarsDerivs = {}
 	self.residuals = SloppyCell.KeyedList()
 
-        self.SetExperimentCollection(exptColl)
-        self.SetCalculationCollection(calcColl)
+        if isinstance(expts, list):
+            expts = SloppyCell.Collections.ExperimentCollection(expts)
+        self.SetExperimentCollection(expts)
+
+        if isinstance(calcs, list):
+            calcs = SloppyCell.Collections.CalculationCollection(calcs)
+        self.SetCalculationCollection(calcs)
+
+    def get_params(self):
+        """
+        Return a copy of the current model parameters
+        """
+        return self.calcColl.GetParameters()
 
     def res(self, params):
         """
@@ -45,6 +48,11 @@ class Model:
 
         return resvals
 
+    def res_log_params(self, logparams):
+        """
+        Return the residual values given the logarithm of the parameters
+        """
+        return self.res(scipy.exp(logparams))
 
     def res_dict(self, params):
         """
@@ -509,7 +517,7 @@ class Model:
 	## compute all (numParams*(numParams + 1))/2 unique hessian elements
         for i in range(nOv):
             for j in range(i, nOv):
-                hess[i][j] = self.hess_elem(self.cost_log_params, f0,
+                hess[i][j] = self.hessian_elem(self.cost_log_params, f0,
                                             scipy.log(params), 
                                             i, j, eps[i], eps[j], 
                                             relativeScale, stepSizeCutoff)
