@@ -59,7 +59,7 @@ class KeyedList(list):
     #
     # Methods for manipulating by key.
     #
-    def setByKey(self, key, value):
+    def set(self, key, value):
         #if key in self.storedKeys:
         if self.keyToIndex.has_key(key):
             self[self.keyToIndex[key]] = value
@@ -67,6 +67,8 @@ class KeyedList(list):
             list.append(self, value)
             self.storedKeys.append(key)
             self.keyToIndex[key] = len(self)-1
+
+    setByKey = set
 
     def indexByKey(self, key):
         return self.keyToIndex[key]
@@ -80,8 +82,7 @@ class KeyedList(list):
         else:
             return default
 
-    def getByKey(self, key, default = None):
-        return self.get(key, default)
+    getByKey = get
 
     def keys(self):
         return self.storedKeys
