@@ -46,6 +46,8 @@ class Trajectory:
         self.values = scipy.concatenate((self.values, other.values))
 
     def getVariableTrajectory(self, id):
+        if not self.keyToColumn.has_key(id):
+            raise ValueError, 'Variable %s not found in trajectory. Is it a constant variable?'
         return self.values[:, self.keyToColumn.getByKey(id)]
 
     def make_DoAssignmentInRow(self, net):
