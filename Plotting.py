@@ -18,7 +18,7 @@ def ColorWheel():
                    yield c + s + l
 
 cW = ColorWheel()
-def PlotEigenvalueSpectrum(vals, lab = None):
+def plot_eigvals(vals, lab=None):
     posVals = abs(scipy.compress(vals > 0, vals))
     posRange = scipy.compress(vals > 0, range(len(vals)))
     negVals = abs(scipy.compress(vals < 0, vals))
@@ -33,11 +33,13 @@ def PlotEigenvalueSpectrum(vals, lab = None):
         semilogy(negRange, negVals, 'r'+sym[1])
 
     a = axis()
-    axis([-3, len(vals)+2, a[2], a[3]])
+    axis([-0.05*len(vals), 1.05*(len(vals) - 1), a[2], a[3]])
 
     return line
 
-def plot_eigenvect(vect, labels=None, num_label = 5):
+PlotEigenvalueSpectrum = plot_eigvals
+
+def plot_eigvect(vect, labels=None, num_label = 5):
     """
     Plot a given eigenvector.
 
@@ -48,7 +50,7 @@ def plot_eigenvect(vect, labels=None, num_label = 5):
     #  bar width of 0.8
     bar(scipy.arange(-0.4, len(vect) - 0.4, 1), vect/scipy.linalg.norm(vect))
     a = axis()
-    a[0:2] = [-.03*len(vect), len(vect)*1.03]
+    a[0:2] = [-.03*len(vect) - 0.4, (len(vect) - 1)*1.03 + 0.4]
 
     if labels is not None:
         mags = zip(abs(vect), range(len(vect)), vect)
