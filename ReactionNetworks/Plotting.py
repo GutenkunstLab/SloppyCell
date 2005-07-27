@@ -3,6 +3,7 @@ from pylab import *
 
 from SloppyCell.Plotting import *
 
+
 def PlotEigenvectors(eigVects, net = None, title = None):
     nEv = 3
     nOv = len(eigVects[:,0])
@@ -204,7 +205,7 @@ def plot_model_results(model, expts = None, style='errorbars',
                                      in dataDict.items()])
                     if style is 'errorbars':
                         l = errorbar(d[:,0], d[:,1], yerr=d[:,2], 
-                                     fmt=fmt[:-1], ecolor=fmt, capsize=6)[0]
+                                     fmt=fmt[:-1], ecolor='k', capsize=6)[0]
                     elif style is 'lines':
                         # Make sure we order the data before plotting
                         order = scipy.argsort(d[:,0], 0)
@@ -236,6 +237,56 @@ def plot_model_results(model, expts = None, style='errorbars',
                 else:
                     printedName = dataId
                 labels.append('%s in %s for %s' % (printedName, calcId, exptId))
+
+    if show_legend:
+        legend(lines, labels, loc=loc)
+
+def plot_trajectory(traj, vars = None,
+                    show_legend = True, loc = 'upper left',
+                    logx = False, logy = False):
+    if vars is None:
+        vars = traj.dynamicVarKeys
+
+    lines, labels = [], []
+    cW = ColorWheel()
+    for id in vars:
+        fmt = cW.next()
+        if logx:
+            semilogx(traj.timepoints, traj.getVariableTrajectory(id), fmt[::2], 
+                     linewidth=3, label=id)
+        elif logy:
+            semilogy(traj.timepoints, traj.getVariableTrajectory(id), fmt[::2], 
+                     linewidth=3, label=id)
+        else:
+            plot(traj.timepoints, traj.getVariableTrajectory(id), fmt[::2], 
+                 linewidth=3, label=id)
+
+    if show_legend:
+        legend(loc=loc)
+
+
+def plot_ensemble_trajs(best=None, mean=None, lower=None, upper=None,
+                        vars=None, 
+                        show_legend = True, loc = 'upper left',):
+    cW = ColorWheel()
+    lines = []
+    labels = []
+    for var in vars:
+        fmt = cW.next()
+        if best is not None:
+            l = plot(best.timepoints, best.getVariableTrajectory(var), 
+                     fmt[0]+'-', linewidth=2)
+        if mean is not None:
+            plot(mean.timepoints, mean.getVariableTrajectory(var), fmt[0]+'--', 
+                 linewidth=2)
+        if upper is not None and lower is not None:
+            xpts = scipy.concatenate((lower.timepoints, upper.timepoints[::-1]))
+            ypts = scipy.concatenate((lower.getVariableTrajectory(var),
+                                      upper.getVariableTrajectory(var)[::-1]))
+            fill(xpts, ypts, fmt[0], alpha=0.4)
+
+        lines.append(l)
+        labels.append(var)
 
     if show_legend:
         legend(lines, labels, loc=loc)
