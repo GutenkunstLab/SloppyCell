@@ -27,8 +27,9 @@ class Variable:
         self.id, self.name = id, name
         self.value, self.initialValue = value, value
         self.typicalValue = typicalValue
-        self.is_constant, self.isOptimizable = isConstant, isOptimizable
+        self.is_constant, self.is_optimizable = isConstant, isOptimizable
         self.isConstant = self.is_constant
+        self.isOptimizable = self.is_optimizable
 
 class Compartment(Variable):
     def __init__(self, id, size, name, is_constant, 
@@ -70,7 +71,13 @@ class Event:
         
     def parseTrigger(self, trigger):
         # Figures out if the event is time-triggered and parses it to niceness.
+
+        # 'and' is a reserved keyword in python, so the parser will break
+        #  unless we substitute the name here.
+        trigger = trigger.replace('and(', 'and_func(')
+
         self.trigger = trigger
+
         ast = symbolic.string2ast(trigger)
         if Parsing.extractVariablesFromAST(ast) == sets.Set(['time']):
             self.timeTriggered = True
