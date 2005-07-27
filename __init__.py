@@ -6,8 +6,11 @@ ExperimentCollection = SloppyCell.Collections.ExperimentCollection
 Experiment = SloppyCell.Collections.Experiment
 CalculationCollection = SloppyCell.Collections.CalculationCollection
 
+import Ensembles
 import Plotting
 import Residuals
+import Optimization
+import Utility
 
 # This bit of voodoo is to expose the Model class while also allowing the
 #  module it's a part of to be reloaded. This preserves the convenience
