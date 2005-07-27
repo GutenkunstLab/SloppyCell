@@ -2,7 +2,15 @@ import os
 
 import symbolic
 
-def net_eqns_to_TeX_file(net, filename):
+try:
+    import SBMLInterface as SBMLInt
+    to_SBML_file = SBMLInt.toSBMLFile
+    from_SBML_file = SBMLInt.fromSBMLFile
+except ImportError:
+    print 'SBML import and export not available.'
+
+
+def eqns_TeX_file(net, filename = None):
     lines = []
     lines.append(r'\documentclass{article}')
     lines.append(r'\usepackage{amsmath}')
@@ -12,6 +20,8 @@ def net_eqns_to_TeX_file(net, filename):
     lines.append(_net_eqns_to_TeX(net))
     lines.append(r'\end{document}')
 
+    if filename is None:
+        filename = '%s.tex' % net.id
     f = file(filename, 'w')
     f.write(os.linesep.join(lines))
     f.close()
@@ -158,6 +168,9 @@ def _ast_to_TeX(term, name_dict = {}):
         # We do sqrt specially
         if term[1][1] == 'sqrt':
             return '\\sqrt{%s}' % _ast_to_TeX(term[-1][2], name_dict)
+        elif term[1][1] == 'pow' and len(term[-1][2]) == 4:
+            return '{%s}^{%s}' % (_ast_to_TeX(term[-1][2][1], name_dict),
+                                  _ast_to_TeX(term[-1][2][3], name_dict))
 
         out = '\\operatorname{%s}\\left(%s\\right)' % \
                 (_ast_to_TeX(term[:-1], name_dict), 
