@@ -1,3 +1,4 @@
+import sets
 import symbolic as symbolic
 import Parsing as Parsing
 
@@ -9,7 +10,7 @@ class Reaction:
         self.name = name
 
         variables = Parsing.extractVariablesFromString(kineticLaw)
-        self.parameters = variables.difference(stoichiometry.keys())
+        self.parameters = variables.difference(sets.Set(stoichiometry.keys()))
 
     def doKwargsSubstitution(self, kwargs):
         self.oldStoichiometry = self.stoichiometry
