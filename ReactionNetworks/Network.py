@@ -104,7 +104,7 @@ class Network:
         #  generates the python code for the function in fooFunc_functionBody.
         self.dynamicFunctions = ['get_ddv_dt', 'get_d2dv_ddvdt', 
                                  'get_d2dv_dovdt', 'get_eventValues', 
-                                 'get_eventDerivs']#, 'get_res', 'get_resjac']
+                                 'get_eventDerivs', 'root_func']#, 'get_res', 'get_resjac']
 
         # Should we get sensitivities via finite differences? (Faster, but less
         #  accurate.)
@@ -176,6 +176,7 @@ class Network:
         self.dirty['ddv_dt'] = True
 
     def add_rate_rule(self, lhs, rhs):
+        self.variables.get(lhs).is_constant = False
         self.rateRules.setByKey(lhs, rhs)
         self.makeCrossReferences()
         self.dirty['ddv_dt'] = True
@@ -188,6 +189,16 @@ class Network:
            or id == self.id:
             raise ValueError, ('The id %s is already in use!' % id)
 
+    def set_id(self, id):
+        self.id = id
+
+    def copy(self, new_id = None):
+        new_net = copy.deepcopy(self)
+        if new_id is not None:
+            new_net.set_id(new_id)
+
+        new_net.compile()
+        return new_net
 
     #
     # Methods to become a 'SloppyCell.Model'
@@ -362,7 +373,7 @@ class Network:
         else:
             return ddv_dpTrajectory
 
-    def FindFixedPoint(self, dv0 = None):
+    def dyn_var_fixed_point(self, dv0 = None):
         if dv0 is None:
             dv0 = self.getDynamicVarValues()
 
@@ -421,7 +432,7 @@ class Network:
 
         var = self.variables.getByKey(id)
         var.initialValue = value
-        if var.isConstant:
+        if var.is_constant:
             var.value = value
         self.constantVarValues = [var.value for var in
                                   self.constantVars.values()]
@@ -434,15 +445,22 @@ class Network:
 
     def update_optimizable_vars(self, params):
         """
-        Update the net's optimizable vars from a passed-in KeyedList.
+        Update the net's optimizable vars from a passed-in KeyedList, 
+         dictionary, or sequence.
 
         Only those variables that intersect between the net and params are
-        changed.
+        changed if a KeyedList or dict is passed in.
         """
-        inBoth = sets.Set(self.optimizableVars.keys())
-        inBoth = inBoth.intersection(sets.Set(params.keys()))
-        for id in inBoth:
-            self.set_initial_var_value(id, params.getByKey(id))
+        if hasattr(params, 'get'):
+            inBoth = sets.Set(self.optimizableVars.keys())
+            inBoth = inBoth.intersection(sets.Set(params.keys()))
+            for id in inBoth:
+                self.set_initial_var_value(id, params.get(id))
+        elif len(params) == len(self.optimizableVars):
+            for ii, id in enumerate(self.optimizableVars.keys()):
+                self.set_initial_var_value(id, params[ii])
+        else:
+            raise ValueError, 'Passed in parameter set does not have the proper length!'
 
     setOptimizables = update_optimizable_vars
 
@@ -473,6 +491,10 @@ class Network:
 	# need to put it down here, for i.c.s that are parameters
 	self.updateAssignedVars(time = 0)
 
+    def set_dyn_var_ics(self, values):
+        for ii, id in enumerate(self.dynamicVars.keys()):
+            self.set_initial_var_value(id, values[ii])
+
     def updateVariablesFromDynamicVars(self, values, time):
         for ii in range(len(self.dynamicVars)):
             self.dynamicVars[ii].value = values[ii]
@@ -483,6 +505,14 @@ class Network:
             rhs = self.substituteFunctionDefinitions(rhs)
             rhs = self.substituteVariableNames(rhs)
             self.assignedVars.getByKey(id).value = eval(rhs)
+
+    def set_var_optimizable(self, id, is_optimizable):
+        self.variables.get(id).is_optimizable = is_optimizable
+        self.makeCrossReferences()
+
+    def set_var_constant(self, id, is_constant):
+        self.variables.get(id).is_constant = is_constant
+        self.makeCrossReferences()
 
     #
     # Generate the differential equations and functions to calculate them.
@@ -874,6 +904,24 @@ class Network:
         self.get_eventValues_functionBody = functionBody
         self.get_eventValues = None
 
+    def make_root_func(self):
+        self._root_func = scipy.zeros(len(self.complexEvents), scipy.Float)
+
+        functionBody = 'def root_func(self, dynamicVars, time):\n\t'
+        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
+
+        for ii, event in enumerate(self.complexEvents.values()):
+            rhs = self.substituteFunctionDefinitions(event.trigger)
+            functionBody += 'self._root_func[%i] = %s\n\t' % (ii, rhs)
+
+        functionBody += '\n\treturn self._root_func'
+
+        f = file(os.path.join(_TEMP_DIR, 'root_func.py'), 'w')
+        print >> f, functionBody
+        f.close()
+        self.root_func_functionBody = functionBody
+        self.root_func = None
+
     def make_get_eventDerivs(self):
         self._eventDerivValues = scipy.zeros(len(self.complexEvents),
                                              scipy.Float)
@@ -927,9 +975,9 @@ class Network:
 
         for id, var in self.variables.items():
             mapping[var.__class__].setByKey(id, var)
-            if var.isConstant:
+            if var.is_constant:
                 self.constantVars.setByKey(id, var)
-                if var.isOptimizable:
+                if var.is_optimizable:
                     self.optimizableVars.setByKey(id, var)
             elif id in self.assignmentRules.keys():
                 self.assignedVars.setByKey(id, var)
@@ -961,6 +1009,7 @@ class Network:
         if self.dirty['events']:
             self.make_get_eventValues()
             self.make_get_eventDerivs()
+            self.make_root_func()
             self.dirty['events'] = False
 
         # Create all the functions listed in self.dynamicFunctions, if they
@@ -1199,6 +1248,8 @@ class Network:
         #      between functions with different numbers of arguments
         #self.addFunctionDefinition('log', ['b, x'],  'log(x)/log(b)')
 
+    # Deprecated functions below.
+
     def addCompartment(self, id, size=1.0, name='', isConstant=True, 
                        typicalValue=False, isOptimizable=False):
         compartment = Compartment(id, size, name, isConstant, typicalValue,
@@ -1236,3 +1287,5 @@ class Network:
                 sp = id.split('_')
                 id = '%s_{%s}' % (sp[0], ''.join(sp[1:]))
             return id
+
+    FindFixedPoint = dyn_var_fixed_point
