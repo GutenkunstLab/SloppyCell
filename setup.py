@@ -1,5 +1,5 @@
 import glob
-from scipy_distutils.core import setup
+from scipy_distutils.core import setup, Extension
 
 # We want the data files for the various xsl transforms included in the
 # installation tree. That keeps the directory structure clean, and they're
@@ -16,8 +16,12 @@ class smart_install_data(install_data):
         self.install_dir = getattr(install_cmd, 'install_lib')
         return install_data.run(self)
 
+lsodar = Extension(name = 'SloppyCell._lsodar',
+                   sources = ['lsodar.pyf', 'odepack/opkdmain.f', 
+                              'odepack/opkda1.f', 'odepack/opkda2.f'])
+
 setup(name='SloppyCell',
-      version='0.1',
+      version='0.2',
       author='Ryan Gutenkunst',
       author_email='rng7@cornell.edu',
       url='http://sloppycell.sourceforge.net',
@@ -39,4 +43,5 @@ setup(name='SloppyCell',
       # The 2.4 way to replace the hack
       #package_data={'SloppyCell.ReactionNetworks': ['sbml_l2v1_todot.xsl', 
       #                                              'xsltml_2.0/*']},
+      ext_modules = [lsodar]
       )

@@ -50,6 +50,12 @@ try:
 except ImportError:
     HAVE_PSYCO = False
 
+try:
+    import Dynamics
+    HAVE_DYNAMICS = True
+except ImportError:
+    HAVE_DYNAMICS = False
+
 # Optional since only TeXForm depends on them.
 try:
     import Ft
@@ -109,6 +115,14 @@ class Network:
         # Should we get sensitivities via finite differences? (Faster, but less
         #  accurate.)
         self.fdSensitivities = False
+
+    natural_times = True
+    def full_speed(cls):
+        cls.natural_times = False
+    full_speed = classmethod(full_speed)
+    def pretty_plotting(cls):
+        cls.natural_times = True
+    pretty_plotting = classmethod(pretty_plotting)
 
     #
     # Methods used to build up a network
@@ -278,6 +292,9 @@ class Network:
     def integrate(self, times, params = None,
                   returnEvents = False, addTimes = True,
                   rtol = None):
+        if HAVE_DYNAMICS:
+            return Dynamics.integrate(self, times, params)
+
         if params is not None:
             self.setOptimizables(params)
 
@@ -905,12 +922,12 @@ class Network:
         self.get_eventValues = None
 
     def make_root_func(self):
-        self._root_func = scipy.zeros(len(self.complexEvents), scipy.Float)
+        self._root_func = scipy.zeros(len(self.events), scipy.Float)
 
         functionBody = 'def root_func(self, dynamicVars, time):\n\t'
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
 
-        for ii, event in enumerate(self.complexEvents.values()):
+        for ii, event in enumerate(self.events.values()):
             rhs = self.substituteFunctionDefinitions(event.trigger)
             functionBody += 'self._root_func[%i] = %s\n\t' % (ii, rhs)
 
