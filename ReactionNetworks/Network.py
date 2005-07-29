@@ -1095,11 +1095,16 @@ class Network:
         return input
 
     def substituteFunctionDefinitions(self, input):
-        reversedFunctions = self.functionDefinitions.items()
+        # extractFunctionsFromString returns a set of tuples of the form
+        #  (function name, # of arguments)
+        # _standardFuncDefs is keyed by tuples like this, but
+        # functionDefinitions is just keyed by function name
+        reversedFunctions = [(fd.id, len(fd.variables)) for fd in\
+                             self.functionDefinitions.values()]
         reversedFunctions.reverse()
         functionsUsed = Parsing.extractFunctionsFromString(input)
-        for id, function in reversedFunctions:
-            if id in functionsUsed:
+        for tup, function in reversedFunctions:
+            if tup in functionsUsed:
                 input = Parsing.substituteFunctionIntoString(input, id, 
                                                              function.variables,
                                                              function.math)
@@ -1108,9 +1113,9 @@ class Network:
         standardIds = sets.Set(self._standardFuncDefs.keys())
         standardUsed = standardIds.intersection(functionsUsed)
         while len(standardUsed) > 0:
-            for id in standardUsed:
-                function = self._standardFuncDefs.getByKey(id)
-                input = Parsing.substituteFunctionIntoString(input, id, 
+            for tup in standardUsed:
+                function = self._standardFuncDefs.getByKey(tup)
+                input = Parsing.substituteFunctionIntoString(input, function.id,
                                                              function.variables,
                                                              function.math)
 
@@ -1232,38 +1237,35 @@ class Network:
         self.makeCrossReferences()
 
     def _addStandardFunctionDefinitions(self):
-        standardFuncDefs = {
-                            'gt':(['x', 'y'],  'x - y'),
-                            'geq':(['x', 'y'],  'x - y'),
-                            'lt':(['x', 'y'],  'y - x'),
-                            'leq':(['x', 'y'],  'y - x'),
-                            'pow':(['x', 'n'],  'x**n'),
-                            'root':(['n', 'x'],  'x**(1./n)'),
-                            'sqrt':(['x'],  'x**(.5)'),
-                            'cot':(['x'],  '1./tan(x)'),
-                            'arccot':(['x'],  'atan(1./x)'),
-                            'coth':(['x'],  '1./tanh(x)'),
-                            'arccoth':(['x'],  'arctanh(1./x)'),
-                            'csc':(['x'],  '1./sin(x)'),
-                            'arccsc':(['x'],  'asin(1./x)'),
-                            'csch':(['x'],  '1./sinh(x)'),
-                            'arccsch':(['x'],  'arcsinh(1./x)'),
-                            'sec':(['x'],  '1./cos(x)'),
-                            'arcsec':(['x'],  'acos(1./x)'),
-                            'sech':(['x'],  '1./cosh(x)'),
-                            'arcsech':(['x'],  'arccosh(1./x)'),
-                            }
+        standardFuncDefs = [
+                            ('gt', ['x', 'y'],  'x - y'),
+                            ('geq', ['x', 'y'],  'x - y'),
+                            ('lt', ['x', 'y'],  'y - x'),
+                            ('leq', ['x', 'y'],  'y - x'),
+                            ('pow', ['x', 'n'],  'x**n'),
+                            ('root', ['n', 'x'],  'x**(1./n)'),
+                            ('sqrt', ['x'],  'x**(.5)'),
+                            ('cot', ['x'],  '1./tan(x)'),
+                            ('arccot', ['x'],  'atan(1./x)'),
+                            ('coth', ['x'],  '1./tanh(x)'),
+                            ('arccoth', ['x'],  'arctanh(1./x)'),
+                            ('csc', ['x'],  '1./sin(x)'),
+                            ('arccsc', ['x'],  'asin(1./x)'),
+                            ('csch', ['x'],  '1./sinh(x)'),
+                            ('arccsch', ['x'],  'arcsinh(1./x)'),
+                            ('sec', ['x'],  '1./cos(x)'),
+                            ('arcsec', ['x'],  'acos(1./x)'),
+                            ('sech', ['x'],  '1./cosh(x)'),
+                            ('arcsech', ['x'],  'arccosh(1./x)'),
+                            ('log', ['b','x'], 'log(x)/log(b)')
+                            ]
 
         self._standardFuncDefs = KeyedList()
-        for id, (vars, math) in standardFuncDefs.items():
+        for id, vars, math in standardFuncDefs:
             function = FunctionDefinition(id, vars, math)
             self._checkIdUniqueness(function.id)
-            self._standardFuncDefs.setByKey(function.id, function)
-
-        # XXX: SBML takes log(b, x) to mean log base b of x. We should
-        #      modify Parsing.substituteFunctionIntoString to differentiate
-        #      between functions with different numbers of arguments
-        #self.addFunctionDefinition('log', ['b, x'],  'log(x)/log(b)')
+            self._standardFuncDefs.set((function.id, 
+                                        len(function.variables)), function)
 
     # Deprecated functions below.
 
@@ -1291,18 +1293,26 @@ class Network:
 
     addRateRule = add_rate_rule
 
-    def get_var_name(self, id):
-        """Return a variable's name if it exists, else just return its id.
+    def get_component_name(self, id):
         """
-        var_name = self.variables.getByKey(id).name
-        if var_name:
-            return var_name
+        Return a components's name if it exists, else just return its id.
+        """
+        complists = [self.variables, self.reactions, self.functionDefinitions,
+                     self.events]
+        for complist in complists:
+            if complist.has_key(id):
+                name = complist.get(id).name
+                break
+
+        if name:
+            return name
         else:
-            # If a parameter doesn't have a name, kludge together
+            # If a component doesn't have a name, kludge together
             #  a TeX name by subscripting anything after the first _
             if id.count('_') > 0:
                 sp = id.split('_')
                 id = '%s_{%s}' % (sp[0], ''.join(sp[1:]))
             return id
+
 
     FindFixedPoint = dyn_var_fixed_point
