@@ -6,6 +6,7 @@ import scipy
 from TestNetwork import net, m, params
 net = copy.copy(net)
 net.compile()
+net.full_speed()
 
 class test_ScaleFactors(unittest.TestCase):
     def test_fixed_scale_factors(self):
@@ -14,7 +15,7 @@ class test_ScaleFactors(unittest.TestCase):
         mCopy.get_expts()['expt1'].set_fixed_scale_factors({'x': 1.0,
                                             'y': 0.5})
         c = mCopy.cost(params)
-        self.assertAlmostEqual(c, 139.3202824, 4,
+        self.assertAlmostEqual(c, 139.3202824, 3,
                                'Failed on test of fixed scale factors.')
         
     def test_inconsistent_fixed_and_shared_scale_factors(self):
