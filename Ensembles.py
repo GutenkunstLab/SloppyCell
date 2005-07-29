@@ -1,5 +1,6 @@
 import copy
 import scipy
+import time
 
 from SloppyCell import KeyedList
 
@@ -9,11 +10,16 @@ set_seeds = scipy.stats.seed
 set_seeds(72529486,916423761)
 
 def build_ensemble_log_params(m, params, hess, ens_size, 
-                              step_scale = 1.0, temperature = 1.0):
+                              step_scale = 1.0, temperature = 1.0,
+                              max_run_hours = scipy.inf, seeds = None):
     """
     Build an ensemble of parameter sets for the given model.
     """
+    start_time = time.time()
     samp_mat, sing_vals, cutoff_sing_val = _sampling_matrix(hess)
+
+    if seeds is not None:
+        set_seeds(seeds[0], seeds[1])
 
     param_keys = params.keys()
 
@@ -22,13 +28,18 @@ def build_ensemble_log_params(m, params, hess, ens_size,
     ens_params, ens_costs = [copy.deepcopy(params)], [orig_cost]
     ens_count, trial_moves = 1, 0
     while ens_count < ens_size:
+        if (time.time() - start_time)/3600 > max_run_hours:
+            break
+
         deltaParams = _trial_move(samp_mat, sing_vals, cutoff_sing_val)
         quadCost = _quadratic_cost(deltaParams, hess)
 
+        scaled_step = step_scale * scipy.sqrt(temperature) * deltaParams
+
         # I'm assuming log parameters here.
-        next_params = curr_params * scipy.exp(step_scale * deltaParams)
+        next_params = curr_params * scipy.exp(scaled_step)
         # If we had non-log parameters, it would be:
-        # next_params = curr_params + step_scal*deltaParams
+        # next_params = curr_params + scaled_step
 
         next_cost = m.cost(next_params)
     	trial_moves += 1
