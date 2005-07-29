@@ -68,7 +68,13 @@ def extractFunctionsFromAST(ast, functions = None):
     if ast[0] is 'power' and ast[-1][0] is 'trailer' and\
        ast[-1][1] == ['LPAR', '(']:
         # Add f
-        functions.add(symbolic.ast2string(ast[:-1]))
+        # Extract the arguments to the function, discarding commas
+        if ast[-1][2][0] == 'arglist':
+            argsASTlist = ast[-1][2][1::2]
+        else:
+            argsASTlist = [ast[-1][2]]
+        functions.add((symbolic.ast2string(ast[:-1]), len(argsASTlist)))
+
         # Extract from x
         extractFunctionsFromAST(ast[-1][2], functions)
         return functions
@@ -123,30 +129,31 @@ def substituteFunctionIntoAST(ast, idAST, variablesAST, expressionAST):
 
     # If we're in f(x) and we have the proper name
     if ast[0] is 'power' and ast[-1][0] is 'trailer' and\
-       ast[-1][1] == ['LPAR', '('] and\
-       ast[:-1] == idAST:
+       ast[-1][1] == ['LPAR', '('] and ast[:-1] == idAST:
         # Extract the arguments to the function, discarding commas
         if ast[-1][2][0] == 'arglist':
             argsASTlist = ast[-1][2][1::2]
         else:
             argsASTlist = [ast[-1][2]]
 
-        newExpressionAST = copy.deepcopy(expressionAST)
-        for old, new in zip(variablesAST, argsASTlist):
-            # If our argument is more than just a single number or variable 
-            #  wrap it in parentheses
-            if new[0] not in ['NAME', 'NUMBER']:
-                new = ['atom', ['LPAR', '('], new, ['RPAR', ')']]
+        if len(argsASTlist) == len(variablesAST):
+            newExpressionAST = copy.deepcopy(expressionAST)
+            for old, new in zip(variablesAST, argsASTlist):
+                # If our argument is more than just a single number or variable 
+                #  wrap it in parentheses
+                if new[0] not in ['NAME', 'NUMBER']:
+                    new = ['atom', ['LPAR', '('], new, ['RPAR', ')']]
 
-            substituteSubTreeInAST(newExpressionAST, old, new)
-            # Descend into the argument to see whether we need to substitute
-            # there
-            if new in descenders:
-                substituteFunctionIntoAST(new, idAST, variablesAST, 
-                                          expressionAST)
+                substituteSubTreeInAST(newExpressionAST, old, new)
+                # Descend into the argument to see whether we need to substitute
+                # there
+                if new in descenders:
+                    substituteFunctionIntoAST(new, idAST, variablesAST, 
+                                              expressionAST)
 
-        # Wrap our function up in parentheses to preserve order of operations
-        return ['atom', ['LPAR', '('], newExpressionAST, ['RPAR', ')']]
+            # Wrap our function up in parentheses to preserve order of 
+            #  operations
+            return ['atom', ['LPAR', '('], newExpressionAST, ['RPAR', ')']]
 
     for ii, term in enumerate(ast):
         if term[0] in descenders:
@@ -166,26 +173,35 @@ assert extractVariablesFromString('x**2') == sets.Set(['x'])
 assert extractVariablesFromString('x**y') == sets.Set(['x', 'y'])
 assert extractVariablesFromString('f(x)') == sets.Set(['x'])
 assert extractVariablesFromString('f(x, y)') == sets.Set(['x', 'y'])
-assert extractVariablesFromString('f(x + z/x.y, y)') == sets.Set(['x', 'y', 'z', 'x.y'])
+assert extractVariablesFromString('f(x + z/x.y, y)')\
+        == sets.Set(['x', 'y', 'z', 'x.y'])
 assert extractVariablesFromString('x**2 + f(y)') == sets.Set(['x', 'y'])
 assert extractVariablesFromString('x + y**2 + z**(a + b) + z**f.g.h(a + b + sqrt(c))') == sets.Set(['x', 'y', 'z', 'a', 'b', 'c'])
 assert extractVariablesFromString('g(a)**2') == sets.Set(['a'])
 
-assert extractFunctionsFromString('f.g(x)') == sets.Set(['f.g'])
-assert extractFunctionsFromString('f(g(x))') == sets.Set(['f', 'g'])
-assert extractFunctionsFromString('f(g(x)/2, a, b(x))') == sets.Set(['f', 'g', 'b'])
-assert extractFunctionsFromString('a + g(x)') == sets.Set(['g'])
-assert extractFunctionsFromString('a + g(x) + (a + f(x))') == sets.Set(['f', 'g'])
-assert extractFunctionsFromString('f(g(1 + h.i(a))/2) + j(q**k(x)) + q.r[1] + s[1]') == sets.Set(['f', 'g', 'h.i', 'j', 'k'])
-assert extractFunctionsFromString('(g(x) + 2)**f(y)') == sets.Set(['f', 'g'])
-assert extractFunctionsFromString('g(x)**f(y)') == sets.Set(['f', 'g'])
+assert extractFunctionsFromString('f.g(x)') == sets.Set([('f.g', 1)])
+assert extractFunctionsFromString('f(g(x))') == sets.Set([('f', 1), ('g', 1)])
+assert extractFunctionsFromString('f(g(x)/2, a, b(x, y))')\
+        == sets.Set([('f', 3), ('g', 1), ('b', 2)])
+assert extractFunctionsFromString('a + g(x)') == sets.Set([('g', 1)])
+assert extractFunctionsFromString('a + g(x) + (a + f(x))')\
+        == sets.Set([('f', 1), ('g', 1)])
+assert extractFunctionsFromString('f(g(1 + h.i(a))/2) + j(q**k(x)) + q.r[1] + s[1]') == sets.Set([('f', 1), ('g', 1), ('h.i', 1), ('j', 1), ('k', 1)])
+assert extractFunctionsFromString('(g(x) + 2)**f(y)')\
+        == sets.Set([('f', 1), ('g', 1)])
+assert extractFunctionsFromString('g(x)**f(y)')\
+        == sets.Set([('f', 1), ('g', 1)])
 
 assert substituteVariableNamesInString('f(b, a) + a(q) + a.b(x) + a**x + y**a', 'a', 'c') == 'f(b,c)+c(q)+c.b(x)+c**x+y**c'
 assert substituteVariableNamesInString('f.b(x + a.b)', 'a.b', 'c') == 'f.b(x+c)'
 assert substituteVariableNamesInString('x', 'x', 'c') == 'c'
 
-assert substituteFunctionIntoString('g(a + b, c)', 'g', ['x', 'y'], 'x + y**2') == '((a+b)+c**2)'
-assert substituteFunctionIntoString('f(g(a + b))', 'f', ['x'], 'h(x + 2)') == '(h((g(a+b))+2))'
-assert substituteFunctionIntoString('f.g.h(c)', 'f.g', ['x'], 'x + 2') == 'f.g.h(c)'
+assert substituteFunctionIntoString('g(a + b, c)', 'g', ['x', 'y'], 'x + y**2')\
+        == '((a+b)+c**2)'
+assert substituteFunctionIntoString('f(g(a + b))', 'f', ['x'], 'h(x + 2)')\
+        == '(h((g(a+b))+2))'
+assert substituteFunctionIntoString('f.g.h(c)', 'f.g', ['x'], 'x + 2')\
+        == 'f.g.h(c)'
 assert substituteFunctionIntoString('f.g(c)', 'f.g', ['x'], 'x + 2') == '(c+2)'
-assert substituteFunctionIntoString('f.g(c)**2', 'f.g', ['x'], 'x + 2') == '(c+2)**2'
+assert substituteFunctionIntoString('f.g(c)**2', 'f.g', ['x'], 'x + 2')\
+        == '(c+2)**2'
