@@ -9,6 +9,35 @@ try:
 except ImportError:
     print 'SBML import and export not available.'
 
+def net_DOT_file(net, filename = None):
+    lines = []
+    lines.append('digraph "%s" {' % net.id)
+    lines.append('\tsize="7.5,10!"')
+    for id in net.species.keys():
+        lines.append('\t"%s"[color=black]' % net.get_component_name(id))
+
+    lines.append('')
+    for rid, rxn in net.reactions.items():
+        rxn_name = net.get_component_name(rid)
+        lines.append('\t"%s"[shape=rectangle][color=red]' % rxn_name)
+        for rid, stoich in rxn.stoichiometry.items():
+            if stoich < 0:
+                rname = net.get_component_name(rid)
+                lines.append('\t\t"%s" -> "%s";' % (rxn_name, rname))
+            elif stoich > 0:
+                lines.append('\t\t"%s" -> "%s";' % (rname, rxn_name))
+            else:
+                lines.append('\t\t"%s" -> "%s"[arrowhead=dot];' % (rname, 
+                                                                   rxn_name))
+        
+    lines.append('}')
+
+    if filename is None:
+        filename = '%s.dot' % net.id
+    f = file(filename, 'w')
+    f.write(os.linesep.join(lines))
+    f.close()
+
 
 def eqns_TeX_file(net, filename = None):
     lines = []
@@ -30,10 +59,10 @@ def _net_eqns_to_TeX(net):
     """
     Return a string that contains the longtable-bound TeX'd equations for the network
     """
-    name_dict = dict([(id, '\\mathrm{%s}' % net.get_var_name(id))
+    name_dict = dict([(id, '\\mathrm{%s}' % net.get_component_name(id))
                       for id in net.variables.keys()])
     species_dict = dict([(id, '\\left[\\mathrm{%s}\\right]'
-                          % net.get_var_name(id))
+                          % net.get_component_name(id))
                          for id in net.species.keys()])
     name_dict.update(species_dict)
     lines = []
