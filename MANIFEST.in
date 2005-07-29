@@ -1,4 +1,2 @@
 recursive include *.py
 recursive include Doc *
-include ReactionNetworks/*.xsl
-include ReactionNetworks/xsltml_2.0/*

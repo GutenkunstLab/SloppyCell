@@ -23,6 +23,7 @@ import symbolic
 symbolic.loadDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 
 import Integration
+import IO
 import Parsing
 import Reactions
 import SloppyCell.Collections as Collections
@@ -55,14 +56,6 @@ try:
     HAVE_DYNAMICS = True
 except ImportError:
     HAVE_DYNAMICS = False
-
-# Optional since only TeXForm depends on them.
-try:
-    import Ft
-    import libsbml
-    HAVE_FT_AND_LIBSBML = True
-except ImportError:
-    HAVE_FT_AND_LIBSBML = False
 
 class Network:
 
@@ -1125,104 +1118,9 @@ class Network:
 
         return input
 
-    def TeXForm(self):
-        """
-        Return a dict of TeX-formatted network eqns, indexed by variable id.
-
-        The flow here is a little complicated. We use libsbml to go from the
-        equations in python syntax to MathML. Then we use 4Suite and a set of
-        XML style sheets to convert the MathML to TeX.
-        """
-        if not HAVE_FT_AND_LIBSBML:
-            raise exceptions.Warning, 'TeXForm not available because 4Suite library or libsbml is not installed.'
-            return
-
-        # I don't fully understand the usage of Ft, so much is stolen from
-        # http://uche.ogbuji.net/tech/akara/nodes/2003-01-01/python-xslt
-        from Ft.Xml.Xslt import Processor
-        processor = Processor.Processor()
-        from Ft.Xml import InputSource
-
-        # This is the absolute path to the stylesheets we use
-        transformFileName = os.path.join(RXNNETS_DIR, 'xsltml_2.0', 
-                                         'mmltex.xsl')
-        transformFile = file(transformFileName, 'r')
-
-        # These substitutions munge Windows paths into appropriate URIs
-        transformURI = transformFileName
-        transformURI = transformURI.replace(':', '|')
-        transformURI = transformURI.replace('\\', '/')
-        transformURI = 'file://' + transformFileName
-
-        transform = InputSource.DefaultFactory.fromStream(transformFile, 
-                                                          transformURI)
-        processor.appendStylesheet(transform)
-
-        # libsbml wants the MathML embedded in a MathMLDocument
-        mmlDoc = libsbml.MathMLDocument()
-        eqns = KeyedList()
-        for id, rhs in self.diffEqRHS.items() + self.assignmentRules.items():
-            # Convert powers from python notation to what libsbml expects
-            rhs = rhs.replace('**', '^')
-
-            mathAST = libsbml.parseFormula(rhs)
-            mmlDoc.setMath(mathAST)
-            sourceString = libsbml.writeMathMLToString(mmlDoc)
-            source = InputSource.DefaultFactory.fromString(sourceString, 
-                                                           'file://bogus')
-            # Finally, we get the TeX-formatted RHS
-            texRHS = processor.run(source)
-
-            # Add in the LHS of eqn
-            if id in self.assignmentRules.keys():
-                line = '\\mathrm{%s} &=& %s' % (id, texRHS[1:-1])
-            else:
-                line = '{d\\mathrm{%s} \\over dt} &=& %s' % (id, texRHS[1:-1]) 
-
-            # Put \times between variables for clarity
-            line = line.replace('}\\mathrm', '}\\times\\mathrm')
-
-            # Replace variable ids with their names
-            for id2 in self.variables.keys():
-                # Wrap species in brackets
-                if id2 in self.species.keys():
-                    line = line.replace('\\mathrm{%s}' % id2,
-                                        '\\left[\\mathrm{%s}\\right]' % id2)
-
-                name = self.variables.getByKey(id2).name
-                if name:
-                    line = line.replace('\\mathrm{%s}' % id2,
-                                        '\\mathrm{%s}' % name)
-                else:
-                    # If a parameter doesn't have a name, kludge together
-                    #  a TeX name by subscripting anything after the first _
-                    if id2 in self.parameters.keys() and id2.count('_') > 0:
-                        sp = id2.split('_')
-                        newId = '%s_{%s}' % (sp[0], ''.join(sp[1:]))
-                        line = line.replace('\\mathrm{%s}' % id2,
-                                            '\\mathrm{%s}' % newId)
-
-            eqns.setByKey(id, line + '\\\\')
-
-        return eqns
-
     def TeXOutputToFile(self, filename):
         """Output TeX-formatted network eqns to a file."""
-        eqns = self.TeXForm()
-        if eqns is None: # Can happen if we don't have Ft or libsbml
-            return
-
-	output = open(filename, 'w')
-	output.write('\\documentclass[12pt]{article}\n')
-        output.write('\\usepackage[pdftex, landscape]{geometry}\n')
-	output.write('\\begin{document}\n')
-	output.write('\\begin{eqnarray*}\n')
-        for equation in eqns.values():
-            output.write(equation)
-            output.write('\n')
-	output.write('\\end{eqnarray*}\n')
-	output.write('\\end{document}\n')
-	output.close()
+        IO.eqns_TeX_file(self, filename)
 
     def __getstate__(self):
         odict = copy.copy(self.__dict__)

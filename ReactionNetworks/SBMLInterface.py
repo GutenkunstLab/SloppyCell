@@ -1,11 +1,6 @@
 import os
 import sys
-try:
-    import Ft
-    HAVE_FT = True
-    RXNNETS_DIR = os.path.dirname(__file__)
-except ImportError:
-    HAVE_FT = False
+
 import libsbml
 import Network
 import Reactions
@@ -18,32 +13,7 @@ def toSBMLFile(net, fileName):
     f.close()
 
 def SBMLtoDOT(sbmlFileName, dotFileName):
-    if not HAVE_FT:
-        print 'Need 4Suite library installed to export to .dot'
-        return
-
-    from Ft.Xml.Xslt import Processor
-    processor = Processor.Processor()
-    from Ft.Xml import InputSource
-        
-    transformFileName = os.path.join(RXNNETS_DIR, 'sbml_l2v1_todot.xsl')
-    transformFile = file(transformFileName, 'r')
-    transformURI = 'file://%s' % transformFileName
-    transform = InputSource.DefaultFactory.fromStream(transformFile, 
-                                                      transformURI)
-
-    processor.appendStylesheet(transform)
-
-    sourceFile = file(sbmlFileName, 'r')
-    sourceURI = 'file://%s' % os.path.abspath(sbmlFileName)
-
-    source = InputSource.DefaultFactory.fromStream(sourceFile, sourceURI)
-
-    out = processor.run(source)
-    f = file(dotFileName, 'w')
-    f.write(out)
-    f.close()
-    
+    raise DeprecationWarning, 'SBMLtoDOT has been deprecated. Instead, use IO.net_DOT_file(net, filename)'
 
 def toSBMLString(net):
     m = libsbml.Model(net.id)
