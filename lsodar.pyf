@@ -1,0 +1,60 @@
+!    -*- f90 -*-
+python module dlsodar__user__routines 
+    interface dlsodar_user_interface 
+        subroutine jac(neq, t,y,ml, mu, pd, nrowpd)
+            integer intent(hide), depend(y) :: neq = len(y)
+            double precision intent(in) :: t
+            double precision intent(in), dimension(neq) :: y
+            integer intent(hide) :: ml
+            integer intent(hide) :: mu
+            double precision intent(out), depend(neq), depend(nrowpd), dimension(nrowpd,neq) :: pd
+            integer intent(hide) :: nrowpd
+        end subroutine jac
+        subroutine g(neq,t,y,ng,gout)
+            integer intent(hide), depend(y) :: neq = len(y)
+            double precision intent(in) :: t
+            double precision intent(in), dimension(neq) :: y
+            integer intent(hide), depend(gout) :: ng
+            double precision intent(out), dimension(ng) :: gout
+        end subroutine g
+        subroutine f(neq,t,y,ydot) ! in :_lsodar:lsodar.f:lsodar:unknown_interface
+            integer intent(hide), depend(y) :: neq = len(y)
+            double precision intent(in) :: t
+            double precision intent(in), dimension(neq) :: y
+            double precision intent(out), depend(neq), dimension(neq) :: ydot
+        end subroutine f
+    end interface dlsodar_user_interface
+end python module dlsodar__user__routines
+python module _lsodar ! in 
+    interface  ! in :_lsodar
+        subroutine dlsodar(f,neq,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,jac,jt,g,ng,jroot) ! in :_lsodar:opkdmain.f
+            use dlsodar__user__routines
+            external f
+            integer intent(hide), depend(y) :: neq = len(y)
+            double precision intent(in, out), dimension(neq) :: y
+            double precision intent(in, out) :: t
+            double precision intent(in) :: tout
+            integer intent(in) :: itol
+            ! I'd be nicer if I could use the ternary operator here, but this
+            !  seems to work.
+            double precision intent(in), dimension(((itol==3)+(itol==4))*(neq-1)+1) :: rtol
+            double precision intent(in), dimension(((itol==2)+(itol==4))*(neq-1)+1) :: atol
+            integer intent(in) :: itask
+            integer intent(in, out) :: istate
+            integer intent(hide), parameter :: iopt=1
+        
+            double precision dimension(lrw) :: rwork
+            integer intent(hide), check(len(rwork)>=lrw),depend(rwork) :: lrw=len(rwork)
+            integer dimension(liw) :: iwork
+            integer intent(hide),check(len(iwork)>=liw),depend(iwork) :: liw=len(iwork)
+        
+            external jac
+            integer intent(in) :: jt
+            external g
+            integer intent(in) :: ng
+            integer intent(out), dimension(MAX(1, ng)) :: jroot
+    end interface 
+end python module _lsodar
+
+! This file was auto-generated with f2py (version:2.39.235_1693).
+! See http://cens.ioc.ee/projects/f2py2e/
