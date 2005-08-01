@@ -17,6 +17,12 @@ class KeyedList(list):
             for (key, value) in items:
                 self.setByKey(key, value)
 
+    def copy(self):
+        return copy.copy(self)
+
+    def deepcopy(self):
+        return copy.deepcopy(self)
+
     def setOrder(self, order):
         if len(order) != len(self):
             raise ValueError, 'New order is of a different length!'
