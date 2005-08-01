@@ -29,6 +29,10 @@ class Model:
             calcs = SloppyCell.Collections.CalculationCollection(calcs)
         self.SetCalculationCollection(calcs)
 
+        # Echo the cost or chi-squared on each evaluation
+        self.costVerbose = False
+        self.chisqVerbose = False
+        
     def get_params(self):
         """
         Return a copy of the current model parameters
@@ -66,7 +70,15 @@ class Model:
         Return the sum of the squares of the residuals for the model
         """
         resvals = scipy.array(self.res(params))
-        return scipy.sum(resvals**2)
+        chisq = scipy.sum(resvals**2)
+        if chisqVerbose: print chisq
+
+        # Setting NAN to INF will save the minimization, but
+        # this is not the actual cost. Usually an integration issue
+        if scipy.isnan(chisq):
+            print 'Warning: Chi-Squared in NAN, setting to INF'
+            chisq = scipy.inf
+        return chisq
 
     def redchisq(self, params):
         """
@@ -81,7 +93,9 @@ class Model:
         """
         Return the cost (1/2 chisq) of the model
         """
-        return 0.5 * self.chisq(params)
+        cost = 0.5 * self.chisq(params)
+        if costVerbose: print cost
+        return cost
 
     def cost_log_params(self, log_params):
         """
@@ -528,13 +542,15 @@ class Model:
 
     def ComputeHessianElement(self, costFunc, chiSq, 
                               params, i, j, epsi, epsj, 
-                              relativeScale, stepSizeCutoff):
-        return 0.5 * self.hessian_elem(costFunc, chiSq, 
-                                  params, i, j, epsi, epsj, 
-                                  relativeScale, stepSizeCutoff)
+                              relativeScale, stepSizeCutoff, verbose):
+        element = 0.5 * self.hessian_elem(costFunc, chiSq, 
+                                          params, i, j, epsi, epsj, 
+                                          relativeScale, stepSizeCutoff)
+        if verbose: print 'hessian['+str(i)+','+str(j)+']='+repr(element)
+        return element
 
     def CalcHessianInLogParameters(self, params, eps, relativeScale = False, 
-                                   stepSizeCutoff = 1e-6):
+                                   stepSizeCutoff = 1e-6, verbose = False):
 	nOv = len(params)
         if len(scipy.asarray(eps)) == 1:
             eps = scipy.ones(len(params), scipy.Float) * eps
@@ -552,7 +568,8 @@ class Model:
                                                         scipy.log(params), 
                                                         i, j, eps[i], eps[j], 
                                                         relativeScale, 
-                                                        stepSizeCutoff)
+                                                        stepSizeCutoff,
+                                                        verbose)
                 hess[j][i] = hess[i][j]
 
         return hess
@@ -595,9 +612,8 @@ class Model:
                                                         params, i, j, 
                                                         eps[i], eps[j], 
                                                         relativeScale, 
-                                                        stepSizeCutoff)
-                if verbose == True :
-			print 'hess['+str(i)+']['+str(j)+']='+repr(hess[i][j])
+                                                        stepSizeCutoff,
+                                                        verbose)
                 hess[j][i] = hess[i][j]
 
         return hess
