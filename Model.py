@@ -773,7 +773,9 @@ class Model:
             exptData = expt.GetData()
             for calcKey, calcData in exptData.items():
                 for depVarKey, depVarData in calcData.items():
-                    for indVar, (value, uncert) in depVarData.items():
+                    sortedData = depVarData.items()
+                    sortedData.sort()
+                    for indVar, (value, uncert) in sortedData:
                         resName = (exptKey, calcKey, depVarKey, indVar)
                         res = Residuals.ScaledErrorInFit(resName, depVarKey,
                                                          calcKey, indVar, value,
