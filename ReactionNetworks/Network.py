@@ -109,6 +109,9 @@ class Network:
         #  accurate.)
         self.fdSensitivities = False
 
+        # Integrate with log concentrations (to avoid negative concentrations)
+        self.integrateWithLogs = False
+        
     natural_times = True
     def full_speed(cls):
         cls.natural_times = False
