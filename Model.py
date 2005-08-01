@@ -71,7 +71,7 @@ class Model:
         """
         resvals = scipy.array(self.res(params))
         chisq = scipy.sum(resvals**2)
-        if chisqVerbose: print chisq
+        if self.chisqVerbose: print chisq
 
         # Setting NAN to INF will save the minimization, but
         # this is not the actual cost. Usually an integration issue
@@ -94,7 +94,7 @@ class Model:
         Return the cost (1/2 chisq) of the model
         """
         cost = 0.5 * self.chisq(params)
-        if costVerbose: print cost
+        if self.costVerbose: print cost
         return cost
 
     def cost_log_params(self, log_params):
