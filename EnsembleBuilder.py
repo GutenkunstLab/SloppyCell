@@ -76,9 +76,9 @@ class EnsembleBuilder:
 		if _.AcceptMove(quadCost,newCost-currCost):
 			ensCount += 1
 			currParams = nextParams
-			cost = _.model.Cost(currParams)
+			currCost = _.model.Cost(currParams)
 			_.ensembleParams.append(currParams)
-			_.ensembleCosts.append(cost)
+			_.ensembleCosts.append(currCost)
             if trialMoves%200 == 0:
                 print "trial moves", trialMoves
                 print "ensemble size", ensCount
