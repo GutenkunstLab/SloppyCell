@@ -257,6 +257,10 @@ class Network:
         return KeyedList([(var.id, var.value) for var in
                           self.optimizableVars.values()])
 
+    def GetParameterTypicalValues(self):
+        return KeyedList([(var.id, var.typicalValue) for var in
+                          self.optimizableVars.values()])
+
     def GetResult(self, vars):
         result = {}
         times = self.trajectory.timepoints
@@ -356,7 +360,7 @@ class Network:
             for i, (id, var) in enumerate(self.optimizableVars.items()) :
                 saved = var.value
 
-                stepsize = 1.0e-6*abs(saved) + 1.0e-12
+                stepsize = 1.0e-6*abs(var.typicalValue) + 1.0e-12
                 self.set_initial_var_value(id, saved + stepsize)
 
 	        self.resetDynamicVariables()

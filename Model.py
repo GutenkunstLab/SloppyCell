@@ -121,31 +121,46 @@ class Model:
     def AddResidual(self, res):
         self.residuals.setByKey(res.key, res)
 
-    def Force(self, params, epsf):
+    def Force(self, params, epsf, relativeScale=False, stepSizeCutoff=None):
         """
         Force(parameters, epsilon factor) -> list
 
         Returns a list containing the numerical gradient of the Cost with
         respect to each parameter (in the parameter order of the
         CalculationCollection). Each element of the gradient is:
-            Cost(param + eps factor * param) - Cost(param - eps factor * param)/
-              (2 * eps factor * param).
+            Cost(param + eps) - Cost(param - eps)/(2 * eps).
+        If relativeScale is False then epsf is the stepsize used (it should
+        already be multiplied by typicalValues before Jacobian is called)
+        If relativeScale is True then epsf is multiplied by params.
+        The two previous statements hold for both scalar and vector valued
+        epsf.
         """
 
         force = []
         params = scipy.array(params)
-        for index, param in enumerate(params):
-            eps = epsf * param
+        
+        if stepSizeCutoff==None:
+            stepSizeCutoff = scipy.sqrt(scipy.limits.double_epsilon)
+            
+	if relativeScale is True :
+            eps = epsf * abs(params)
+	else :
+            eps = epsf * scipy.ones(len(params),scipy.Float)
 
+        for i in range(0,len(eps)):
+            if eps[i] < stepSizeCutoff:
+                eps[i] = stepSizeCutoff
+
+        for index, param in enumerate(params):
             paramsPlus = params.copy()
-            paramsPlus[index] = param + eps
+            paramsPlus[index] = param + eps[index]
             costPlus = self.Cost(paramsPlus)
 
             paramsMinus = params.copy()
-            paramsMinus[index] = param - eps
+            paramsMinus[index] = param - eps[index]
             costMinus = self.Cost(paramsMinus)
 
-            force.append((costPlus-costMinus)/(2.0*eps))
+            force.append((costPlus-costMinus)/(2.0*eps[index]))
 
         return force
 
@@ -375,11 +390,13 @@ class Model:
     	"""
 	Finite difference the residual dictionary to get a dictionary
 	for the Jacobian. It will be indexed the same as the residuals.
-	Note: epsf is either a scalar or an array. If it's a scalar then
-	the step sizes for each parameter are either set to this value
-	or scaled by this value. If it's a vector then each parameter
-	has it's own stepsize or scale for stepsize
-	"""
+	Note: epsf is either a scalar or an array.
+        If relativeScale is False then epsf is the stepsize used (it should
+        already be multiplied by typicalValues before Jacobian is called)
+        If relativeScale is True then epsf is multiplied by params.
+        The two previous statements hold for both scalar and vector valued
+        epsf.
+        """
 	origParams = params.__copy__()
 	j = {} # will hold the result
 
@@ -394,22 +411,26 @@ class Model:
             stepSizeCutoff = scipy.sqrt(scipy.limits.double_epsilon)
             
 	if relativeScale is True :
-	       eps = epsf * abs(params)
- 	       for i in range(0,len(eps)):
-		  if eps[i] < stepSizeCutoff:
-			eps[i] = stepSizeCutoff
+            eps = epsf * abs(params)
 	else :
-	       eps = epsf * scipy.ones(len(params),scipy.Float)
+            eps = epsf * scipy.ones(len(params),scipy.Float)
+
+        for i in range(0,len(eps)):
+            if eps[i] < stepSizeCutoff:
+                eps[i] = stepSizeCutoff
 
 
 	for index in range(0,len(params)) :
             paramsPlus = params.copy()
             paramsPlus[index] = params[index] + eps[index]
-
 	    resPlus = self.resDict(paramsPlus)
 
+            paramsMinus = params.copy()
+            paramsMinus[index] = params[index] - eps[index]
+            resMinus = self.resDict(paramsMinus)
+
 	    for ks in res.keys() :
-		j[ks].append((resPlus[ks]-res[ks])/(eps[index]))
+		j[ks].append((resPlus[ks]-resMinus[ks])/(2.* eps[index]))
 	
 	# NOTE: after call to ComputeResidualsWithScaleFactors the Model's
 	# parameters get updated, must reset this:
@@ -574,11 +595,31 @@ class Model:
 
         return hess
 
-    def CalcHessian(self, params, eps, relativeScale = True, 
-                    stepSizeCutoff = 1e-6, jacobian = None, verbose = False):
+    def CalcHessian(self, params, epsf, relativeScale = True, 
+                    stepSizeCutoff = None, jacobian = None, verbose = False):
 	nOv = len(params)
-        if len(scipy.asarray(eps)) == 1:
-            eps = scipy.ones(len(params), scipy.Float) * eps
+    	"""
+	Finite difference the residual dictionary to get a dictionary
+	for the Hessian. It will be indexed the same as the residuals.
+	Note: epsf is either a scalar or an array.
+        If relativeScale is False then epsf is the stepsize used (it should
+        already be multiplied by typicalValues before Jacobian is called)
+        If relativeScale is True then epsf is multiplied by params.
+        The two previous statements hold for both scalar and vector valued
+        epsf.
+        """
+
+        if stepSizeCutoff==None:
+            stepSizeCutoff = scipy.sqrt(scipy.limits.double_epsilon)
+            
+	if relativeScale is True :
+            eps = epsf * abs(params)
+	else :
+            eps = epsf * scipy.ones(len(params),scipy.Float)
+
+        for i in range(0,len(eps)):
+            if eps[i] < stepSizeCutoff:
+                eps[i] = stepSizeCutoff
 
         if jacobian!=None:
             jacobian = scipy.asarray(jacobian)
@@ -629,6 +670,7 @@ class Model:
 
 	paramlist = scipy.array(currParams)
 	if relativeScale is True :
+            ## eps should be epsf*abs(typicalvalue) JJW 7.22.05
 	       eps = epsf * abs(paramlist)
 	       for i in range(0,len(eps)) :
 		  if eps[i] < min(scipy.asarray(epsf)) :
