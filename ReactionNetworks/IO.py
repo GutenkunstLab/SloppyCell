@@ -21,8 +21,8 @@ def net_DOT_file(net, filename = None):
         rxn_name = net.get_component_name(rid)
         lines.append('\t"%s"[shape=rectangle][color=red]' % rxn_name)
         for rid, stoich in rxn.stoichiometry.items():
+            rname = net.get_component_name(rid)
             if stoich < 0:
-                rname = net.get_component_name(rid)
                 lines.append('\t\t"%s" -> "%s";' % (rxn_name, rname))
             elif stoich > 0:
                 lines.append('\t\t"%s" -> "%s";' % (rname, rxn_name))
@@ -39,14 +39,14 @@ def net_DOT_file(net, filename = None):
     f.close()
 
 
-def eqns_TeX_file(net, filename = None):
+def eqns_TeX_file(net, filename = None, sub_funcdefs = True):
     lines = []
     lines.append(r'\documentclass{article}')
     lines.append(r'\usepackage{amsmath}')
     lines.append(r'\usepackage{fullpage}')
     lines.append(r'\usepackage{longtable}')
     lines.append(r'\begin{document}')
-    lines.append(_net_eqns_to_TeX(net))
+    lines.append(_net_eqns_to_TeX(net, sub_funcdefs))
     lines.append(r'\end{document}')
 
     if filename is None:
@@ -55,14 +55,16 @@ def eqns_TeX_file(net, filename = None):
     f.write(os.linesep.join(lines))
     f.close()
 
-def _net_eqns_to_TeX(net):
+def _net_eqns_to_TeX(net, sub_funcdefs):
     """
     Return a string that contains the longtable-bound TeX'd equations for the network
     """
-    name_dict = dict([(id, '\\mathrm{%s}' % net.get_component_name(id))
-                      for id in net.variables.keys()])
+    name_dict = dict([(id, '\\mathrm{%s}' % net.get_component_name(id, True))
+                      for id in net.variables.keys()] + 
+                     [(id, net.get_component_name(id, True))
+                       for id in net.functionDefinitions.keys()])
     species_dict = dict([(id, '\\left[\\mathrm{%s}\\right]'
-                          % net.get_component_name(id))
+                          % net.get_component_name(id, True))
                          for id in net.species.keys()])
     name_dict.update(species_dict)
     lines = []
@@ -73,6 +75,8 @@ def _net_eqns_to_TeX(net):
     lines.append(r'   \fbox{$\frac{#1}{#2}$}}')
     lines.append(r'\begin{longtable}{rcl}')
     for id, rhs in net.diffEqRHS.items():
+        if sub_funcdefs:
+            rhs = net.substituteFunctionDefinitions(rhs)
         texRHS = expr_to_TeX(rhs, name_dict, longtable=True)
         line = '$ \\frac{d\\,%s}{dt}$ &=& %s' % (name_dict.get(id), texRHS)
         # Use the tabfrac and force a space between the equations
