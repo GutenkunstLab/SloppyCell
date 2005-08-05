@@ -475,7 +475,7 @@ class Model:
 	return jac,jtj
 
     def hessian_elem(self, func, f0, params, i, j, epsi, epsj,
-                     relativeScale, stepSizeCutoff):
+                     relativeScale, stepSizeCutoff, verbose):
         """
         Return the second partial derivative for func w.r.t. parameters i and j
 
@@ -528,10 +528,81 @@ class Model:
 
         params[i], params[j] = origPi, origPj
 
+        if verbose: 
+            print 'hessian[%i, %i] = %g' % (i, j, element)
+
         return element
 
+    def hessian(self, params, epsf, relativeScale = True, 
+                stepSizeCutoff = None, jacobian = None, 
+                verbose = False):
+    	"""
+        Returns the hessian of the model.
+
+        epsf: Sets the stepsize to try
+        relativeScale: If True, step i is of size p[i] * eps, otherwise it is
+                       eps
+        stepSizeCutoff: The minimum stepsize to take
+        jacobian: If the jacobian is passed, it will be used to estimate
+                  the step size to take.
+        vebose: If True, a message will be printed with each hessian element
+                calculated
+        """
+
+	nOv = len(params)
+        if stepSizeCutoff is None:
+            stepSizeCutoff = scipy.sqrt(scipy.limits.double_epsilon)
+            
+        params = scipy.asarray(params)
+	if relativeScale:
+            eps = epsf * abs(params)
+	else:
+            eps = epsf * scipy.ones(len(params),scipy.Float)
+
+        # Make sure we don't take steps smaller than stepSizeCutoff
+        eps = scipy.maximum(eps, stepSizeCutoff)
+
+        if jacobian is not None:
+            # Turn off the relative scaling since that would overwrite all this
+            relativeScale = False
+
+            jacobian = scipy.asarray(jacobian)
+            if len(jacobian.shape) == 2: # Need to sum up the total jacobian
+                residuals = scipy.asarray(self.res(params))
+                jacobian = 2.0*residuals*jacobian
+
+            # If parameters are independent, then
+            #  epsilon should be (sqrt(2)*J[i])^-1
+            factor = 1.0/scipy.sqrt(2)
+            for i in range(nOv):
+                if jacobian[i] == 0.0:
+                    eps[i] = 0.5*abs(params[i])
+                else: 
+                    # larger than stepSizeCutoff, but not more than 
+                    #  half of the original parameter value
+                    eps[i] = min(max(factor/abs(jacobian[i]), stepSizeCutoff), 
+                                 0.5*abs(params[i]))
+
+	## compute cost at f(x)
+	f0 = self.cost(params)
+
+	hess = scipy.zeros((nOv, nOv), scipy.Float)
+
+	## compute all (numParams*(numParams + 1))/2 unique hessian elements
+        for i in range(nOv):
+            for j in range(i, nOv):
+                hess[i][j] = self.hessian_elem(self.cost, f0,
+                                               params, i, j, 
+                                               eps[i], eps[j], 
+                                               relativeScale, stepSizeCutoff,
+                                               verbose)
+                hess[j][i] = hess[i][j]
+
+        return hess
+
     def hessian_log_params(self, params, eps,
-                           relativeScale=False, stepSizeCutoff=1e-6):
+                           relativeScale=False, stepSizeCutoff=1e-6,
+                           verbose=False):
         """
         Returns the hessian of the model in log parameters.
 
@@ -539,6 +610,8 @@ class Model:
         relativeScale: If True, step i is of size p[i] * eps, otherwise it is
                        eps
         stepSizeCutoff: The minimum stepsize to take
+        vebose: If True, a message will be printed with each hessian element
+                calculated
         """
 	nOv = len(params)
         if len(scipy.asarray(eps)) == 1:
@@ -553,9 +626,10 @@ class Model:
         for i in range(nOv):
             for j in range(i, nOv):
                 hess[i][j] = self.hessian_elem(self.cost_log_params, f0,
-                                            scipy.log(params), 
-                                            i, j, eps[i], eps[j], 
-                                            relativeScale, stepSizeCutoff)
+                                               scipy.log(params), 
+                                               i, j, eps[i], eps[j], 
+                                               relativeScale, stepSizeCutoff,
+                                               verbose)
                 hess[j][i] = hess[i][j]
 
         return hess
@@ -564,40 +638,18 @@ class Model:
     def ComputeHessianElement(self, costFunc, chiSq, 
                               params, i, j, epsi, epsj, 
                               relativeScale, stepSizeCutoff, verbose):
-        element = 0.5 * self.hessian_elem(costFunc, chiSq, 
-                                          params, i, j, epsi, epsj, 
-                                          relativeScale, stepSizeCutoff)
-        if verbose: print 'hessian['+str(i)+','+str(j)+']='+repr(element)
-        return element
+        return 0.5 * self.hessian_elem(costFunc, chiSq, 
+                                       params, i, j, epsi, epsj, 
+                                       relativeScale, stepSizeCutoff, 
+                                       verbose)
 
     def CalcHessianInLogParameters(self, params, eps, relativeScale = False, 
                                    stepSizeCutoff = 1e-6, verbose = False):
-	nOv = len(params)
-        if len(scipy.asarray(eps)) == 1:
-            eps = scipy.ones(len(params), scipy.Float) * eps
-
-	## compute residuals/cost at f(x)
-	chiSq = self.CostFromLogParams(scipy.log(params))
-
-	hess = scipy.zeros((nOv, nOv), scipy.Float)
-
-	## compute all (numParams*(numParams + 1))/2 unique hessian elements
-        for i in range(nOv):
-            for j in range(i, nOv):
-                hess[i][j] = self.ComputeHessianElement(self.CostFromLogParams,
-                                                        chiSq,
-                                                        scipy.log(params), 
-                                                        i, j, eps[i], eps[j], 
-                                                        relativeScale, 
-                                                        stepSizeCutoff,
-                                                        verbose)
-                hess[j][i] = hess[i][j]
-
-        return hess
+        return self.hessian_log_params(params, eps, relativeScale,
+                                       stepSizeCutoff, verbose)
 
     def CalcHessian(self, params, epsf, relativeScale = True, 
                     stepSizeCutoff = None, jacobian = None, verbose = False):
-	nOv = len(params)
     	"""
 	Finite difference the residual dictionary to get a dictionary
 	for the Hessian. It will be indexed the same as the residuals.
@@ -608,56 +660,8 @@ class Model:
         The two previous statements hold for both scalar and vector valued
         epsf.
         """
-
-        if stepSizeCutoff==None:
-            stepSizeCutoff = scipy.sqrt(scipy.limits.double_epsilon)
-            
-	if relativeScale is True :
-            eps = epsf * abs(params)
-	else :
-            eps = epsf * scipy.ones(len(params),scipy.Float)
-
-        for i in range(0,len(eps)):
-            if eps[i] < stepSizeCutoff:
-                eps[i] = stepSizeCutoff
-
-        if jacobian!=None:
-            jacobian = scipy.asarray(jacobian)
-            self.Cost(params) # Calculate all the internal variables
-            if len(jacobian.shape)==2: # Need to sum up the total jacobian
-                res = scipy.asarray([[self.residuals[index].GetValue(self.calcVals, self.internalVars, self.params)] \
-                                     for index in range(len(self.residuals))])
-                jacobian = 2.0*residuals*jacobian
-
-            # If parameters are independent, then
-            # epsilon should be (sqrt(2)*J[i])^-1
-            factor = 1.0/scipy.sqrt(2)
-            for i in range(nOv):
-                if jacobian[i]==0.0:
-                    eps[i] = 0.5*abs(params[i])
-                else: # larger than stepSizeCutoff, but not more that half of the original parameter value
-                    eps[i] = scipy.minimum( scipy.maximum( factor/abs(jacobian[i]), stepSizeCutoff ), 0.5*abs(params[i]) )
-
-            # Turn off the relative scaling since this will overwrite all this work
-            if relativeScale: relativeScale = False
-            
-	## compute residuals/cost at f(x)
-	chiSq = self.Cost(params)
-
-	hess = scipy.zeros((nOv, nOv), scipy.Float)
-
-	## compute all (numParams*(numParams + 1))/2 unique hessian elements
-        for i in range(nOv):
-            for j in range(i, nOv):
-                hess[i][j] = self.ComputeHessianElement(self.Cost, chiSq,
-                                                        params, i, j, 
-                                                        eps[i], eps[j], 
-                                                        relativeScale, 
-                                                        stepSizeCutoff,
-                                                        verbose)
-                hess[j][i] = hess[i][j]
-
-        return hess
+        return self.hessian(params, epsf, relativeScale,
+                            stepSizeCutoff, jacobian, verbose)
 
     def CalcHessianUsingResiduals(self,params,epsf,relativeScale = True, moreAcc = False) :
     	currParams = copy.copy(params)
