@@ -403,6 +403,18 @@ class Network:
 
         return scipy.exp(dvFixed)
 
+    def evaluate_expr(self, expr, time=0):
+        """
+        Evaluate the given expression using the current values of the network
+        variables.
+        """
+        if isinstance(expr, str):
+             expr = self.substituteFunctionDefinitions(expr)
+             expr = self.substituteVariableNames(expr)
+             return eval(expr)
+        else:
+            return expr
+
     def PrintFakeData(self, times, dataIds = None,
                       fixedScaleFactors = False, fileName = None,
                       sigmaLambda = lambda y: 0*y + 1):
@@ -498,14 +510,14 @@ class Network:
             else:
                 var.value = var.initialValue
 
-        # self.updateAssignedVars(time = 0)
+        # We need to update the assigned variables both before and after
+        #  we do the pending dynamic vars.
+        self.updateAssignedVars(time = 0)
 
         for id, var in pending:
-            rhs = self.substituteFunctionDefinitions(var.initialValue)
-            rhs = self.substituteVariableNames(rhs)
-            self.dynamicVars.getByKey(id).value = eval(rhs)
+            self.dynamicVars.getByKey(id).value = \
+                    self.evaluate_expr(var.initialValue, 0)
 	
-	# need to put it down here, for i.c.s that are parameters
 	self.updateAssignedVars(time = 0)
 
     def set_dyn_var_ics(self, values):
@@ -519,9 +531,7 @@ class Network:
 
     def updateAssignedVars(self, time):
         for id, rhs in self.assignmentRules.items():
-            rhs = self.substituteFunctionDefinitions(rhs)
-            rhs = self.substituteVariableNames(rhs)
-            self.assignedVars.getByKey(id).value = eval(rhs)
+            self.assignedVars.getByKey(id).value = self.evaluate_expr(rhs, time)
 
     def set_var_optimizable(self, id, is_optimizable):
         self.variables.get(id).is_optimizable = is_optimizable
@@ -738,23 +748,13 @@ class Network:
     def fireEvent(self, event, dynamicVarValues, time):
         self.updateVariablesFromDynamicVars(dynamicVarValues, time)
 
-        delay = event.delay
-        # If the delay is a math expression, calculate its value
-        if type(delay) == types.StringType:
-            delay = self.substituteFunctionDefinitions(delay)
-            delay = self.substituteVariableNames(delay)
-            delay = eval(delay)
+        delay = self.evaluate_expr(event.delay, time)
 
         executionTime = round(time + delay, 8)
         event.newValues[executionTime] = {}
         # Calculate the values that will get assigned to the variables
         for id, rhs in event.eventAssignments.items():
-            if type(rhs) == types.StringType:
-                rhs = self.substituteFunctionDefinitions(rhs)
-                erhs = self.substituteVariableNames(rhs)
-                event.newValues[executionTime][id] = eval(erhs)
-            else:
-                event.newValues[executionTime][id] = rhs
+            event.newValues[executionTime][id] = self.evaluate_expr(rhs, time)
 
         return delay
 
@@ -770,7 +770,7 @@ class Network:
             if len(Parsing.extractVariablesFromString(delay)) > 0:
                 raise exceptions.NotImplementedError, "We don't support math form delays in sensitivity! (Yet)"
             else:
-                delay = eval(delay)
+                delay = self.evaluate_expr(delay, time)
 
         executionTime = round(time + delay, 8)
         event.newValues[executionTime] = {}
@@ -780,13 +780,8 @@ class Network:
         for lhsId, rhs in event.eventAssignments.items():
             lhsIndex = self.dynamicVars.indexByKey(lhsId)
 
-            # Everything below should work if the rhs is a constant, as long
-            #  as we convert it to a string first.
-            rhs = str(rhs)
-            rhs = self.substituteFunctionDefinitions(rhs)
-
             # Compute and store the new value of the lhs
-            newVal = eval(self.substituteVariableNames(rhs))
+            newVal = self.evaluate_expr(rhs, time)
             event.newValues[executionTime][lhsId] = newVal
             newValues[lhsIndex] = newVal
 
@@ -802,14 +797,14 @@ class Network:
             dtrigger_ddvValue = {}
             for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
                 dtrigger_ddv = self.takeDerivative(trigger, dynId)
-                dtrigger_ddv = self.substituteVariableNames(dtrigger_ddv)
-                dtrigger_ddvValue[dynId] = eval(dtrigger_ddv)
+                dtrigger_ddvValue[dynId] = self.evaluate_expr(dtrigger_ddv, 
+                                                              time)
 
             dtrigger_dovValue = {}
             for ovIndex, optId in enumerate(self.optimizableVars.keys()):
                 dtrigger_dov = self.takeDerivative(trigger, optId)
-                dtrigger_dov = self.substituteVariableNames(dtrigger_dov)
-                dtrigger_dovValue[optId] = eval(dtrigger_dov)
+                dtrigger_dovValue[optId] = self.evaluate_expr(dtrigger_dov,
+                                                              time)
 
             dTf_dov = {}
             for ovIndex, optId in enumerate(self.optimizableVars.keys()):
@@ -833,18 +828,15 @@ class Network:
             drhs_ddvValue = {}
             for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
                 drhs_ddv = self.takeDerivative(rhs, dynId)
-                drhs_ddv = self.substituteVariableNames(drhs_ddv)
-                drhs_ddvValue[dynId] = eval(drhs_ddv)
+                drhs_ddvValue[dynId] = self.evaluate_expr(drhs_ddv, time)
 
             drhs_dovValue = {}
             for ovIndex, optId in enumerate(self.optimizableVars.keys()):
                 drhs_dov = self.takeDerivative(rhs, optId)
-                drhs_dov = self.substituteVariableNames(drhs_dov)
-                drhs_dovValue[optId] = eval(drhs_dov)
+                drhs_dovValue[optId] = self.evaluate_expr(drhs_dov, time)
 
             drhs_dtime = self.takeDerivative(rhs, 'time')
-            drhs_dtime = self.substituteVariableNames(drhs_dtime)
-            drhs_dtimeValue = eval(drhs_dtime)
+            drhs_dtimeValue = self.evaluate_expr(drhs_dtime, time)
 
             # Calculate the perturbations to the sensitivities
             for ovIndex, optId in enumerate(self.optimizableVars.keys()):
