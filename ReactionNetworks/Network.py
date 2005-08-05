@@ -1099,12 +1099,12 @@ class Network:
         #  (function name, # of arguments)
         # _standardFuncDefs is keyed by tuples like this, but
         # functionDefinitions is just keyed by function name
-        reversedFunctions = [(fd.id, len(fd.variables)) for fd in\
+        reversedFunctions = [((fd.id, len(fd.variables)), fd) for fd in\
                              self.functionDefinitions.values()]
         reversedFunctions.reverse()
         functionsUsed = Parsing.extractFunctionsFromString(input)
-        for tup, function in reversedFunctions:
-            if tup in functionsUsed:
+        for (id, numvars), function in reversedFunctions:
+            if (id, numvars) in functionsUsed:
                 input = Parsing.substituteFunctionIntoString(input, id, 
                                                              function.variables,
                                                              function.math)
@@ -1198,26 +1198,36 @@ class Network:
 
     addRateRule = add_rate_rule
 
-    def get_component_name(self, id):
+    def get_component_name(self, id, TeX_form=False):
         """
         Return a components's name if it exists, else just return its id.
         """
+        # These are all the things that have names (except the network itself)
         complists = [self.variables, self.reactions, self.functionDefinitions,
                      self.events]
+        # If we don't find a name, we'll just use the id
+        name = id
         for complist in complists:
-            if complist.has_key(id):
+            # If the id is in a list and has a non-empty name
+            if complist.has_key(id) and complist.get(id).name:
                 name = complist.get(id).name
                 break
 
-        if name:
-            return name
-        else:
-            # If a component doesn't have a name, kludge together
-            #  a TeX name by subscripting anything after the first _
-            if id.count('_') > 0:
-                sp = id.split('_')
-                id = '%s_{%s}' % (sp[0], ''.join(sp[1:]))
-            return id
+        # We can also check the network's name
+        if id == self.id and self.name:
+            name = self.name
+
+        if TeX_form:
+            # If we've got one underscore in the name, use that to indicate a 
+            #  subscript
+            if name.count('_') == 1:
+                sp = name.split('_')
+                name = '%s_{%s}' % (sp[0], sp[1])
+            else:
+                # TeX can't handle more than one _ in a name, so we substitute
+                name = name.replace('_', r'\_')
+
+        return name
 
 
     FindFixedPoint = dyn_var_fixed_point
