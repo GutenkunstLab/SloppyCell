@@ -329,6 +329,9 @@ class Network:
     def integrateSensitivity(self, times, params = None,
                              returnEvents = False, addTimes = True,
                              rtol=None):
+        if HAVE_DYNAMICS:
+            return Dynamics.integrate_sensitivity(self, times, params, rtol)
+
         if params is not None:
             self.setOptimizables(params)
 
