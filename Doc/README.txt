@@ -1,27 +1,45 @@
-SloppyCell is a software environment for simulation and analysis of 
-biomolecular networks.  SloppyCell is written in Python, and leverages 
-efficient numerical algorithms provided by the SciPy package (www.scipy.org).
-Features of SloppyCell include:
+SloppyCell
+==========
 
-- deterministic and stochastic dynamical simulations
-- simulation of multiple related networks sharing common values of 
-  parameters
-- support for the Systems Biology Markup Language (SBML) level 2 version 1
-- forward and backward adjoint sensitivity analysis
-- parameter optimization methods to fit parameters to experimental data
-- stochastic Bayesian analysis of parameter space to estimate error bars
-  associated with optimal fits
+SloppyCell is a software environment for simulation and analysis of biomolecular
+networks developed by the groups of `Jim Sethna`_ and `Chris Myers`_ at `Cornell University`_.
 
-In addition to SciPy, SloppyCell uses pylab (matplotlib.sourceforge.net) for
-graphics, and libsbml (www.sbml.org) for SBML interfaces.
+Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dynamics page <http://www.lassp.cornell.edu/sethna/GeneDynamics/>`_.
 
-The top level of the SloppyCell package provides support for describing
-Models, Calculations and Experiments.  Models combine Calculations and 
-Experiments to support the definition of a cost function (the residual
-misfit between Calculations and Experiments).  The most widely used
-type of Calculation is that described by a ReactionNetwork.  The 
-ReactionNetworks subdirectory contains code to support the construction
-of networks from sets of chemicals, reactions, and parameters.
+.. topic:: News
+
+   July 4th, 2005: **SloppyCell 0.1 Released**
+
+      This is the initial public release of SloppyCell. Please see the changelog_ for changes from recent development versions.
 
 
+.. topic:: Features:
 
+   - support for much of the `Systems Biology Markup Language (SBML) 
+     <http://sbml.org>`_ level 2 version 1 (`details <SBML_support.html>`_)
+   - deterministic dynamical simulations (stochastic on the way)
+   - sensitivity analysis
+   - parameter optimization methods to fit parameters to experimental data
+   - simulation of multiple related networks sharing common values of 
+     parameters
+   - stochastic Bayesian analysis of parameter space to estimate error bars
+     associated with optimal fits
+
+.. The top level of the SloppyCell package provides support for describing Models, Calculations and Experiments.  Models combine Calculations and Experiments to support the definition of a cost function (the residual misfit between Calculations and Experiments).  The most widely used type of Calculation is that described by a ReactionNetwork.  The ReactionNetworks subdirectory contains code to support the construction of networks from sets of chemicals, reactions, and parameters.
+
+- `Installation guide <INSTALL.html>`_
+- `Usage example <Example/README.html>`_
+- `Mailing list`_
+- Sourceforge `project page`_
+- `CVS snapshot <SloppyCell-CVS.tgz>`_ generated nightly
+- `API documentation <SloppyCell/index.html>`_ generated nightly
+
+$Date$
+
+.. _Cornell University: http://www.cornell.edu
+.. _Mailing list: http://lists.sourceforge.net/lists/listinfo/sloppycell-users
+.. _Graphviz: http://www.graphviz.org/
+.. _changelog: changelog.html
+.. _project page: http://www.sourceforge.net/projects/sloppycell/
+.. _Jim Sethna: http://www.lassp.cornell.edu/sethna/
+.. _Chris Myers: http://www.tc.cornell.edu/~myers/

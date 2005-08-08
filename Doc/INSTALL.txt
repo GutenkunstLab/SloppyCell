@@ -1,0 +1,55 @@
+Installing SloppyCell
+=====================
+
+Dependencies
+~~~~~~~~~~~~
+
+Required to run
++++++++++++++++
+* Python_
+* Scipy_
+* matplotlib_
+
+Required to build
++++++++++++++++++
+* Fortran77 compiler
+
+Recommended
++++++++++++
+* LibSBML_: Required for SBML import and export. Be sure to build ``--with-python``.
+* Psyco_: A just-in-time compiler for python, Psyco will speed up integrations by about 50% on supported platforms.
+* Graphviz_: SloppyCell can generate ``.dot`` files specifying network diagrams,which can be visualized using Graphviz. 
+* IPython_: A dramatic improvement over the standard python shell.
+
+
+Instructions
+~~~~~~~~~~~~
+.. topic:: On Windows
+
+   1. Install required dependencies. We recommend installing the `Enthought Python distribution <http://www.enthought.com/python/>`_ to satisfy the Python and SciPy dependencies.
+   2. Get the binary version -- not there yet...
+
+.. topic:: On OS X and Linux
+
+   1. Install required dependencies.  
+   (On OS X 10.3, we recommend installing `MacEnthon <http://download.enthought.com/MacEnthon/>`_ which will install Scipy, matplotlib, and IPython. A pre-built version of g77 (Fortran77 compiler) for OSX 10.3 is available at http://hpc.sf.net.)
+
+   2. `Download <http://sourceforge.net/project/showfiles.php?group_id=140498>`_ SloppyCell-0.2.tgz.
+
+   3. Unpack the tarball. (``tar xzf SloppyCell-0.2.tar.gz``)
+
+   4. Descend into the SloppyCell-0.2 directory. (``cd SloppyCell-0.2``)
+
+   5. Run the installation script. (``python setup.py install``) 
+
+   6. Run the included test routines. (``cd ../Testing; python test.py``)
+
+$Date$
+
+.. _Python: http://www.python.org
+.. _SciPy: http://www.scipy.org
+.. _matplotlib: http://matplotlib.sourceforge.net/
+.. _LibSBML: http://www.sbml.org/software/libsbml/
+.. _IPython: http://ipython.scipy.org/
+.. _Graphviz: http://www.graphviz.org/
+.. _Psyco: http://psyco.sourceforge.net/

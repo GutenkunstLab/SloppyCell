@@ -1,0 +1,17 @@
+SloppyCell SBML Support
+=======================
+
+Support for the following features of SBML is planned for SloppyCell
+version 0.3:
+
+- Algebraic rules
+- Mathematical expressions using piecewise
+- Logical operators in event triggers
+
+Others features not currently supported:
+
+- Delay terms in mathematical expressions
+- Unit manipulations
+
+We are interested in adding support for those features that folks are using.
+Please contact us if we're missing a feature you would find useful.
