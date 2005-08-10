@@ -40,10 +40,6 @@ cosh, sinh, tanh = scipy.cosh, scipy.sinh, scipy.tanh
 arccosh, arcsinh, arctanh = scipy.arccosh, scipy.arcsinh, scipy.arctanh
 exponentiale, pi = scipy.e, scipy.pi
 
-# This is the absolute path to the directory where Networks.py is. I use it
-#  to find the xml files needed for the TeX output.
-RXNNETS_DIR = os.path.dirname(__file__)
-
 # Optional since it's x86-only.
 try:
     import psyco
@@ -112,12 +108,12 @@ class Network:
         # Integrate with log concentrations (to avoid negative concentrations)
         self.integrateWithLogs = False
         
-    natural_times = True
+    add_times = True
     def full_speed(cls):
-        cls.natural_times = False
+        cls.add_times = False
     full_speed = classmethod(full_speed)
     def pretty_plotting(cls):
-        cls.natural_times = True
+        cls.add_times = True
     pretty_plotting = classmethod(pretty_plotting)
 
     #
