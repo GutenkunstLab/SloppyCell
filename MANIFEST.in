@@ -1,2 +1,1 @@
-recursive include *.py
-recursive include Doc *
+recursive-include Doc *
