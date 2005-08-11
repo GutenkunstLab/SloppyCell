@@ -15,7 +15,7 @@ class KeyedList(list):
 
         if items is not None:
             for (key, value) in items:
-                self.setByKey(key, value)
+                self.set(key, value)
 
     def copy(self):
         return copy.copy(self)
@@ -39,6 +39,8 @@ class KeyedList(list):
         self.setOrder(self.keys()[::-1])
 
     def __delitem__(self, index):
+        index = index % len(self)
+
         list.__delitem__(self, index)
         del self.storedKeys[index]
         for key, ii in self.keyToIndex.items():
@@ -66,7 +68,6 @@ class KeyedList(list):
     # Methods for manipulating by key.
     #
     def set(self, key, value):
-        #if key in self.storedKeys:
         if self.keyToIndex.has_key(key):
             self[self.keyToIndex[key]] = value
         else:
@@ -74,12 +75,10 @@ class KeyedList(list):
             self.storedKeys.append(key)
             self.keyToIndex[key] = len(self)-1
 
-    setByKey = set
-
-    def indexByKey(self, key):
+    def index_by_key(self, key):
         return self.keyToIndex[key]
 
-    def removeByKey(self, key):
+    def remove_by_key(self, key):
         del self[self.keyToIndex[key]]
 
     def get(self, key, default = None):
@@ -88,7 +87,10 @@ class KeyedList(list):
         else:
             return default
 
+    setByKey = set
     getByKey = get
+    indexByKey = index_by_key
+    removeByKey = remove_by_key
 
     def keys(self):
         return self.storedKeys
@@ -96,7 +98,7 @@ class KeyedList(list):
     def update(self, other):
         if isinstance(other, dict) or isinstance(other, KeyedList):
             for key, value in other.items():
-                self.setByKey(key, value)
+                self.set(key, value)
         else:
             if(len(self) != len(other)):
                 raise ValueError, 'Other list not of same length!'
@@ -108,7 +110,7 @@ class KeyedList(list):
 
     def setdefault(self, key, default=None):
         if not self.keyToIndex.has_key(key):
-            self.setByKey(key, default)
+            self.set(key, default)
 
     def values(self):
         return self[:]
