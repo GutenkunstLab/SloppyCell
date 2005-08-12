@@ -1,13 +1,11 @@
 import copy
-import exceptions
 import sets
-import os
 
 import scipy
 
-import SloppyCell
 import Residuals
-import SloppyCell.Collections
+import Collections
+from KeyedList import KeyedList
 
 class Model:
     def __init__(self, expts, calcs):
@@ -19,19 +17,21 @@ class Model:
         self.calcSensitivityVals = {}
 	self.internalVars = {}
         self.internalVarsDerivs = {}
-	self.residuals = SloppyCell.KeyedList()
+	self.residuals = KeyedList()
 
         if isinstance(expts, list):
-            expts = SloppyCell.Collections.ExperimentCollection(expts)
+            expts = Collections.ExperimentCollection(expts)
         self.SetExperimentCollection(expts)
 
         if isinstance(calcs, list):
-            calcs = SloppyCell.Collections.CalculationCollection(calcs)
+            calcs = Collections.CalculationCollection(calcs)
         self.SetCalculationCollection(calcs)
 
         # Echo the cost or chi-squared on each evaluation
         self.costVerbose = False
         self.chisqVerbose = False
+
+        self.observers = KeyedList()
         
     def get_params(self):
         """
@@ -39,9 +39,13 @@ class Model:
         """
         return self.calcColl.GetParameters()
 
-    def res(self, params):
+    def _evaluate(self, params):
         """
-        Return the residual values of the model fit given a set of parameters
+        Evaluate the cost for the model, returning the intermediate residuals,
+        and chi-squared.
+
+        (Summing up the residuals is a negligible amount of work. This 
+         arrangment makes notification of observers much simpler.)
         """
         self.params.update(params)
         self.CalculateForAllDataPoints(params)
@@ -50,7 +54,26 @@ class Model:
         resvals = [res.GetValue(self.calcVals, self.internalVars, self.params)
                    for res in self.residuals.values()]
 
-        return resvals
+        chisq = scipy.sum(scipy.asarray(resvals)**2)
+        if scipy.isnan(chisq):
+            print 'Warning: Chi-Squared in NAN, setting to INF'
+            chisq = scipy.inf
+        cost = 0.5 * chisq
+        self._notify(event = 'evaluation', 
+                     resvals = resvals,
+                     chisq = chisq,
+                     cost = cost, 
+                     params = params)
+
+        return resvals, chisq, cost
+
+
+    def res(self, params):
+        """
+        Return the residual values of the model fit given a set of parameters
+        """
+
+        return self._evaluate(params)[0]
 
     def res_log_params(self, logparams):
         """
@@ -69,16 +92,7 @@ class Model:
         """
         Return the sum of the squares of the residuals for the model
         """
-        resvals = scipy.array(self.res(params))
-        chisq = scipy.sum(resvals**2)
-        if self.chisqVerbose: print chisq
-
-        # Setting NAN to INF will save the minimization, but
-        # this is not the actual cost. Usually an integration issue
-        if scipy.isnan(chisq):
-            print 'Warning: Chi-Squared in NAN, setting to INF'
-            chisq = scipy.inf
-        return chisq
+        return self._evaluate(params)[1]
 
     def redchisq(self, params):
         """
@@ -93,8 +107,8 @@ class Model:
         """
         Return the cost (1/2 chisq) of the model
         """
-        cost = 0.5 * self.chisq(params)
-        if self.costVerbose: print cost
+        return self._evaluate(params)[2]
+
         return cost
 
     def cost_log_params(self, log_params):
@@ -102,6 +116,40 @@ class Model:
         Return the cost given the logarithm of the input parameters
         """
         return self.cost(scipy.exp(log_params))
+
+
+    def _notify(self, **args):
+        """
+        Call all observers with the given arguments.
+        """
+        for obs in self.observers:
+            obs(**args)
+
+    def attach_observer(self, obs_key, observer):
+        """
+        Add an observer to be notified by this Model.
+        """
+        self.observers.set(obs_key, observer)
+
+    def detach_observer(self, obs_key):
+        """
+        Remove an observer from the Model.
+        """
+        self.observers.remove_by_key(obs_key)
+
+    def get_observers(self):
+        """
+        Return the KeyedList of observers for this model.
+        """
+        return self.observers
+
+    def reset_observers(self):
+        """
+        Call reset() for all attached observers.
+        """
+        for obs in self.observers:
+            if hasattr(obs, 'reset'):
+                obs.reset()
 
 	
     # Deprecating...
@@ -202,27 +250,6 @@ class Model:
         self.calcVals = self.GetCalculationCollection().GetResults(varsByCalc)
 	return self.calcSensitivityVals
 
-    def ComputeResidualsWithScaleFactors(self, params):
-    #    """
-    #    ComputeResidualsWithScaleFactors(parameters) -> dictionary
-
-    #    Computes a dictionary of residuals corresponding to the passed in
-    #    parameters. The dictionary returned is of the form:
-    #      1) dictionary[(experiment, calculation, dependent variable,
-    #                     independent variable)] -> residual
-    #         for residuals corresponding to experimental data
-    #      2) dictionary[parameter] -> residual
-    #         for residuals corresponding to priors
-
-    #    XXX: Currently only calculates residuals as
-    #         (scale factor * prediction - measurement)/uncertainty
-    #    XXX: The structure of the return value may need to change to accomodate
-    #         more general forms of residuals.
-    #    """
-
-        return self.resDict(params)
-
-
     def ComputeInternalVariables(self):
         self.internalVars['scaleFactors'] = self.compute_scale_factors()
 
@@ -271,7 +298,7 @@ class Model:
                     scale_factors[var] = value
                 continue
             elif len(fixedAt) > 1:
-                    raise exceptions.ValueError('Shared scale factors fixed at inconsistent values in experiment %s!' % expt.GetName())
+                    raise ValueError('Shared scale factors fixed at inconsistent values in experiment %s!' % expt.GetName())
 
             # Finally, compute the scale factor for this group
             theoryDotData, theoryDotTheory = 0, 0
@@ -528,6 +555,8 @@ class Model:
 
         params[i], params[j] = origPi, origPj
 
+        self._notify(event = 'hessian element', i = i, j = j, 
+                     element = element)
         if verbose: 
             print 'hessian[%i, %i] = %g' % (i, j, element)
 
