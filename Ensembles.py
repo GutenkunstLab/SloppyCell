@@ -9,31 +9,86 @@ eig = scipy.linalg.eig
 set_seeds = scipy.stats.seed
 set_seeds(72529486,916423761)
 
-def build_ensemble_log_params(m, params, hess, ens_size, 
-                              step_scale = 1.0, temperature = 1.0,
-                              max_run_hours = scipy.inf, seeds = None):
+def autocorrelation(series):
     """
-    Build an ensemble of parameter sets for the given model.
+    Return the autocorrelation of a series
     """
-    start_time = time.time()
-    samp_mat, sing_vals, cutoff_sing_val = _sampling_matrix(hess)
+    series = scipy.array(series)
+    slen = len(series)
+    smean = scipy.mean(series)
+    acorr = scipy.zeros(len(series), scipy.Float)
+    c0 = scipy.sum((series - smean)**2)/slen
+
+    acorr[0] = 1.0
+    for ii in range(1, len(acorr)):
+        acorr[ii] = scipy.sum((series[:-ii]-smean) * (series[ii:]-smean))\
+                /(slen*c0)
+
+    return acorr
+
+def ensemble_log_params(m, params, hess, 
+                        steps=scipy.inf, max_run_hours=scipy.inf,
+                        temperature=1.0, step_scale=1.0,
+                        sing_val_cutoff=1e-4, seeds=None):
+    """
+    Generate a Bayesian ensemble of parameter sets consistent with the data in
+    the model.
+
+    Inputs:
+     m -- Model to generate the ensemble for
+     params -- Initial parameter KeyedList to start from 
+     hess -- Hessian of the model
+     steps -- Maximum number of Monte Carlo steps to attempt
+     max_run_hours -- Maximum number of hours to run
+     temperature -- Temperature of the ensemble
+     step_scale -- Additional scale applied to each step taken. step_scale < 1
+                   results in steps shorter than those dictated by the quadratic
+                   approximation and may be useful if acceptance is low.
+     sing_val_cutoff -- Truncate the quadratic approximation at eigenvalues
+                        smaller than this fraction of the largest.
+     seeds -- A tuple of two integers to seed the random number generator
+
+    Outputs:
+     ens, ens_costs, ratio
+     ens -- List of KeyedList parameter sets in the ensemble
+     ens_costs -- List of costs for each parameter set
+     ratio -- Fraction of attempted moves that were accepted
+
+    The sampling is done by Markove Chain Monte Carlo, with a Metropolis-Hasting
+    update scheme. The canidate-generating density is a gaussian centered on the
+    current point, with axes determined by the hessian. For a useful 
+    introduction see:
+     Chib and Greenberg. "Understanding the Metropolis-Hastings Algorithm" 
+     _The_American_Statistician_ 49(4), 327-335
+    """
+    if scipy.isinf(steps) and scipy.isinf(max_run_hours):
+        raise ValueError, 'Both steps and max_run_hours cannot be infinity, or the code will never stop!'
 
     if seeds is not None:
         set_seeds(seeds[0], seeds[1])
 
-    param_keys = params.keys()
+    curr_params = params.copy()
+    param_keys = curr_params.keys()
+    curr_cost = m.cost(curr_params)
+    ens, ens_costs = [curr_params], [curr_cost]
 
-    curr_params = scipy.array(params)
-    orig_cost = m.cost(curr_params)
-    ens_params, ens_costs = [copy.deepcopy(params)], [orig_cost]
-    ens_count, trial_moves = 1, 0
-    while ens_count < ens_size:
+    curr_params = scipy.array(curr_params)
+
+    # Generate the sampling matrix used to generate candidate moves
+    samp_mat, sing_vals, cutoff_sing_val = _sampling_matrix(hess, 
+                                                            sing_val_cutoff)
+
+    accepted_moves = 0
+    start_time = time.time()
+
+    while len(ens) < steps+1:
+        # Have we run too long?
         if (time.time() - start_time)/3600 > max_run_hours:
             break
 
+        # Generate the trial move from the quadratic approximation
         deltaParams = _trial_move(samp_mat, sing_vals, cutoff_sing_val)
-        quadCost = _quadratic_cost(deltaParams, hess)
-
+        # Scale the trial move by the step_scale and the temperature
         scaled_step = step_scale * scipy.sqrt(temperature) * deltaParams
 
         # I'm assuming log parameters here.
@@ -42,22 +97,23 @@ def build_ensemble_log_params(m, params, hess, ens_size,
         # next_params = curr_params + scaled_step
 
         next_cost = m.cost(next_params)
-    	trial_moves += 1
-    	if _accept_move(quadCost, next_cost - orig_cost, temperature):
-            ens_count += 1
-            ens_params.append(KeyedList(zip(param_keys, next_params)))
-            ens_costs.append(next_cost)
+    	if _accept_move(next_cost - curr_cost, temperature):
+            accepted_moves += 1.
             curr_params = next_params
+            curr_cost = next_cost
 
-    print 'Acceptance ratio: %f' % ((ens_count - 1.0)/trial_moves)
-    return ens_params, ens_costs
+        ens.append(KeyedList(zip(param_keys, curr_params)))
+        ens_costs.append(curr_cost)
 
-def _accept_move(quadCost, deltaCost, temp):
-    if deltaCost < 0.0:
+    ratio = accepted_moves/len(ens)
+    return ens, ens_costs, ratio
+
+def _accept_move(delta_cost, temperature):
+    if delta_cost < 0.0:
         return True
     else:
         p = scipy.rand()
-        return (p < scipy.exp(-deltaCost/temp))
+        return (p < scipy.exp(-delta_cost/temperature))
 
 def _sampling_matrix(hessian, cutoff=1e-4):
     ## basically need SVD of hessian - singular values and eigenvectors
@@ -90,11 +146,13 @@ def _trial_move(sampling_mat, sing_vals, cutoff_sing_val):
     # that the acceptance ratio will always be about exp(-1) if
     # the harmonic approx. is good
     cutoff_vals = scipy.compress(sing_vals < cutoff_sing_val, sing_vals)
-    scale = scipy.sqrt(len(sing_vals) - len(cutoff_vals)
-                       + sum(cutoff_vals)/cutoff_sing_val)
+    if len(cutoff_vals):
+        scale = scipy.sqrt(len(sing_vals) - len(cutoff_vals)
+                           + sum(cutoff_vals)/cutoff_sing_val)
+    else:
+        scale = scipy.sqrt(len(sing_vals))
+
     randVec = randVec/scale
-    ## now rescale by the sampling matrix, including the appropriate
-    ## reweighting by the control parameter.
 
     ## RIGHT MULTIPLICATION
     trialMove = scipy.dot(sampling_mat, randVec)
@@ -121,59 +179,7 @@ def net_ensemble_trajs(net, times, ensemble):
     mean_traj = copy.deepcopy(best_traj)
     mean_traj.values = mean_values
 
-    lower_traj, upper_traj = copy.deepcopy(best_traj), copy.deepcopy(best_traj)
-    lower_traj.values = mean_values - std_values
-    upper_traj.values = mean_values + std_values
+    std_traj = copy.deepcopy(best_traj)
+    std_traj.values = std_values
 
-    return best_traj, mean_traj, lower_traj, upper_traj
-
-
-def GetEnsembleTrajs(calc, times):
-    # pass in networkcalculation (an instance of the network)
-    # , and a vector of times. 
-    # Get out a dictionary indexed by chemical
-    # which has the envelope of all the trajectories of all
-    # the chemicals over the ensemble. Also passes out the
-    # variance at each time point so can compare with the
-    # linearized prediction for the variance
-    
-    bestfittraj = {}
-    meanchem = {}
-    variancechems = {}
-    maxtrajchems = {}
-    mintrajchems = {}
-    varstocalc = {}
-    alldvs = calc.dynamicVars.keys() + calc.assignedVars.keys()  # all chemicals
-    for var in alldvs :
-    	maxtrajchems[var] = scipy.zeros((len(times),),scipy.Float)
-    	mintrajchems[var] = scipy.ones((len(times),),scipy.Float)*1.0e80
-    	meanchem[var] = scipy.zeros((len(times),),scipy.Float)
-    	variancechems[var] = scipy.zeros((len(times),),scipy.Float)
-    	bestfittraj[var] = []
-    	varstocalc[var] = times
-    
-    
-    for var in alldvs :
-    	# store best fit separately
-    	for params in _.ensembleParams[0:1] :
-    		calc.Calculate(varstocalc,params)
-    		tmptraj = calc.trajectory.getVariableTrajectory(var)
-    		bestfittraj[var] = scipy.array(tmptraj)
-    
-    	# this computes trajectories for all parameter sets in the ensemble
-    	# May want to step through this
-    	for params in _.ensembleParams :
-    		calc.Calculate(varstocalc,params)
-    		tmptraj = calc.trajectory.getVariableTrajectory(var)
-    		# alltrajs[var].append(tmptraj)
-    		meanchem[var] = meanchem[var] + scipy.array(tmptraj)
-    		variancechems[var] = variancechems[var] + scipy.array(tmptraj)**2 # an elementwise square
-    		for i in range(0,len(times)) :
-    			maxtrajchems[var][i] = max(maxtrajchems[var][i],tmptraj[i])
-    			mintrajchems[var][i] = min(mintrajchems[var][i],tmptraj[i])
-    
-    for kys in meanchem.keys() :
-    	meanchem[kys] = meanchem[kys]/len(_.ensembleParams)
-    	variancechems[kys] = variancechems[kys]/len(_.ensembleParams) - meanchem[kys]**2
-    
-    return bestfittraj,meanchem,variancechems,maxtrajchems,mintrajchems
+    return best_traj, mean_traj, std_traj
