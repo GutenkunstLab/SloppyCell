@@ -42,6 +42,14 @@ def integrate(net, times, params=None, rtol=None):
         else:
             sys.stderr.write("Non-scalar rtol of improper length passed into integrate!")
 
+    if getattr(net, 'integrateWithLogs', False):
+        def func(logDV, time):
+            dv = scipy.exp(logDV)
+            ddv_dt = net.get_ddv_dt(dv, time)
+            return ddv_dt / dv
+        atol = 1e-12
+        rtol = 1e-6
+
     #yout = scipy.zeros((0, len(net.dynamicVars)), scipy.Float)
     yout, tout = scipy.array([IC]), [start]
     te, ye, ie = [], [], []
@@ -62,7 +70,11 @@ def integrate(net, times, params=None, rtol=None):
             curTimes = scipy.concatenate(([start], curTimes))
 
         nRoots = len(net.events)
-        Dfun_temp = lambda y, t: scipy.transpose(net.get_d2dv_ddvdt(y, t))
+        if getattr(net, 'integrateWithLogs', False):
+            Dfun_temp = None
+            IC = scipy.log(IC)
+        else:
+            Dfun_temp = lambda y, t: scipy.transpose(net.get_d2dv_ddvdt(y, t))
         temp = odeintr(func, copy.copy(IC), curTimes, 
                        root_func = net.root_func,
                        root_term = [True]*nRoots,
@@ -72,8 +84,10 @@ def integrate(net, times, params=None, rtol=None):
                        insert_events = True,
                        full_output = True)
 
-        IC = copy.copy(temp[0][-1])
-        yout = scipy.concatenate((yout, temp[0]))
+        if getattr(net, 'integrateWithLogs', False):
+            yout = scipy.concatenate((yout, scipy.exp(temp[0])))
+        else:
+            yout = scipy.concatenate((yout, temp[0]))
         tout.extend(temp[1])
         start, IC = tout[-1], copy.copy(yout[-1])
         te.extend(temp[2])
