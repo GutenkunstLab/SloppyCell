@@ -408,9 +408,11 @@ class Network:
         variables.
         """
         if isinstance(expr, str):
-             expr = self.substituteFunctionDefinitions(expr)
-             expr = self.substituteVariableNames(expr)
-             return eval(expr)
+            # We remove beginning and trailing whitespace, just for convenience
+            str = str.strip()
+            expr = self.substituteFunctionDefinitions(expr)
+            expr = self.substituteVariableNames(expr)
+            return eval(expr)
         else:
             return expr
 
