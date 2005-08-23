@@ -454,7 +454,10 @@ class Network:
     # Methods to get and set object properties
     #
 
-    def set_initial_var_value(self, id, value):
+    def set_var_ic(self, id, value):
+        """
+        Set the initial condition of the variable with the given id.
+        """
         if id in self.assignedVars.keys():
             print 'WARNING! Attempt to assign an initial condition to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the initial condition of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
 
@@ -465,10 +468,24 @@ class Network:
         self.constantVarValues = [var.value for var in
                                   self.constantVars.values()]
 
+    set_initial_var_value = set_var_ic
     setInitialVariableValue = set_initial_var_value
 
+    def set_var_value(self, id, value):
+        """
+        Set the current stored value of the variable with the given id.
+        """
+        if id in self.assignedVars.keys():
+            print 'WARNING! Attempt to assign a value to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the value of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
+
+        var = self.variables.get(id)
+        var.value = value
+        self.updateAssignedVars(time)
 
     def setTypicalVariableValue(self, id, value):
+        """
+        Set the typical value of the variable with the given id.
+        """
         self.variables.getByKey(id).typicalValue = value
 
     def update_optimizable_vars(self, params):

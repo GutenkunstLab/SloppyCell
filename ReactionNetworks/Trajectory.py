@@ -12,10 +12,8 @@ class Trajectory:
         if keyToColumn is not None:
             self.keyToColumn = keyToColumn
         else:
-            self.keyToColumn = KeyedList(\
-                zip(net.dynamicVars.keys()
-                    + net.assignedVars.keys(),
-                    range(len(net.dynamicVars)+len(net.assignedVars))))
+            keys = net.dynamicVars.keys + net.assignedVars.keys()
+            self.keyToColumn = KeyedList(zip(keys, range(len(keys))))
 
         self.timepoints = scipy.zeros(0, scipy.Float)
 	self.values = scipy.zeros((0, len(keyToColumn)), scipy.Float)
@@ -49,6 +47,14 @@ class Trajectory:
         if not self.keyToColumn.has_key(id):
             raise ValueError, 'Variable %s not found in trajectory. Is it a constant variable?'
         return self.values[:, self.keyToColumn.getByKey(id)]
+
+    def last_dynamic_var_values(self):
+        """
+        Return a list of the dynamic variable values at the last timepoint in
+        the trajectory.
+        """
+        return [values[-1, self.keyToColumn[dv_id]] for dv_id in 
+                self.dynamicVarKeys]
 
     def make_DoAssignmentInRow(self, net):
         functionBody = 'def DoAssignmentInRow(self, row, time):\n\t'
