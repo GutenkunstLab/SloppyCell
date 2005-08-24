@@ -409,7 +409,7 @@ class Network:
         """
         if isinstance(expr, str):
             # We remove beginning and trailing whitespace, just for convenience
-            str = str.strip()
+            expr = expr.strip()
             expr = self.substituteFunctionDefinitions(expr)
             expr = self.substituteVariableNames(expr)
             return eval(expr)
@@ -473,7 +473,7 @@ class Network:
     set_initial_var_value = set_var_ic
     setInitialVariableValue = set_initial_var_value
 
-    def set_var_value(self, id, value):
+    def set_var_value(self, id, value, time=0):
         """
         Set the current stored value of the variable with the given id.
         """

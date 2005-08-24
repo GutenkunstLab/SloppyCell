@@ -18,8 +18,9 @@ class Variable:
     def __init__(self, id, value, 
                  name, typicalValue, 
                  isConstant, isOptimizable):
+
         if typicalValue is None:
-            if value != 0:
+            if value != 0 and not isinstance(value, str):
                 typicalValue = value
             else:
                 typicalValue = 1
