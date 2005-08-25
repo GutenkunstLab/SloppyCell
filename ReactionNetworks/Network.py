@@ -617,7 +617,7 @@ class Network:
         for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
             rhs = self.diffEqRHS.getByKey(rhsId)
             rhs = self.substituteFunctionDefinitions(rhs)
-            rhs = self.substituteConstantVariableValues(rhs)
+            #rhs = self.substituteConstantVariableValues(rhs)
             # Take all derivatives of the rhs with respect to other 
             #  dynamic variables
             for wrtIndex, wrtId in enumerate(self.dynamicVars.keys()):
@@ -655,7 +655,7 @@ class Network:
             rhs = self.diffEqRHS.getByKey(id)
             if rhs != '0':
                 rhs = self.substituteFunctionDefinitions(rhs)
-                rhs = self.substituteConstantVariableValues(rhs)
+                #rhs = self.substituteConstantVariableValues(rhs)
                 functionBody += '# Total derivative of %s wrt time\n\t' % (id)
                 functionBody += 'res[%i] = yp[%i] - (%s)\n\t' % (ii, ii, rhs)
 
@@ -679,7 +679,7 @@ class Network:
             rhs = self.diffEqRHS.getByKey(id)
             if rhs != '0':
                 rhs = self.substituteFunctionDefinitions(rhs)
-                rhs = self.substituteConstantVariableValues(rhs)
+                #rhs = self.substituteConstantVariableValues(rhs)
                 functionBody += '# Total derivative of %s wrt time\n\t' % (id)
                 functionBody += 'ddv_dt[%i] = %s\n\t' % (ii, rhs)
 
@@ -704,7 +704,7 @@ class Network:
         for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
             rhs = self.diffEqRHS.getByKey(rhsId)
             rhs = self.substituteFunctionDefinitions(rhs)
-            rhs = self.substituteConstantVariableValues(rhs)
+            #rhs = self.substituteConstantVariableValues(rhs)
             # Take all derivatives of the rhs with respect to other 
             #  dynamic variables
             for wrtIndex, wrtId in enumerate(self.dynamicVars.keys()):
@@ -738,7 +738,7 @@ class Network:
             for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
                 rhs = self.diffEqRHS.getByKey(rhsId)
                 rhs = self.substituteFunctionDefinitions(rhs)
-                rhs = self.substituteConstantVariableValues(rhs)
+                #rhs = self.substituteConstantVariableValues(rhs)
                 deriv = self.takeDerivative(rhs, wrtId)
                 if deriv != '0':
                     functionBody += '# Partial derivative of Ddv_Dt for %s wrt %s\n\t\t' % (rhsId, wrtId)
@@ -1075,11 +1075,11 @@ class Network:
         output = symbolic.Diff(input, wrt)
 
         # What other assigned variables does input depend on?
-        otherVars = Parsing.extractVariablesFromString(input)
-        otherVars.difference_update(sets.Set([wrt]))
-        otherVars.intersection_update(sets.Set(self.assignedVars.keys()))
+        assigned_used = Parsing.extractVariablesFromString(input)
+        assigned_used.difference_update(sets.Set([wrt]))
+        assigned_used.intersection_update(sets.Set(self.assignedVars.keys()))
         # Do the chain rule for those variables
-        if id in self.assignedVars.keys():
+        for id in assigned_used:
             rule = self.assignmentRules.getByKey(id)
             rule = self.substituteFunctionDefinitions(rule)
             d2 = self.takeDerivative(rule, wrt)
