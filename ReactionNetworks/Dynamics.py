@@ -5,9 +5,9 @@ import scipy
 
 from SloppyCell.lsodar import odeintr
 from SloppyCell.ReactionNetworks import KeyedList
-from Trajectory import Trajectory
+import Trajectory
 
-def integrate(net, times, params=None, rtol=None):
+def integrate(net, times, params=None, rtol=1e-6):
     if params is not None:
         net.update_optimizable_vars(params)
 
@@ -18,7 +18,7 @@ def integrate(net, times, params=None, rtol=None):
         times.sort()
 
     times = scipy.array(times)
-    if net.add_times:
+    if net.add_tail_times:
         times = scipy.concatenate((times, [1.05*times[-1]]))
 
     # If you ask for time = 0, we'll assume you want dynamic variable values
@@ -50,8 +50,8 @@ def integrate(net, times, params=None, rtol=None):
         atol = 1e-12
         rtol = 1e-6
 
-    #yout = scipy.zeros((0, len(net.dynamicVars)), scipy.Float)
-    yout, tout = scipy.array([IC]), [start]
+    yout, tout = scipy.zeros((0, len(IC)), scipy.Float), []
+    #yout, tout = scipy.array([IC]), [start]
     te, ye, ie = [], [], []
     pendingEvents = {}
 
@@ -80,7 +80,7 @@ def integrate(net, times, params=None, rtol=None):
                        root_term = [True]*nRoots,
                        Dfun = Dfun_temp, 
                        mxstep = 10000, rtol = rtol, atol = atol,
-                       int_pts = net.add_times,
+                       int_pts = net.add_int_times,
                        insert_events = True,
                        full_output = True)
 
@@ -102,24 +102,24 @@ def integrate(net, times, params=None, rtol=None):
 
     net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
 
-    if not net.add_times:
+    if not net.add_int_times:
         yout = _reduce_times(yout, tout, times)
         tout = times
 
     indexKeys = net.dynamicVars.keys() + net.assignedVars.keys()
     keyToColumn = KeyedList(zip(indexKeys, range(len(indexKeys))))
 
-    trajectory = Trajectory(net, keyToColumn)
+    trajectory = Trajectory.Trajectory(net, keyToColumn)
     trajectory.appendFromODEINT(tout, yout)
 
     return trajectory
 
-def integrate_sensitivity(net, times, params=None, rtol=None):
+def integrate_sensitivity(net, times, params=None, rtol=1e-6):
     if params is not None:
         net.update_optimizable_vars(params)
 
     times = scipy.array(times)
-    if net.add_times:
+    if net.add_tail_times:
         times = scipy.concatenate((times, [1.05*times[-1]]))
 
     # If you ask for time = 0, we'll assume you want dynamic variable values
@@ -155,7 +155,8 @@ def integrate_sensitivity(net, times, params=None, rtol=None):
     # Copy in basic ICs
     IC[:nDyn] = net.getDynamicVarValues()
 
-    yout, tout = scipy.array([IC]), [start]
+    #yout, tout = scipy.array([IC]), [start]
+    yout, tout = scipy.zeros((0, len(IC)), scipy.Float), []
     te, ye, ie = [], [], []
     pendingEvents = {}
 
@@ -186,7 +187,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None):
                        root_term = [True]*nRoots,
                        Dfun = Dfun_temp, 
                        mxstep = 10000, rtol = rtol, atol = atolDv,
-                       int_pts = net.add_times,
+                       int_pts = net.add_int_times,
                        insert_events = True,
                        full_output = True)
 
@@ -235,7 +236,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None):
 
     net.updateVariablesFromDynamicVars(yout[-1][:nDyn], tout[-1])
 
-    if not net.add_times:
+    if not net.add_int_times:
         yout = _reduce_times(yout, tout, times)
         tout = times
 
@@ -247,7 +248,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None):
                        enumerate(keyToColumnSensNames)]
     keyToColumnSens = KeyedList(keyToColumnSens)
     
-    ddv_dpTrajectory = Trajectory(net, keyToColumnSens)
+    ddv_dpTrajectory = Trajectory.Trajectory(net, keyToColumnSens)
     ddv_dpTrajectory.appendSensFromODEINT(tout, yout)
 
     return ddv_dpTrajectory

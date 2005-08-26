@@ -108,12 +108,19 @@ class Network:
         # Integrate with log concentrations (to avoid negative concentrations)
         self.integrateWithLogs = False
         
-    add_times = True
+    add_int_times = True
+    add_tail_times = True
     def full_speed(cls):
-        cls.add_times = False
+        cls.add_int_times = False
+        cls.add_tail_times = False
     full_speed = classmethod(full_speed)
+    def fill_traj(cls):
+        cls.add_int_times = True
+        cls.add_tail_times = False
+    fill_traj = classmethod(fill_traj)
     def pretty_plotting(cls):
-        cls.add_times = True
+        cls.add_int_times = True
+        cls.add_tail_times = True
     pretty_plotting = classmethod(pretty_plotting)
 
     #
@@ -755,7 +762,7 @@ class Network:
         print >> f, functionBody
         f.close()
         self.get_d2dv_dovdt_functionBody = functionBody
-        self.get_d2dv_dvcdt = None
+        self.get_d2dv_dovdt = None
         symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 
 
