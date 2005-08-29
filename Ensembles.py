@@ -54,7 +54,7 @@ def ensemble_log_params(m, params, hess,
      ens_costs -- List of costs for each parameter set
      ratio -- Fraction of attempted moves that were accepted
 
-    The sampling is done by Markove Chain Monte Carlo, with a Metropolis-Hasting
+    The sampling is done by Markov Chain Monte Carlo, with a Metropolis-Hasting
     update scheme. The canidate-generating density is a gaussian centered on the
     current point, with axes determined by the hessian. For a useful 
     introduction see:
