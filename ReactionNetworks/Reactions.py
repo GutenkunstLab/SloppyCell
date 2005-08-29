@@ -12,6 +12,13 @@ class Reaction:
         variables = Parsing.extractVariablesFromString(kineticLaw)
         self.parameters = variables.difference(sets.Set(stoichiometry.keys()))
 
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and \
+                (self.__dict__ == other.__dict__)
+
+    def __ne__(self, other):
+        return not (self == other)
+
     def doKwargsSubstitution(self, kwargs):
         self.oldStoichiometry = self.stoichiometry
         self.stoichiometry = {}

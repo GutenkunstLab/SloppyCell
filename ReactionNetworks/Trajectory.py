@@ -53,7 +53,7 @@ class Trajectory:
         Return a list of the dynamic variable values at the last timepoint in
         the trajectory.
         """
-        return [values[-1, self.keyToColumn[dv_id]] for dv_id in 
+        return [self.values[-1, self.keyToColumn.get(dv_id)] for dv_id in 
                 self.dynamicVarKeys]
 
     def make_DoAssignmentInRow(self, net):
@@ -159,8 +159,8 @@ class Trajectory:
 	nDv = len(self.dynamicVarKeys)
 
 	# fill in trajectory
-	for ii, id in enumerate(self.keyToColumn.keys()[0:nDv]):
-            self.values[-numAdded:, self.keyToColumn.getByKey(id)] = \
+	for ii, dvId in enumerate(self.dynamicVarKeys):
+            self.values[-numAdded:, self.keyToColumn.getByKey(dvId)] = \
                     odeint_array[:, ii]
 	# ... and sensitivities
         for ii, dvId in enumerate(self.dynamicVarKeys):

@@ -13,11 +13,18 @@ class FunctionDefinition:
         self.variables = variables
         self.math = math
         self.name = name
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and \
+                (self.__dict__ == other.__dict__)
+
+    def __ne__(self, other):
+        return not (self == other)
     
 class Variable:
     def __init__(self, id, value, 
                  name, typicalValue, 
-                 isConstant, isOptimizable):
+                 is_constant, is_optimizable):
 
         if typicalValue is None:
             if value != 0 and not isinstance(value, str):
@@ -28,9 +35,7 @@ class Variable:
         self.id, self.name = id, name
         self.value, self.initialValue = value, value
         self.typicalValue = typicalValue
-        self.is_constant, self.is_optimizable = isConstant, isOptimizable
-        self.isConstant = self.is_constant
-        self.isOptimizable = self.is_optimizable
+        self.is_constant, self.is_optimizable = is_constant, is_optimizable
 
 class Compartment(Variable):
     def __init__(self, id, size, name, is_constant, 
@@ -58,17 +63,23 @@ class Parameter(Variable):
                           is_constant, is_optimizable)
 
 class Event:
-    def __init__(self, id, trigger, eventAssignments, delay = 0, name = '', 
-                 isTerminal = True):
+    def __init__(self, id, trigger, event_assignments, delay, name):
         self.id, self.name = id, name
         self.delay = delay 
-        self.isTerminal = isTerminal
+        self.is_terminal = (len(event_assignments) > 0)
 
         self.timeTriggered = False
         self.parseTrigger(trigger)
 
-        self.eventAssignments = eventAssignments
-        self.newValues = {}
+        self.event_assignments = event_assignments
+        self.new_values = {}
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and \
+                (self.__dict__ == other.__dict__)
+
+    def __ne__(self, other):
+        return not (self == other)
         
     def parseTrigger(self, trigger):
         # Figures out if the event is time-triggered and parses it to niceness.
