@@ -7,7 +7,6 @@ from __future__ import division
 import copy
 import exceptions
 import sets
-import sys
 import types
 import os
 
@@ -26,7 +25,6 @@ import Integration
 import IO
 import Parsing
 import Reactions
-import SloppyCell.Collections as Collections
 
 from Components import *
 from Trajectory import Trajectory
@@ -88,18 +86,17 @@ class Network:
         # Add in the function definitions I've seen so far in SBML
         self._addStandardFunctionDefinitions()
 
-        # Generating the functions in compile() is pretty slow, so dirty is 
-        #  checked to see which ones need to be remade. (i.e. get_ddv_dt and 
-        #  get_d2dv_ddvdt don't change if we add a new event, but do if we add
-        #  a new variable.)
-        self.dirty = {'ddv_dt': True, 'events': True}
-
         # Here are all the functions we dynamically generate. To add a new one,
         #  called, for example, fooFunc, you need to define make_fooFunc, which
         #  generates the python code for the function in fooFunc_functionBody.
         self.dynamicFunctions = ['get_ddv_dt', 'get_d2dv_ddvdt', 
                                  'get_d2dv_dovdt', 'get_eventValues', 
-                                 'get_eventDerivs', 'root_func']#, 'get_res', 'get_resjac']
+                                 'get_eventDerivs', 'root_func']
+
+        self._dynamic_structure_funcs = [ 'get_ddv_dt', 'get_d2dv_ddvdt', 
+                                         'get_d2dv_dovdt']
+        self._dynamic_event_funcs = ['get_eventValues', 'get_eventDerivs', 
+                                     'root_func']
 
         # Should we get sensitivities via finite differences? (Faster, but less
         #  accurate.)
@@ -108,19 +105,15 @@ class Network:
         # Integrate with log concentrations (to avoid negative concentrations)
         self.integrateWithLogs = False
         
-    add_int_times = True
-    add_tail_times = True
+    add_int_times, add_tail_times = True, True
     def full_speed(cls):
-        cls.add_int_times = False
-        cls.add_tail_times = False
+        cls.add_int_times, cls.add_tail_times = False, False
     full_speed = classmethod(full_speed)
     def fill_traj(cls):
-        cls.add_int_times = True
-        cls.add_tail_times = False
+        cls.add_int_times, cls.add_tail_times = True, False
     fill_traj = classmethod(fill_traj)
     def pretty_plotting(cls):
-        cls.add_int_times = True
-        cls.add_tail_times = True
+        cls.add_int_times, cls.add_tail_times = True, True
     pretty_plotting = classmethod(pretty_plotting)
 
     #
@@ -129,7 +122,6 @@ class Network:
     def add_variable(self, var):
         self._checkIdUniqueness(var.id)
         self.variables.setByKey(var.id, var)
-        self.makeCrossReferences()
 
     def add_parameter(self, id, value=0.0, name='', is_constant=True, 
                       typical_value=None, is_optimizable=True):
@@ -151,15 +143,11 @@ class Network:
         species = Species(id, compartment, initial_conc, name, typical_value,
                           is_boundary_condition, is_constant, is_optimizable)
         self.add_variable(species)
-        if species.id in self.dynamicVars.keys():
-            self.dirty['ddv_dt'] = True
 
     def addEvent(self, *args, **kwargs):
         event = apply(Event, args, kwargs)
         self._checkIdUniqueness(event.id)
         self.events.setByKey(event.id, event)
-        self.dirty['events'] = True
-        self.makeCrossReferences()
 
     def addFunctionDefinition(self, *args, **kwargs):
         function = apply(FunctionDefinition, args, kwargs)
@@ -180,19 +168,14 @@ class Network:
 
         self._checkIdUniqueness(rxn.id)
         self.reactions.setByKey(rxn.id, rxn)
-        self.dirty['ddv_dt'] = True
 
     def addAssignmentRule(self, variable, math):
         self.assignmentRules.setByKey(variable, math)
 	self.variables.get(variable).is_boundary_condition = True
-        self.makeCrossReferences()
-        self.dirty['ddv_dt'] = True
 
     def add_rate_rule(self, lhs, rhs):
         self.variables.get(lhs).is_constant = False
         self.rateRules.setByKey(lhs, rhs)
-        self.makeCrossReferences()
-        self.dirty['ddv_dt'] = True
 
     def _checkIdUniqueness(self, id):
         if id in self.variables.keys()\
@@ -204,14 +187,6 @@ class Network:
 
     def set_id(self, id):
         self.id = id
-
-    def copy(self, new_id = None):
-        new_net = copy.deepcopy(self)
-        if new_id is not None:
-            new_net.set_id(new_id)
-
-        new_net.compile()
-        return new_net
 
     #
     # Methods to become a 'SloppyCell.Model'
@@ -227,8 +202,6 @@ class Network:
         t = list(t)
         t.sort()
 
-        self.compile()
-
         self.trajectory = self.integrate(t, params, addTimes = True)
     
     def CalculateSensitivity(self, vars, params):
@@ -240,14 +213,12 @@ class Network:
         t = list(t)
         t.sort()
 
-        self.compile()
-
         self.ddv_dpTrajectory = self.integrateSensitivity(t,params, addTimes = True, rtol = 1.0e-7)
         # we also have the normal trajectory within this trajectory
         indexlength = len(self.dynamicVars) + len(self.assignedVars)
-        keyToColumn = Collections.KeyedList(zip(self.dynamicVars.keys()
-                                         + self.assignedVars.keys(),
-                                         range(indexlength)))
+        keyToColumn = KeyedList(zip(self.dynamicVars.keys()
+                                    + self.assignedVars.keys(),
+                                    range(indexlength)))
 
         self.trajectory = Trajectory(self, keyToColumn)
         self.trajectory.values = self.ddv_dpTrajectory.values[:,0:indexlength]
@@ -298,6 +269,8 @@ class Network:
         if HAVE_DYNAMICS:
             return Dynamics.integrate(self, times, params)
 
+        self.compile()
+
         if params is not None:
             self.setOptimizables(params)
 
@@ -334,6 +307,8 @@ class Network:
                              rtol=None):
         if HAVE_DYNAMICS:
             return Dynamics.integrate_sensitivity(self, times, params, rtol)
+
+        net.compile()
 
         if params is not None:
             self.setOptimizables(params)
@@ -395,19 +370,6 @@ class Network:
             return ddv_dpTrajectory, te, ye, ie
         else:
             return ddv_dpTrajectory
-
-    def dyn_var_fixed_point(self, dv0 = None):
-        if dv0 is None:
-            dv0 = self.getDynamicVarValues()
-
-        ddv_dtFromLogs = lambda logDV: self.get_ddv_dt(scipy.exp(logDV), 0)
-        fprime = lambda logDV: self.get_d2dv_ddvdt(scipy.exp(logDV), 0)\
-                *scipy.exp(logDV)
-
-        dvFixed = scipy.optimize.fsolve(ddv_dtFromLogs, x0 = scipy.log(dv0),
-                                        fprime = fprime, col_deriv = True)
-
-        return scipy.exp(dvFixed)
 
     def evaluate_expr(self, expr, time=0):
         """
@@ -477,9 +439,6 @@ class Network:
         self.constantVarValues = [var.value for var in
                                   self.constantVars.values()]
 
-    set_initial_var_value = set_var_ic
-    setInitialVariableValue = set_initial_var_value
-
     def set_var_value(self, id, value, time=0):
         """
         Set the current stored value of the variable with the given id.
@@ -515,8 +474,6 @@ class Network:
                 self.set_initial_var_value(id, params[ii])
         else:
             raise ValueError, 'Passed in parameter set does not have the proper length!'
-
-    setOptimizables = update_optimizable_vars
 
     def getInitialVariableValue(self, id):
         return self.variables.getByKey(id).initialValue
@@ -560,11 +517,9 @@ class Network:
 
     def set_var_optimizable(self, id, is_optimizable):
         self.variables.get(id).is_optimizable = is_optimizable
-        self.makeCrossReferences()
 
     def set_var_constant(self, id, is_constant):
         self.variables.get(id).is_constant = is_constant
-        self.makeCrossReferences()
 
     #
     # Generate the differential equations and functions to calculate them.
@@ -572,8 +527,8 @@ class Network:
 
     def makeDiffEqRHS(self):
         # Start with all right-hand-sides set to '0'
-        self.diffEqRHS = KeyedList(zip(self.dynamicVars.keys(),
-                                       ['0'] * len(self.dynamicVars)))
+        self.diff_eq_rhs = KeyedList([(id, '0') for id
+                                    in self.dynamicVars.keys()])
 
         for id, rxn in self.reactions.items():
             rateExpr = rxn.kineticLaw
@@ -590,28 +545,28 @@ class Network:
                     or type(dReactant) == types.FloatType)\
                    and dReactant != 0:
                     if dReactant == 1:
-                        self.diffEqRHS[reactantIndex] += ' + ( %s )' % rateExpr
+                        self.diff_eq_rhs[reactantIndex] += ' + ( %s )' % rateExpr
                     elif dReactant == -1:
-                        self.diffEqRHS[reactantIndex] += ' - ( %s )' % rateExpr
+                        self.diff_eq_rhs[reactantIndex] += ' - ( %s )' % rateExpr
                     else:
-                        self.diffEqRHS[reactantIndex] += ' + %f * ( %s )'\
+                        self.diff_eq_rhs[reactantIndex] += ' + %f * ( %s )'\
                                 % (dReactant, rateExpr)
 
                 elif type(dReactant) == types.StringType:
-                    self.diffEqRHS[reactantIndex] += ' + ( %s ) * ( %s )'\
+                    self.diff_eq_rhs[reactantIndex] += ' + ( %s ) * ( %s )'\
                             % (dReactant, rateExpr)
 
         # Strip off the initial '0 +/- '
-        for id, rhs in self.diffEqRHS.items():
+        for id, rhs in self.diff_eq_rhs.items():
             if len(rhs) > 4:
                 if rhs[:4] == '0 + ':
-                    self.diffEqRHS.setByKey(id, rhs[4:])
+                    self.diff_eq_rhs.setByKey(id, rhs[4:])
                 elif rhs[:4] == '0 - ':
-                    self.diffEqRHS.setByKey(id, rhs[2:])
+                    self.diff_eq_rhs.setByKey(id, rhs[2:])
 
         # Handle the rate rules
         for id, rule in self.rateRules.items():
-            self.diffEqRHS.setByKey(id, rule)
+            self.diff_eq_rhs.setByKey(id, rule)
 
     def make_get_resjac(self):
         self.resjac = scipy.zeros((len(self.dynamicVars),)*2, scipy.Float)
@@ -622,9 +577,8 @@ class Network:
         functionBody += '\n\t'
 
         for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
-            rhs = self.diffEqRHS.getByKey(rhsId)
+            rhs = self.diff_eq_rhs.getByKey(rhsId)
             rhs = self.substituteFunctionDefinitions(rhs)
-            #rhs = self.substituteConstantVariableValues(rhs)
             # Take all derivatives of the rhs with respect to other 
             #  dynamic variables
             for wrtIndex, wrtId in enumerate(self.dynamicVars.keys()):
@@ -643,12 +597,8 @@ class Network:
 
         functionBody += '\n\n\treturn resjac'
 
-        f = file(os.path.join(_TEMP_DIR, 'get_resjac.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.get_resjac_functionBody = functionBody
-        self.get_resjac = None
         symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
+        return functionBody
 
     def make_get_res(self):
         self.res = scipy.zeros(len(self.dynamicVars), scipy.Float)
@@ -659,20 +609,15 @@ class Network:
         functionBody += '\n\t'
 
         for ii, (id, var) in enumerate(self.dynamicVars.items()):
-            rhs = self.diffEqRHS.getByKey(id)
+            rhs = self.diff_eq_rhs.getByKey(id)
             if rhs != '0':
                 rhs = self.substituteFunctionDefinitions(rhs)
-                #rhs = self.substituteConstantVariableValues(rhs)
                 functionBody += '# Total derivative of %s wrt time\n\t' % (id)
                 functionBody += 'res[%i] = yp[%i] - (%s)\n\t' % (ii, ii, rhs)
 
         functionBody += '\n\n\treturn res'
 
-        f = file(os.path.join(_TEMP_DIR, 'get_res.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.get_res_functionBody = functionBody
-        self.get_res = None
+        return functionBody
 
     def make_get_ddv_dt(self):
         self.ddv_dt = scipy.zeros(len(self.dynamicVars), scipy.Float)
@@ -683,21 +628,16 @@ class Network:
         functionBody += '\n\t'
 
         for ii, (id, var) in enumerate(self.dynamicVars.items()):
-            rhs = self.diffEqRHS.getByKey(id)
+            rhs = self.diff_eq_rhs.getByKey(id)
             if rhs != '0':
                 rhs = self.substituteFunctionDefinitions(rhs)
-                #rhs = self.substituteConstantVariableValues(rhs)
                 functionBody += '# Total derivative of %s wrt time\n\t' % (id)
                 functionBody += 'ddv_dt[%i] = %s\n\t' % (ii, rhs)
 
         functionBody += '\n\n\treturn ddv_dt'
 
-        f = file(os.path.join(_TEMP_DIR, 'get_ddv_dt.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.get_ddv_dt_functionBody = functionBody
-        self.get_ddv_dt = None
         symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
+        return functionBody
 
     def make_get_d2dv_ddvdt(self):
         self.d2dv_ddvdt = scipy.zeros((len(self.dynamicVars),
@@ -709,9 +649,8 @@ class Network:
         functionBody += '\n\t'
 
         for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
-            rhs = self.diffEqRHS.getByKey(rhsId)
+            rhs = self.diff_eq_rhs.getByKey(rhsId)
             rhs = self.substituteFunctionDefinitions(rhs)
-            #rhs = self.substituteConstantVariableValues(rhs)
             # Take all derivatives of the rhs with respect to other 
             #  dynamic variables
             for wrtIndex, wrtId in enumerate(self.dynamicVars.keys()):
@@ -723,12 +662,8 @@ class Network:
 
         functionBody += '\n\treturn d2dv_ddvdt'
 
-        f = file(os.path.join(_TEMP_DIR, 'get_d2dv_ddvdt.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.get_d2dv_ddvdt_functionBody = functionBody
-        self.get_d2dv_ddvdt = None
         symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
+        return functionBody
 
     def make_get_d2dv_dovdt(self):
         self.d2dv_dovdt = scipy.zeros((len(self.dynamicVars),
@@ -743,9 +678,8 @@ class Network:
             functionBody += 'if indices is None or %i in indices:\n\t\t' % wrtIndex
             derivWritten = False
             for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
-                rhs = self.diffEqRHS.getByKey(rhsId)
+                rhs = self.diff_eq_rhs.getByKey(rhsId)
                 rhs = self.substituteFunctionDefinitions(rhs)
-                #rhs = self.substituteConstantVariableValues(rhs)
                 deriv = self.takeDerivative(rhs, wrtId)
                 if deriv != '0':
                     functionBody += '# Partial derivative of Ddv_Dt for %s wrt %s\n\t\t' % (rhsId, wrtId)
@@ -758,12 +692,8 @@ class Network:
 
         functionBody += '\n\treturn d2dv_dovdt'
 
-        f = file(os.path.join(_TEMP_DIR, 'get_d2dv_dovdt.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.get_d2dv_dovdt_functionBody = functionBody
-        self.get_d2dv_dovdt = None
         symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
+        return functionBody
 
 
     #
@@ -932,11 +862,7 @@ class Network:
 
         functionBody += '\n\treturn self._eventValues, self._eventTerminals, self._eventDirections'
 
-        f = file(os.path.join(_TEMP_DIR, 'get_eventValues.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.get_eventValues_functionBody = functionBody
-        self.get_eventValues = None
+        return functionBody
 
     def make_root_func(self):
         self._root_func = scipy.zeros(len(self.events), scipy.Float)
@@ -950,11 +876,7 @@ class Network:
 
         functionBody += '\n\treturn self._root_func'
 
-        f = file(os.path.join(_TEMP_DIR, 'root_func.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.root_func_functionBody = functionBody
-        self.root_func = None
+        return functionBody
 
     def make_get_eventDerivs(self):
         self._eventDerivValues = scipy.zeros(len(self.complexEvents),
@@ -966,7 +888,7 @@ class Network:
         for ii, event in enumerate(self.complexEvents.values()):
             trigger = self.substituteFunctionDefinitions(event.trigger)
             rhs = ''
-            for id in self.diffEqRHS.keys():
+            for id in self.diff_eq_rhs.keys():
                 # We use the chain rule to get derivatives wrt time.
                 deriv = self.takeDerivative(trigger, id)
                 if deriv != '0':
@@ -984,17 +906,18 @@ class Network:
 
         functionBody += '\n\treturn self._eventDerivValues'
 
-        f = file(os.path.join(_TEMP_DIR, 'get_eventDerivs.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.get_eventDerivs_functionBody = functionBody
-        self.get_eventDerivs = None
+        symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
+
+        return functionBody
 
     #
     # Internally useful things
     #
 
-    def makeCrossReferences(self):
+    def _makeCrossReferences(self):
+        """
+        Create the cross-reference lists for the Network.
+        """
         self.assignedVars = KeyedList()
         self.constantVars = KeyedList()
         self.optimizableVars = KeyedList()
@@ -1029,33 +952,84 @@ class Network:
             else:
                 self.complexEvents.setByKey(id, event)
 
+    def _exec_dynamic_func(self, func):
+        """
+        Create the executable function corresponding to func's functionBody.
+        """
+        function_body = getattr(self, '%s_functionBody' % func)
+        exec function_body
+        setattr(self, func, 
+                types.MethodType(locals()[func], self, Network))
+        if HAVE_PSYCO:
+            psyco.bind(getattr(self, func))
+
     def compile(self):
-        # XXX: Should really figure out a better way to do this.
-        if self.dirty['ddv_dt']:
+        """
+        Create the dynamically-generated functions for this Network.
+
+        Note that if a model involves many copies of the same network, with 
+        differences only in events or initial conditions, it will save time
+        to compile the base Network before copying it.
+        """
+        # If the structure of our network has changed, remake all the dynamic
+        #  functions
+        # Note that this runs at least once, since _last_structure doesn't
+        #  exist beforehand.
+        curr_structure = self._get_structure()
+        if curr_structure != getattr(self, '_last_structure', None):
+            self._makeCrossReferences()
             self.makeDiffEqRHS()
-            self.make_get_ddv_dt()
-            self.make_get_d2dv_ddvdt()
-            self.make_get_d2dv_dovdt()
-            #self.make_get_res()
-            #self.make_get_resjac()
-            self.dirty['ddv_dt'] = False
+            for func in self._dynamic_structure_funcs:
+                exec 'self.%s_functionBody = self.make_%s()' % (func, func)
+                self._exec_dynamic_func(func)
+            self._last_structure = copy.deepcopy(curr_structure)
 
-        if self.dirty['events']:
-            self.make_get_eventValues()
-            self.make_get_eventDerivs()
-            self.make_root_func()
-            self.dirty['events'] = False
+        if self.events != getattr(self, '_last_events', None):
+            for func in self._dynamic_event_funcs:
+                exec 'self.%s_functionBody = self.make_%s()' % (func, func)
+                self._exec_dynamic_func(func)
+            self._last_events = copy.deepcopy(self.events)
 
-        # Create all the functions listed in self.dynamicFunctions, if they
-        #  don't already exist.
+    def dynamic_function_from_file(self, filename):
+        """
+        Load a dynamic function from a file. 
+        
+        The filename must be <function_name>.py
+        """
+        f = file(filename, 'r')
+        function_body = f.read()
+        f.close()
+
+        basename = os.path.basename(filename)
+        func = os.path.splitext(basename)[0]
+        setattr(self, '%s_functionBody', func)
+        self._exec_dynamic_func(self, func)
+
+    def _get_structure(self):
+        """
+        Return a tuple representing the structure of the Network.
+
+        The tuple contains the functionDefinitions, reactions, and rules for
+        the Network. It also contains information on the constancy and
+        optimizability of the variables.
+        """
+        var_struct = {}
+        structure = (self.functionDefinitions, self.reactions, 
+                     self.assignmentRules, self.rateRules, var_struct)
+        for id, var in self.variables.items():
+            var_struct[id] = (var.is_constant, var.is_optimizable)
+
+        return var_struct
+
+    def output_dynamic_functions(self, directory = _TEMP_DIR):
+        """
+        Output .py files for this Network's dynamic functions into the given
+        directory.
+        """
         for func in self.dynamicFunctions:
-            if getattr(self, func, None) is None:
-                exec getattr(self, func+'_functionBody')
-                setattr(self, func, 
-                        types.MethodType(locals()[func], self, Network))
-                if HAVE_PSYCO:
-                    psyco.bind(getattr(self, func))
-
+            f = file(os.path.join(directory, '%s.py' % func), 'w')
+            f.write(getattr(self, '%s_functionBody' % func))
+            f.close()
 
     def addAssignmentRulesToFunctionBody(self, functionBody):
         functionBody += 'constantVarValues = self.constantVarValues\n\n\t'
@@ -1096,13 +1070,6 @@ class Network:
 
         return output
 
-    def substituteConstantVariableValues(self, input):
-        for id, var in self.constantVars.items():
-            if id not in self.optimizableVars.keys():
-                input = Parsing.substituteVariableNamesInString(input, id,
-                                                                str(var.value)) 
-        return input
-
     def substituteVariableNames(self, input):
         for id in Parsing.extractVariablesFromString(input):
             if id != 'time':
@@ -1142,9 +1109,15 @@ class Network:
 
         return input
 
-    def TeXOutputToFile(self, filename):
-        """Output TeX-formatted network eqns to a file."""
-        IO.eqns_TeX_file(self, filename)
+    def copy(self, new_id = None):
+        """
+        Return a copy of the given network, with an optional new id.
+        """
+        new_net = copy.deepcopy(self)
+        if new_id is not None:
+            new_net.set_id(new_id)
+
+        return new_net
 
     def __getstate__(self):
         odict = copy.copy(self.__dict__)
@@ -1156,7 +1129,14 @@ class Network:
 
     def __setstate__(self, newdict):
         self.__dict__.update(newdict)
-        self.makeCrossReferences()
+        self._makeCrossReferences()
+        # We exec all our functions, so we're ready to go.
+        for func in self._dynamic_structure_funcs + self._dynamic_event_funcs:
+            try:
+                self._exec_dynamic_func(func)
+            except AttributeError:
+                pass
+
 
     def _addStandardFunctionDefinitions(self):
         standardFuncDefs = [
@@ -1189,31 +1169,6 @@ class Network:
             self._standardFuncDefs.set((function.id, 
                                         len(function.variables)), function)
 
-    # Deprecated functions below.
-
-    def addCompartment(self, id, size=1.0, name='', isConstant=True, 
-                       typicalValue=False, isOptimizable=False):
-        compartment = Compartment(id, size, name, isConstant, typicalValue,
-                                  isOptimizable)
-        self.addVariable(compartment)
-        #raise exceptions.DeprecationWarning('Method addCompartment is deprecated, use add_compartment instead.')
-
-    addVariable = add_variable
-    
-    def addSpecies(self, id, compartment, initialConcentration=None,
-                   name='', typicalValue=None, is_boundary_condition=False,
-                   isConstant=False, isOptimizable=False):
-        self.add_species(id, compartment, initialConcentration, name,
-                         typicalValue, is_boundary_condition, isConstant,
-                         isOptimizable)
-
-    def addParameter(self, id, value = 0.0, 
-                     typicalValue = None, name = '',
-                     isConstant = True, isOptimizable = True):
-        self.add_parameter(id, value, name, isConstant, typicalValue,
-                           isOptimizable)
-
-    addRateRule = add_rate_rule
 
     def get_component_name(self, id, TeX_form=False):
         """
@@ -1246,5 +1201,41 @@ class Network:
 
         return name
 
+    # Deprecated functions below.
 
+    def addCompartment(self, id, size=1.0, name='', isConstant=True, 
+                       typicalValue=False, isOptimizable=False):
+        compartment = Compartment(id, size, name, isConstant, typicalValue,
+                                  isOptimizable)
+        self.addVariable(compartment)
+        #raise exceptions.DeprecationWarning('Method addCompartment is deprecated, use add_compartment instead.')
+
+    addVariable = add_variable
+    
+    def addSpecies(self, id, compartment, initialConcentration=None,
+                   name='', typicalValue=None, is_boundary_condition=False,
+                   isConstant=False, isOptimizable=False):
+        self.add_species(id, compartment, initialConcentration, name,
+                         typicalValue, is_boundary_condition, isConstant,
+                         isOptimizable)
+
+    def addParameter(self, id, value = 0.0, 
+                     typicalValue = None, name = '',
+                     isConstant = True, isOptimizable = True):
+        self.add_parameter(id, value, name, isConstant, typicalValue,
+                           isOptimizable)
+
+    addRateRule = add_rate_rule
+
+    def dyn_var_fixed_point(self, dv0 = None):
+        return Dynamics.dyn_var_fixed_point(self, dv0)
     FindFixedPoint = dyn_var_fixed_point
+
+    set_initial_var_value = set_var_ic
+    setInitialVariableValue = set_var_ic
+
+    setOptimizables = update_optimizable_vars
+
+    def TeXOutputToFile(self, filename):
+        """Output TeX-formatted network eqns to a file."""
+        IO.eqns_TeX_file(self, filename)
