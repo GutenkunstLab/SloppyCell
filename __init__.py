@@ -1,24 +1,26 @@
 _TEMP_DIR = '.SloppyCell'
 
-import SloppyCell.Collections
-KeyedList = SloppyCell.Collections.KeyedList
-ExperimentCollection = SloppyCell.Collections.ExperimentCollection
-Experiment = SloppyCell.Collections.Experiment
-CalculationCollection = SloppyCell.Collections.CalculationCollection
+import Collections
+ExperimentCollection = Collections.ExperimentCollection
+Experiment = Collections.Experiment
+CalculationCollection = Collections.CalculationCollection
 
 import Ensembles
 import Plotting
 import Residuals
+import Observers
 import Optimization
 import Utility
 
-# This bit of voodoo is to expose the Model class while also allowing the
-#  module it's a part of to be reloaded. This preserves the convenience
-#  of reload() for debugging while also making it easier to expose the Model
-#  class.
+# This bit of voodoo is to expose the Model and KeyedList classes while also 
+#  allowing the modules they're in to be reloaded. This preserves the 
+#  convenience of reload() for debugging while also making it easier to expose 
+#  the classes.
 #
 # Note that code that wants to import SloppyCell.Model and get the module still
 #  breaks.
-if not locals().has_key('Model_mod'):
-    import Model as Model_mod
-Model = Model_mod.Model
+classimps = ['Model', 'KeyedList']
+for modname in classimps:
+    if not locals().has_key(modname+'_mod'):
+        exec 'import %s as %s_mod' % (modname, modname)
+    exec '%s = %s_mod.%s' % (modname, modname, modname)
