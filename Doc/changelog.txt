@@ -3,6 +3,17 @@ SloppyCell Changelog
 
 .. topic:: In CVS
 
+  - Clean up of dynamic functions (rng7)
+    
+    Dyanmic function code is now much cleaner. Explicit calls to net.compile()
+    are no longer necessary. (They may stil be useful when creating several
+    copies of a single network.)
+
+  - Inclusion of Observer pattern (rng7)
+
+    Observers can now be added to models to monitor various parts of the code.
+    This is a much cleaner solution than just adding print statements.
+
   - New integrator (rng7)
 
     lsodar is now used for the integration. lsodar provides native root-finding 
