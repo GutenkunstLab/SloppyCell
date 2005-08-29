@@ -4,8 +4,8 @@ from email.MIMEText import MIMEText
 
 import scipy
 
-eig = scipy.linalg.eig
-linspace = scipy.linspace
+from scipy import linspace, logspace
+from scipy.linalg import eig
 
 def send_email(to_addr, from_addr, subject, message):
     """
