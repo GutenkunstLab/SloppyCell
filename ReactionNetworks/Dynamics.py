@@ -8,6 +8,8 @@ from SloppyCell.ReactionNetworks import KeyedList
 import Trajectory
 
 def integrate(net, times, params=None, rtol=1e-6):
+    net.compile()
+
     if params is not None:
         net.update_optimizable_vars(params)
 
@@ -115,6 +117,8 @@ def integrate(net, times, params=None, rtol=1e-6):
     return trajectory
 
 def integrate_sensitivity(net, times, params=None, rtol=1e-6):
+    net.compile()
+
     if params is not None:
         net.update_optimizable_vars(params)
 
@@ -218,7 +222,7 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-6):
             else:
                 atolForThis = None
 
-            temp2 = odeintr(Ddv_and_DdvDov_dtTrunc,
+            temp2 = odeintr(_Ddv_and_DdvDov_dtTrunc,
                             ICTrunc, curTimes,
                             args = (net, ovIndex),
                             mxstep = 10000, 
@@ -253,7 +257,20 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-6):
 
     return ddv_dpTrajectory
 
-def D2dv_Dov_dtTrunc(y, time, net, ovIndex):
+def dyn_var_fixed_point(net, dv0 = None):
+    if dv0 is None:
+        dv0 = net.getDynamicVarValues()
+
+    ddv_dtFromLogs = lambda logDV: net.get_ddv_dt(scipy.exp(logDV), 0)
+    fprime = lambda logDV: net.get_d2dv_ddvdt(scipy.exp(logDV), 0)\
+            *scipy.exp(logDV)
+
+    dvFixed = scipy.optimize.fsolve(ddv_dtFromLogs, x0 = scipy.log(dv0),
+                                    fprime = fprime, col_deriv = True)
+
+    return scipy.exp(dvFixed)
+
+def _D2dv_Dov_dtTrunc(y, time, net, ovIndex):
     nDV = len(net.dynamicVars)
 
     # The dynamic variables
@@ -277,13 +294,13 @@ def D2dv_Dov_dtTrunc(y, time, net, ovIndex):
 
     return D2dv_Dov_dt
 
-def Ddv_and_DdvDov_dtTrunc(y, time, net, ovIndex):
+def _Ddv_and_DdvDov_dtTrunc(y, time, net, ovIndex):
     nDV = len(net.dynamicVars)
 
     # XXX: Might want to fill in a global array here. Perhaps a small speed
     #      boost
     Dc_Dt = net.get_ddv_dt(y[:nDV], time)
-    D2dv_Dov_dt = D2dv_Dov_dtTrunc(y, time, net, ovIndex)
+    D2dv_Dov_dt = _D2dv_Dov_dtTrunc(y, time, net, ovIndex)
 
     return scipy.concatenate((Dc_Dt, D2dv_Dov_dt))
 
