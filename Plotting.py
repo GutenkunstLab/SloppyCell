@@ -48,7 +48,7 @@ def plot_eigvect(vect, labels=None, num_label = 5):
     """
     # The 0.4 centers the bars on their numbers, accounting for the default
     #  bar width of 0.8
-    bar(scipy.arange(-0.4, len(vect) - 0.4, 1), vect/scipy.linalg.norm(vect))
+    bar(scipy.arange(len(vect)) - 0.4, vect/scipy.linalg.norm(vect))
     a = axis()
     a[0:2] = [-.03*len(vect) - 0.4, (len(vect) - 1)*1.03 + 0.4]
 
