@@ -6,7 +6,6 @@ import TestNetwork
 net = copy.copy(TestNetwork.net)
 net.setInitialVariableValue('A', 1.0)
 net.setInitialVariableValue('B', 2.0)
-net.dirty['ddv_dt'] = True  # paranoia
 net.compile()
 expt = TestNetwork.expt1
 m = Model(ExperimentCollection([expt]),CalculationCollection([net]))

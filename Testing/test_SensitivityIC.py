@@ -9,7 +9,6 @@ net.setInitialVariableValue('A', 1.0)
 net.setInitialVariableValue('B', 2.0)
 net.addParameter('xIC',4.0)
 net.setInitialVariableValue('x','2.0*exp(xIC)')
-net.dirty['ddv_dt'] = True
 net.compile()
 
 
