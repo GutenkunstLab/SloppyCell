@@ -25,6 +25,8 @@ import Integration
 import IO
 import Parsing
 import Reactions
+import SloppyCell.Collections as Collections
+import matplotlib.mlab as mlab
 
 from Components import *
 from Trajectory import Trajectory
@@ -50,6 +52,9 @@ try:
     HAVE_DYNAMICS = True
 except ImportError:
     HAVE_DYNAMICS = False
+
+# I don't have the fortran lsodar library installed so...
+HAVE_DYNAMICS = False
 
 class Network:
 
@@ -332,7 +337,7 @@ class Network:
        # the requested ones (which should be a subset of all
        # the timepoints)
        return result
-    
+
     #
     # The actual integration
     #
@@ -381,7 +386,7 @@ class Network:
         if HAVE_DYNAMICS:
             return Dynamics.integrate_sensitivity(self, times, params, rtol)
 
-        net.compile()
+        self.compile()
 
         if params is not None:
             self.setOptimizables(params)
@@ -607,6 +612,64 @@ class Network:
         # Handle the rate rules
         for id, rule in self.rateRules.items():
             self.diff_eq_rhs.set(id, rule)
+
+    def getRatesForDV(self,dvName,time) :
+        connectedReactions = {}
+        # this is very messy way to do this but just for the moment...
+        for paramname in self.parameters.keys() :
+            exec(paramname+'='+self.parameters.getByKey(paramname).value.__repr__())
+        for dynamicVarName in self.trajectory.keyToColumn.keys() :
+            tr = self.trajectory.getVariableTrajectory(dynamicVarName)
+            timepoints = self.trajectory.timepoints
+            minval = min(abs(timepoints-time)) # closest value to time in timepoints
+            minindex = mlab.find(minval==abs(timepoints-time)) # this is actually an array
+            chemval = tr[minindex[0]]
+            exec(dynamicVarName+'='+chemval.__repr__())
+
+        for id,rxn in self.reactions.items() :
+            if dvName in rxn.stoichiometry.keys() :
+                if rxn.stoichiometry[dvName] != 0 : # doesn't matter if no change in dvName
+                    rateexpr ='('+rxn.stoichiometry[dvName].__repr__()+')*('+rxn.kineticLaw+')'
+                    rateexprval = eval(rateexpr)
+                    connectedReactions[id] = [rxn.stoichiometry,rateexpr,rateexprval]
+        return connectedReactions
+
+    def make_get_resjac(self):
+        self.resjac = scipy.zeros((len(self.dynamicVars),)*2, scipy.Float)
+
+        functionBody = 'def get_resjac(self, t, dynamicVars, yp, cj):\n\t'
+        functionBody += 'resjac = self.resjac\n\t'
+        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
+        functionBody += '\n\t'
+
+        for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
+            rhs = self.diffEqRHS.getByKey(rhsId)
+            rhs = self.substituteFunctionDefinitions(rhs)
+            rhs = self.substituteConstantVariableValues(rhs)
+            # Take all derivatives of the rhs with respect to other 
+            #  dynamic variables
+            for wrtIndex, wrtId in enumerate(self.dynamicVars.keys()):
+                deriv = self.takeDerivative(rhs, wrtId)
+                if deriv != '0':
+                    #functionBody += '# Partial derivative of Ddv_Dt for %s wrt %s\n\t' % (rhsId, wrtId)
+                    if rhsIndex == wrtIndex:
+                        functionBody += 'resjac[%i, %i] = -(%s) + cj\n\t' % \
+                                (rhsIndex, wrtIndex, deriv)
+                    else:
+                        functionBody += 'resjac[%i, %i] = -(%s)\n\t' % \
+                                (rhsIndex, wrtIndex, deriv)
+                elif rhsIndex == wrtIndex:
+                        functionBody += 'resjac[%i, %i] = cj\n\t' % \
+                                (rhsIndex, wrtIndex)
+
+        functionBody += '\n\n\treturn resjac'
+
+        f = file(os.path.join(_TEMP_DIR, 'get_resjac.py'), 'w')
+        print >> f, functionBody
+        f.close()
+        self.get_resjac_functionBody = functionBody
+        self.get_resjac = None
+        symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 
     def _make_get_ddv_dt(self):
         self.ddv_dt = scipy.zeros(len(self.dynamicVars), scipy.Float)
@@ -1057,13 +1120,23 @@ class Network:
                 output += ' + %s *(%s)' % (d, d2)
 
         return output
-
+    
+    
     def substituteVariableNames(self, input):
-        for id in Parsing.extractVariablesFromString(input):
-            if id != 'time':
-                mapping = "self.variables.getByKey('%s').value" % id
+        variables_used = Parsing.extractVariablesFromString(input)
+        variables_used.discard('time')
+        while variables_used:
+            for id in variables_used:
+                mapping = self.variables.getByKey(id).value
                 input = Parsing.substituteVariableNamesInString(input, id,
-                                                                mapping) 
+                                                                mapping.__str__())
+            variables_used = Parsing.extractVariablesFromString(input)
+            variables_used.discard('time')
+            #for id in Parsing.extractVariablesFromString(input):
+            #    if id != 'time':
+            #        mapping = "self.variables.getByKey('%s').value" % id
+            #        input = Parsing.substituteVariableNamesInString(input, id,
+            #                                                        mapping)
         return input
 
     def substituteFunctionDefinitions(self, input):
