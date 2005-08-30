@@ -172,7 +172,7 @@ def Integrate_Ddv_Dov(net, timepoints, rtol = None):
 			if DwrtOV != '0' :
 				DwrtOV = net.substituteFunctionDefinitions(DwrtOV)
 				DwrtOV = net.substituteVariableNames(DwrtOV)
-				DwrtOV = DwrtOV.replace('self','net')
+				#DwrtOV = DwrtOV.replace('self','net')
 				IC[nDyn*(ovInd+1) + dvInd] = eval(DwrtOV)
 	dvInd = dvInd + 1
 
