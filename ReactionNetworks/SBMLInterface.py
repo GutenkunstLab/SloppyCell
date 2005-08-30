@@ -5,6 +5,7 @@ import libsbml
 import Network
 import Reactions
 import Parsing
+import types
 
 def toSBMLFile(net, fileName):
     sbmlStr = toSBMLString(net)
@@ -31,7 +32,7 @@ def toSBMLString(net):
     for id, c in net.compartments.items():
         sc = libsbml.Compartment(id)
         sc.setName(c.name)
-        sc.setConstant(c.isConstant)
+        sc.setConstant(c.is_constant)
         sc.setSize(c.initialValue)
         m.addCompartment(sc)
     
@@ -39,7 +40,7 @@ def toSBMLString(net):
         ss = libsbml.Species(id)
         ss.setName(s.name)
         ss.setCompartment(s.compartment)
-        if s.initialValue is not None:
+        if s.initialValue is not None and type(s.initialValue) is not types.StringType:
             ss.setInitialConcentration(s.initialValue)
         ss.setBoundaryCondition(s.is_boundary_condition)
         m.addSpecies(ss)
@@ -49,16 +50,16 @@ def toSBMLString(net):
         sp.setName(p.name)
         if p.initialValue is not None:
             sp.setValue(p.initialValue)
-        sp.setConstant(p.isConstant)
+        sp.setConstant(p.is_constant)
         m.addParameter(sp)
-    
+
     for id, r in net.rateRules.items():
         sr = libsbml.RateRule()
         sr.setVariable(id)
         formula = r.replace('**', '^')
         sr.setMath(libsbml.parseFormula(formula))
         m.addRule(sr)
-    
+
     for id, r in net.assignmentRules.items():
         sr = libsbml.AssignmentRule()
         sr.setVariable(id)
