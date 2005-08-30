@@ -1,6 +1,9 @@
 from SloppyCell import *
 
-import Dynamics
+try:
+    import Dynamics
+except:
+    pass
 import IO
 import Plotting
 import Reactions
