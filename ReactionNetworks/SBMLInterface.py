@@ -236,7 +236,7 @@ def fromSBMLString(sbmlStr, id = None):
             eaDict[ea.getVariable()] = libsbml.formulaToString(ea.getMath())
 
         rn.addEvent(id = id, trigger = trigger, eventAssignments = eaDict, 
-                    delay = delay, name = name, isTerminal = True)
+                    delay = delay, name = name)
 
     return rn
 

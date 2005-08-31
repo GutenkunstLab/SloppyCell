@@ -137,7 +137,7 @@ class Network:
         self.variables.set(var.id, var)
         self._makeCrossReferences()
 
-    def add_compartment(self, id, initial_size=1.0, name=None, 
+    def add_compartment(self, id, initial_size=1.0, name='', 
                         typical_value=None,
                         is_constant=True, is_optimizable=False):
         """
@@ -150,7 +150,7 @@ class Network:
         self._add_variable(compartment)
 
     def add_species(self, id, compartment, initial_conc=None, 
-                    name=None, typical_value=None,
+                    name='', typical_value=None,
                     is_boundary_condition=False, is_constant=False, 
                     is_optimizable=False):
         """
@@ -160,7 +160,7 @@ class Network:
                           is_boundary_condition, is_constant, is_optimizable)
         self._add_variable(species)
 
-    def add_parameter(self, id, initial_value=1.0, name=None,
+    def add_parameter(self, id, initial_value=1.0, name='',
                       typical_value=None,
                       is_constant=True, is_optimizable=True):
         """
