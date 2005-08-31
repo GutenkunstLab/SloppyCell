@@ -53,9 +53,6 @@ try:
 except ImportError:
     HAVE_DYNAMICS = False
 
-# I don't have the fortran lsodar library installed so...
-HAVE_DYNAMICS = False
-
 class Network:
 
     def __init__(self, id, name=''):
@@ -138,29 +135,22 @@ class Network:
     def _add_variable(self, var):
         self._checkIdUniqueness(var.id)
         self.variables.set(var.id, var)
+        self._makeCrossReferences()
 
-    def add_parameter(self, id, value=0.0, name='', is_constant=True, 
-                      typical_value=None, is_optimizable=True):
-        """
-        Add a parameter to the Network.
-        """
-        parameter = Parameter(id, value, name, is_constant, typical_value,
-                              is_optimizable)
-        self._add_variable(parameter)
-
-    def add_compartment(self, id, size=1.0, name='', is_constant=True, 
-                        typical_value=None, is_optimizable=False):
+    def add_compartment(self, id, initial_size=1.0, name=None, 
+                        typical_value=None,
+                        is_constant=True, is_optimizable=False):
         """
         Add a compartment to the Network.
 
         All species must reside within a compartment.
         """
-        compartment = Compartment(id, size, name, is_constant, typical_value,
-                                  is_optimizable)
+        compartment = Compartment(id, initial_size, name, typical_value, 
+                                  is_constant, is_optimizable)
         self._add_variable(compartment)
 
     def add_species(self, id, compartment, initial_conc=None, 
-                    name='', typical_value=None,
+                    name=None, typical_value=None,
                     is_boundary_condition=False, is_constant=False, 
                     is_optimizable=False):
         """
@@ -169,6 +159,16 @@ class Network:
         species = Species(id, compartment, initial_conc, name, typical_value,
                           is_boundary_condition, is_constant, is_optimizable)
         self._add_variable(species)
+
+    def add_parameter(self, id, initial_value=1.0, name=None,
+                      typical_value=None,
+                      is_constant=True, is_optimizable=True):
+        """
+        Add a parameter to the Network.
+        """
+        parameter = Parameter(id, initial_value, name, is_constant, 
+                              typical_value, is_optimizable)
+        self._add_variable(parameter)
 
     def add_event(self, id, trigger, event_assignments={}, delay=0, name=''):
         """
@@ -226,13 +226,13 @@ class Network:
         self._checkIdUniqueness(rxn.id)
         self.reactions.set(rxn.id, rxn)
 
-    def add_assignment_rule(self, var_id, math):
+    def add_assignment_rule(self, var_id, rhs):
         """
         Add an assignment rule to the Network.
 
         A rate rules species that <var_id> = rhs.
         """
-        self.assignmentRules.set(var_id, math)
+        self.assignmentRules.set(var_id, rhs)
 
     def add_rate_rule(self, var_id, rhs):
         """
@@ -242,6 +242,22 @@ class Network:
         """
         self.variables.get(var_id).is_constant = False
         self.rateRules.set(var_id, rhs)
+
+    def remove_component(self, id):
+        """
+        Remove the component with the given id from the Network.
+
+        Components that can be removed are variables, reactions, events,
+        function definitions, assignment rules, and rate rules.
+        """
+        complists = [self.variables, self.reactions, self.functionDefinitions,
+                     self.events, self.assignmentRules, self.rateRules]
+        for complist in complists:
+            # If the id is in a list and has a non-empty name
+            if complist.has_key(id):
+                complist.remove_by_key(id)
+
+        self._makeCrossReferences()
 
     def _checkIdUniqueness(self, id):
         """
@@ -260,11 +276,23 @@ class Network:
         """
         self.id = id
 
-    def get_id(self, id):
+    def get_id(self):
         """
         Get the id of this Network.
         """
         return self.id
+
+    def set_name(self, name):
+        """
+        Set the name of this Network
+        """
+        self.id = name 
+
+    def get_name(self):
+        """
+        Get the name of this Network.
+        """
+        return self.name
 
     #
     # Methods to become a 'SloppyCell.Model'
@@ -458,7 +486,17 @@ class Network:
             # We remove beginning and trailing whitespace, just for convenience
             expr = expr.strip()
             expr = self.substituteFunctionDefinitions(expr)
-            expr = self.substituteVariableNames(expr)
+            #expr = self.substituteVariableNames(expr)
+            # We substitute float values for all the variable ids in our string
+            variables_used = Parsing.extractVariablesFromString(expr)
+            variables_used.discard('time')
+            while variables_used:
+                for id in variables_used:
+                    mapping = str(self.variables.getByKey(id).value)
+                    expr = Parsing.substituteVariableNamesInString(expr, id, 
+                                                                   mapping) 
+                variables_used = Parsing.extractVariablesFromString(expr)
+                variables_used.discard('time')
             return eval(expr)
         else:
             return expr
@@ -633,43 +671,6 @@ class Network:
                     rateexprval = eval(rateexpr)
                     connectedReactions[id] = [rxn.stoichiometry,rateexpr,rateexprval]
         return connectedReactions
-
-    def make_get_resjac(self):
-        self.resjac = scipy.zeros((len(self.dynamicVars),)*2, scipy.Float)
-
-        functionBody = 'def get_resjac(self, t, dynamicVars, yp, cj):\n\t'
-        functionBody += 'resjac = self.resjac\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-        functionBody += '\n\t'
-
-        for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
-            rhs = self.diffEqRHS.getByKey(rhsId)
-            rhs = self.substituteFunctionDefinitions(rhs)
-            rhs = self.substituteConstantVariableValues(rhs)
-            # Take all derivatives of the rhs with respect to other 
-            #  dynamic variables
-            for wrtIndex, wrtId in enumerate(self.dynamicVars.keys()):
-                deriv = self.takeDerivative(rhs, wrtId)
-                if deriv != '0':
-                    #functionBody += '# Partial derivative of Ddv_Dt for %s wrt %s\n\t' % (rhsId, wrtId)
-                    if rhsIndex == wrtIndex:
-                        functionBody += 'resjac[%i, %i] = -(%s) + cj\n\t' % \
-                                (rhsIndex, wrtIndex, deriv)
-                    else:
-                        functionBody += 'resjac[%i, %i] = -(%s)\n\t' % \
-                                (rhsIndex, wrtIndex, deriv)
-                elif rhsIndex == wrtIndex:
-                        functionBody += 'resjac[%i, %i] = cj\n\t' % \
-                                (rhsIndex, wrtIndex)
-
-        functionBody += '\n\n\treturn resjac'
-
-        f = file(os.path.join(_TEMP_DIR, 'get_resjac.py'), 'w')
-        print >> f, functionBody
-        f.close()
-        self.get_resjac_functionBody = functionBody
-        self.get_resjac = None
-        symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 
     def _make_get_ddv_dt(self):
         self.ddv_dt = scipy.zeros(len(self.dynamicVars), scipy.Float)
@@ -1070,14 +1071,14 @@ class Network:
         for id, var in self.variables.items():
             var_struct[id] = (var.is_constant, var.is_optimizable)
 
-        return var_struct
+        return structure
 
     def output_dynamic_functions(self, directory = _TEMP_DIR):
         """
         Output .py files for this Network's dynamic functions into the given
         directory.
         """
-        for func in self.dynamicFunctions:
+        for func in self._dynamic_structure_funcs + self._dynamic_event_funcs:
             f = file(os.path.join(directory, '%s.py' % func), 'w')
             f.write(getattr(self, '%s_functionBody' % func))
             f.close()
@@ -1120,24 +1121,6 @@ class Network:
                 output += ' + %s *(%s)' % (d, d2)
 
         return output
-    
-    
-    def substituteVariableNames(self, input):
-        variables_used = Parsing.extractVariablesFromString(input)
-        variables_used.discard('time')
-        while variables_used:
-            for id in variables_used:
-                mapping = self.variables.getByKey(id).value
-                input = Parsing.substituteVariableNamesInString(input, id,
-                                                                mapping.__str__())
-            variables_used = Parsing.extractVariablesFromString(input)
-            variables_used.discard('time')
-            #for id in Parsing.extractVariablesFromString(input):
-            #    if id != 'time':
-            #        mapping = "self.variables.getByKey('%s').value" % id
-            #        input = Parsing.substituteVariableNamesInString(input, id,
-            #                                                        mapping)
-        return input
 
     def substituteFunctionDefinitions(self, input):
         # extractFunctionsFromString returns a set of tuples of the form
@@ -1170,13 +1153,15 @@ class Network:
 
         return input
 
-    def copy(self, new_id = None):
+    def copy(self, new_id=None, new_name=None):
         """
         Return a copy of the given network, with an optional new id.
         """
         new_net = copy.deepcopy(self)
         if new_id is not None:
             new_net.set_id(new_id)
+        if new_name is not None:
+            new_net.set_name(new_name)
 
         return new_net
 
@@ -1264,11 +1249,12 @@ class Network:
 
     # Deprecated functions below.
 
-    def addCompartment(self, id, size=1.0, name='', isConstant=True, 
-                       typicalValue=False, isOptimizable=False):
-        compartment = Compartment(id, size, name, isConstant, typicalValue,
-                                  isOptimizable)
-        self.addVariable(compartment)
+    def addCompartment(self, id, size=1.0, name='', 
+                       typicalValue=False,isConstant=True, isOptimizable=False):
+        self.add_compartment(id = id, initial_size = size, name = name,
+                             typical_value = typicalValue, 
+                             is_constant = isConstant, 
+                             is_optimizable = isOptimizable)
         #raise exceptions.DeprecationWarning('Method addCompartment is deprecated, use add_compartment instead.')
 
     addVariable = _add_variable
@@ -1276,15 +1262,21 @@ class Network:
     def addSpecies(self, id, compartment, initialConcentration=None,
                    name='', typicalValue=None, is_boundary_condition=False,
                    isConstant=False, isOptimizable=False):
-        self.add_species(id, compartment, initialConcentration, name,
-                         typicalValue, is_boundary_condition, isConstant,
-                         isOptimizable)
+        self.add_species(id = id, compartment = compartment, 
+                         initial_conc = initialConcentration, 
+                         name = name,
+                         typical_value = typicalValue, 
+                         is_boundary_condition = is_boundary_condition, 
+                         is_constant = isConstant,
+                         is_optimizable = isOptimizable)
 
     def addParameter(self, id, value = 0.0, 
                      typicalValue = None, name = '',
                      isConstant = True, isOptimizable = True):
-        self.add_parameter(id, value, name, isConstant, typicalValue,
-                           isOptimizable)
+        self.add_parameter(id = id, initial_value = value, name = name, 
+                           typical_value = typicalValue,
+                           is_constant = isConstant, 
+                           is_optimizable = isOptimizable)
 
     addRateRule = add_rate_rule
 
@@ -1302,7 +1294,9 @@ class Network:
         IO.eqns_TeX_file(self, filename)
 
     def addEvent(self, id, trigger, eventAssignments, delay=0, name=''):
-        self.add_event(id, trigger, eventAssignments, delay, name)
+        self.add_event(id = id, trigger = trigger, 
+                       event_assignments = eventAssignments, name = name,
+                       delay = delay)
 
     addFunctionDefinition = add_func_def
     addAssignmentRule = add_assignment_rule
