@@ -38,9 +38,9 @@ class Variable:
         self.is_constant, self.is_optimizable = is_constant, is_optimizable
 
 class Compartment(Variable):
-    def __init__(self, id, size, name, is_constant, 
-                 typical_value, is_optimizable):
-        Variable.__init__(self, id, size, name, typical_value, 
+    def __init__(self, id, initial_size, name, typical_value, 
+                 is_constant, is_optimizable):
+        Variable.__init__(self, id, initial_size, name, typical_value, 
                           is_constant, is_optimizable)
 
 class Species(Variable):
