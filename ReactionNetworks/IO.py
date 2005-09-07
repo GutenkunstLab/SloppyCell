@@ -74,7 +74,7 @@ def _net_eqns_to_TeX(net, sub_funcdefs):
     lines.append(r'   \setlength{\fboxrule}{0pt}%')
     lines.append(r'   \fbox{$\frac{#1}{#2}$}}')
     lines.append(r'\begin{longtable}{rcl}')
-    for id, rhs in net.diffEqRHS.items():
+    for id, rhs in net.diff_eq_rhs.items():
         if sub_funcdefs:
             rhs = net.substituteFunctionDefinitions(rhs)
         texRHS = expr_to_TeX(rhs, name_dict, longtable=True)
