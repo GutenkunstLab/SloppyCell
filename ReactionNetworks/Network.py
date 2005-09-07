@@ -94,7 +94,7 @@ class Network:
         self._dynamic_structure_funcs = ['get_ddv_dt', 'get_d2dv_ddvdt', 
                                          'get_d2dv_dovdt']
         self._dynamic_event_funcs = ['get_eventValues', 'get_eventDerivs', 
-                                     'root_func']
+                                     'root_func', 'root_func_dt']
 
         # Should we get sensitivities via finite differences? (Faster, but less
         #  accurate.)
@@ -928,6 +928,36 @@ class Network:
             functionBody += 'self._root_func[%i] = %s\n\t' % (ii, rhs)
 
         functionBody += '\n\treturn self._root_func'
+
+        return functionBody
+
+    def _make_root_func_dt(self):
+        self._root_func_dt = scipy.zeros(len(self.events), scipy.Float)
+
+        functionBody = 'def root_func_dt(self, dynamicVars, ddv_dt, time):\n\t'
+        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
+
+        for ii, event in enumerate(self.events.values()):
+            trigger = self.substituteFunctionDefinitions(event.trigger)
+            rhs = []
+            for id in self.diff_eq_rhs.keys():
+                # We use the chain rule to get derivatives wrt time.
+                deriv = self.takeDerivative(trigger, id)
+                if deriv != '0':
+                    rhs.append('(%s) * ddv_dt[%i]' % 
+                               (deriv, self.dynamicVars.indexByKey(id)))
+
+            # We need to include the partial derivative wrt time.
+            deriv = self.takeDerivative(trigger, 'time')
+            if deriv != '0':
+                rhs.append(deriv)
+
+            functionBody += 'self._root_func_dt[%i] = %s\n\t'\
+                    % (ii, ' + '.join(rhs))
+
+        functionBody += '\n\treturn self._root_func_dt'
+
+        symbolic.saveDiffs(os.path.join(_TEMP_DIR, 'diff.pickle'))
 
         return functionBody
 

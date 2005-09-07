@@ -3,9 +3,12 @@ import sets
 
 import scipy
 
-from SloppyCell.lsodar import odeintr
+import SloppyCell.lsodar
+odeintr = SloppyCell.lsodar.odeintr
 from SloppyCell.ReactionNetworks import KeyedList
 import Trajectory
+
+# XXX: Need to incorporate root_grace_t into integrate_sensitivity
 
 def integrate(net, times, params=None, rtol=1e-6):
     net.compile()
@@ -56,11 +59,30 @@ def integrate(net, times, params=None, rtol=1e-6):
     #yout, tout = scipy.array([IC]), [start]
     te, ye, ie = [], [], []
     pendingEvents = {}
+    root_grace_t = (times[-1] - times[0])/1e10
+    event_just_fired = False
 
     while start < times[-1]:
-        if start in pendingEvents.keys():
-            IC = net.executeEvent(pendingEvents[start], IC, start)
-            pendingEvents.pop(start)
+        if round(start, 12) in pendingEvents.keys():
+            IC = net.executeEvent(pendingEvents[round(start, 12)], IC, start)
+            pendingEvents.pop(round(start, 12))
+
+        # If an event just fired, we integrate for root_grace_t without looking
+        #  for events, to prevent detecting the same event several times.
+        if event_just_fired:
+            event_just_fired = False
+            temp = odeintr(func, copy.copy(IC), [start, start+root_grace_t], 
+                           Dfun = Dfun_temp, 
+                           mxstep = 10000, rtol = rtol, atol = atol,
+                           int_pts = net.add_int_times,
+                           full_output = True)
+
+            if getattr(net, 'integrateWithLogs', False):
+                yout = scipy.concatenate((yout, scipy.exp(temp[0])))
+            else:
+                yout = scipy.concatenate((yout, temp[0]))
+            tout.extend(temp[1])
+            start, IC = tout[-1], copy.copy(yout[-1])
 
         if pendingEvents:
             nextEventTime = min(pendingEvents.keys())
@@ -77,6 +99,7 @@ def integrate(net, times, params=None, rtol=1e-6):
             IC = scipy.log(IC)
         else:
             Dfun_temp = lambda y, t: scipy.transpose(net.get_d2dv_ddvdt(y, t))
+
         temp = odeintr(func, copy.copy(IC), curTimes, 
                        root_func = net.root_func,
                        root_term = [True]*nRoots,
@@ -92,15 +115,21 @@ def integrate(net, times, params=None, rtol=1e-6):
             yout = scipy.concatenate((yout, temp[0]))
         tout.extend(temp[1])
         start, IC = tout[-1], copy.copy(yout[-1])
-        te.extend(temp[2])
-        ye.extend(temp[3])
-        ie.extend(temp[4])
+        for te_this, ye_this, ie_this in zip(temp[2], temp[3], temp[4]):
+            root_derivs = net.root_func_dt(ye_this, 
+                                           net.get_ddv_dt(ye_this, te_this), 
+                                           te_this)
+            if root_derivs[ie_this] > 0:
+                te.append(te_this)
+                ye.append(ye_this)
+                ie.append(ie_this)
+                event_just_fired = True
 
         # If an event fired
-        if temp[4]:
+        if event_just_fired:
             event = net.events[ie[-1]]
             delay = net.fireEvent(event, yout[-1], te[-1])
-            pendingEvents[te[-1] + delay] = event
+            pendingEvents[round(te[-1] + delay, 12)] = event
 
     net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
 
