@@ -1,5 +1,3 @@
-import sys
-
 import scipy
 
 sigmaFunc = lambda traj, dataId: 1
@@ -19,8 +17,7 @@ def calculatePerfectDataLMHessian(traj, dataIds = None, optIds = None,
             dataSigma = 0*traj.getVariableTrajectory(dataId) + dataSigma
 
         if fixedScaleFactors:
-            scaleFactorDerivs[dataId] = dict(zip(optIds, 
-                                                 scipy.zeros(len(optIds))))
+            scaleFactorDerivs[dataId] = dict([(id, 0) for id in optIds])
         else:
             scaleFactorDerivs[dataId] = \
                     calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds)
@@ -30,9 +27,9 @@ def calculatePerfectDataLMHessian(traj, dataIds = None, optIds = None,
                                              scaleFactorDerivs[dataId])
 
     LMHessian = scipy.sum(LMHessianDict.values())
-    returns = [LMHessian]
+    returns = (LMHessian,)
     if returnDict:
-        returns.append(LMHessianDict)
+        returns = returns + (LMHessianDict,)
 
     return returns
 
