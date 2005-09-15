@@ -53,6 +53,7 @@ python module _lsodar ! in
             external g
             integer intent(in) :: ng
             integer intent(out), dimension(MAX(1, ng)) :: jroot
+        end subroutine dslodar
     end interface 
 end python module _lsodar
 
