@@ -1,36 +1,41 @@
 import scipy
 from pylab import *
+rc('lines', linewidth=2)
 
-def ColorWheel():
+def ColorWheel(colors = ('b', 'g', 'r', 'c', 'm', 'k'), 
+               symbols = ('o', 's', '^', 'v', '<', ">", 'x', 'D', 'h', 'p'),
+               lines = ('-', '--', '-.', ':')):
     """
     ColorWheel()
 
     Returns a generator that cycles through a selection of colors, symbols, and 
     line styles for matlibplot.matlab.plot.
     """
-    colors = ['b', 'g', 'r', 'c', 'm', 'k']
-    symbols = ['o', 's', '^', 'v', '<', ">", 'x', 'D', 'h', 'p']
-    lines = ['-', '--', '-.', ':']
+    if not colors:
+        colors = ('',)
+    if not symbols:
+        symbols = ('',)
+    if not lines:
+        lines = ('',)
+
     while 1:
         for l in lines:
            for s in symbols:
                 for c in colors:
                    yield c + s + l
 
-cW = ColorWheel()
+eigvals_cW = ColorWheel(colors = ('b', 'g', 'c', 'm', 'k'), 
+                        lines = None)
 def plot_eigvals(vals, lab=None):
     posVals = abs(scipy.compress(vals > 0, vals))
     posRange = scipy.compress(vals > 0, range(len(vals)))
     negVals = abs(scipy.compress(vals < 0, vals))
     negRange = scipy.compress(vals < 0, range(len(vals)))
 
-    sym = cW.next()
-    while sym[0] == 'r':
-        sym = cW.next()
-
-    line = semilogy(posRange, posVals, sym[:2], label = lab)
+    sym = eigvals_cW.next()
+    line = semilogy(posRange, posVals, sym, label = lab)
     if len(negVals) > 0:
-        semilogy(negRange, negVals, 'r'+sym[1])
+        semilogy(negRange, negVals, 'r'+sym[1:])
 
     a = axis()
     axis([-0.05*len(vals), 1.05*(len(vals) - 1), a[2], a[3]])

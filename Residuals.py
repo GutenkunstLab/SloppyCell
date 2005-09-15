@@ -58,8 +58,10 @@ class ScaledErrorInFit(Residual):
 	deriv = []
 	for pname in params.keys() :
 	  if len(self.dy(predictions, internalVars, params)) > 0 :
+            # Default to 0 if parameter not in senspredictions, (i.e. it may
+            #  not have been in a given calculation
 	    v1 = self.dy(predictions, internalVars, params)[self.cKey][self.yKey][self.xVal]*\
-	    senspredictions[self.cKey][self.yKey][self.xVal][pname]
+	    senspredictions[self.cKey][self.yKey][self.xVal].get(pname, 0)
 	    #v1 = senspredictions[self.cKey][self.yKey][self.xVal][pname]
 	  else :
 	    v1 = 0.0
@@ -92,13 +94,43 @@ class PriorInLog(Residual):
                 / self.sigmaLogPVal
 
     def dp(self, predictions, internalVars, params):
-        return {pKey: scipy.log(params.getByKey(self.pKey))/self.sigmaLogPVal}
+        return {self.pKey: scipy.log(params.getByKey(self.pKey))/self.sigmaLogPVal}
 
     def dy(self, predictions, internalVars, params):
         return {}
     
     def dintVar(self, predictions, internalVars, params):
     	return {}
+
+    def Dp(self,predictions,senspredictions,internalVars,internalVarsDerivs,\
+    	params):
+	""" Total derivative w.r.t p of the residual. Can be used as it stands 
+        for other residual
+	types but v3 may have to be changed depending on how it is decided 
+        to key dp """
+	deriv = []
+	for pname in params.keys() :
+	  if len(self.dy(predictions, internalVars, params)) > 0 :
+            # Default to 0 if parameter not in senspredictions, (i.e. it may
+            #  not have been in a given calculation
+	    v1 = self.dy(predictions, internalVars, params)[self.cKey][self.yKey][self.xVal]*\
+	    senspredictions[self.cKey][self.yKey][self.xVal].get(pname, 0)
+	    #v1 = senspredictions[self.cKey][self.yKey][self.xVal][pname]
+	  else :
+	    v1 = 0.0
+	  if len(self.dintVar(predictions, internalVars, params)) > 0 :
+	    v2 = self.dintVar(predictions, internalVars, params)[self.cKey][self.yKey][self.xVal]*\
+	    internalVarsDerivs['scaleFactors'][self.exptKey][self.yKey].get(pname, 0)
+	  else :
+	    v2 = 0.0
+	  if len(self.dp(predictions, internalVars, params)) > 0 and self.pKey is pname:
+	    # dp should be keyed on the residual name? Should dy and dintVar be aswell?
+	    v3 = self.dp(predictions, internalVars, params).get(pname, 0)
+	  else :
+	    v3 = 0.0
+	  deriv.append(v1+v2+v3)
+
+	return deriv
 
 class PeriodCheckResidual(Residual):
     def __init__(self, key, calcKey, depVarKey, indVarValue,  depVarMeasurement,

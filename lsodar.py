@@ -3,7 +3,7 @@ import os
 
 import scipy
 
-from SloppyCell import _lsodar
+import SloppyCell._lsodar as _lsodar
 
 _msgs = {2: "Integration successful.",
          3: "Integration successful. Root found.",

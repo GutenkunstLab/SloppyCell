@@ -27,8 +27,8 @@ class Variable:
                  is_constant, is_optimizable):
 
         if typicalValue is None:
-            if value != 0 and not isinstance(value, str):
-                typicalValue = value
+            if value and not isinstance(value, str):
+                typicalValue = abs(value)
             else:
                 typicalValue = 1
 

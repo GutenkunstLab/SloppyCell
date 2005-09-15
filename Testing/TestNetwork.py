@@ -26,4 +26,4 @@ data = {'x': {1.0: (1.0, 0.1),
         }
 expt1.set_data({'test': data})
 
-m = Model(ExperimentCollection([expt1]), CalculationCollection([net]))
+m = Model([expt1], [net])

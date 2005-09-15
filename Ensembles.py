@@ -2,7 +2,8 @@ import copy
 import scipy
 import time
 
-from SloppyCell import KeyedList
+import SloppyCell.KeyedList_mod as KeyedList_mod
+KeyedList = KeyedList_mod.KeyedList
 
 eig = scipy.linalg.eig
 

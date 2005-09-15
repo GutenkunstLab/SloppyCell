@@ -1,14 +1,14 @@
+import copy
 import unittest
 
-import scipy,copy
+import scipy
+
 from SloppyCell.ReactionNetworks import *
+
 import TestNetwork
-net = copy.copy(TestNetwork.net)
-net.setInitialVariableValue('A', 1.0)
-net.setInitialVariableValue('B', 2.0)
-net.compile()
-expt = TestNetwork.expt1
-m = Model(ExperimentCollection([expt]),CalculationCollection([net]))
+
+net = TestNetwork.net
+m = TestNetwork.m
 
 class test_DerivativeCalculators(unittest.TestCase):
     def test_GetJandJtJ(self):

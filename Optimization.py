@@ -3,7 +3,8 @@ import sys
 
 import scipy
 
-from KeyedList import KeyedList
+import SloppyCell.KeyedList_mod as KeyedList_mod
+KeyedList = KeyedList_mod.KeyedList
 
 def fmin_powell_log_params(m, params, *args, **kwargs):
     func = m.cost_log_params

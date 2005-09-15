@@ -3,11 +3,14 @@ import os
 import symbolic
 
 try:
-    import SBMLInterface as SBMLInt
-    to_SBML_file = SBMLInt.toSBMLFile
-    from_SBML_file = SBMLInt.fromSBMLFile
+    import SBMLInterface
+    from SBMLInterface import toSBMLFile as to_SBML_file
+    from SBMLInterface import fromSBMLFile as from_SBML_file
 except ImportError:
     print 'SBML import and export not available.'
+
+import SloppyCell
+import Network_mod
 
 def net_DOT_file(net, filename = None):
     lines = []
@@ -40,6 +43,8 @@ def net_DOT_file(net, filename = None):
 
 
 def eqns_TeX_file(net, filename = None, sub_funcdefs = True):
+    net.compile()
+
     lines = []
     lines.append(r'\documentclass{article}')
     lines.append(r'\usepackage{amsmath}')
@@ -223,3 +228,31 @@ def _ast_to_TeX(term, name_dict = {}):
     # This is a kludge to handle pass-downs from the other cases
     elif term[0] == 'power':
         return _ast_to_TeX(term[-1], name_dict)
+
+def dynamic_function_from_file(obj, filename):
+    """
+    Load a dynamic function from a file and attach it to the obj. (A Network
+    or Trajectory.)
+    
+    The filename must be <function_name>.py
+    """
+    f = file(filename, 'r')
+    function_body = f.read()
+    f.close()
+
+    basename = os.path.basename(filename)
+    func = os.path.splitext(basename)[0]
+    setattr(obj, '%s_functionBody' % func, function_body)
+    Network_mod._exec_dynamic_func(obj, func)
+
+def output_dynamic_functions(obj, directory = SloppyCell._TEMP_DIR):
+    """
+    Output .py files for this objects's dynamic functions into the given
+    directory.
+    """
+    for func in obj._dynamic_funcs:
+        body = getattr(obj, '%s_functionBody' % func, None)
+        if body is not None:
+            f = file(os.path.join(directory, '%s.py' % func), 'w')
+            f.write(getattr(obj, '%s_functionBody' % func))
+            f.close()

@@ -1,5 +1,6 @@
 import scipy
 
+# This specifies the uncertainties assumed.
 sigmaFunc = lambda traj, dataId: 1
 
 def calculatePerfectDataLMHessian(traj, dataIds = None, optIds = None, 
@@ -27,11 +28,10 @@ def calculatePerfectDataLMHessian(traj, dataIds = None, optIds = None,
                                              scaleFactorDerivs[dataId])
 
     LMHessian = scipy.sum(LMHessianDict.values())
-    returns = (LMHessian,)
     if returnDict:
-        returns = returns + (LMHessianDict,)
-
-    return returns
+        return LMHessian, LMHessianDict
+    else:
+        return LMHessian
 
 def computeIntervals(traj):
     # We want to break up our integrals when events fire, so first we figure out
@@ -98,18 +98,19 @@ def calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds):
 def computeLMHessianContribution(traj, dataId, dataSigma, optIds, 
                                  scaleFactorDerivs):
     LMHessian = scipy.zeros((len(optIds), len(optIds)), scipy.Float)
-    for startIndex, endIndex in computeIntervals(traj):
-        k = min(5, endIndex-startIndex - 1)
+    for start, end in computeIntervals(traj):
+        k = min(5, end-start - 1)
         yTCK, sigmaTCK = interpolateInterval(traj, dataId, dataSigma, 
-                                             startIndex, endIndex)
+                                             start, end)
 
         sensTCKs = {}
         for optIndex, optId in enumerate(optIds):
             sens = traj.getVariableTrajectory((dataId, optId))\
-                    [startIndex:endIndex]
-            optValue = traj.constantVarValues.getByKey(optId)
-            sensTCK = scipy.interpolate.splrep(traj.timepoints\
-                                               [startIndex:endIndex], 
+                    [start:end]
+            optValue = abs(traj.get_var_traj(optId)[start:end])
+            # Note that we multiply here by abs(opt) to turn senstivity from
+            #  d/d_opt to d/d_log(abs(opt))
+            sensTCK = scipy.interpolate.splrep(traj.timepoints[start:end], 
                                                sens * optValue,
                                                k = k, s = 0)
             sensTCKs[optId] = sensTCK
@@ -129,13 +130,13 @@ def computeLMHessianContribution(traj, dataId, dataSigma, optIds,
 
                 value, error = scipy.\
                         integrate.quad(integrand, 
-                                       traj.timepoints[startIndex], 
-                                       traj.timepoints[endIndex - 1], 
+                                       traj.timepoints[start], 
+                                       traj.timepoints[end - 1], 
                                        args = (sens1TCK, sens2TCK,
                                                yTCK, sigmaTCK,
                                                scaleFactorDerivs[optId1],
                                                scaleFactorDerivs[optId2]),
-                                       limit = endIndex-startIndex)
+                                       limit = end-start)
 
                 LMHessian[optIndex1][optIndex2] += value
                 if optIndex1 != optIndex2:
@@ -175,5 +176,7 @@ try:
     psyco.bind(_scaleFactorDerivsIntegrand)
     psyco.bind(_integrandFixedSF)
     psyco.bind(_integrandVarSF)
+    psyco.bind(scipy.interpolate.splrep)
+    psyco.bind(scipy.interpolate.splev)
 except ImportError:
     pass

@@ -2,10 +2,9 @@ import os
 import sys
 
 import libsbml
-import Network
-import Reactions
+
+import Network_mod
 import Parsing
-import types
 
 def toSBMLFile(net, fileName):
     sbmlStr = toSBMLString(net)
@@ -40,7 +39,7 @@ def toSBMLString(net):
         ss = libsbml.Species(id)
         ss.setName(s.name)
         ss.setCompartment(s.compartment)
-        if s.initialValue is not None and type(s.initialValue) is not types.StringType:
+        if s.initialValue is not None and not isinstance(s.initialValue, str):
             ss.setInitialConcentration(s.initialValue)
         ss.setBoundaryCondition(s.is_boundary_condition)
         m.addSpecies(ss)
@@ -129,7 +128,7 @@ def fromSBMLString(sbmlStr, id = None):
     elif id is not None:
         modelId = id
         
-    rn = Network.Network(id = modelId, name = m.getName())
+    rn = Network_mod.Network(id = modelId, name = m.getName())
 
     for c in m.getListOfCompartments():
         id, name = c.getId(), c.getName()
@@ -245,8 +244,8 @@ def createNetworkParameter(p):
     v = p.getValue()
     isConstant = p.getConstant()
 
-    parameter = Network.Parameter(id = id, value = v, is_constant = isConstant,
-                                  name = name, typical_value = v, is_optimizable = True)
+    parameter = Network_mod.Parameter(id = id, value = v, is_constant = isConstant,
+                                      name = name, typical_value = None, is_optimizable = True)
 				  # optimizable by default
 
     return parameter

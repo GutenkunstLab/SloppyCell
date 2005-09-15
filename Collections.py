@@ -1,6 +1,7 @@
 import sets, copy
 
-from KeyedList import KeyedList
+import SloppyCell.KeyedList_mod as KeyedList_mod
+KeyedList = KeyedList_mod.KeyedList
 
 class ExperimentCollection(dict):
     """

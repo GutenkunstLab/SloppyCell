@@ -3,8 +3,11 @@ import sets
 import scipy
 from pylab import *
 
-from SloppyCell.Plotting import *
-import Network
+import SloppyCell.Plotting
+ColorWheel = SloppyCell.Plotting.ColorWheel
+plot_eigvals = SloppyCell.Plotting.plot_eigvals
+plot_eigvect = SloppyCell.Plotting.plot_eigvect
+import Network_mod
 
 def PlotEigenvectors(eigVects, net = None, title = None):
     nEv = 3
@@ -366,19 +369,17 @@ def plot_trajectory(traj, vars = None,
     if vars is None:
         vars = traj.dynamicVarKeys
 
-    lines, labels = [], []
-    cW = ColorWheel()
+    plot_funcs_dict = {(False, False): plot,
+                       (True, False): semilogx,
+                       (False, True): semilogy,
+                       (True, True): loglog}
+    plot_func = plot_funcs_dict[(logx, logy)]
+
+    cW = ColorWheel(symbols=None)
     for id in vars:
         fmt = cW.next()
-        if logx:
-            semilogx(traj.timepoints, traj.getVariableTrajectory(id), fmt[::2], 
-                     linewidth=3, label=id)
-        elif logy:
-            semilogy(traj.timepoints, traj.getVariableTrajectory(id), fmt[::2], 
-                     linewidth=3, label=id)
-        else:
-            plot(traj.timepoints, traj.getVariableTrajectory(id), fmt[::2], 
-                 linewidth=3, label=id)
+        plot_func(traj.timepoints, traj.getVariableTrajectory(id), fmt, 
+                  linewidth=3, label=id)
 
     if show_legend:
         legend(loc=loc)

@@ -1,6 +1,6 @@
 import sets
-import symbolic as symbolic
-import Parsing as Parsing
+import symbolic
+import Parsing
 
 class Reaction:
     def __init__(self, id, stoichiometry, kineticLaw = '', name = ''):
