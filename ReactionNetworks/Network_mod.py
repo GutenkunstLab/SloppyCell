@@ -721,7 +721,7 @@ class Network:
                 functionBody += '# Total derivative of %s wrt time\n\t' % (id)
                 functionBody += 'ddv_dt[%i] = %s\n\t' % (ii, rhs)
 
-        functionBody += '\n\n\treturn ddv_dt'
+        functionBody += '\n\n\treturn ddv_dt\n'
 
         symbolic.saveDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
         return functionBody
@@ -747,7 +747,7 @@ class Network:
                     functionBody += 'd2dv_ddvdt[%i, %i] = %s\n\t' % \
                             (wrtIndex, rhsIndex, deriv)
 
-        functionBody += '\n\treturn d2dv_ddvdt'
+        functionBody += '\n\treturn d2dv_ddvdt\n'
 
         symbolic.saveDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
         return functionBody
@@ -777,7 +777,7 @@ class Network:
                 functionBody += 'pass\n\t\t'
             functionBody += '\n\t'
 
-        functionBody += '\n\treturn d2dv_dovdt'
+        functionBody += '\n\treturn d2dv_dovdt\n'
 
         symbolic.saveDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
         return functionBody
@@ -947,7 +947,7 @@ class Network:
                     (ii, event.is_terminal)
             functionBody += 'self._eventDirections[%i] = 1\n\t' % ii
 
-        functionBody += '\n\treturn self._eventValues, self._eventTerminals, self._eventDirections'
+        functionBody += '\n\treturn self._eventValues, self._eventTerminals, self._eventDirections\n'
 
         return functionBody
 
@@ -961,7 +961,7 @@ class Network:
             rhs = self.substituteFunctionDefinitions(event.trigger)
             functionBody += 'self._root_func[%i] = %s\n\t' % (ii, rhs)
 
-        functionBody += '\n\treturn self._root_func'
+        functionBody += '\n\treturn self._root_func\n'
 
         return functionBody
 
@@ -989,7 +989,7 @@ class Network:
             functionBody += 'self._root_func_dt[%i] = %s\n\t'\
                     % (ii, ' + '.join(rhs))
 
-        functionBody += '\n\treturn self._root_func_dt'
+        functionBody += '\n\treturn self._root_func_dt\n'
 
         symbolic.saveDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
 
@@ -1021,7 +1021,7 @@ class Network:
             functionBody += 'self._eventDerivValues[%i] = %s\n\t'\
                     % (ii, rhs)
 
-        functionBody += '\n\treturn self._eventDerivValues'
+        functionBody += '\n\treturn self._eventDerivValues\n'
 
         symbolic.saveDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
 

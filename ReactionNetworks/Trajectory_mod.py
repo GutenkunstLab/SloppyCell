@@ -127,7 +127,7 @@ class Trajectory:
         else:
             functionBody.append('pass')
 
-        return ('%s\t' % os.linesep).join(functionBody)
+        return '\n\t'.join(functionBody) + '\n'
 
     def make__sens_assignment(self, net):
         functionBody = ['def _sens_assignment(self, values, times, start, end):'
@@ -163,8 +163,7 @@ class Trajectory:
         else:
             functionBody.append('pass')
 
-        return ('%s\t' % os.linesep).join(functionBody)
-
+        return '\n\t'.join(functionBody) + '\n'
 
     def appendFromODEINT(self, timepoints, odeint_array):
         if getattr(self, '_assignment', None) is None:
