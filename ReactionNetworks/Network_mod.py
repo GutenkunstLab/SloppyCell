@@ -550,7 +550,8 @@ class Network:
         Set current variable values from a KeyedList or dictionary.
         """
         for id, value in kl.items():
-            self.set_var_val(id, value, time, warn=False)
+            self.set_var_val(id, value, time, warn=False, do_assignments=False)
+        self.updateAssignedVars(time)
 
     def get_var_val(self, id):
         """
@@ -572,7 +573,7 @@ class Network:
         for id, value in kl.items():
             self.set_var_ic(id, value, warn=False)
 
-    def set_var_val(self, id, value, time=0, warn=True):
+    def set_var_val(self, id, value, time=0, warn=True, do_assignments=True):
         """
         Set the current stored value of the variable with the given id.
         """
@@ -581,7 +582,8 @@ class Network:
 
         var = self.variables.get(id)
         var.value = value
-        self.updateAssignedVars(time)
+        if do_assignments:
+            self.updateAssignedVars(time)
 
     def set_var_typical_val(self, id, val):
         """
