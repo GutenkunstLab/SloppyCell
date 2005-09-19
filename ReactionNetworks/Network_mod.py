@@ -492,7 +492,7 @@ class Network:
             var_vals = self.get_var_vals()
             new_locals = dict(var_vals.items())
             new_locals['time'] = time
-            return eval(expr, globals(), var_vals)
+            return eval(expr, globals(), new_locals)
         else:
             return expr
 
