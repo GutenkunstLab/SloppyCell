@@ -487,18 +487,12 @@ class Network:
             # We remove beginning and trailing whitespace, just for convenience
             expr = expr.strip()
             expr = self.substituteFunctionDefinitions(expr)
-            #expr = self.substituteVariableNames(expr)
-            # We substitute float values for all the variable ids in our string
-            variables_used = Parsing.extractVariablesFromString(expr)
-            variables_used.discard('time')
-            while variables_used:
-                for id in variables_used:
-                    mapping = str(self.variables.getByKey(id).value)
-                    expr = Parsing.substituteVariableNamesInString(expr, id, 
-                                                                   mapping) 
-                variables_used = Parsing.extractVariablesFromString(expr)
-                variables_used.discard('time')
-            return eval(expr)
+            # We create a locals dictionary to evaluate the expression in that
+            #  maps variable ids to their current values
+            var_vals = self.get_var_vals()
+            new_locals = dict(var_vals.items())
+            new_locals['time'] = time
+            return eval(expr, globals(), var_vals)
         else:
             return expr
 
@@ -512,17 +506,23 @@ class Network:
             raise ValueError, 'Id %s not found in network.' % id
 
     def set_var_typical_val(self, id, value):
+        """
+        Set the typical value for a variable.
+        """
         var = self.variables.getByKey(id)
         var.typicalValue = value
 
     def get_var_typical_val(self, id):
+        """
+        Return the typical value for a variable.
+        """
         return self._get_var_attr(id, 'typicalValue')
 
-    def set_var_ic(self, id, value):
+    def set_var_ic(self, id, value, warn=True):
         """
         Set the initial condition of the variable with the given id.
         """
-        if id in self.assignedVars.keys():
+        if warn and id in self.assignedVars.keys():
             print 'WARNING! Attempt to assign an initial condition to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the initial condition of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
 
         var = self.variables.getByKey(id)
@@ -533,28 +533,50 @@ class Network:
                                   self.constantVars.values()]
 
     def get_var_ic(self, id):
+        """
+        Return the initial condition for a variable
+        """
         return self._get_var_attr(id, 'initialValue')
 
     def get_var_ics(self):
+        """
+        Return the variable initial conditions as a KeyedList
+        """
         return KeyedList([(id, self.get_var_ic(id)) for id in 
                           self.variables.keys()])
 
-    def set_var_vals(self, kl):
+    def set_var_vals(self, kl, time = 0):
+        """
+        Set current variable values from a KeyedList or dictionary.
+        """
         for id, value in kl.items():
-            self.set_var_val(id, value)
+            self.set_var_val(id, value, time, warn=False)
+
+    def get_var_val(self, id):
+        """
+        Return the current value of a variable
+        """
+        return self._get_var_attr(id, 'value')
+
+    def get_var_vals(self):
+        """
+        Return the current variable values as a KeyedList
+        """
+        return KeyedList([(id, self.get_var_val(id)) for id in 
+                          self.variables.keys()])
 
     def set_var_ics(self, kl):
         """
         Set variable initial conditions from a KeyedList or dictionary.
         """
         for id, value in kl.items():
-            self.set_var_ic(id, value)
+            self.set_var_ic(id, value, warn=False)
 
-    def set_var_val(self, id, value, time=0):
+    def set_var_val(self, id, value, time=0, warn=True):
         """
         Set the current stored value of the variable with the given id.
         """
-        if id in self.assignedVars.keys():
+        if warn and self.assignedVars.has_key(id):
             print 'WARNING! Attempt to assign a value to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the value of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
 
         var = self.variables.get(id)
@@ -588,8 +610,7 @@ class Network:
         else:
             raise ValueError, 'Passed in parameter set does not have the proper length!'
 
-    def getInitialVariableValue(self, id):
-        return self.variables.getByKey(id).initialValue
+    getInitialVariableValue = get_var_ic
 
     def getDynamicVarValues(self):
         return [var.value for var in self.dynamicVars.values()]
