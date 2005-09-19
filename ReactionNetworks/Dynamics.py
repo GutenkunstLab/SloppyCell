@@ -93,7 +93,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=False,
         if getattr(net, 'integrateWithLogs', False):
             IC = scipy.log(IC)
         temp = odeintr(func, copy.copy(IC), curTimes, 
-                       root_func = net.root_func,
+                       root_func = net.root_func, 
                        root_term = [True]*len(net.events),
                        Dfun = Dfun, 
                        mxstep = 10000, rtol = rtol, atol = atol,
@@ -210,11 +210,12 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-6):
         func = net.get_ddv_dt
         nRoots = len(net.events)
         Dfun_temp = lambda y, t: scipy.transpose(net.get_d2dv_ddvdt(y, t))
-        temp = odeintr(func, copy.copy(IC[:nDyn]), 
-                       curTimes, 
+
+        temp = odeintr(func, copy.copy(IC[:nDyn]),
+                       curTimes,
                        root_func = net.root_func,
                        root_term = [True]*nRoots,
-                       Dfun = Dfun_temp, 
+                       Dfun = Dfun_temp,
                        mxstep = 10000, rtol = rtol, atol = atolDv,
                        int_pts = net.add_int_times,
                        insert_events = True,
@@ -222,7 +223,7 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-6):
 
         curTimes = temp[1]
         newSpace = scipy.zeros((len(curTimes), nDyn * (nOpt + 1)), scipy.Float)
-        yout = scipy.concatenate((yout, newSpace)) 
+        yout = scipy.concatenate((yout, newSpace))
         yout[-len(curTimes):, :nDyn] = copy.copy(temp[0][:,:nDyn])
         tout.extend(curTimes)
         te.extend(temp[2])
@@ -292,6 +293,10 @@ def _Ddv_and_DdvDov_dtTrunc_2(sens_y, time, net, ovIndex, tcks):
 
     return D2dv_Dov_dt
 
+def Dfun_sens(sens_y, time, net, ovIndex, tcks):
+    dv_y = [scipy.interpolate.splev(time, tck) for tck in tcks]
+    return scipy.transpose(net.get_d2dv_ddvdt(dv_y,time))
+
 def _D2dv_Dov_dtTrunc(dv, Ddv_Dov, time, net, ovIndex):
     # The partial derivative of the dynamic vars wrt the ovIndex optimizable var
     partials = net.get_d2dv_dovdt(dv, time, indices = [ovIndex])[:, ovIndex]
@@ -329,10 +334,10 @@ def _reduce_times(yout, tout, times):
 
     return yout
 
-def integrate_sensitivity_2(net, times, params=None, rtol = 1e-8):
+def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
     rtol = min(rtol, global_rtol)
     traj, te, ye, ie = integrate(net, times, params, fill_traj=True,
-                                 return_events=True)
+                                 return_events=True, rtol=1e-7)
 
     times = traj.get_times()
     n_dyn, n_opt = len(net.dynamicVars), len(net.optimizableVars)
@@ -360,7 +365,7 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-8):
     pendingEvents = {}
 
     intervals = computeIntervals(traj)
-    dv_typ_vals = [net.get_var_typical_val(dyn_id) for dyn_id 
+    dv_typ_vals = [net.get_var_typical_val(dyn_id) for dyn_id
                    in net.dynamicVars.keys()]
 
     for start_ind, end_ind in intervals:
@@ -375,7 +380,6 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-8):
         curTimes = traj.get_times()[start_ind:end_ind]
 
         k = min(5, end_ind - start_ind - 1)
-        print 'k: %i' % k
         ys = [traj.get_var_traj(dv_id)[start_ind:end_ind] for dv_id
               in net.dynamicVars.keys()]
         tcks = [scipy.interpolate.splrep(curTimes, y, k=k, s=0) for y in ys]
@@ -387,14 +391,15 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-8):
             atol = rtol * scipy.asarray(dv_typ_vals)/\
                     net.get_var_typical_val(opt_id)
 
-            temp2 = odeintr(_Ddv_and_DdvDov_dtTrunc_2,
+            temp = odeintr(_Ddv_and_DdvDov_dtTrunc_2,
                             IC_this, curTimes,
                             args = (net, ov_ind, tcks),
-                            mxstep = 10000, 
+                            Dfun = Dfun_sens,
+                            mxstep = 10000,
                             rtol = rtol, atol = atol)
 
             yout[start_ind:end_ind, (ov_ind + 1) * n_dyn:(ov_ind + 2)*n_dyn] =\
-                    copy.copy(temp2[0])
+                    copy.copy(temp[0])
 
         IC = copy.copy(yout[end_ind - 1])
 
@@ -429,5 +434,6 @@ try:
     psyco.bind(_Ddv_and_DdvDov_dtTrunc)
     psyco.bind(_Ddv_and_DdvDov_dtTrunc_2)
     psyco.bind(SloppyCell.lsodar.odeintr)
+    psyco.bind(Dfun_sens)
 except ImportError:
     pass
