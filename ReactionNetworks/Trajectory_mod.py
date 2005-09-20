@@ -1,17 +1,10 @@
+from __future__ import division
+
 import os
 import copy
 import types
 
 import scipy
-
-# Expose function definitions that SBML wants to see.
-log, log10 = scipy.log, scipy.log10
-exp = scipy.exp
-cos, sin, tan = scipy.cos, scipy.sin, scipy.tan
-acos, asin, atan = scipy.arccos, scipy.arcsin, scipy.arctan
-cosh, sinh, tanh = scipy.cosh, scipy.sinh, scipy.tanh
-arccosh, arcsinh, arctanh = scipy.arccosh, scipy.arcsinh, scipy.arctanh
-exponentiale, pi = scipy.e, scipy.pi
 
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
@@ -22,6 +15,7 @@ class Trajectory:
     _known_structures = []
     _known_function_bodies = []
     _dynamic_funcs = ['_assignment', '_sens_assignment']
+    _common_namespace = Network_mod.Network._common_namespace
 
     def __init__(self, net, key_column=None, is_sens=False):
         if key_column is not None:
@@ -47,6 +41,12 @@ class Trajectory:
         self.typical_var_values = KeyedList([(id, var.typicalValue)
                                              for (id, var)
                                              in net.variables.items()])
+
+        # We make a copy of the Network's namespace.
+        self._func_strs = copy.copy(net._func_strs)
+        self.namespace = copy.copy(self._common_namespace)
+        for func_id, func_str in self._func_strs:
+            self.namespace[func_id] = eval(func_str, self.namespace, {})
 
         # To avoid generating our function bodies every Trajectory creation, we
         #  keep a list of known structures in the class itself.
@@ -121,8 +121,9 @@ class Trajectory:
         if len(net.assignmentRules) > 0:
             for id, rule in net.assignmentRules.items():
                 lhs = self._sub_var_names(id)
-                rhs = net.substituteFunctionDefinitions(rule)
-                rhs = self._sub_var_names(rhs)
+                #rhs = net.substituteFunctionDefinitions(rule)
+                rhs = self._sub_var_names(rule)
+                functionBody.append('# Assignment rule %s = %s' % (id, rule))
                 functionBody.append('%s = %s' % (lhs, rhs))
         else:
             functionBody.append('pass')
@@ -135,7 +136,7 @@ class Trajectory:
 
         if len(net.assignmentRules) > 0:
 	    for id, rule in net.assignmentRules.items():
-                rule = net.substituteFunctionDefinitions(rule)
+                #rule = net.substituteFunctionDefinitions(rule)
                 derivWRTdv = {}
                 for wrtId in net.dynamicVars.keys():
                     deriv = net.takeDerivative(rule, wrtId)
@@ -167,7 +168,8 @@ class Trajectory:
 
     def appendFromODEINT(self, timepoints, odeint_array):
         if getattr(self, '_assignment', None) is None:
-            Network_mod._exec_dynamic_func(self, '_assignment')
+            Network_mod._exec_dynamic_func(self, '_assignment', 
+                                           self.namespace)
 
         numAdded = odeint_array.shape[0]
         addedValues = scipy.zeros((numAdded, len(self.key_column)), 
@@ -184,10 +186,12 @@ class Trajectory:
 
     def appendSensFromODEINT(self, timepoints, odeint_array):
         if getattr(self, '_assignment', None) is None:
-            Network_mod._exec_dynamic_func(self, '_assignment')
+            Network_mod._exec_dynamic_func(self, '_assignment',
+                                           self.namespace)
 
         if getattr(self, '_sens_assignment', None) is None:
-            Network_mod._exec_dynamic_func(self, '_sens_assignment')
+            Network_mod._exec_dynamic_func(self, '_sens_assignment',
+                                           self.namespace)
 
         numAdded = odeint_array.shape[0]
         addedValues = scipy.zeros((numAdded, len(self.key_column)), 
@@ -216,7 +220,15 @@ class Trajectory:
         odict = copy.copy(self.__dict__)
         odict['_assignment'] = None
         odict['_sens_assignment'] = None
+        odict['namespace'] = None
         return odict
+
+    def __setstate__(self, newdict):
+        self.__dict__.update(newdict)
+        # Remake our namespace
+        self.namespace = copy.copy(self._common_namespace)
+        for func_id, func_str in self._func_strs:
+            self.namespace[func_id] = eval(func_str, self.namespace, {})
 
     def _sub_var_names(self, input):
 	for id in Parsing.extractVariablesFromString(input):

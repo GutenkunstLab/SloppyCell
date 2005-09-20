@@ -175,9 +175,8 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-6):
     # Handle sensitivities of initial conditions
     for dvInd, (id, var) in enumerate(net.dynamicVars.items()):
 	if isinstance(var.initialValue, str):
-            rule = net.substituteFunctionDefinitions(var.initialValue)
             for ovInd, ovName in enumerate(net.optimizableVars.keys()) :
-                DwrtOV = net.takeDerivative(rule, ovName)
+                DwrtOV = net.takeDerivative(var.initialValue, ovName)
                 IC[nDyn*(ovInd+1) + dvInd] = net.evaluate_expr(DwrtOV,
                                                                time=start)
 
@@ -353,9 +352,8 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
     for dvInd, id in enumerate(net.dynamicVars.keys()):
         init_val = net.get_var_ic(id)
 	if isinstance(init_val, str):
-            rule = net.substituteFunctionDefinitions(init_val)
             for ovInd, ovName in enumerate(net.optimizableVars.keys()) :
-                DwrtOV = net.takeDerivative(rule, ovName)
+                DwrtOV = net.takeDerivative(init_val, ovName)
                 IC[n_dyn*(ovInd+1) + dvInd] = net.evaluate_expr(DwrtOV,
                                                                time=start)
 

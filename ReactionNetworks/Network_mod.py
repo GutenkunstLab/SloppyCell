@@ -20,6 +20,10 @@ KeyedList = SloppyCell.KeyedList_mod.KeyedList
 import symbolic
 # We load a dictionary of previously-taken derivatives for efficiency
 symbolic.loadDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
+# This will save the diffs dictionary upon exit from the python interpreter
+import atexit
+atexit.register(symbolic.saveDiffs, os.path.join(SloppyCell._TEMP_DIR, 
+                                                 'diff.pickle'))
 
 import Integration
 import Parsing
@@ -30,14 +34,14 @@ import matplotlib.mlab as mlab
 from Components import *
 import Trajectory_mod
 
-# Expose function definitions that SBML wants to see.
-log, log10 = scipy.log, scipy.log10
-exp = scipy.exp
-cos, sin, tan = scipy.cos, scipy.sin, scipy.tan
-acos, asin, atan = scipy.arccos, scipy.arcsin, scipy.arctan
-cosh, sinh, tanh = scipy.cosh, scipy.sinh, scipy.tanh
-arccosh, arcsinh, arctanh = scipy.arccosh, scipy.arcsinh, scipy.arctanh
-exponentiale, pi = scipy.e, scipy.pi
+## Expose function definitions that SBML wants to see.
+#log, log10 = scipy.log, scipy.log10
+#exp = scipy.exp
+#cos, sin, tan = scipy.cos, scipy.sin, scipy.tan
+#acos, asin, atan = scipy.arccos, scipy.arcsin, scipy.arctan
+#cosh, sinh, tanh = scipy.cosh, scipy.sinh, scipy.tanh
+#arccosh, arcsinh, arctanh = scipy.arccosh, scipy.arcsinh, scipy.arctanh
+#exponentiale, pi = scipy.e, scipy.pi
 
 # Optional since it's x86-only.
 try:
@@ -56,12 +60,67 @@ class Network:
     # Here are all the functions we dynamically generate. To add a new one,
     #  called, for example, fooFunc, you need to define _make_fooFunc, which
     #  generates the python code for the function in fooFunc_functionBody.
-
     _dynamic_structure_funcs = ['get_ddv_dt', 'get_d2dv_ddvdt', 
                                 'get_d2dv_dovdt']
     _dynamic_event_funcs = ['get_eventValues', 'get_eventDerivs', 
                             'root_func', 'root_func_dt']
     _dynamic_funcs = _dynamic_structure_funcs + _dynamic_event_funcs
+
+    
+    # These are-predefined functions we want in our working namespace
+    _common_namespace = {'log': scipy.log,
+                         'log10': scipy.log10,
+                         'exp': scipy.exp,
+                         'cos': scipy.cos,
+                         'sin': scipy.sin,
+                         'tan': scipy.tan,
+                         'acos': scipy.arccos,
+                         'asin': scipy.arcsin,
+                         'atan': scipy.arctan,
+                         'cosh': scipy.cosh,
+                         'sinh': scipy.sinh,
+                         'tanh': scipy.tanh,
+                         'arccosh': scipy.arccosh,
+                         'arcsinh': scipy.arcsinh,
+                         'arctanh': scipy.arctanh,
+                         'exponentiale': scipy.e,
+                         'pi': scipy.pi,
+                         }
+    # These are functions we need to create but that should be used commonly
+    _standard_func_defs = [('gt', ['x', 'y'],  'x - y'),
+                         ('geq', ['x', 'y'],  'x - y'),
+                         ('lt', ['x', 'y'],  'y - x'),
+                         ('leq', ['x', 'y'],  'y - x'),
+                         ('pow', ['x', 'n'],  'x**n'),
+                         ('root', ['n', 'x'],  'x**(1/n)'),
+                         ('sqrt', ['x'],  'x**(.5)'),
+                         ('cot', ['x'],  '1/tan(x)'),
+                         ('arccot', ['x'],  'atan(1/x)'),
+                         ('coth', ['x'],  '1/tanh(x)'),
+                         ('arccoth', ['x'],  'arctanh(1/x)'),
+                         ('csc', ['x'],  '1/sin(x)'),
+                         ('arccsc', ['x'],  'asin(1/x)'),
+                         ('csch', ['x'],  '1/sinh(x)'),
+                         ('arccsch', ['x'],  'arcsinh(1/x)'),
+                         ('sec', ['x'],  '1/cos(x)'),
+                         ('arcsec', ['x'],  'acos(1/x)'),
+                         ('sech', ['x'],  '1/cosh(x)'),
+                         ('arcsech', ['x'],  'arccosh(1/x)'),
+                         # This atrocious two-argument form of log is
+                         #  used in the SBML test suite. Supporting it
+                         #  might be a pain.
+                         #('log', ['b','x'], 'log(x)/log(b)')
+                         ]
+    # Add our common function definitions to a func_strs list.
+    _common_func_strs = []
+    for id, vars, math in _standard_func_defs:
+        var_str = ','.join(vars)
+        func = 'lambda %s: %s' % (var_str, math)
+        _common_func_strs.append((id, func))
+        for ii, wrt in enumerate(vars):
+            deriv_id = '%s_%i' % (id, ii)
+            func = 'lambda %s: %s' % (var_str, symbolic.Diff(math, wrt))
+            _common_func_strs.append((deriv_id, func))
 
     def __init__(self, id, name=''):
         self.id, self.name = id, name
@@ -93,8 +152,16 @@ class Network:
         self.complexEvents = KeyedList()
         self.timeTriggeredEvents = KeyedList()
 
-        # Add in the function definitions I've seen so far in SBML
-        self._addStandardFunctionDefinitions()
+        # All expressions are evaluated, and functions exec'd in self.namespace.
+        #  (A dictionary mapping names to objects they represent)
+        self.namespace = copy.copy(self._common_namespace)
+
+        # These are the strings we eval to create the functions our Network
+        #  defines. We'll evaluate them all to start with, to get the common
+        #  ones in there.
+        self._func_strs = copy.copy(self._common_func_strs)
+        for func_id, func_str in self._func_strs:
+            self.namespace[func_id] = eval(func_str, self.namespace, {})
 
         # Should we get sensitivities via finite differences? (Faster, but less
         #  accurate.)
@@ -211,6 +278,18 @@ class Network:
         func = FunctionDefinition(id, variables, math, name)
         self._checkIdUniqueness(func.id)
         self.functionDefinitions.set(func.id, func)
+
+        # Add the function and its partial derivatives to func_strs
+        # Also do the evaluation
+        var_str = ','.join(variables)
+        func_str = 'lambda %s: %s' % (var_str, math)
+        self._func_strs.append((id, func_str))
+        self.namespace[id] = eval(func_str, self.namespace)
+        for ii, wrt in enumerate(variables):
+            diff_id = '%s_%i' % (id, ii)
+            func_str = 'lambda %s: %s' % (var_str, symbolic.Diff(math, wrt))
+            self._func_strs.append((diff_id, func_str))
+            self.namespace[diff_id] = eval(func_str, self.namespace)
 
     def addReaction(self, id, *args, **kwargs):
         # Reactions can be added by (1) passing in a string representing
@@ -484,15 +563,14 @@ class Network:
         variables.
         """
         if isinstance(expr, str):
-            # We remove beginning and trailing whitespace, just for convenience
-            expr = expr.strip()
-            expr = self.substituteFunctionDefinitions(expr)
-            # We create a locals dictionary to evaluate the expression in that
+            # We create a local_namespace to evaluate the expression in that
             #  maps variable ids to their current values
             var_vals = self.get_var_vals()
-            new_locals = dict(var_vals.items())
-            new_locals['time'] = time
-            return eval(expr, globals(), new_locals)
+            local_namespace = dict(var_vals.items())
+            local_namespace['time'] = time
+            local_namespace.update(self.namespace)
+            # We strip whitespace, just for convenience
+            return eval(expr.strip(), local_namespace, {})
         else:
             return expr
 
@@ -740,13 +818,11 @@ class Network:
         for ii, (id, var) in enumerate(self.dynamicVars.items()):
             rhs = self.diff_eq_rhs.getByKey(id)
             if rhs != '0':
-                rhs = self.substituteFunctionDefinitions(rhs)
                 functionBody += '# Total derivative of %s wrt time\n\t' % (id)
                 functionBody += 'ddv_dt[%i] = %s\n\t' % (ii, rhs)
 
         functionBody += '\n\n\treturn ddv_dt\n'
 
-        symbolic.saveDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
         return functionBody
 
     def _make_get_d2dv_ddvdt(self):
@@ -760,7 +836,6 @@ class Network:
 
         for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
             rhs = self.diff_eq_rhs.getByKey(rhsId)
-            rhs = self.substituteFunctionDefinitions(rhs)
             # Take all derivatives of the rhs with respect to other 
             #  dynamic variables
             for wrtIndex, wrtId in enumerate(self.dynamicVars.keys()):
@@ -772,7 +847,6 @@ class Network:
 
         functionBody += '\n\treturn d2dv_ddvdt\n'
 
-        symbolic.saveDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
         return functionBody
 
     def _make_get_d2dv_dovdt(self):
@@ -789,7 +863,6 @@ class Network:
             derivWritten = False
             for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
                 rhs = self.diff_eq_rhs.getByKey(rhsId)
-                rhs = self.substituteFunctionDefinitions(rhs)
                 deriv = self.takeDerivative(rhs, wrtId)
                 if deriv != '0':
                     functionBody += '# Partial derivative of Ddv_Dt for %s wrt %s\n\t\t' % (rhsId, wrtId)
@@ -802,7 +875,6 @@ class Network:
 
         functionBody += '\n\treturn d2dv_dovdt\n'
 
-        symbolic.saveDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
         return functionBody
 
 
@@ -850,7 +922,6 @@ class Network:
             event.new_values[executionTime][lhsId] = newVal
             new_values[lhsIndex] = newVal
 
-        trigger = self.substituteFunctionDefinitions(event.trigger)
         # Compute the derivatives of our firing times wrt all our variables
         # dTf_dov = -(sum_dv dTrigger_ddv ddv_dov - dTrigger_dov)/(sum_dv dTrigger_ddv ddv_dt)
         # XXX: Handle trigger has explicit time dependence.
@@ -888,7 +959,6 @@ class Network:
             # Everything below should work if the rhs is a constant, as long
             #  as we convert it to a string first.
             rhs = str(rhs)
-            rhs = self.substituteFunctionDefinitions(rhs)
 
             drhs_ddvValue = {}
             for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
@@ -964,8 +1034,8 @@ class Network:
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
 
         for ii, event in enumerate(self.complexEvents.values()):
-            rhs = self.substituteFunctionDefinitions(event.trigger)
-            functionBody += 'self._eventValues[%i] = %s\n\t' % (ii, rhs)
+            functionBody += 'self._eventValues[%i] = %s\n\t' % (ii, 
+                                                                event.trigger)
             functionBody += 'self._eventTerminals[%i] = %s\n\t' % \
                     (ii, event.is_terminal)
             functionBody += 'self._eventDirections[%i] = 1\n\t' % ii
@@ -981,8 +1051,7 @@ class Network:
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
 
         for ii, event in enumerate(self.events.values()):
-            rhs = self.substituteFunctionDefinitions(event.trigger)
-            functionBody += 'self._root_func[%i] = %s\n\t' % (ii, rhs)
+            functionBody += 'self._root_func[%i] = %s\n\t' % (ii, event.trigger)
 
         functionBody += '\n\treturn self._root_func\n'
 
@@ -995,7 +1064,7 @@ class Network:
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
 
         for ii, event in enumerate(self.events.values()):
-            trigger = self.substituteFunctionDefinitions(event.trigger)
+            trigger = event.trigger
             rhs = []
             for id in self.diff_eq_rhs.keys():
                 # We use the chain rule to get derivatives wrt time.
@@ -1014,8 +1083,6 @@ class Network:
 
         functionBody += '\n\treturn self._root_func_dt\n'
 
-        symbolic.saveDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
-
         return functionBody
 
     def _make_get_eventDerivs(self):
@@ -1026,7 +1093,7 @@ class Network:
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
 
         for ii, event in enumerate(self.complexEvents.values()):
-            trigger = self.substituteFunctionDefinitions(event.trigger)
+            trigger = event.trigger
             rhs = ''
             for id in self.diff_eq_rhs.keys():
                 # We use the chain rule to get derivatives wrt time.
@@ -1045,8 +1112,6 @@ class Network:
                     % (ii, rhs)
 
         functionBody += '\n\treturn self._eventDerivValues\n'
-
-        symbolic.saveDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
 
         return functionBody
 
@@ -1102,21 +1167,33 @@ class Network:
         # If the structure of our network has changed, remake all the dynamic
         #  functions
         # Note that this runs at least once, since _last_structure doesn't
-        #  exist beforehand.
+        #  exist beforehand. Also note that __setstate__ will exec all our
+        #  dynamic functions upon copying.
+        if self.functionDefinitions != getattr(self, '_last_funcDefs', None):
+            # Eval our function definitions. Note that these need to be done
+            #  in order, and at each point we need to refer back to 
+            #  self.namespace, so that, for example, if f(x) = 1  + g(x)
+            #  the evaluation of f has the definition of g.
+            self.namespace = copy.copy(self._common_namespace)
+            for func_id, func_str in self._func_strs:
+                self.namespace[func_id] = eval(func_str, self.namespace, {})
+            self._last_funcDefs = copy.deepcopy(self.functionDefinitions)
+
         curr_structure = self._get_structure()
         if curr_structure != getattr(self, '_last_structure', None):
             self._makeCrossReferences()
             self._makeDiffEqRHS()
             for func in self._dynamic_structure_funcs:
                 exec 'self.%s_functionBody = self._make_%s()' % (func, func)
-                _exec_dynamic_func(self, func)
+                _exec_dynamic_func(self, func, self.namespace)
             self._last_structure = copy.deepcopy(curr_structure)
 
         if self.events != getattr(self, '_last_events', None):
             for func in self._dynamic_event_funcs:
                 exec 'self.%s_functionBody = self._make_%s()' % (func, func)
-                _exec_dynamic_func(self, func)
+                _exec_dynamic_func(self, func, self.namespace)
             self._last_events = copy.deepcopy(self.events)
+
 
     def _get_structure(self):
         """
@@ -1145,8 +1222,7 @@ class Network:
             functionBody += '%s = dynamicVars[%i]\n\t' % (id, ii)
 
         for variable, math in self.assignmentRules.items():
-            rhs = self.substituteFunctionDefinitions(math)
-            functionBody += variable + ' = ' + rhs + '\n\t'
+            functionBody += '%s = %s\n\t' % (variable, math)
 
         return functionBody
 
@@ -1165,44 +1241,12 @@ class Network:
         # Do the chain rule for those variables
         for id in assigned_used:
             rule = self.assignmentRules.getByKey(id)
-            rule = self.substituteFunctionDefinitions(rule)
             d2 = self.takeDerivative(rule, wrt)
             if d2 != '0':
                 d = symbolic.Diff(input, id)
                 output += ' + %s *(%s)' % (d, d2)
 
         return output
-
-    def substituteFunctionDefinitions(self, input):
-        # extractFunctionsFromString returns a set of tuples of the form
-        #  (function name, # of arguments)
-        # _standardFuncDefs is keyed by tuples like this, but
-        # functionDefinitions is just keyed by function name
-        reversedFunctions = [((fd.id, len(fd.variables)), fd) for fd in\
-                             self.functionDefinitions.values()]
-        reversedFunctions.reverse()
-        functionsUsed = Parsing.extractFunctionsFromString(input)
-        for (id, numvars), function in reversedFunctions:
-            if (id, numvars) in functionsUsed:
-                input = Parsing.substituteFunctionIntoString(input, id, 
-                                                             function.variables,
-                                                             function.math)
-                functionsUsed = Parsing.extractFunctionsFromString(input)
-
-        standardIds = sets.Set(self._standardFuncDefs.keys())
-        standardUsed = standardIds.intersection(functionsUsed)
-        while len(standardUsed) > 0:
-            for tup in standardUsed:
-                function = self._standardFuncDefs.getByKey(tup)
-                input = Parsing.substituteFunctionIntoString(input, function.id,
-                                                             function.variables,
-                                                             function.math)
-
-            functionsUsed = Parsing.extractFunctionsFromString(input)
-            standardUsed = standardIds.intersection(functionsUsed)
-
-
-        return input
 
     def copy(self, new_id=None, new_name=None):
         """
@@ -1217,54 +1261,30 @@ class Network:
         return new_net
 
     def __getstate__(self):
+        # deepcopy automatically does a deepcopy of whatever we return
+        #  here, so we only need to do a shallow copy and remove functions 
         odict = copy.copy(self.__dict__)
 
         for func in self._dynamic_structure_funcs + self._dynamic_event_funcs:
             odict[func] = None
+        odict['namespace'] = None
 
         return odict
 
     def __setstate__(self, newdict):
         self.__dict__.update(newdict)
         self._makeCrossReferences()
-        # We exec all our functions, so we're ready to go.
+
+        # Recreate our namespace
+        self.namespace = copy.copy(self._common_namespace)
+        for func_id, func_str in self._func_strs:
+            self.namespace[func_id] = eval(func_str, self.namespace, {})
+        # exec all our functions
         for func in self._dynamic_funcs:
             try:
-                _exec_dynamic_func(self, func)
+                _exec_dynamic_func(self, func, self.namespace)
             except AttributeError:
                 pass
-
-
-    def _addStandardFunctionDefinitions(self):
-        standardFuncDefs = [
-                            ('gt', ['x', 'y'],  'x - y'),
-                            ('geq', ['x', 'y'],  'x - y'),
-                            ('lt', ['x', 'y'],  'y - x'),
-                            ('leq', ['x', 'y'],  'y - x'),
-                            ('pow', ['x', 'n'],  'x**n'),
-                            ('root', ['n', 'x'],  'x**(1./n)'),
-                            ('sqrt', ['x'],  'x**(.5)'),
-                            ('cot', ['x'],  '1./tan(x)'),
-                            ('arccot', ['x'],  'atan(1./x)'),
-                            ('coth', ['x'],  '1./tanh(x)'),
-                            ('arccoth', ['x'],  'arctanh(1./x)'),
-                            ('csc', ['x'],  '1./sin(x)'),
-                            ('arccsc', ['x'],  'asin(1./x)'),
-                            ('csch', ['x'],  '1./sinh(x)'),
-                            ('arccsch', ['x'],  'arcsinh(1./x)'),
-                            ('sec', ['x'],  '1./cos(x)'),
-                            ('arcsec', ['x'],  'acos(1./x)'),
-                            ('sech', ['x'],  '1./cosh(x)'),
-                            ('arcsech', ['x'],  'arccosh(1./x)'),
-                            ('log', ['b','x'], 'log(x)/log(b)')
-                            ]
-
-        self._standardFuncDefs = KeyedList()
-        for id, vars, math in standardFuncDefs:
-            function = FunctionDefinition(id, vars, math)
-            self._checkIdUniqueness(function.id)
-            self._standardFuncDefs.set((function.id, 
-                                        len(function.variables)), function)
 
 
     def get_component_name(self, id, TeX_form=False):
@@ -1348,12 +1368,14 @@ class Network:
     addFunctionDefinition = add_func_def
     addAssignmentRule = add_assignment_rule
 
-def _exec_dynamic_func(obj, func):
+def _exec_dynamic_func(obj, func, in_namespace={}):
     """
     Create the executable function corresponding to func's functionBody.
     """
     function_body = getattr(obj, '%s_functionBody' % func)
-    exec function_body
+    # This exec gives the function access to everything defined in in_namespace
+    #  and inserts the result into the locals namespace
+    exec function_body in in_namespace, locals()
     # The call to types.MethodType ensures that we can call the function
     #  as obj.f(...) and get the implicit 'self' argument.
     # locals()[func] just gets the actual function object the exec created.
