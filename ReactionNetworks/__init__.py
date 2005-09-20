@@ -17,7 +17,12 @@ except ImportError:
     pass
 
 import IO
-import Plotting
+
+try:
+    import Plotting
+except ImportError:
+    pass
+
 import Reactions
 import PerfectData
 
