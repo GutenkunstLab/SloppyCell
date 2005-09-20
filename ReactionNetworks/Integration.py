@@ -166,14 +166,10 @@ def Integrate_Ddv_Dov(net, timepoints, rtol = None):
     dvInd = 0
     for id, var in net.dynamicVars.items():
 	if type(var.initialValue) == types.StringType:
-		rule = net.substituteFunctionDefinitions(var.initialValue)
 		for ovInd,ovName in enumerate(net.optimizableVars.keys()) :
-			DwrtOV = net.takeDerivative(rule, ovName)
-			if DwrtOV != '0' :
-				DwrtOV = net.substituteFunctionDefinitions(DwrtOV)
-				DwrtOV = net.substituteVariableNames(DwrtOV)
-				#DwrtOV = DwrtOV.replace('self','net')
-				IC[nDyn*(ovInd+1) + dvInd] = eval(DwrtOV)
+			DwrtOV = net.takeDerivative(var.initialValue, ovName)
+                        IC[nDyn*(ovInd+1) + dvInd] = net.evaluate_expr(DwrtOV,
+                                                                       time = start)
 	dvInd = dvInd + 1
 
     IC[:nDyn] = net.getDynamicVarValues()
