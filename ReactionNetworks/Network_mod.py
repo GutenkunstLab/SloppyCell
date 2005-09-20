@@ -1318,6 +1318,22 @@ class Network:
 
         return name
 
+    def get_eqn_structure(self):
+        out = {}
+        out['odes'] = dict(self.diff_eq_rhs.items())
+        out['functions'] = {}
+        for func_id, func_def in self.functionDefinitions.items():
+            vars = ', '.join(func_def.variables)
+            out['functions']['%s(%s)' % (func_id, vars)] = func_def.math
+        out['parameters'] = dict([(id, var.value) for (id, var) 
+                                  in self.constantVars.items()])
+        out['assignments'] = dict(self.assignmentRules.items())
+        out['events'] = dict([(event.trigger, event.event_assignments)
+                              for event in self.events])
+
+        return out
+
+
     # Deprecated functions below.
 
     def addCompartment(self, id, size=1.0, name='', 
