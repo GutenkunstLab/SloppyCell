@@ -288,7 +288,7 @@ def odeintr(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0, ml=0, m
                 tindex += 1
                     
             # If we reached a critical point, move to the next
-            if itask == 4 or itask == 5 and treached == tcrit[tcrit_ii]:
+            if (itask == 4 or itask == 5) and treached == tcrit[tcrit_ii]:
                 tcrit_ii += 1
                 # If we're out of critical points, drop back to normal 
                 #  integration mode
