@@ -390,11 +390,12 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
                     net.get_var_typical_val(opt_id)
 
             temp = odeintr(_Ddv_and_DdvDov_dtTrunc_2,
-                            IC_this, curTimes,
-                            args = (net, ov_ind, tcks),
-                            Dfun = Dfun_sens,
-                            mxstep = 10000,
-                            rtol = rtol, atol = atol)
+                           IC_this, curTimes,
+                           args = (net, ov_ind, tcks),
+                           Dfun = Dfun_sens,
+                           mxstep = 10000,
+                           rtol = rtol, atol = atol,
+                           tcrit = (times[-1],))
 
             yout[start_ind:end_ind, (ov_ind + 1) * n_dyn:(ov_ind + 2)*n_dyn] =\
                     copy.copy(temp[0])
