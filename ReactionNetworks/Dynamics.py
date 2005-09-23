@@ -53,7 +53,10 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=False,
     #  of fired events
     te, ye, ie = [], [], []
     pendingEvents = {}
-    root_grace_t = (times[-1] - times[0])/1e10
+    # After firing an event, we integrate for root_grace_t without looking for
+    #  events to prevent finding the same one over and over again due to 
+    #  numerical imprecision
+    root_grace_t = (times[-1] - times[0])/1e6
     event_just_fired = False
 
     while start < times[-1]:
@@ -72,11 +75,13 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=False,
                            int_pts = fill_traj,
                            full_output = True)
 
+            # We don't append the last point, to prevent a needless 'event 
+            #  looking' duplication of times in the trajectory.
             if getattr(net, 'integrateWithLogs', False):
-                yout = scipy.concatenate((yout, scipy.exp(temp[0])))
+                yout = scipy.concatenate((yout, scipy.exp(temp[0:-1])))
             else:
-                yout = scipy.concatenate((yout, temp[0]))
-            tout.extend(temp[1])
+                yout = scipy.concatenate((yout, temp[0:-1]))
+            tout.extend(temp[1:-1])
             start, IC = tout[-1], copy.copy(yout[-1])
             event_just_fired = False
 
