@@ -3,6 +3,24 @@ SloppyCell Changelog
 
 .. topic:: In CVS
 
+  - Cleaner expression manipulation (rng7)
+
+    Switched to manipulating string expressions using the compiler module's
+    AST, rather than the parsing modules. The resulting code is much, much more
+    readable.
+
+  - Namespaces (rng7)
+
+    Rather than doing text substitutions to evaluate expressions, both
+    Networks and Trajectories keep a namespace dictionary of functions. This
+    greatly simplifies the code, and speeds things up.
+
+  - Faster expression evaluation (rng7)
+
+    Expression are now evaluated in Network using a local dictionary rather
+    than substituting into the string representation. This is much cleaner
+    and faster.
+
   - Clean up of dynamic functions (rng7)
     
     Dyanmic function code is now much cleaner. Explicit calls to net.compile()

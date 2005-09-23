@@ -1,7 +1,6 @@
 import sets
 
-import symbolic
-import Parsing
+import SloppyCell.ExprManip as ExprManip
 
 #
 # Containers for the more complex SBML entities.
@@ -90,11 +89,11 @@ class Event:
 
         self.trigger = trigger
 
-        ast = symbolic.string2ast(trigger)
-        if Parsing.extractVariablesFromAST(ast) == sets.Set(['time']):
+        if ExprManip.extract_vars(trigger) == sets.Set(['time']):
             self.timeTriggered = True
-            firstArg = symbolic.ast2string(ast[2][2][1])
-            secondArg = symbolic.ast2string(ast[2][2][3])
+            ast = ExprManip.AST.strip_parse(trigger)
+            firstArg = ExprManip.AST.ast2str(ast.args[0])
+            secondArg = ExprManip.AST.ast2str(ast.args[1])
 
             if firstArg == 'time':
                 self.triggeringTime = eval(secondArg)

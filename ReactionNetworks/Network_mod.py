@@ -16,32 +16,21 @@ import SloppyCell
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
 
-# This is the symbolic differentiation library
-import symbolic
+import SloppyCell.ExprManip as ExprManip
 # We load a dictionary of previously-taken derivatives for efficiency
-symbolic.loadDiffs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
+ExprManip.load_derivs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
 # This will save the diffs dictionary upon exit from the python interpreter
 import atexit
-atexit.register(symbolic.saveDiffs, os.path.join(SloppyCell._TEMP_DIR, 
-                                                 'diff.pickle'))
+atexit.register(ExprManip.save_derivs, os.path.join(SloppyCell._TEMP_DIR, 
+                                                    'diff.pickle'))
 
 import Integration
-import Parsing
 import Reactions
 import SloppyCell.Collections as Collections
 import matplotlib.mlab as mlab
 
 from Components import *
 import Trajectory_mod
-
-## Expose function definitions that SBML wants to see.
-#log, log10 = scipy.log, scipy.log10
-#exp = scipy.exp
-#cos, sin, tan = scipy.cos, scipy.sin, scipy.tan
-#acos, asin, atan = scipy.arccos, scipy.arcsin, scipy.arctan
-#cosh, sinh, tanh = scipy.cosh, scipy.sinh, scipy.tanh
-#arccosh, arcsinh, arctanh = scipy.arccosh, scipy.arcsinh, scipy.arctanh
-#exponentiale, pi = scipy.e, scipy.pi
 
 # Optional since it's x86-only.
 try:
@@ -119,7 +108,7 @@ class Network:
         _common_func_strs.append((id, func))
         for ii, wrt in enumerate(vars):
             deriv_id = '%s_%i' % (id, ii)
-            func = 'lambda %s: %s' % (var_str, symbolic.Diff(math, wrt))
+            func = 'lambda %s: %s' % (var_str, ExprManip.diff_expr(math, wrt))
             _common_func_strs.append((deriv_id, func))
 
     def __init__(self, id, name=''):
@@ -287,7 +276,7 @@ class Network:
         self.namespace[id] = eval(func_str, self.namespace)
         for ii, wrt in enumerate(variables):
             diff_id = '%s_%i' % (id, ii)
-            func_str = 'lambda %s: %s' % (var_str, symbolic.Diff(math, wrt))
+            func_str = 'lambda %s: %s' % (var_str, ExprManip.diff_expr(math, wrt))
             self._func_strs.append((diff_id, func_str))
             self.namespace[diff_id] = eval(func_str, self.namespace)
 
@@ -635,7 +624,8 @@ class Network:
         """
         Return the current value of a variable
         """
-        return self._get_var_attr(id, 'value')
+        val = self._get_var_attr(id, 'value')
+        return self.evaluate_expr(val)
 
     def get_var_vals(self):
         """
@@ -651,7 +641,7 @@ class Network:
         for id, value in kl.items():
             self.set_var_ic(id, value, warn=False)
 
-    def set_var_val(self, id, value, time=0, warn=True, do_assignments=True):
+    def set_var_val(self, id, val, time=0, warn=True, do_assignments=True):
         """
         Set the current stored value of the variable with the given id.
         """
@@ -659,7 +649,7 @@ class Network:
             print 'WARNING! Attempt to assign a value to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the value of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
 
         var = self.variables.get(id)
-        var.value = value
+        var.value = val
         if do_assignments:
             self.updateAssignedVars(time)
 
@@ -667,7 +657,7 @@ class Network:
         """
         Set the typical value of the variable with the given id.
         """
-        self.variables.getByKey(id).typicalValue = value
+        self.variables.getByKey(id).typicalValue = val
 
     setTypicalVariableValue = set_var_typical_val
 
@@ -740,11 +730,9 @@ class Network:
     #
 
     def _makeDiffEqRHS(self):
-        # Start with all right-hand-sides set to '0'
-        self.diff_eq_rhs = KeyedList([(id, '0') for id
-                                    in self.dynamicVars.keys()])
+        diff_eq_terms = {}
 
-        for id, rxn in self.reactions.items():
+        for rnx_id, rxn in self.reactions.items():
             rateExpr = rxn.kineticLaw
 
 	    for reactantId, dReactant in rxn.stoichiometry.items():
@@ -756,35 +744,18 @@ class Network:
                     #  to the next.
                     continue
 
-                reactantIndex = self.dynamicVars.indexByKey(reactantId)
-                if (type(dReactant) == types.IntType
-                    or type(dReactant) == types.FloatType)\
-                   and dReactant != 0:
-                    if dReactant == 1:
-                        self.diff_eq_rhs[reactantIndex] += \
-                                ' + ( %s )' % rateExpr
-                    elif dReactant == -1:
-                        self.diff_eq_rhs[reactantIndex] += \
-                                ' - ( %s )' % rateExpr
-                    else:
-                        self.diff_eq_rhs[reactantIndex] += ' + %f * ( %s )'\
-                                % (dReactant, rateExpr)
+                term = '(%s) * (%s)'  % (dReactant, rateExpr)
+                diff_eq_terms.setdefault(reactantId, [])
+                diff_eq_terms[reactantId].append(term)
 
-                elif type(dReactant) == types.StringType:
-                    self.diff_eq_rhs[reactantIndex] += ' + ( %s ) * ( %s )'\
-                            % (dReactant, rateExpr)
-
-        # Strip off the initial '0 +/- '
-        for id, rhs in self.diff_eq_rhs.items():
-            if len(rhs) > 4:
-                if rhs[:4] == '0 + ':
-                    self.diff_eq_rhs.set(id, rhs[4:])
-                elif rhs[:4] == '0 - ':
-                    self.diff_eq_rhs.set(id, rhs[2:])
-
-        # Handle the rate rules
-        for id, rule in self.rateRules.items():
-            self.diff_eq_rhs.set(id, rule)
+        self.diff_eq_rhs = KeyedList()
+        for id in self.dynamicVars.keys():
+            if self.rateRules.has_key(id):
+                self.diff_eq_rhs.set(id, self.rateRules.get(id))
+            else:
+                # We use .get to return a default of ['0']
+                rhs = '+'.join(diff_eq_terms.get(id, ['0']))
+                self.diff_eq_rhs.set(id, ExprManip.simplify_expr(rhs))
 
     def getRatesForDV(self,dvName,time) :
         connectedReactions = {}
@@ -904,7 +875,7 @@ class Network:
 
         # If the delay is a math expression, calculate its value
         if type(delay) == types.StringType:
-            if len(Parsing.extractVariablesFromString(delay)) > 0:
+            if len(ExprManip.extract_vars(delay)) > 0:
                 raise exceptions.NotImplementedError, "We don't support math form delays in sensitivity! (Yet)"
             else:
                 delay = self.evaluate_expr(delay, time)
@@ -928,7 +899,7 @@ class Network:
         if event.timeTriggered:
             dTf_dov = dict(zip(self.optimizableVars.keys(), [0] * nOV))
         else:
-            if 'time' in Parsing.extractVariablesFromString(trigger):
+            if 'time' in ExprManip.extract_vars(trigger):
                 raise exceptions.NotImplementedError, "We don't support explicit time dependence in complex event triggers for sensitivity! (Yet) Tigger was: %s" % trigger
             dtrigger_ddvValue = {}
             for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
@@ -1232,10 +1203,10 @@ class Network:
 
         Does the chain rule through assigned variables.
         """
-        output = symbolic.Diff(input, wrt)
+        output = ExprManip.diff_expr(input, wrt)
 
         # What other assigned variables does input depend on?
-        assigned_used = Parsing.extractVariablesFromString(input)
+        assigned_used = ExprManip.extract_vars(input)
         assigned_used.difference_update(sets.Set([wrt]))
         assigned_used.intersection_update(sets.Set(self.assignedVars.keys()))
         # Do the chain rule for those variables
@@ -1243,7 +1214,7 @@ class Network:
             rule = self.assignmentRules.getByKey(id)
             d2 = self.takeDerivative(rule, wrt)
             if d2 != '0':
-                d = symbolic.Diff(input, id)
+                d = ExprManip.diff_expr(input, id)
                 output += ' + %s *(%s)' % (d, d2)
 
         return output

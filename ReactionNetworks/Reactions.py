@@ -1,6 +1,5 @@
 import sets
-import symbolic
-import Parsing
+import SloppyCell.ExprManip as ExprManip
 
 class Reaction:
     def __init__(self, id, stoichiometry, kineticLaw = '', name = ''):
@@ -9,7 +8,7 @@ class Reaction:
         self.kineticLaw = kineticLaw
         self.name = name
 
-        variables = Parsing.extractVariablesFromString(kineticLaw)
+        variables = ExprManip.extract_vars(kineticLaw)
         self.parameters = variables.difference(sets.Set(stoichiometry.keys()))
 
     def __eq__(self, other):
@@ -26,7 +25,7 @@ class Reaction:
             self.stoichiometry[kwargs[base]] = self.oldStoichiometry[base]
 
         for base, instance in kwargs.items():
-            self.kineticLaw = Parsing.substituteVariableNamesInString(self.kineticLaw, base, instance)
+            self.kineticLaw = ExprManip.sub_for_var(self.kineticLaw, base, instance)
 
 class HomodimerizationReaction(Reaction):
     def __init__(self, id, **kwargs):

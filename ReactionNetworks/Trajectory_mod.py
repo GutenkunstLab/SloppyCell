@@ -9,7 +9,7 @@ import scipy
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
 import Network_mod
-import Parsing
+import SloppyCell.ExprManip as ExprManip
 
 class Trajectory:
     _known_structures = []
@@ -96,7 +96,7 @@ class Trajectory:
             return scipy.ones(len(self.timepoints), scipy.Float) *\
                     self.const_var_values.get(id)
         else:
-            raise ValueError, 'Variable %s not found in trajectory.' % id
+            raise ValueError, 'Variable %s not found in trajectory.' % str(id)
 
     def get_var_vals_index(self, index):
         out = KeyedList(zip(self.keys(), [None]*len(self.keys())))
@@ -231,11 +231,11 @@ class Trajectory:
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
     def _sub_var_names(self, input):
-	for id in Parsing.extractVariablesFromString(input):
+	for id in ExprManip.extract_vars(input):
             # convert it back to something key_column will recognize
 	    # had to use a form  dynVarName__derivWRT__optParamName for the
 	    # sensitivity variable because otherwise,
-            # Parsing.extractVariablesFromString gets confused
+            # extract_vars gets confused
             splitId = id.split('__derivWRT__')
             if len(splitId) == 1:
 	    	idname = splitId[0]
@@ -255,7 +255,7 @@ class Trajectory:
             else:
                 raise 'Problem with idname %s in Trajectory._sub_var_names'
 
-            input = Parsing.substituteVariableNamesInString(input, id, mapping)
+            input = ExprManip.sub_for_var(input, id, mapping)
 
         return input
 

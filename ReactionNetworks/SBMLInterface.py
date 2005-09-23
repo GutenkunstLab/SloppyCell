@@ -4,7 +4,7 @@ import sys
 import libsbml
 
 import Network_mod
-import Parsing
+import SloppyCell.ExprManip as ExprManip
 
 def toSBMLFile(net, fileName):
     sbmlStr = toSBMLString(net)
@@ -170,20 +170,23 @@ def fromSBMLString(sbmlStr, id = None):
             if parameter.id in rn.variables.keys():
                 oldId = parameter.id
                 parameter.id = id + '_' + parameter.id
-                kLFormula = Parsing.\
-                        substituteVariableNamesInString(kLFormula, oldId, 
-                                                        parameter.id)
+                kLFormula = ExprManip.sub_for_var(kLFormula, oldId, 
+                                                  parameter.id)
             rn.addVariable(parameter)
     
+        # Assemble the stoichiometry. SBML has the annoying trait that 
+        #  species can appear as both products and reactants and 'cancel out'
         stoichiometry = {}
         for reactant in rxn.getListOfReactants():
+            stoichiometry.setdefault(reactant.getSpecies(), 0)
             if reactant.getStoichiometryMath() == None:
-                stoichiometry[reactant.getSpecies()] =\
-                        -1 * reactant.getStoichiometry()
+                stoichiometry[reactant.getSpecies()] -=\
+                        reactant.getStoichiometry()
     
         for product in rxn.getListOfProducts():
+            stoichiometry.setdefault(product.getSpecies(), 0)
             if product.getStoichiometryMath() == None:
-                stoichiometry[product.getSpecies()] = product.getStoichiometry()
+                stoichiometry[product.getSpecies()] += product.getStoichiometry()
 
         for modifier in rxn.getListOfModifiers():
             stoichiometry.setdefault(modifier.getSpecies(), 0)
