@@ -78,10 +78,10 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=False,
             # We don't append the last point, to prevent a needless 'event 
             #  looking' duplication of times in the trajectory.
             if getattr(net, 'integrateWithLogs', False):
-                yout = scipy.concatenate((yout, scipy.exp(temp[0:-1])))
+                yout = scipy.concatenate((yout, scipy.exp(temp[0][:-1])))
             else:
-                yout = scipy.concatenate((yout, temp[0:-1]))
-            tout.extend(temp[1:-1])
+                yout = scipy.concatenate((yout, temp[0][:-1]))
+            tout.extend(temp[1][:-1])
             start, IC = tout[-1], copy.copy(yout[-1])
             event_just_fired = False
 
