@@ -341,7 +341,7 @@ def _reduce_times(yout, tout, times):
 def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
     rtol = min(rtol, global_rtol)
     traj, te, ye, ie = integrate(net, times, params, fill_traj=True,
-                                 return_events=True, rtol=1e-7)
+                                 return_events=True, rtol=rtol/10.)
 
     times = traj.get_times()
     n_dyn, n_opt = len(net.dynamicVars), len(net.optimizableVars)
