@@ -554,8 +554,9 @@ class Network:
         if isinstance(expr, str):
             # We create a local_namespace to evaluate the expression in that
             #  maps variable ids to their current values
-            var_vals = self.get_var_vals()
-            local_namespace = dict(var_vals.items())
+            vars_used = ExprManip.extract_vars(expr)
+            var_vals = [(id, self.get_var_val(id)) for id in vars_used]
+            local_namespace = dict(var_vals)
             local_namespace['time'] = time
             local_namespace.update(self.namespace)
             # We strip whitespace, just for convenience
