@@ -379,7 +379,7 @@ def plot_trajectory(traj, vars = None,
     for id in vars:
         fmt = cW.next()
         plot_func(traj.timepoints, traj.getVariableTrajectory(id), fmt, 
-                  linewidth=3, label=id)
+                  linewidth=3, label=str(id))
 
     if show_legend:
         legend(loc=loc)
