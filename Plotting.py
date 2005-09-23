@@ -26,19 +26,19 @@ def ColorWheel(colors = ('b', 'g', 'r', 'c', 'm', 'k'),
 
 eigvals_cW = ColorWheel(colors = ('b', 'g', 'c', 'm', 'k'), 
                         lines = None)
-def plot_eigvals(vals, lab=None):
+def plot_eigvals(vals, label=None, offset = 0):
     posVals = abs(scipy.compress(vals > 0, vals))
     posRange = scipy.compress(vals > 0, range(len(vals)))
     negVals = abs(scipy.compress(vals < 0, vals))
     negRange = scipy.compress(vals < 0, range(len(vals)))
 
     sym = eigvals_cW.next()
-    line = semilogy(posRange, posVals, sym, label = lab)
+    line = semilogy(posRange+offset, posVals, sym, label = label)
     if len(negVals) > 0:
-        semilogy(negRange, negVals, 'r'+sym[1:])
+        semilogy(negRange+offset, negVals, 'r'+sym[1:])
 
     a = axis()
-    axis([-0.05*len(vals), 1.05*(len(vals) - 1), a[2], a[3]])
+    axis([-0.05*len(vals) + offset, 1.05*(len(vals) - 1) + offset, a[2], a[3]])
 
     return line
 
