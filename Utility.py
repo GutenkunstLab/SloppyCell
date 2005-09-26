@@ -7,10 +7,13 @@ import scipy
 from scipy import linspace, logspace
 from scipy.linalg import eig
 
-def send_email(to_addr, from_addr, subject, message):
+def send_email(to_addr, from_addr=None, subject='', message=''):
     """
     Send a plain-text email to a single address.
     """
+    if from_addr is None:
+        from_addr = to_addr
+
     # Create a text/plain message
     msg = MIMEText(message)
     msg['Subject'] = subject
