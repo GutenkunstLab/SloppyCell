@@ -169,7 +169,7 @@ class Trajectory:
     def appendFromODEINT(self, timepoints, odeint_array):
         if getattr(self, '_assignment', None) is None:
             Network_mod._exec_dynamic_func(self, '_assignment', 
-                                           self.namespace)
+                                           self.namespace, bind=False)
 
         numAdded = odeint_array.shape[0]
         addedValues = scipy.zeros((numAdded, len(self.key_column)), 
@@ -187,11 +187,11 @@ class Trajectory:
     def appendSensFromODEINT(self, timepoints, odeint_array):
         if getattr(self, '_assignment', None) is None:
             Network_mod._exec_dynamic_func(self, '_assignment',
-                                           self.namespace)
+                                           self.namespace, bind=False)
 
         if getattr(self, '_sens_assignment', None) is None:
             Network_mod._exec_dynamic_func(self, '_sens_assignment',
-                                           self.namespace)
+                                           self.namespace, bind=False)
 
         numAdded = odeint_array.shape[0]
         addedValues = scipy.zeros((numAdded, len(self.key_column)), 

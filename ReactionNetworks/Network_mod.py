@@ -1356,7 +1356,7 @@ class Network:
     addFunctionDefinition = add_func_def
     addAssignmentRule = add_assignment_rule
 
-def _exec_dynamic_func(obj, func, in_namespace={}):
+def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
     """
     Create the executable function corresponding to func's functionBody.
     """
@@ -1371,5 +1371,5 @@ def _exec_dynamic_func(obj, func, in_namespace={}):
     #  with the proper name.
     setattr(obj, func, 
             types.MethodType(locals()[func], obj, obj.__class__))
-    if HAVE_PSYCO:
+    if HAVE_PSYCO and bind:
         psyco.bind(getattr(obj, func))
