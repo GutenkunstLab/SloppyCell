@@ -21,6 +21,7 @@ g_2 = lambda x, y, z: x**4 * y**6 * 5*z**4
 class test_Differentiation(unittest.TestCase):
     def test_diff_expr(self):
         cases = [('x', 'x'),
+                 ('+x', 'x'),
                  ('y', 'x'),
                  ('x+y', 'x'),
                  ('x*y', 'x'),
