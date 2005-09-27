@@ -178,6 +178,9 @@ def _simplify_ast(ast):
                 return Const(-simple_expr.value)
         else:
             return UnarySub(simple_expr)
+    elif isinstance(ast, UnaryAdd):
+        simple_expr = _simplify_ast(ast.expr)
+        return simple_expr
     else:
         # Handle node types with no special cases.
         for attr_name in AST._node_attrs[ast.__class__]:

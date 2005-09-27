@@ -43,6 +43,7 @@ _OP_ORDER = {Name: 0,
              Mul: 5,
              Div: 5,
              UnarySub: 6,
+             UnaryAdd: 6,
              Sub: 10,
              Add: 10,
              Discard: 100}
@@ -60,6 +61,7 @@ _node_attrs = {Name: (),
                CallFunc: ('args',),
                Power: ('left', 'right'),
                UnarySub: ('expr',),
+               UnaryAdd: ('expr',),
                Slice: ('lower', 'upper'),
                Sliceobj: ('nodes',),
                Subscript: ('subs',)
@@ -101,6 +103,8 @@ def ast2str(ast, outer = _FARTHEST_OUT, adjust = 0):
                           ast2str(ast.right, ast))
     elif isinstance(ast, UnarySub):
         out = '-%s' % ast2str(ast.expr, ast)
+    elif isinstance(ast, UnaryAdd):
+        out = '+%s' % ast2str(ast.expr, ast)
     elif isinstance(ast, CallFunc):
         args = [ast2str(arg) for arg in ast.args]
         out = '%s(%s)' % (ast2str(ast.node), ', '.join(args))

@@ -144,6 +144,9 @@ def _diff_ast(ast, wrt):
     elif isinstance(ast, UnarySub):
         return UnarySub(_diff_ast(ast.expr, wrt))
 
+    elif isinstance(ast, UnaryAdd):
+        return UnaryAdd(_diff_ast(ast.expr, wrt))
+
 def _product_deriv(terms, wrt):
     """
     Return an AST expressing the derivative of the product of all the terms.

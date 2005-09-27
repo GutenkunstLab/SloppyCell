@@ -104,6 +104,8 @@ def _ast2TeX(ast, outer=AST._FARTHEST_OUT, name_dict={},
                              _ast2TeX(ast.right, ast, name_dict))
     elif isinstance(ast, UnarySub):
         out = '-%s' % _ast2TeX(ast.expr, ast, name_dict)
+    elif isinstance(ast, UnaryAdd):
+        out = '+%s' % _ast2TeX(ast.expr, ast, name_dict)
     elif isinstance(ast, CallFunc):
         lam_func = lambda arg: _ast2TeX(arg, name_dict=name_dict)
         name = lam_func(ast.node)
