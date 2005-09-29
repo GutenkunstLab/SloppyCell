@@ -1,11 +1,35 @@
 import scipy
 
 # This specifies the uncertainties assumed.
-sigmaFunc = lambda traj, dataId: 1
+def sigmaFunc(traj, dataId):
+    """
+    This error structure takes the uncertainty on a variable to be equal to
+    the maxiumum value in a trajectory. If that maxiumum value less than 1e-16,
+    the uncertainty is taken to be 1.
+    """
+    data = traj.get_var_traj(dataId)
+    max_data = max(abs(data))
+    cutoff = 1e-16
+    if max_data > cutoff:
+        sigma = max_data
+    elif max_data == 0:
+        sigma = 1
+    else:
+        print '*'*70
+        print 'max_data for %s is non-zero and less than %g!' % (dataId, cutoff)
+        print '*'*70
+        sigma = 1
+
+    return sigma
+
+def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, fixed_sf=False,
+                       return_dict=False, rtol=1e-6):
+    return calculatePerfectDataLMHessian(sens_traj, data_ids, opt_ids, fixed_sf,
+                                         return_dict, rtol)
 
 def calculatePerfectDataLMHessian(traj, dataIds = None, optIds = None, 
                                   fixedScaleFactors = False, 
-                                  returnDict = False):
+                                  returnDict = False, rtol=1e-6):
     if dataIds is None:
         dataIds = traj.dynamicVarKeys + traj.assignedVarKeys
     if optIds is None:
@@ -21,11 +45,12 @@ def calculatePerfectDataLMHessian(traj, dataIds = None, optIds = None,
             scaleFactorDerivs[dataId] = dict([(id, 0) for id in optIds])
         else:
             scaleFactorDerivs[dataId] = \
-                    calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds)
+                    calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds,
+                                               rtol)
 
         LMHessianDict[dataId] = \
                 computeLMHessianContribution(traj, dataId, dataSigma, optIds,
-                                             scaleFactorDerivs[dataId])
+                                             scaleFactorDerivs[dataId], rtol)
 
     LMHessian = scipy.sum(LMHessianDict.values())
     if returnDict:
@@ -56,7 +81,7 @@ def interpolateInterval(traj, dataId, dataSigma, startIndex, endIndex):
 
     return yTCK, sigmaTCK
 
-def calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds):
+def calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds, rtol):
     scaleFactorDerivs = {}
     intTheorySq = 0
     for startIndex, endIndex in computeIntervals(traj):
@@ -68,7 +93,8 @@ def calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds):
                                             traj.timepoints[startIndex], 
                                             traj.timepoints[endIndex - 1], 
                                             args = (yTCK, sigmaTCK),
-                                            limit = endIndex-startIndex)
+                                            limit = endIndex-startIndex,
+                                            epsrel=rtol, epsabs=scipy.inf)
         intTheorySq += value
     
         for optId in optIds:
@@ -85,7 +111,8 @@ def calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds):
                                    traj.timepoints[startIndex], 
                                    traj.timepoints[endIndex - 1], 
                                    args = (sensTCK, yTCK, sigmaTCK),
-                                   limit = endIndex-startIndex)
+                                   limit = endIndex-startIndex,
+                                   epsrel=rtol, epsabs=scipy.inf)
     
             scaleFactorDerivs.setdefault(optId, 0)
             scaleFactorDerivs[optId] += -numerator
@@ -96,7 +123,7 @@ def calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds):
     return scaleFactorDerivs
 
 def computeLMHessianContribution(traj, dataId, dataSigma, optIds, 
-                                 scaleFactorDerivs):
+                                 scaleFactorDerivs, rtol):
     LMHessian = scipy.zeros((len(optIds), len(optIds)), scipy.Float)
     for start, end in computeIntervals(traj):
         k = min(5, end-start - 1)
@@ -136,7 +163,8 @@ def computeLMHessianContribution(traj, dataId, dataSigma, optIds,
                                                yTCK, sigmaTCK,
                                                scaleFactorDerivs[optId1],
                                                scaleFactorDerivs[optId2]),
-                                       limit = end-start)
+                                       limit = end-start,
+                                       epsrel=rtol, epsabs=scipy.inf)
 
                 LMHessian[optIndex1][optIndex2] += value
                 if optIndex1 != optIndex2:
