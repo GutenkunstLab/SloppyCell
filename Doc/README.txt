@@ -19,9 +19,8 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
      <http://sbml.org>`_ level 2 version 1 (`details <SBML_support.html>`_)
    - deterministic dynamical simulations (stochastic on the way)
    - sensitivity analysis
-   - parameter optimization methods to fit parameters to experimental data
-   - simulation of multiple related networks sharing common values of 
-     parameters
+   - optimization methods to fit parameters to experimental data
+   - simulation of multiple related networks sharing common parameters
    - stochastic Bayesian analysis of parameter space to estimate error bars
      associated with optimal fits
 
@@ -33,6 +32,13 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 - Sourceforge `project page`_
 - `CVS snapshot <SloppyCell-CVS.tgz>`_ generated nightly
 - `API documentation <SloppyCell/index.html>`_ generated nightly
+
+.. topic:: Citing SloppyCell:
+
+    There are no papers yet on SloppyCell itself. For now, please reference this website:
+
+    Ryan Gutenkunst, Fergal Casey, Josh Waterfall, Kevin Brown, Chris Myers, and Jim Sethna. SloppyCell. http://sloppycell.soureforge.net/ (2005)
+  
 
 $Date$
 
