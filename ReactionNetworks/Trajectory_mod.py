@@ -15,7 +15,28 @@ class Trajectory:
     _known_structures = []
     _known_function_bodies = []
     _dynamic_funcs = ['_assignment', '_sens_assignment']
-    _common_namespace = Network_mod.Network._common_namespace
+    # These are-predefined functions we want in our working namespace
+    _common_namespace = {'log': scipy.log,
+                         'log10': scipy.log10,
+                         'exp': scipy.exp,
+                         'cos': scipy.cos,
+                         'sin': scipy.sin,
+                         'tan': scipy.tan,
+                         'acos': scipy.arccos,
+                         'asin': scipy.arcsin,
+                         'atan': scipy.arctan,
+                         'cosh': scipy.cosh,
+                         'sinh': scipy.sinh,
+                         'tanh': scipy.tanh,
+                         'arccosh': scipy.arccosh,
+                         'arcsinh': scipy.arcsinh,
+                         'arctanh': scipy.arctanh,
+                         'exponentiale': scipy.e,
+                         'pi': scipy.pi,
+                         }
+
+    def __len__(self):
+        return len(self.timepoints)
 
     def __init__(self, net, key_column=None, is_sens=False):
         if key_column is not None:
@@ -89,6 +110,9 @@ class Trajectory:
         self.timepoints = scipy.concatenate((self.timepoints, other.timepoints))
         self.values = scipy.concatenate((self.values, other.values))
 
+    def get_var_typical_val(self, id):
+        return self.typical_var_values.get(id)
+
     def get_var_traj(self, id):
         if self.key_column.has_key(id):
             return self.values[:, self.key_column.get(id)]
@@ -98,22 +122,56 @@ class Trajectory:
         else:
             raise ValueError, 'Variable %s not found in trajectory.' % str(id)
 
-    def get_var_vals_index(self, index):
-        out = KeyedList(zip(self.keys(), [None]*len(self.keys())))
-        for key, col in self.key_column.items():
-            out.set(key, self.values[index, col])
-        out.update(self.const_var_values)
+    def _get_time_index(self, time, eps=1e-6):
+        """
+        Return the index of the stored value closest to the requested time.
 
-        return out
-
-    def get_var_vals(self, time, epsilon = 1e-6):
+        Prints a warning if the difference between the requested time and the
+        stored time is greater than a fraction eps of the trajectory length.
+        """
         index = scipy.argmin(abs(self.timepoints - time))
         time_range = self.timepoints[-1] - self.timepoints[0]
-        if abs(self.timepoints[index] - time)/time_range > epsilon:
+        if abs(self.timepoints[index] - time)/time_range > eps:
             print 'Time %f requested, closest time stored in trajectory is %f.'\
                     % (time, self.timepoints[index])
+        return index
 
+    def get_var_vals(self, time, eps=1e-6):
+        """
+        Return a KeyedList of the values of the trajectory's variables at the 
+        given time.
+
+        Prints a warning if the difference between the requested time and the
+        stored time is greater than a fraction eps of the trajectory length.
+        """
+        index = self._get_time_index(time, eps)
         return self.get_var_vals_index(index)
+
+    def get_var_val(self, var_id, time, eps=1e-6):
+        """
+        Return the values of the given variable at the given time.
+
+        Prints a warning if the difference between the requested time and the
+        stored time is greater than a fraction eps of the trajectory length.
+        """
+        index = self._get_time_index(time, eps)
+        return self.get_var_val_index(var_id, index)
+
+    def get_var_vals_index(self, index):
+        """
+        Return a KeyedList of the values of the trajectory's variables at the 
+        given index.
+        """
+        out = KeyedList([(key, self.get_var_val_index(key, index)) for
+                          key in self.keys()])
+        return out
+
+    def get_var_val_index(self, var_id, index):
+        """
+        Return the value of the given variable at the given index.
+        """
+        col = self.key_column.get(var_id)
+        return self.values[index, col]
 
     def make__assignment(self, net):
         functionBody = ['def _assignment(self, values, times, start, end):']
