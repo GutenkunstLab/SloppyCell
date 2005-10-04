@@ -388,15 +388,7 @@ class Network:
         t.sort()
 
         self.ddv_dpTrajectory = self.integrateSensitivity(t,params, addTimes = True, rtol = 1.0e-7)
-        # we also have the normal trajectory within this trajectory
-        indexlength = len(self.dynamicVars) + len(self.assignedVars)
-        keyToColumn = KeyedList(zip(self.dynamicVars.keys()
-                                    + self.assignedVars.keys(),
-                                    range(indexlength)))
-
-        self.trajectory = Trajectory_mod.Trajectory(self, keyToColumn)
-        self.trajectory.values = self.ddv_dpTrajectory.values[:,0:indexlength]
-        self.trajectory.timepoints = self.ddv_dpTrajectory.timepoints
+        self.trajectory = self.ddv_dpTrajectory
 
     def GetName(self):
         return self.id
@@ -440,8 +432,10 @@ class Network:
     def integrate(self, times, params = None,
                   returnEvents = False, addTimes = True,
                   rtol = None):
-        if HAVE_DYNAMICS:
+        if HAVE_DYNAMICS and hasattr(Dynamics, 'integrate'):
             return Dynamics.integrate(self, times, params)
+
+        print 'Warning: Using older integrator. It is known to be buggy in its handling of events. I strongly suggest building the new integrator.'
 
         self.compile()
 
@@ -479,7 +473,7 @@ class Network:
     def integrateSensitivity(self, times, params = None,
                              returnEvents = False, addTimes = True,
                              rtol=None):
-        if HAVE_DYNAMICS:
+        if HAVE_DYNAMICS and hasattr(Dynamics, 'integrate'):
             return Dynamics.integrate_sensitivity(self, times, params, rtol)
 
         self.compile()
