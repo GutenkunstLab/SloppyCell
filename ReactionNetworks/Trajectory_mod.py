@@ -170,8 +170,11 @@ class Trajectory:
         """
         Return the value of the given variable at the given index.
         """
-        col = self.key_column.get(var_id)
-        return self.values[index, col]
+        if self.key_column.has_key(var_id):
+            col = self.key_column.get(var_id)
+            return self.values[index, col]
+        elif self.const_var_values.has_key(var_id):
+            return self.const_var_values.get(var_id)
 
     def make__assignment(self, net):
         functionBody = ['def _assignment(self, values, times, start, end):']
