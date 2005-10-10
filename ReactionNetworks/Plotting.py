@@ -1,12 +1,9 @@
 import sets
 
 import scipy
-from pylab import *
 
 import SloppyCell.Plotting
-ColorWheel = SloppyCell.Plotting.ColorWheel
-plot_eigvals = SloppyCell.Plotting.plot_eigvals
-plot_eigvect = SloppyCell.Plotting.plot_eigvect
+from SloppyCell.Plotting import *
 import Network_mod
 
 def PlotEigenvectors(eigVects, net = None, title = None):
@@ -236,12 +233,8 @@ def plot_model_results(model, expts = None, style='errorbars',
                 
                 lines.append(l)
                 # Let's print the pretty name for our variable if we can.
-                name = net.variables.getByKey(dataId).name
-                if name is not None:
-                    printedName = name
-                else:
-                    printedName = dataId
-                labels.append('%s in %s for %s' % (printedName, calcId, exptId))
+                name = net.get_component_name(dataId)
+                labels.append('%s in %s for %s' % (name, calcId, exptId))
 
     if show_legend:
         legend(lines, labels, loc=loc)
