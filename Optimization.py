@@ -14,8 +14,9 @@ def fmin_powell_log_params(m, params, *args, **kwargs):
     if isinstance(params, KeyedList):
         pout = params.copy()
         pout.update(scipy.exp(pmin))
-
-    return pout
+        return pout
+    else:
+        return scipy.exp(pmin)
 
 def fmin_log_params(m, params, *args, **kwargs):
     func = m.cost_log_params
@@ -26,7 +27,9 @@ def fmin_log_params(m, params, *args, **kwargs):
     if isinstance(params, KeyedList):
         pout = params.copy()
         pout.update(scipy.exp(pmin))
-    return pout
+        return pout
+    else:
+        return scipy.exp(pmin)
 
 def leastsq_log_params(m, params, *args, **kwargs):
     func = m.res_log_params
@@ -36,4 +39,6 @@ def leastsq_log_params(m, params, *args, **kwargs):
     if isinstance(params, KeyedList):
         pout = params.copy()
         pout.update(scipy.exp(pmin))
-    return pout
+        return pout
+    else:
+        return scipy.exp(pmin)
