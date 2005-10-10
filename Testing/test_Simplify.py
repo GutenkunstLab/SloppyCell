@@ -18,7 +18,7 @@ class test_Simplify(unittest.TestCase):
                  'x**(-y + z)', 'f(x)', 'g(x,y,z)', 'x**(y**z)', 
                  '(x**y)**z', 'x**y**z', 'x - (x+y)', '(x+y) - z',
                  'g(x-0+2, y**2 - 0**0, z*y + x/1)', 'x/x', 'x/y',
-                 '(x-x)/z', 'x**2 - y/z', 'x+1-1+2-3-x', '0+1*1'
+                 '(x-x)/z', 'x**2 - y/z', 'x+1-1+2-3-x', '0+1*1', 'x-x+y'
                  ]
 
         for expr in cases: 
@@ -30,7 +30,7 @@ class test_Simplify(unittest.TestCase):
             else:
                 assert simp == 0
 
-suite = unittest.makeSuite(test_Simplify, 'text')
+suite = unittest.makeSuite(test_Simplify)
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.TextTestRunner(verbosity=2).run(suite)

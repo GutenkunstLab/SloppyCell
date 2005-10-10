@@ -171,30 +171,24 @@ def _collect_pos_neg(ast, poss, negs):
     """
     Append to poss and negs, respectively, the nodes in AST with positive and 
     negative factors from a addition/subtraction chain.
-
-    This is exactly the code in _collect_num_denom, which name substitutions.
-    Should figure out a convenient way to refactor.
     """
+    # 
+    # This code is almost duplicated from _collect_num_denom. 
+    # The additional twist is handling UnarySubs.
+    #
     if not (isinstance(ast, Add) or isinstance(ast, Sub)):
-        # If ast is not addition or subtraction, just put it in poss.
         poss.append(ast)
         return
 
     if isinstance(ast.left, Sub) or isinstance(ast.left, Add):
-        # If the left argument is a multiplication or division, descend into
-        #  it, otherwise it is in the numerator.
         _collect_pos_neg(ast.left, poss, negs)
     else:
         poss.append(ast.left)
 
     if isinstance(ast.right, Sub) or isinstance(ast.right, Add):
-        # If the left argument is a multiplication or division, descend into
-        #  it, otherwise it is in the denominator.
         if isinstance(ast, Add):
             _collect_pos_neg(ast.right, poss, negs)
         elif isinstance(ast, Sub):
-            # Note that when we descend into the denominator of a Sub, we want 
-            #  to swap our poss and negs lists
             _collect_pos_neg(ast.right, negs, poss)
     else:
         if isinstance(ast, Add):
