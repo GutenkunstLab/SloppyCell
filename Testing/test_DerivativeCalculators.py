@@ -75,7 +75,7 @@ class test_DerivativeCalculators(unittest.TestCase):
                                 maxdiff = diff
         self.assertAlmostEqual(maxdiff, 0.0, 1, 'Failed on Hessian in log parameters accuracy') # within 10% error is fine
 	 
-suite = unittest.makeSuite(test_DerivativeCalculators, 'test')
+suite = unittest.makeSuite(test_DerivativeCalculators)
 
 if __name__ == '__main__':
     unittest.main()

@@ -250,7 +250,7 @@ class test_lsodar(unittest.TestCase):
 
 no_lsodar_msg = 'lsodar not working!'
 if _HAVE_LSODAR:
-    suite = unittest.makeSuite(test_lsodar, 'test')
+    suite = unittest.makeSuite(test_lsodar)
 else:
     message = no_lsodar_msg
 

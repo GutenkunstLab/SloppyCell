@@ -14,7 +14,7 @@ class test_Plotting(unittest.TestCase):
         """Ensure plotting basic results doesn't crash"""
         Plotting.plot_model_results(m)
 
-suite = unittest.makeSuite(test_Plotting, 'test')
+suite = unittest.makeSuite(test_Plotting)
 
 if __name__ == '__main__':
     unittest.main()

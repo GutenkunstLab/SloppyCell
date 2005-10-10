@@ -24,7 +24,7 @@ class test_SensitivityIC(unittest.TestCase):
 	self.assertAlmostEqual(x_wrt_xIC, 2.0*scipy.exp(4.0), 8,'Failed on x_wrt_xIC sensitivity at t=0')
 
 
-suite = unittest.makeSuite(test_SensitivityIC, 'test')
+suite = unittest.makeSuite(test_SensitivityIC)
 
 if __name__ == '__main__':
     unittest.main()

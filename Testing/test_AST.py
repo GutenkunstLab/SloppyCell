@@ -61,7 +61,7 @@ class test_AST(unittest.TestCase):
             assert sets.Set(poss) == sets.Set(p)
             assert sets.Set(negs) == sets.Set(n)
 
-suite = unittest.makeSuite(test_AST, 'text')
+suite = unittest.makeSuite(test_AST)
 
 if __name__ == '__main__':
     unittest.main()

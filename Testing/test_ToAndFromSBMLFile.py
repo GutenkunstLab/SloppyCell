@@ -22,7 +22,7 @@ class test_SBMLFunctions(unittest.TestCase):
 
 no_libsbml_msg = 'libsbml not installed. SBML import and export will not be available!'
 if _HAVE_SBML:
-    suite = unittest.makeSuite(test_SBMLFunctions, 'test')
+    suite = unittest.makeSuite(test_SBMLFunctions)
 else:
     message = no_libsbml_msg
 

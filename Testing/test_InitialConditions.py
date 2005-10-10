@@ -48,7 +48,7 @@ class test_scale_factors(unittest.TestCase):
         self.assertAlmostEqual(ICx, 4.0, 6, 'Failed on changing parameter IC')
 
 
-suite = unittest.makeSuite(test_scale_factors, 'test')
+suite = unittest.makeSuite(test_scale_factors)
 
 if __name__ == '__main__':
     unittest.main()
