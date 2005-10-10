@@ -212,4 +212,4 @@ def _make_product(terms):
             product = Mul((product, term))
         return product 
     else:
-        return Const('1')
+        return Const(1)

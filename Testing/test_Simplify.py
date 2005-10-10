@@ -18,7 +18,7 @@ class test_Simplify(unittest.TestCase):
                  'x**(-y + z)', 'f(x)', 'g(x,y,z)', 'x**(y**z)', 
                  '(x**y)**z', 'x**y**z', 'x - (x+y)', '(x+y) - z',
                  'g(x-0+2, y**2 - 0**0, z*y + x/1)', 'x/x', 'x/y',
-                 '(x-x)/z', 'x**2 - y/z', 'x+1-1+2-3-x'
+                 '(x-x)/z', 'x**2 - y/z', 'x+1-1+2-3-x', '0+1*1'
                  ]
 
         for expr in cases: 
