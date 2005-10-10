@@ -5,7 +5,6 @@ from email.MIMEText import MIMEText
 import scipy
 
 from scipy import linspace, logspace
-from scipy.linalg import eig
 
 def send_email(to_addr, from_addr=None, subject='', message=''):
     """
@@ -43,3 +42,14 @@ def load(filename):
     obj = cPickle.load(f)
     f.close()
     return obj
+
+def eig(mat):
+    """
+    Return the sorted eigenvalues and eigenvectors of mat.
+    """
+    e, v = scipy.linalg.eig(mat)
+    order = scipy.argsort(abs(e))[::-1]
+    e = scipy.take(e, order)
+    v = scipy.take(v, order, axis=1)
+
+    return e, v
