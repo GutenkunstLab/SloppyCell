@@ -12,11 +12,12 @@ import Trajectory_mod
 # XXX: Need to incorporate root_grace_t into integrate_sensitivity
 global_rtol = 1e-6
 
-def integrate(net, times, params=None, rtol=1e-6, fill_traj=False,
+def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
               return_events=False):
     rtol = min(rtol, global_rtol)
     net.compile()
-    fill_traj = net.add_int_times or fill_traj
+    if fill_traj is None:
+        fill_traj = net.add_int_times
 
     if params is not None:
         net.update_optimizable_vars(params)
