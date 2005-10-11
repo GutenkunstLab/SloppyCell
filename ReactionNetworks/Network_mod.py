@@ -716,9 +716,11 @@ class Network:
 
     def set_var_optimizable(self, id, is_optimizable):
         self.variables.get(id).is_optimizable = is_optimizable
+        self._makeCrossReferences()
 
     def set_var_constant(self, id, is_constant):
         self.variables.get(id).is_constant = is_constant
+        self._makeCrossReferences()
 
     #
     # Generate the differential equations and functions to calculate them.
