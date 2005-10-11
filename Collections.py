@@ -98,7 +98,7 @@ class Experiment:
         self.SetName(name)
         self.SetData(data)
         self.SetFixedScaleFactors(fixedScaleFactors)
-        self.set_shared_scale_factors(shared_sf)
+        self.set_shared_sf(shared_sf)
         self.periodChecks=[]
         self.amplitudeChecks=[]
         
@@ -114,23 +114,26 @@ class Experiment:
     def UpdateData(self, newData):
         self.data.update(newData)
 
-    def GetData(self):
+    def get_data(self):
         return self.data
 
-    def set_fixed_scale_factors(self, fixed_sf):
+    def set_fixed_sf(self, fixed_sf):
         self.fixedScaleFactors = fixed_sf
 
-    def set_shared_scale_factors(self, shared_sf):
+    def set_shared_sf(self, shared_sf):
         self.shared_sf = shared_sf
 
-    def get_shared_scale_factors(self):
+    def get_shared_sf(self):
         return self.shared_sf
 
-    def GetFixedScaleFactors(self):
+    def get_fixed_sf(self):
         return self.fixedScaleFactors
 
+
     SetData = set_data
-    SetFixedScaleFactors = set_fixed_scale_factors
+    GetData = get_data
+    SetFixedScaleFactors = set_fixed_sf
+    GetFixedScaleFactors = get_fixed_sf
 
     def AddPeriodCheck(self, calcKey, chemical, period, sigma, startTime=0.0):
         """

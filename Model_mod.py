@@ -1,3 +1,9 @@
+"""
+Model class that unites theory with data.
+"""
+
+__docformat__ = "restructuredtext en"
+
 import copy
 import sets
 
@@ -9,9 +15,19 @@ import KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
 class Model:
+    """
+    A Model object connects a set of experimental data with the objects used to
+    model that data.
+
+    Most importantly, a Model can calculate a cost for a given set of 
+    parameters, characterizing how well those parameters fit the data contained
+    within the model.
+    """
     def __init__(self, expts, calcs):
         """
-        Construct a model from lists of experiment and calcultion objects.
+        expts  A sequence of Experiments to be fit to.
+        calcs  A sequence of calculation objects referred to by the 
+               Experiments.
         """
 
         self.calcVals = {}
@@ -22,10 +38,14 @@ class Model:
 
         if isinstance(expts, list):
             expts = Collections.ExperimentCollection(expts)
+        elif isinstance(expts, dict):
+            expts = Collections.ExperimentCollection(expts.values())
         self.SetExperimentCollection(expts)
 
         if isinstance(calcs, list):
             calcs = Collections.CalculationCollection(calcs)
+        elif isinstance(expts, dict):
+            calcs = Collections.CalculationCollection(calcs.values())
         self.SetCalculationCollection(calcs)
 
         # Echo the cost or chi-squared on each evaluation
@@ -275,14 +295,14 @@ class Model:
         scale_factors = {}
 
         exptData = expt.GetData()
-        fixed_sf = expt.GetFixedScaleFactors()
+        fixed_sf = expt.get_fixed_sf()
 
         # Get the variables measured in this experiment
         measuredVars = sets.Set()
         for calcId in exptData:
             measuredVars.union_update(sets.Set(exptData[calcId].keys()))
 
-        sf_groups = map(sets.Set, expt.get_shared_scale_factors())
+        sf_groups = map(sets.Set, expt.get_shared_sf())
         # Flatten out the list of shared scale factors.
         flattened = []
         for g in sf_groups:
