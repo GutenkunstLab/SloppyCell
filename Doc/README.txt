@@ -10,7 +10,8 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
    July 4th, 2005: **SloppyCell 0.1 Released**
 
-      This is the initial public release of SloppyCell. Please see the changelog_ for changes from recent development versions.
+      This is the initial public release of SloppyCell. Please see the 
+      changelog_ for changes from recent development versions.
 
 
 .. topic:: Features:
@@ -30,7 +31,7 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 - `Usage example <Example/README.html>`_
 - `Mailing list`_
 - Sourceforge `project page`_
-- `CVS snapshot <SloppyCell-CVS.tgz>`_ generated nightly
+- `CVS snapshot <SloppyCell-CVS.tar.gz>`_ generated nightly
 - `API documentation <SloppyCell/index.html>`_ generated nightly
 
 .. topic:: Citing SloppyCell:
