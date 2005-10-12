@@ -20,10 +20,10 @@ def dict2TeX(d, name_dict, lhs_form='%s', longtable=False):
                          
             for term in pos[1:]:
                 TeXed = _ast2TeX(term, name_dict=name_dict)
-                lines.append(r' & & $ + %s $\\' % TeXed)
+                lines.append(r' & & $ + \, %s $\\' % TeXed)
             for term in neg:
                 TeXed = _ast2TeX(term, name_dict=name_dict)
-                lines.append(r' & & $ - %s $\\' % TeXed)
+                lines.append(r' & & $ - \, %s $\\' % TeXed)
         else:
             lhsTeX = lhs_form % expr2TeX(lhs, name_dict=name_dict)
             rhsTeX = expr2TeX(rhs, name_dict=name_dict)
