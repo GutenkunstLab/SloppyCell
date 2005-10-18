@@ -1,9 +1,10 @@
 SloppyCell Example
 ==================
 
-In this example, we'll first reproduce the results of and build upon the work in avaiable for free `on Pubmed`__ 
+In this example, we'll first reproduce the results of and build upon the work in
+avaiable for free `on Pubmed`__ 
 
-.. _Tyson1991: http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=1831270&query_hl=1
+.. _Tyson 1991: http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=1831270&query_hl=1
 __ Tyson1991
 
 Creating the Networks
