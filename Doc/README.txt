@@ -12,7 +12,7 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
       Perhaps we have some visitors who saw our posters at the 6th International
       Conference on Systems Biology. If you're interested in our methods, please
-      download SloppyCell and check it out.
+      download the CVS tarball below and check it out.
 
       Unfortunately, we weren't able to get all we wanted finished in
       time for the conference. More complete documentation is forthcoming, as
