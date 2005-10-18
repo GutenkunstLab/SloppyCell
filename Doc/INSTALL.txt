@@ -36,7 +36,7 @@ Instructions
       c. Descend into the SloppyCell-0.2 directory. (``cd SloppyCell-0.2``)
       d. Build SloppyCell. (``python setup.py build -cmingw32``) 
 
-   3. Or try installing this `binary version <SlopppyCell-0.2-win32.zip>`_
+   3. Or try installing this `binary version <SloppyCell-0.2-win32.zip>`_
       (built by Robert Clewley).
 
       a. Un-zip the binary.
