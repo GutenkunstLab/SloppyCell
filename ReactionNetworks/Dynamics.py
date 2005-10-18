@@ -1,3 +1,8 @@
+"""
+Methods for evaluating the dynamics of Network.
+"""
+__docformat__ = "restructuredtext en"
+
 import copy
 import sets
 
@@ -14,6 +19,23 @@ global_rtol = 1e-6
 
 def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
               return_events=False):
+    """
+    Integrate a Network, returning a Trajectory.
+
+    net            The Network to integrate.
+    times          A sequence of times to include in the integration output.
+    params         Parameters for the integration. If params=None, the current 
+                   parameters of net are used.
+    rtol           Relative error tolerance for this integration.
+    fill_traj      If True, the integrator will add the times it samples to
+                   the returned trajectory. This is slower, but the resulting
+                   trajectory will be more densely sampled where the dynamics
+                   change quickly.
+    return_events  If True, the output is (traj, te, ye, ie). te is a sequence
+                   of times at which events fired. ye is a sequence of the
+                   dynamic variable values where the events fired. ie is the
+                   index of the fired events.
+    """
     rtol = min(rtol, global_rtol)
     net.compile()
     if fill_traj is None:
@@ -27,6 +49,12 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
     times = scipy.array(times)
     if net.add_tail_times:
         times = scipy.concatenate((times, [1.05*times[-1]]))
+
+    if getattr(net, 'times_to_add', False):
+        times = scipy.concatenate((times, net.times_to_add))
+        times = list(times)
+        times.sort()
+        times = scipy.array(times)
 
     # If you ask for time = 0, we'll assume you want dynamic variable values
     #  reset.
@@ -70,7 +98,9 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
         if event_just_fired:
             if getattr(net, 'integrateWithLogs', False):
                 IC = scipy.log(IC)
-            temp = odeintr(func, copy.copy(IC), [start, start+root_grace_t], 
+            next_requested = scipy.compress(times > start, times)[0]
+            integrate_to = min(start + root_grace_t, next_t)
+            temp = odeintr(func, copy.copy(IC), [start, integrate_to], 
                            Dfun = Dfun, 
                            mxstep = 10000, rtol = rtol, atol = atol,
                            int_pts = fill_traj,
@@ -129,6 +159,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
 
         # If an event fired
         if event_just_fired:
+            #print 'event %i fired at %f' % (ie[-1], te[-1])
             event = net.events[ie[-1]]
             delay = net.fireEvent(event, yout[-1], te[-1])
             pendingEvents[round(te[-1] + delay, 12)] = event
@@ -281,6 +312,12 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-6):
     return ddv_dpTrajectory
 
 def dyn_var_fixed_point(net, dv0 = None):
+    """
+    Return the dynamic variables values at the closest fixed point of the net.
+
+    dv0  Initial guess for the fixed point. If not given, the current state
+         of the net is used.
+    """
     if dv0 is None:
         dv0 = net.getDynamicVarValues()
 

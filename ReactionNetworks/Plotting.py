@@ -273,16 +273,16 @@ def plot_ensemble_results(model, ensemble, expts = None,
     lines, labels = [], []
     cW = ColorWheel()
 
-    Network.Network.pretty_plotting()
+    Network_mod.Network.pretty_plotting()
     model.cost(ensemble[0])
     timepoints = {}
     for netId, net in nets.items():
         traj = getattr(net, 'trajectory', None)
         if traj is not None:
-            net.times_to_add = traj.timepoints
-            timepoints[netId] = net.times_to_add
+            net.times_to_add = scipy.linspace(traj.timepoints[0], 
+                                              traj.timepoints[-1], 1000)
 
-    Network.Network.full_speed()
+    Network_mod.Network.full_speed()
 
     results = {}
     for params in ensemble:
@@ -301,7 +301,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
                     results[exptId][netId].setdefault(dataId, [])
 
                     scaleFactor = model.GetScaleFactors()[exptId][dataId]
-                    result = scaleFactor*traj.getVariableTrajectory(dataId)
+                    result = scaleFactor*traj.get_var_traj(dataId)
                     results[exptId][netId][dataId].append(result)
 
     for exptId in expts:
@@ -328,7 +328,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
                         l = plot(d[:,0], d[:,1], fmt[::2])
 
                 if plot_trajectories:
-                    times = timepoints[netId]
+                    times = model.get_calcs()[netId].trajectory.get_times()
                     mean_vals = scipy.mean(results[exptId][netId][dataId], 0)
                     std_vals = scipy.std(results[exptId][netId][dataId], 0)
 
@@ -348,6 +348,9 @@ def plot_ensemble_results(model, ensemble, expts = None,
                 else:
                     printedName = dataId
                 labels.append('%s in %s for %s' % (printedName, netId, exptId))
+
+    for netId, net in nets.items():
+        del net.times_to_add
 
     if show_legend:
         legend(lines, labels, loc=loc)
