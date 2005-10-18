@@ -8,6 +8,20 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
 .. topic:: News
 
+   October 18th, 2005: **Welcome ICSB Participants!**
+
+      Perhaps we have some visitors who saw our posters at the 6th International
+      Conference on Systems Biology. If you're interested in our methods, please
+      download SloppyCell and check it out.
+
+      Unfortunately, we weren't able to get all we wanted finished in
+      time for the conference. More complete documentation is forthcoming, as
+      is an updated Windows build. In the meantime, you can look in
+      SloppyCell/Example for a script that uses almost all of our functionality.
+      
+      Please email the sloppycell-users `mailing list`_ for assistance, 
+      or contact `Ryan Gutenkunst`_ directly.
+
    July 4th, 2005: **SloppyCell 0.1 Released**
 
       This is the initial public release of SloppyCell. Please see the 
@@ -32,7 +46,7 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 - `Mailing list`_
 - Sourceforge `project page`_
 - `CVS snapshot <SloppyCell-CVS.tar.gz>`_ generated nightly
-- `API documentation <SloppyCell/index.html>`_ generated nightly
+- `API documentation <api/index.html>`_ generated nightly
 
 .. topic:: Citing SloppyCell:
 
@@ -45,8 +59,9 @@ $Date$
 
 .. _Cornell University: http://www.cornell.edu
 .. _Mailing list: http://lists.sourceforge.net/lists/listinfo/sloppycell-users
-.. _Graphviz: http://www.graphviz.org/
 .. _changelog: changelog.html
 .. _project page: http://www.sourceforge.net/projects/sloppycell/
 .. _Jim Sethna: http://www.lassp.cornell.edu/sethna/
 .. _Chris Myers: http://www.tc.cornell.edu/~myers/
+.. _sloppycell-users: mailto:sloppycell-users@lists.sourceforge.net
+.. _Ryan Gutenkunst: mailto:rng7@cornell.edu

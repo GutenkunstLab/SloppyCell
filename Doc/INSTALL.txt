@@ -26,22 +26,36 @@ Instructions
 ~~~~~~~~~~~~
 .. topic:: On Windows
 
-   1. Install required dependencies. We recommend installing the `Enthought Python distribution <http://www.enthought.com/python/>`_ to satisfy the Python and SciPy dependencies.
-   2. Get the binary version -- not there yet...
+   1. Install required dependencies. We recommend installing the 
+      `Enthought Python distribution <http://www.enthought.com/python/>`_ to 
+      satisfy the Python and SciPy dependencies.
+   2. To build SloppyCell on Windows.
+
+      a. Install `MinGW <http::/http://www.mingw.org/>`_
+      b. Unpack the tarball. (``tar xzf SloppyCell-0.2.tar.gz``)
+      c. Descend into the SloppyCell-0.2 directory. (``cd SloppyCell-0.2``)
+      d. Build SloppyCell. (``python setup.py build -cmingw32``) 
+
+   3. Or try installing this `binary version <SlopppyCell-0.2-win32.zip>`_
+      (built by Robert Clewley).
+
+      a. Un-zip the binary.
+      b. Descend into the SloppyCell-0.2 directory. (``cd SloppyCell-0.2``)
+
+   4. Run the installation script. (``python setup.py install``) 
+   5. Run the included test routines. (``cd ../Testing; python test.py``)
 
 .. topic:: On OS X and Linux
 
    1. Install required dependencies.  
-   (On OS X 10.3, we recommend installing `MacEnthon <http://download.enthought.com/MacEnthon/>`_ which will install Scipy, matplotlib, and IPython. A pre-built version of g77 (Fortran77 compiler) for OSX 10.3 is available at http://hpc.sf.net.)
-
+      (On OS X 10.3, we recommend installing 
+      `MacEnthon <http://download.enthought.com/MacEnthon/>`_ which will install
+      Scipy, matplotlib, and IPython. A pre-built version of g77 (Fortran77 
+      compiler) for OSX 10.3 is available at http://hpc.sf.net.)
    2. `Download <http://sourceforge.net/project/showfiles.php?group_id=140498>`_ SloppyCell-0.2.tgz.
-
    3. Unpack the tarball. (``tar xzf SloppyCell-0.2.tar.gz``)
-
    4. Descend into the SloppyCell-0.2 directory. (``cd SloppyCell-0.2``)
-
    5. Run the installation script. (``python setup.py install``) 
-
    6. Run the included test routines. (``cd ../Testing; python test.py``)
 
 $Date$
