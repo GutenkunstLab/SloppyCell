@@ -1,119 +1,76 @@
 import scipy
 
 # This specifies the uncertainties assumed.
-def sigmaFunc(traj, dataId):
+def sigmaFunc(traj, data_id):
     """
-    This error structure takes the uncertainty on a variable to be equal to
-    the maxiumum value in a trajectory. If that maxiumum value less than 1e-16,
-    the uncertainty is taken to be 1.
+    This takes the uncertainty in a variable to be equal to its typical value 
+    divided by 10.
     """
-    data = traj.get_var_traj(dataId)
-    max_data = max(abs(data))
-    cutoff = 1e-16
-    if max_data > cutoff:
-        sigma = max_data
-    elif max_data == 0:
-        sigma = 1
-    else:
-        print '*'*70
-        print 'max_data for %s is non-zero and less than %g!' % (dataId, cutoff)
-        print '*'*70
-        sigma = 1
-
+    sigma = traj.get_var_typical_val(data_id)/10.0
+    cutoff = 1e-12
+    if sigma < cutoff:
+        print 'sigma < %g for variable %s!' % (cutoff, data_id)
     return sigma
 
 def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, fixed_sf=False,
-                       return_dict=False, rtol=1e-6):
-    return calculatePerfectDataLMHessian(sens_traj, data_ids, opt_ids, fixed_sf,
-                                         return_dict, rtol)
+                       return_dict=False):
+    if data_ids is None:
+        data_ids = sens_traj.dynamicVarKeys + sens_traj.assignedVarKeys
+    if opt_ids is None:
+        opt_ids = sens_traj.optimizableVarKeys
 
-def calculatePerfectDataLMHessian(traj, dataIds = None, optIds = None, 
-                                  fixedScaleFactors = False, 
-                                  returnDict = False, rtol=1e-6):
-    if dataIds is None:
-        dataIds = traj.dynamicVarKeys + traj.assignedVarKeys
-    if optIds is None:
-        optIds = traj.optimizableVarKeys
+    sf_derivs, hess_dict = {}, {}
+    for data_id in data_ids:
+        data_sigma = sigmaFunc(sens_traj, data_id)
+        if scipy.isscalar(data_sigma):
+            data_sigma = scipy.zeros(len(sens_traj), scipy.Float) + data_sigma
 
-    scaleFactorDerivs, LMHessianDict = {}, {}
-    for dataIndex, dataId in enumerate(dataIds):
-        dataSigma = sigmaFunc(traj, dataId)
-        if scipy.isscalar(dataSigma):
-            dataSigma = 0*traj.getVariableTrajectory(dataId) + dataSigma
-
-        if fixedScaleFactors:
-            scaleFactorDerivs[dataId] = dict([(id, 0) for id in optIds])
+        if fixed_sf:
+            sf_derivs[data_id] = dict([(id, 0) for id in opt_ids])
         else:
-            scaleFactorDerivs[dataId] = \
-                    calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds,
-                                               rtol)
+            sf_derivs[data_id] = get_sf_derivs(sens_traj, data_id, data_sigma, 
+                                               opt_ids)
 
-        LMHessianDict[dataId] = \
-                computeLMHessianContribution(traj, dataId, dataSigma, optIds,
-                                             scaleFactorDerivs[dataId], rtol)
+        hess_dict[data_id] = \
+                computeLMHessianContribution(sens_traj, data_id, data_sigma, 
+                                             opt_ids, sf_derivs[data_id])
 
-    LMHessian = scipy.sum(LMHessianDict.values())
-    if returnDict:
-        return LMHessian, LMHessianDict
+    hess = scipy.sum(hess_dict.values())
+    if return_dict:
+        return hess, hess_dict
     else:
-        return LMHessian
+        return hess
 
-def computeIntervals(traj):
+def get_intervals(traj):
     # We want to break up our integrals when events fire, so first we figure out
     #  when they fired by looking for duplicated times in the trajectory
-    eventIndices = scipy.compress(scipy.diff(traj.timepoints) == 0, 
-                                  scipy.arange(len(traj.timepoints)))
+    times = traj.get_times()
+    eventIndices = scipy.compress(scipy.diff(times) == 0, 
+                                  scipy.arange(len(times)))
     intervals = zip([0] + list(eventIndices + 1), 
-                    list(eventIndices + 1) + [len(traj.timepoints)])
+                    list(eventIndices + 1) + [len(times)])
 
     return intervals
 
-
-def interpolateInterval(traj, dataId, dataSigma, startIndex, endIndex):
-    k = min(5, endIndex-startIndex - 1)
-
-    times = traj.timepoints[startIndex:endIndex]
-    y = traj.getVariableTrajectory(dataId)[startIndex:endIndex]
-    sigma = dataSigma[startIndex:endIndex]
-
-    yTCK = scipy.interpolate.splrep(times, y, k = k, s = 0)
-    sigmaTCK = scipy.interpolate.splrep(times, sigma, k = k, s = 0)
-
-    return yTCK, sigmaTCK
-
-def calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds, rtol):
+def get_sf_derivs(traj, dataId, data_sigma, optIds):
     scaleFactorDerivs = {}
     intTheorySq = 0
-    for startIndex, endIndex in computeIntervals(traj):
-        k = min(5, endIndex-startIndex - 1)
-        yTCK, sigmaTCK = interpolateInterval(traj, dataId, dataSigma,
-                                             startIndex, endIndex)
-    
-        value, error = scipy.integrate.quad(_theorySqIntegrand, 
-                                            traj.timepoints[startIndex], 
-                                            traj.timepoints[endIndex - 1], 
-                                            args = (yTCK, sigmaTCK),
-                                            limit = endIndex-startIndex,
-                                            epsrel=rtol, epsabs=scipy.inf)
+    for start, end in get_intervals(traj):
+        y = traj.get_var_traj(dataId)[start:end]
+        times = traj.get_times()[start:end]
+        sigma = data_sigma[start:end]
+
+        value = scipy.integrate.simps((y/sigma)**2, times, 
+                                      even='last')
         intTheorySq += value
     
         for optId in optIds:
-            sens = traj.getVariableTrajectory((dataId, optId))\
-                    [startIndex:endIndex]
-            optValue = traj.constantVarValues.getByKey(optId)
-            sensTCK = scipy.interpolate.splrep(traj.timepoints\
-                                               [startIndex:endIndex], 
-                                               sens * optValue,
-                                               k = k, s = 0)
-    
-            numerator, error = scipy.\
-                    integrate.quad(_scaleFactorDerivsIntegrand,
-                                   traj.timepoints[startIndex], 
-                                   traj.timepoints[endIndex - 1], 
-                                   args = (sensTCK, yTCK, sigmaTCK),
-                                   limit = endIndex-startIndex,
-                                   epsrel=rtol, epsabs=scipy.inf)
-    
+            optValue = abs(traj.get_var_traj(optId)[start:end])
+            sens = traj.get_var_traj((dataId, optId))[start:end]*optValue
+
+            numerator = scipy.integrate.simps(sens*y/sigma**2, times, 
+                                              even='last')
+
             scaleFactorDerivs.setdefault(optId, 0)
             scaleFactorDerivs[optId] += -numerator
 
@@ -122,49 +79,36 @@ def calculateScaleFactorDerivs(traj, dataId, dataSigma, optIds, rtol):
 
     return scaleFactorDerivs
 
-def computeLMHessianContribution(traj, dataId, dataSigma, optIds, 
-                                 scaleFactorDerivs, rtol):
+def computeLMHessianContribution(traj, dataId, data_sigma, optIds, 
+                                 scaleFactorDerivs):
     LMHessian = scipy.zeros((len(optIds), len(optIds)), scipy.Float)
-    for start, end in computeIntervals(traj):
-        k = min(5, end-start - 1)
-        yTCK, sigmaTCK = interpolateInterval(traj, dataId, dataSigma, 
-                                             start, end)
 
-        sensTCKs = {}
-        for optIndex, optId in enumerate(optIds):
-            sens = traj.getVariableTrajectory((dataId, optId))\
-                    [start:end]
-            optValue = abs(traj.get_var_traj(optId)[start:end])
-            # Note that we multiply here by abs(opt) to turn senstivity from
-            #  d/d_opt to d/d_log(abs(opt))
-            sensTCK = scipy.interpolate.splrep(traj.timepoints[start:end], 
-                                               sens * optValue,
-                                               k = k, s = 0)
-            sensTCKs[optId] = sensTCK
+    # We break up our integral at event firings.
+    for start, end in get_intervals(traj):
+        times = traj.timepoints[start:end]
+        y = traj.getVariableTrajectory(dataId)[start:end]
+        sigma = data_sigma[start:end]
 
         for optIndex1, optId1 in enumerate(optIds):
-            sens1TCK = sensTCKs[optId1]
+            # We convert our sensitivity trajectory to a sensitivity wrt the 
+            #  log(abs()) by multiplying by the parmeter value.
+            optValue = abs(traj.get_var_traj(optId1)[start:end])
+            sens1 = traj.get_var_traj((dataId, optId1))[start:end]*optValue
+            dB1 = scaleFactorDerivs[optId1]
             for jj, optId2 in enumerate(optIds[optIndex1:]):
                 optIndex2 = jj + optIndex1
 
-                sens2TCK = sensTCKs[optId2]
+                optValue = abs(traj.get_var_traj(optId2)[start:end])
+                sens2 = traj.get_var_traj((dataId, optId2))[start:end]*optValue
+                dB2 = scaleFactorDerivs[optId2]
 
-                if scaleFactorDerivs[optId1] == 0\
-                   and scaleFactorDerivs[optId2] == 0:
-                    integrand = _integrandFixedSF
-                else:
-                    integrand = _integrandVarSF
-
-                value, error = scipy.\
-                        integrate.quad(integrand, 
-                                       traj.timepoints[start], 
-                                       traj.timepoints[end - 1], 
-                                       args = (sens1TCK, sens2TCK,
-                                               yTCK, sigmaTCK,
-                                               scaleFactorDerivs[optId1],
-                                               scaleFactorDerivs[optId2]),
-                                       limit = end-start,
-                                       epsrel=rtol, epsabs=scipy.inf)
+                integrand = (sens1 + dB1 * y) * (sens2 + dB2 * y)/ sigma**2
+                # We do the even='last' for speed. Otherwise, for an even number
+                #  of points, simps does twice as much work as for an odd
+                #  number.
+                # In tests it really doesn't make much difference in accurary.
+                value = scipy.integrate.simps(integrand, times, 
+                                              even='last')
 
                 LMHessian[optIndex1][optIndex2] += value
                 if optIndex1 != optIndex2:
@@ -173,38 +117,3 @@ def computeLMHessianContribution(traj, dataId, dataSigma, optIds,
     LMHessian /= (traj.timepoints[-1] - traj.timepoints[0])
 
     return LMHessian
-
-def _scaleFactorDerivsIntegrand(t, sensTCK, yTCK, sigmaTCK):
-    sensVal = scipy.interpolate.splev(t, sensTCK)
-    y = scipy.interpolate.splev(t, yTCK)
-    sigma = scipy.interpolate.splev(t, sigmaTCK)
-    return sensVal * y/sigma**2
-
-def _theorySqIntegrand(t, yTCK, sigmaTCK):
-    y = scipy.interpolate.splev(t, yTCK)
-    sigma = scipy.interpolate.splev(t, sigmaTCK)
-    return (y/sigma)**2
-
-def _integrandFixedSF(t, sens1TCK, sens2TCK, yTCK, sigmaTCK, dB1, dB2):
-    sens1Val = scipy.interpolate.splev(t, sens1TCK)
-    sens2Val = scipy.interpolate.splev(t, sens2TCK)
-    sigma = scipy.interpolate.splev(t, sigmaTCK)
-    return sens1Val * sens2Val / sigma**2
-
-def _integrandVarSF(t, sens1TCK, sens2TCK, yTCK, sigmaTCK, dB1, dB2):
-    sens1Val = scipy.interpolate.splev(t, sens1TCK)
-    sens2Val = scipy.interpolate.splev(t, sens2TCK)
-    y = scipy.interpolate.splev(t, yTCK)
-    sigma = scipy.interpolate.splev(t, sigmaTCK)
-    return (sens1Val + dB1 * y) * (sens2Val + dB2 * y)/ sigma**2
-
-try:
-    import psyco
-    psyco.bind(_theorySqIntegrand)
-    psyco.bind(_scaleFactorDerivsIntegrand)
-    psyco.bind(_integrandFixedSF)
-    psyco.bind(_integrandVarSF)
-    psyco.bind(scipy.interpolate.splrep)
-    psyco.bind(scipy.interpolate.splev)
-except ImportError:
-    pass
