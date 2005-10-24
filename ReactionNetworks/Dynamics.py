@@ -99,7 +99,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
             if getattr(net, 'integrateWithLogs', False):
                 IC = scipy.log(IC)
             next_requested = scipy.compress(times > start, times)[0]
-            integrate_to = min(start + root_grace_t, next_t)
+            integrate_to = min(start + root_grace_t, next_requested)
             temp = odeintr(func, copy.copy(IC), [start, integrate_to], 
                            Dfun = Dfun, 
                            mxstep = 10000, rtol = rtol, atol = atol,
