@@ -42,7 +42,7 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 .. The top level of the SloppyCell package provides support for describing Models, Calculations and Experiments.  Models combine Calculations and Experiments to support the definition of a cost function (the residual misfit between Calculations and Experiments).  The most widely used type of Calculation is that described by a ReactionNetwork.  The ReactionNetworks subdirectory contains code to support the construction of networks from sets of chemicals, reactions, and parameters.
 
 - `Installation guide <INSTALL.html>`_
-- `Usage example <Example/README.html>`_
+- `Usage example <Example/README.html>`_ (incomplete, see SloppyCell/Example)
 - `Mailing list`_
 - Sourceforge `project page`_
 - `CVS snapshot <SloppyCell-CVS.tar.gz>`_ generated nightly
