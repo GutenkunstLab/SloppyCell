@@ -58,10 +58,12 @@ for id, val in params.items():
 #  Once you're close, it often helps to try several of the optimizers, as
 #  they have different strengths and may head different places.
 # First we'll try Nelder-Mead
-#pmin1 = Optimization.fmin_log_params(m, params, xtol=1e-2)
-## Then we run Levenburg-Marquardt
-#params = Optimization.leastsq_log_params(m, pmin1)
-#Utility.save(params, 'min_params.bp')
+pmin1 = Optimization.fmin_log_params(m, params, xtol=1e-2)
+# Then we run Levenburg-Marquardt
+params = Optimization.leastsq_log_params(m, pmin1)
+
+# We save our parameter values, the reload them.
+Utility.save(params, 'min_params.bp')
 params = Utility.load('min_params.bp')
 
 print 'Final cost:', m.cost(params)
@@ -87,10 +89,10 @@ Plotting.plot_eigvect(evects[:,0], params.keys())
 
 ## Now we'll build an ensemble of parameters.
 Network.full_speed()
-#ens, ens_costs, ratio = Ensembles.ensemble_log_params(m, params, hess, 
-#                                                      steps = 2000,
-#                                                      max_run_hours = 10/60.)
-#Utility.save((ens, ens_costs, ratio), 'ensemble.bp')
+ens, ens_costs, ratio = Ensembles.ensemble_log_params(m, params, hess, 
+                                                      steps = 2000,
+                                                      max_run_hours = 10/60.)
+Utility.save((ens, ens_costs, ratio), 'ensemble.bp')
 (ens, ens_costs, ratio) = Utility.load('ensemble.bp')
 
 # We can look at the autocorrelation function of our costs to check efficiency
