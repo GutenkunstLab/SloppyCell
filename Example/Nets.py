@@ -25,7 +25,7 @@ base_net.set_var_optimizable('k2', False)
 ###############################################################################
 
 # Output the LaTeX'd equations. This can be very useful for debugging.
-IO.eqns_TeX_file(base_net, 'TeX/eqns.tex')
+IO.eqns_TeX_file(base_net, 'eqns.tex')
 
 ###############################################################################
 
