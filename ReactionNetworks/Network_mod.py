@@ -549,7 +549,7 @@ class Network:
             # We create a local_namespace to evaluate the expression in that
             #  maps variable ids to their current values
             vars_used = ExprManip.extract_vars(expr)
-            var_vals = [(id, self.get_var_val(id)) for id in vars_used]
+            var_vals = [(id, self.get_var_val(id)) for id in vars_used if id != 'time']
             local_namespace = dict(var_vals)
             local_namespace['time'] = time
             local_namespace.update(self.namespace)

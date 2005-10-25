@@ -148,6 +148,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
         # Check the directions of our root crossings to see whether events
         #  actually fired.
         for te_this, ye_this, ie_this in zip(temp[2], temp[3], temp[4]):
+            if getattr(net, 'integrateWithLogs', False): ye_this = scipy.exp(ye_this)
             root_derivs = net.root_func_dt(ye_this, 
                                            net.get_ddv_dt(ye_this, te_this), 
                                            te_this)

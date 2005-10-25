@@ -312,7 +312,7 @@ class Trajectory:
                 #  value alone
                 mapping = str(self.const_var_values.get(id))
             elif idname == 'time':
-                mapping = 'times[start:end, %i]'
+                mapping = 'times[start:end]'
             else:
                 raise 'Problem with idname %s in Trajectory._sub_var_names'
 
