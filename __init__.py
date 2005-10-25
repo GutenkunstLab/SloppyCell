@@ -1,3 +1,4 @@
+_VERSION = 'CVS'
 _TEMP_DIR = '.SloppyCell'
 
 import os
