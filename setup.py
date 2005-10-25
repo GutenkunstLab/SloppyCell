@@ -5,7 +5,7 @@ lsodar = Extension(name = 'SloppyCell._lsodar',
                               'odepack/opkda1.f', 'odepack/opkda2.f'])
 
 setup(name='SloppyCell',
-      version='0.2',
+      version='CVS',
       author='Ryan Gutenkunst',
       author_email='rng7@cornell.edu',
       url='http://sloppycell.sourceforge.net',
