@@ -54,6 +54,8 @@ class ExperimentCollection(dict):
             for period in expt.GetPeriodChecks():
                 calc, depVar = period['calcKey'], period['depVarKey']
                 start, period = period['startTime'], period['period']
+                if calc not in varsByCalc.keys():
+                    varsByCalc[calc].setdefault(calc, {})
                 if depVar not in varsByCalc[calc]:
                     varsByCalc[calc].setdefault(depVar, sets.Set())
                 varsByCalc[calc][depVar].union_update([start, start+2.0*period])
@@ -61,6 +63,8 @@ class ExperimentCollection(dict):
             for amplitude in expt.GetAmplitudeChecks():
                 calc, depVar = amplitude['calcKey'], amplitude['depVarKey']
                 start, test, period = amplitude['startTime'], amplitude['testTime'], amplitude['period']
+                if calc not in varsByCalc.keys():
+                    varsByCalc[calc].setdefault(calc, {})
                 if depVar not in varsByCalc[calc]:
                     varsByCalc[calc].setdefault(depVar, sets.Set())
                 varsByCalc[calc][depVar].union_update([start, start+period,

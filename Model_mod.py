@@ -801,6 +801,8 @@ class Model:
 
     def CalcHessianUsingResidualsInLogParams(self,params,epsf,relativeScale = True, moreAcc = False) :
     	currParams = copy.copy(params)
+        currRawParams = copy.copy(params)
+        currRawParams.update(scipy.exp(params))
 	nOp = len(currParams)
 	J,jtj = self.GetJandJtJInLogParameters(currParams)
 	self.ComputeInternalVariables()
@@ -819,7 +821,7 @@ class Model:
 
 	    		for res in J.keys() :
 				resvalue = self.residuals.getByKey(res).GetValue\
-					(localCalcVals, localIntVars, currParams)
+					(localCalcVals, localIntVars, currRawParams)
 				secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(J[res]))/ \
 					eps[index]*resvalue
 
@@ -834,7 +836,8 @@ class Model:
 			
 			for res in J.keys() :
                                 resvalue = self.residuals.getByKey(res).GetValue\
-                                        (localCalcVals, localIntVars, currParams)
+                                        (localCalcVals, localIntVars, currRawParams)
+                                print JPlus[res], '\n\n', JMinus[res], '\n\n', eps[index], '\n\n', res, resvalue 
                                 secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(JMinus[res]))/ \
                                         (2.0*eps[index])*resvalue
 	self.params.update(scipy.exp(currParams))
