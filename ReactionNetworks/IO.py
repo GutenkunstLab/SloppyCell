@@ -8,6 +8,7 @@ except ImportError:
     print 'SBML import and export not available.'
 
 import SloppyCell
+from SloppyCell.KeyedList_mod import KeyedList
 import SloppyCell.ExprManip as ExprManip
 import Network_mod
 
@@ -41,7 +42,7 @@ def net_DOT_file(net, filename = None):
     f.close()
 
 
-def eqns_TeX_file(net, filename = None, sub_funcdefs = True):
+def eqns_TeX_file(net, filename = None):
     net.compile()
 
     lines = []
@@ -50,7 +51,7 @@ def eqns_TeX_file(net, filename = None, sub_funcdefs = True):
     lines.append(r'\usepackage{fullpage}')
     lines.append(r'\usepackage{longtable}')
     lines.append(r'\begin{document}')
-    lines.append(_net_eqns_to_TeX(net, sub_funcdefs))
+    lines.append(_net_eqns_to_TeX(net))
     lines.append(r'\end{document}')
 
     if filename is None:
@@ -59,7 +60,7 @@ def eqns_TeX_file(net, filename = None, sub_funcdefs = True):
     f.write(os.linesep.join(lines))
     f.close()
 
-def _net_eqns_to_TeX(net, sub_funcdefs):
+def _net_eqns_to_TeX(net):
     """
     Return a string that contains the longtable-bound TeX'd equations for the network
     """
@@ -73,12 +74,30 @@ def _net_eqns_to_TeX(net, sub_funcdefs):
                           % net.get_component_name(id, True))
                          for id in net.species.keys()])
     name_dict.update(species_dict)
-    eqns_str = ExprManip.Py2TeX.dict2TeX(net.diff_eq_rhs, name_dict, 
-                                       r'\frac{d\,%s}{dt}', longtable=True)
-    assigns_str = ExprManip.Py2TeX.dict2TeX(net.assignmentRules, name_dict, 
-                                          longtable=True)
 
-    return os.linesep.join([eqns_str, assigns_str])
+    outputs = []
+    if net.functionDefinitions:
+        func_KL = KeyedList()
+        for func_id, func in net.functionDefinitions.items():
+            lhs = '%s(%s)' % (func_id, r','.join(func.variables))
+            func_KL.set(lhs, func.math)
+        funcs_str = ExprManip.Py2TeX.dict2TeX(func_KL, name_dict, 
+                                              split_terms=False)
+        outputs.extend([r'\section*{Function Definitions}', funcs_str])
+
+    if net.assignmentRules:
+        assigns_str = ExprManip.Py2TeX.dict2TeX(net.assignmentRules, name_dict, 
+                                                split_terms=True)
+        outputs.extend([r'\section*{Assignment Rules}', assigns_str])
+
+    if net.diff_eq_rhs:
+        eqns_str = ExprManip.Py2TeX.dict2TeX(net.diff_eq_rhs, name_dict, 
+                                             r'\frac{d\,%s}{dt}', 
+                                             split_terms=True)
+        outputs.extend([r'\section*{Differential Equations}', eqns_str])
+
+    return os.linesep.join(outputs)
+                            
 
 def dynamic_function_from_file(obj, filename):
     """
