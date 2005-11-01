@@ -14,6 +14,23 @@ g = lambda x, y, z: x**4 * y**6 * z**5
 
 
 class test_AST(unittest.TestCase):
+    def test_ast2str(self):
+        cases = ['x', 'x+y', 'x-y', 'x*y', 'x/y', 'x**y', '-x', 'x**-y',
+                 'x**(-y + z)', 'f(x)', 'g(x,y,z)', 'x**(y**z)', 
+                 '(x**y)**z', 'x**y**z', 'x - (x+y)', '(x+y) - z',
+                 'g(x-0+2, y**2 - 0**0, z*y + x/1)', 'x/x', 'x/y',
+                 '(x-x)/z', 'x**2 - y/z', 'x+1-1+2-3-x', '0+1*1', 'x-x+y',
+                 '(-2)**2', '-2**2'
+                 ]
+        for expr in cases: 
+            run = ast2str(strip_parse(expr))
+            orig = eval(expr)
+            out = eval(run)
+            if orig != 0:
+                assert abs(orig - out)/(0.5 * (orig + out)) < 1e-6
+            else:
+                assert out == 0
+
     def test__collect_num_denom(self):
         cases = [(strip_parse('1'), (['1'], [])),
                  (strip_parse('1/2'), (['1'], ['2'])),
