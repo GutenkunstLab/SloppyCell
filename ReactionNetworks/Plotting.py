@@ -372,13 +372,19 @@ def plot_trajectory(traj, vars = None,
     plot_func = plot_funcs_dict[(logx, logy)]
 
     cW = ColorWheel(symbols=None)
+    lines, labels = [], []
     for id in vars:
         fmt = cW.next()
-        plot_func(traj.timepoints, traj.getVariableTrajectory(id), fmt, 
-                  linewidth=3, label=str(id))
+        label = str(id)
+        line = plot_func(traj.timepoints, traj.getVariableTrajectory(id), fmt, 
+                          linewidth=3, label=label)
+        lines.append(line)
+        labels.append(label)
 
     if show_legend:
         legend(loc=loc)
+
+    return (lines, labels)
 
 def plot_ensemble_trajs(best_traj=None, mean_traj=None, 
                         std_traj=None, std_devs=1.0,
