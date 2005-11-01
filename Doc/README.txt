@@ -50,9 +50,9 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
 .. topic:: Citing SloppyCell:
 
-    There are no papers yet on SloppyCell itself. For now, please reference this website:
+   There are no papers yet on SloppyCell itself. For now, please reference this website:
 
-    Ryan Gutenkunst, Fergal Casey, Josh Waterfall, Kevin Brown, Chris Myers, and Jim Sethna. SloppyCell. http://sloppycell.soureforge.net/ (2005)
+      Ryan Gutenkunst, Fergal Casey, Josh Waterfall, Kevin Brown, Chris Myers, and Jim Sethna. SloppyCell. http://sloppycell.soureforge.net/ (2005)
   
 
 $Date$
