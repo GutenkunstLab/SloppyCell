@@ -205,7 +205,7 @@ class Network:
                                   is_constant, is_optimizable)
         self._add_variable(compartment)
 
-    def add_species(self, id, compartment, initial_conc=None, 
+    def add_species(self, id, compartment, initial_conc=0, 
                     name='', typical_value=None,
                     is_boundary_condition=False, is_constant=False, 
                     is_optimizable=False):
@@ -300,7 +300,9 @@ class Network:
 
         A rate rules species that <var_id> = rhs.
         """
+        self.set_var_constant(var_id, False)
         self.assignmentRules.set(var_id, rhs)
+        self._makeCrossReferences()
 
     def add_rate_rule(self, var_id, rhs):
         """
@@ -308,8 +310,9 @@ class Network:
 
         A rate rules species that d <var_id>/dt = rhs.
         """
-        self.variables.get(var_id).is_constant = False
+        self.set_var_constant(var_id, False)
         self.rateRules.set(var_id, rhs)
+        self._makeCrossReferences()
 
     def remove_component(self, id):
         """
@@ -549,7 +552,8 @@ class Network:
             # We create a local_namespace to evaluate the expression in that
             #  maps variable ids to their current values
             vars_used = ExprManip.extract_vars(expr)
-            var_vals = [(id, self.get_var_val(id)) for id in vars_used if id != 'time']
+            var_vals = [(id, self.get_var_val(id)) for id in vars_used
+                        if id != 'time']
             local_namespace = dict(var_vals)
             local_namespace['time'] = time
             local_namespace.update(self.namespace)
@@ -580,6 +584,13 @@ class Network:
         """
         return self._get_var_attr(id, 'typicalValue')
 
+    def get_var_typical_vals(self, id):
+        """
+        Return the variable typical values as a KeyedList.
+        """
+        return KeyedList([(id, self.get_var_typical_value(id)) for id in 
+                          self.variables.keys()])
+
     def set_var_ic(self, id, value, warn=True):
         """
         Set the initial condition of the variable with the given id.
@@ -591,7 +602,7 @@ class Network:
         var.initialValue = value
         if var.is_constant:
             var.value = value
-        self.constantVarValues = [var.value for var in
+        self.constantVarValues = [self.evaluate_expr(var.value) for var in
                                   self.constantVars.values()]
 
     def get_var_ic(self, id):
@@ -1113,7 +1124,7 @@ class Network:
             else:
                 self.dynamicVars.set(id, var)
 
-        self.constantVarValues = [var.value for var in 
+        self.constantVarValues = [self.evaluate_expr(var.value) for var in 
                                   self.constantVars.values()]
 
         self.complexEvents = KeyedList()
@@ -1241,12 +1252,14 @@ class Network:
 
     def __setstate__(self, newdict):
         self.__dict__.update(newdict)
-        self._makeCrossReferences()
+        self.namespace = copy.copy(self._common_namespace)
 
         # Recreate our namespace
-        self.namespace = copy.copy(self._common_namespace)
         for func_id, func_str in self._func_strs:
             self.namespace[func_id] = eval(func_str, self.namespace, {})
+
+        self._makeCrossReferences()
+
         # exec all our functions
         for func in self._dynamic_funcs:
             try:
