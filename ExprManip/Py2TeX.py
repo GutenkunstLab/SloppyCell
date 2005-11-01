@@ -7,10 +7,10 @@ import AST
 #  denominators
 _EMPTY_MUL = Mul((None, None))
 
-def dict2TeX(d, name_dict, lhs_form='%s', longtable=False):
+def dict2TeX(d, name_dict, lhs_form='%s', split_terms=False):
     lines = []
     for lhs, rhs in d.items():
-        if longtable:
+        if split_terms:
             ast = AST.strip_parse(rhs)
             pos, neg = [], []
             AST._collect_pos_neg(ast, pos, neg)
@@ -27,25 +27,22 @@ def dict2TeX(d, name_dict, lhs_form='%s', longtable=False):
         else:
             lhsTeX = lhs_form % expr2TeX(lhs, name_dict=name_dict)
             rhsTeX = expr2TeX(rhs, name_dict=name_dict)
-            lines.append(r'$ %s $ &=& $ %s $\\' % (lhsTeX, rhsTeX))
+            lines.append(r'$ %s $ & = & $ %s $\\' % (lhsTeX, rhsTeX))
         # Force a space between TeX'd entries
         lines[-1] = '%s[5mm]' % lines[-1]
 
     all = os.linesep.join(lines)
 
-    if longtable:
-        all = all.replace(r'\frac{', r'\tabfrac{')
-        # This makes the fractions look much nicer in the tabular output. See
-        #  http://www.texnik.de/table/table.phtml#fractions
-        lines = [r'\providecommand{\tabfrac}[2]{%',
-                 r'   \setlength{\fboxrule}{0pt}%',
-                 r'   \fbox{$\frac{#1}{#2}$}}',
-                 r'\begin{longtable}{rcl}'] + [all] + [r'\end{longtable}']
-        all = os.linesep.join(lines)
+    all = all.replace(r'\frac{', r'\tabfrac{')
+    # This makes the fractions look much nicer in the tabular output. See
+    #  http://www.texnik.de/table/table.phtml#fractions
+    lines = [r'\providecommand{\tabfrac}[2]{%',
+             r'   \setlength{\fboxrule}{0pt}%',
+             r'   \fbox{$\frac{#1}{#2}$}}',
+             r'\begin{longtable}{rcl}'] + [all] + [r'\end{longtable}']
+    all = os.linesep.join(lines)
 
     return all
-
-
 
 def expr2TeX(expr, name_dict={}):
     """
@@ -95,10 +92,10 @@ def _ast2TeX(ast, outer=AST._FARTHEST_OUT, name_dict={},
         nums = [lam_func(term) for term in nums]
         if denoms:
             denoms = [lam_func(term) for term in denoms]
-            out = r'\frac{%s}{%s}' % (r' \times '.join(nums),
-                                      r' \times '.join(denoms))
+            out = r'\frac{%s}{%s}' % (r' \cdot '.join(nums),
+                                      r' \cdot '.join(denoms))
         else:
-            out = r' \times '.join(nums)
+            out = r' \cdot '.join(nums)
     elif isinstance(ast, Power):
         out = '{%s}^{%s}' % (_ast2TeX(ast.left, ast, name_dict, adjust = 1),
                              _ast2TeX(ast.right, ast, name_dict))
@@ -114,7 +111,7 @@ def _ast2TeX(ast, outer=AST._FARTHEST_OUT, name_dict={},
             # Special case
             out = r'\sqrt{%s}' % args[0]
         else:
-            out = r'\operatorname{%s}\left(%s\right)' % (name, ', '.join(args))
+            out = r'\operatorname{%s}\left(%s\right)' % (name, r',\,'.join(args))
 
     if AST._need_parens(outer, ast, adjust):
         return out
