@@ -1,5 +1,6 @@
 import copy
 import os
+import sets
 
 import scipy
 
@@ -30,7 +31,7 @@ _iwork_vars = {'nst': 10,
               'mused': 18,
               }
 
-def odeintr(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0, ml=0, mu=0, rtol=None, atol=None, tcrit=None, h0=0.0, hmax=0.0, hmin=0.0, ixpr=0, mxstep=500, mxhnil=0, mxordn=12, mxords=5, printmessg=0, root_term = [], root_func=None, int_pts=False, insert_events=False):
+def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=None, atol=None, tcrit=None, h0=0.0, hmax=0.0, hmin=0.0, ixpr=0, mxstep=500, mxhnil=0, mxordn=12, mxords=5, printmessg=0, root_term = [], root_func=None, int_pts=False, insert_events=False, return_derivs = None):
     """Integrate a system of ordinary differential equations.
 
     Description:
@@ -60,11 +61,6 @@ def odeintr(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0, ml=0, m
               value point should be the first element of this sequence.
       args -- extra arguments to pass to function.
       Dfun -- the gradient (Jacobian) of func (same input signature as func).
-      ****
-      col_deriv -- non-zero implies that Dfun defines derivatives down
-                   columns (faster), otherwise Dfun should define derivatives
-                   across rows.
-      **** Not yet working!
       full_output -- non-zero to return a dictionary of optional outputs as
                      the second output.
       printmessg -- print the convergence message.
@@ -109,7 +105,7 @@ def odeintr(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0, ml=0, m
 
     Additional Inputs:
 
-      *** Not supported yet!
+      *** Not tested yet!
       ml, mu -- If either of these are not-None or non-negative, then the
                 Jacobian is assumed to be banded.  These give the number of
                 lower and upper non-zero diagonals in this banded matrix.
@@ -142,9 +138,13 @@ def odeintr(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0, ml=0, m
       mxordn -- maximum order to be allowed for the nonstiff (Adams) method.
       mxords -- maximum order to be allowed for the stiff (BDF) method.
 
-      int_pts --- If True, every step the integrator took is output. The return
-                  sequence is then yout, tout, [info_dict]
+      int_pts -- If True, every step the integrator took is output. The return
+                sequence is then yout, tout, [info_dict]
 
+      return_derivs -- If True, the return sequence becomes:
+                          yout, tout, [ie, ye, te,] dout, [info_dict].
+                          dout is an array of the 1st time derivatives of
+                          the variables.
     """
 
     # Take care of our passed in functions. We need to wrap them in lambda's to 
@@ -229,7 +229,6 @@ def odeintr(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0, ml=0, m
     liw = 20 + neq
     iwork = scipy.zeros(liw, scipy.Int)
 
-
     rwork[4] = h0
     rwork[5] = hmax
     rwork[6] = hmin
@@ -245,6 +244,10 @@ def odeintr(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0, ml=0, m
     t0, tindex = t[0], 1
     tout, yout = [t0], [y0]
     t_root, y_root, i_root = [], [], []
+
+    # Handle derivative requests
+    if return_derivs:
+        dout = [copy.copy(usefunc(t0, y0))]
 
     info_dict = dict([(key, []) for key in
                       (_rwork_vars.keys() + _iwork_vars.keys())])
@@ -283,6 +286,13 @@ def odeintr(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0, ml=0, m
                         info_dict[key].append(iwork[index])
                     info_dict['message'] = _msgs[istate]
 
+                # Collect derivatives
+                if return_derivs:
+                    t_ask = treached * (1- scipy.limits.double_resolution)
+                    dky, iflag = _lsodar.dintdy(t_ask, 1, rwork[20+ng:],
+                                                neq)
+                    dout.append(dky)
+
             # If we reached our goal, move on to the next point.
             if treached == t[tindex]:
                 tindex += 1
@@ -313,6 +323,8 @@ def odeintr(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0, ml=0, m
 
     # Process outputs
     outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
+    if return_derivs:
+        outputs = outputs + (scipy.array(dout),)
     if full_output:
         outputs = outputs + (info_dict,)
 

@@ -248,6 +248,34 @@ class test_lsodar(unittest.TestCase):
         self.assertAlmostEqual(y[1][1], 3.386380e-5, 4)
         self.assertAlmostEqual(y[6][2], 9.610125e-1, 4)
 
+    def test_int_pts_and_tcrit(self):
+        """ Test intermediate output """
+        y, tout, te, ye, ie = odeintr(func, y0, t, 
+                                      rtol = 1e-4, atol = [1e-6, 1e-10, 1e-6],
+                                      tcrit = [0.2, 0.9, 1.7],
+                                      int_pts = True)
+
+        out_index = tout.index(t[1])
+        self.assertAlmostEqual(y[out_index][1], 3.386380e-5, 4)
+        out_index = tout.index(t[6])
+        self.assertAlmostEqual(y[out_index][2], 9.610125e-1, 4)
+        self.assertEqual(t[-1], tout[-1])
+
+    def test_first_deriv(self):
+        """ Test derivative output of 1st derivative """
+        y, tout, te, ye, ie, dout = odeintr(func, y0, t, 
+                                      rtol = 1e-4, atol = [1e-6, 1e-10, 1e-6],
+                                      return_derivs = True,
+                                      int_pts = True)
+
+        out_index = tout.index(t[1])
+        # This is out_index-1 because we can't return derivative information
+        #  easily for the initial point.
+        int_deriv = dout[out_index]
+        func_deriv = func(y[out_index], tout[out_index])
+        for ii in range(len(y0)):
+            self.assertAlmostEqual(int_deriv[ii], func_deriv[ii], 6)
+
 no_lsodar_msg = 'lsodar not working!'
 if _HAVE_LSODAR:
     suite = unittest.makeSuite(test_lsodar)

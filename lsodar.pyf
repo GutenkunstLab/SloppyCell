@@ -52,8 +52,18 @@ python module _lsodar ! in
             integer intent(in) :: jt
             external g
             integer intent(in) :: ng
+            ! I can't return a size zero array...
             integer intent(out), dimension(MAX(1, ng)) :: jroot
         end subroutine dslodar
+        subroutine dintdy(t,k,yh,nyh,dky,iflag) ! in :_lsodar:opkda1.f
+            double precision intent(in) :: t
+            integer intent(in) :: k
+            ! This is a slice of rwork, rwork[20+ng:] (in Python indices)
+            double precision intent(in), dimension(:) :: yh
+            integer intent(in) :: nyh
+            double precision intent(out), dimension(nyh) :: dky
+            integer intent(out) :: iflag
+        end subroutine dintdy
     end interface 
 end python module _lsodar
 
