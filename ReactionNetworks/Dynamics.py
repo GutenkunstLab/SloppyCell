@@ -413,7 +413,7 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
 
     for start_ind, end_ind in intervals:
         start_time = times[start_ind]
-        end_time = times[start_ind]
+        end_time = times[end_ind-1]
         if start_time in pendingEvents.keys():
             # We don't currently do delays in sensitivity integration, but
             #  we'll keep this here for when we do.
