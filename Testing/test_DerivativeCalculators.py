@@ -61,7 +61,9 @@ class test_DerivativeCalculators(unittest.TestCase):
                                 maxdiff = diff
         self.assertAlmostEqual(maxdiff, 0.0, 1, 'Failed on Hessian accuracy') # within 10% error is fine
 	p = m.params.__copy__()
-	h = m.CalcHessianUsingResidualsInLogParams(scipy.log(p),1.0e-6,moreAcc=False)
+        for ii, val in enumerate(p.values()):
+            p[ii] = scipy.log(val)
+	h = m.CalcHessianUsingResidualsInLogParams(p, 1.0e-6,moreAcc=False)
 	p = m.params.__copy__()	
 	hfd = m.CalcHessianInLogParameters(p,1.0e-5)
 	maxdiff = 0.0
