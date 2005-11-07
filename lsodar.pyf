@@ -61,7 +61,7 @@ python module _lsodar ! in
             ! This is a slice of rwork, rwork[20+ng:] (in Python indices)
             double precision intent(in), dimension(:) :: yh
             integer intent(in) :: nyh
-            double precision intent(out), dimension(nyh) :: dky
+            double precision intent(out), dimension(nyh), depend(nyh) :: dky
             integer intent(out) :: iflag
         end subroutine dintdy
     end interface 
