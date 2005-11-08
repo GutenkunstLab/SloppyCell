@@ -733,6 +733,9 @@ class Network:
         self.variables.get(id).is_constant = is_constant
         self._makeCrossReferences()
 
+    def get_var_constant(self, id):
+        return self.variables.get(id).is_constant
+
     #
     # Generate the differential equations and functions to calculate them.
     #
