@@ -66,8 +66,10 @@ class Trajectory:
         self.assignedVarKeys = net.assignedVars.keys()
         self.optimizableVarKeys = net.optimizableVars.keys()
 
-        self.const_var_values = KeyedList([(id, var.value) for (id, var) in
-                                            net.constantVars.items()])
+        # We do an 'evaluate_expr' here to take care of constant variables that 
+        #  are initialized by other variables
+        self.const_var_values = KeyedList([(id, net.evaluate_expr(id)) for 
+                                           id in net.constantVars.keys()])
         self.typical_var_values = KeyedList([(id, var.typicalValue)
                                              for (id, var)
                                              in net.variables.items()])
