@@ -5,6 +5,7 @@ import copy
 import types
 
 import scipy
+import matplotlib.mlab as mlab
 
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
@@ -38,7 +39,7 @@ class Trajectory:
     def __len__(self):
         return len(self.timepoints)
 
-    def __init__(self, net, key_column=None, is_sens=False):
+    def __init__(self, net, key_column=None, is_sens=False, holds_dt=False):
         if key_column is not None:
             self.key_column = key_column
         else:
@@ -46,6 +47,14 @@ class Trajectory:
             if is_sens:
                 keys += [(cname, pname) for cname in keys
                          for pname in net.optimizableVars.keys()]
+            if holds_dt :
+                keyscopy = keys[:] # slicing gives a copy
+                for keyname in keyscopy :
+                    if isinstance(keyname,str) :
+                        keys += [(keyname,'time')]
+                    else : # key is a tuple
+                        keys += [keyname + ('time',)]
+
             self.key_column = KeyedList(zip(keys, range(len(keys))))
 
         # These are the main storage
@@ -62,6 +71,10 @@ class Trajectory:
         self.typical_var_values = KeyedList([(id, var.typicalValue)
                                              for (id, var)
                                              in net.variables.items()])
+        self.event_info = ([],[],[])
+        self.tcks = {} # need this to store the interpolation information
+        self.dytcks = {} # to store interpolated vector field info
+        self.net = net
 
         # We make a copy of the Network's namespace.
         self._func_strs = copy.copy(net._func_strs)
@@ -97,6 +110,9 @@ class Trajectory:
 
     def get_times(self):
         return self.timepoints
+
+    def add_event_info(self,eventinfo) :
+        self.event_info = eventinfo  # the information is a triple (te,ye,ie)
 
     def append(self, other):
         if self.key_column != other.key_column:
@@ -138,7 +154,7 @@ class Trajectory:
 
     def get_var_vals(self, time, eps=1e-6):
         """
-        Return a KeyedList of the values of the trajectory's variables at the 
+        Return a KeyedList of the values of the trajectory's variables at the
         given time.
 
         Prints a warning if the difference between the requested time and the
@@ -159,7 +175,7 @@ class Trajectory:
 
     def get_var_vals_index(self, index):
         """
-        Return a KeyedList of the values of the trajectory's variables at the 
+        Return a KeyedList of the values of the trajectory's variables at the
         given index.
         """
         out = KeyedList([(key, self.get_var_val_index(key, index)) for
@@ -210,7 +226,7 @@ class Trajectory:
                     # get derivative of assigned variable w.r.t.
                     #  dynamic variables
                     for wrtId, deriv in derivWRTdv.items():
-                        rhs.append('(%s) * %s__derivWRT__%s' % 
+                        rhs.append('(%s) * %s__derivWRT__%s' %
                                    (deriv, wrtId, optId))
 
 		    # now partial derivative w.r.t. optId
@@ -227,13 +243,13 @@ class Trajectory:
 
         return '\n\t'.join(functionBody) + '\n'
 
-    def appendFromODEINT(self, timepoints, odeint_array):
+    def appendFromODEINT(self, timepoints, odeint_array, holds_dt = False):
         if getattr(self, '_assignment', None) is None:
-            Network_mod._exec_dynamic_func(self, '_assignment', 
+            Network_mod._exec_dynamic_func(self, '_assignment',
                                            self.namespace, bind=False)
 
         numAdded = odeint_array.shape[0]
-        addedValues = scipy.zeros((numAdded, len(self.key_column)), 
+        addedValues = scipy.zeros((numAdded, len(self.key_column)),
                                   scipy.Float)
 
         self.values = scipy.concatenate((self.values, addedValues))
@@ -244,8 +260,12 @@ class Trajectory:
                     odeint_array[:, ii]
 
         self._assignment(self.values, self.timepoints, -numAdded, None)
+        if holds_dt :
+            for ii, id in enumerate(self.dynamicVarKeys) :
+                self.values[-numAdded:, self.key_column.get((id,'time'))] = \
+                    odeint_array[:,ii+len(self.dynamicVarKeys)]
 
-    def appendSensFromODEINT(self, timepoints, odeint_array):
+    def appendSensFromODEINT(self, timepoints, odeint_array, holds_dt = False):
         if getattr(self, '_assignment', None) is None:
             Network_mod._exec_dynamic_func(self, '_assignment',
                                            self.namespace, bind=False)
@@ -255,27 +275,40 @@ class Trajectory:
                                            self.namespace, bind=False)
 
         numAdded = odeint_array.shape[0]
-        addedValues = scipy.zeros((numAdded, len(self.key_column)), 
+        addedValues = scipy.zeros((numAdded, len(self.key_column)),
                                   scipy.Float)
 
         self.values = scipy.concatenate((self.values, addedValues))
         self.timepoints = scipy.concatenate((self.timepoints, timepoints))
 
-	nDv = len(self.dynamicVarKeys)
+        nDv = len(self.dynamicVarKeys)
+        nOv = len(self.optimizableVarKeys)
 
-	# fill in trajectory
-	for ii, dvId in enumerate(self.dynamicVarKeys):
+        # fill in trajectory
+        for ii, dvId in enumerate(self.dynamicVarKeys):
             self.values[-numAdded:, self.key_column.get(dvId)] = \
                     odeint_array[:, ii]
-	# ... and sensitivities
+        # ... and sensitivities
         for ii, dvId in enumerate(self.dynamicVarKeys):
             for jj, ovId in enumerate(self.optimizableVarKeys):
-                self.values[-numAdded:, 
+                self.values[-numAdded:,
                             self.key_column.get((dvId, ovId))]\
                         = odeint_array[:, ii + (jj+1)*nDv]
 
         self._assignment(self.values, self.timepoints, -numAdded, None)
         self._sens_assignment(self.values, self.timepoints, -numAdded, None)
+
+        if holds_dt :
+        # fill in the time derivative of the trajectory
+            for ii, dvId in enumerate(self.dynamicVarKeys):
+                self.values[-numAdded:, self.key_column.get((dvId,'time'))] = \
+                    odeint_array[:, ii + nDv*(nOv+1)]
+        # ... and of the sensitivities
+            for ii, dvId in enumerate(self.dynamicVarKeys):
+                for jj, ovId in enumerate(self.optimizableVarKeys):
+                    self.values[-numAdded:,
+                            self.key_column.get((dvId, ovId,'time'))]\
+                        = odeint_array[:, ii + (jj+1)*nDv + nDv*(nOv+1)]
 
     def __getstate__(self):
         odict = copy.copy(self.__dict__)
@@ -320,13 +353,143 @@ class Trajectory:
 
         return input
 
+    def build_interpolated_traj(self) :
+        """ Given that a trajectory exists, build_interpolated_traj will create the
+        coefficients for the spline interpolatation.
+        The spline can then be evaluated using Trajectory.evaluate_interpolated_traj or
+        Trajectory.evaluate_interpolated_trajs """
+        te,ye,ie = self.event_info
+        teIndices = []
+
+        if len(te) == 0 : # no events
+            intervals = [(0,len(self.timepoints))]
+        else :
+            # At an event there are two time points in the trajectory that
+            # are the same (=tevent) but we want the second one
+            for tevent in te :
+                teIndices.append(mlab.find(self.timepoints==tevent)[1])
+
+            # don't expect there to be an event at 0, if there is this will be messed up
+            teIndicesWith0 = list(teIndices[0:])
+            teIndicesWith0.insert(0,0)
+            # put in the last time point aswell, again a problem if there's an event at
+            # the last time
+            teIndices.extend([len(self.timepoints)])
+            intervals = zip(teIndicesWith0,teIndices)
+
+        self.tcks = {}
+
+        for (start_ind,end_ind) in intervals :
+            start_time, end_time = self.timepoints[start_ind], self.timepoints[end_ind-1]
+            curTimes = self.timepoints[start_ind:end_ind]
+            k = min(5,end_ind-start_ind-1)
+            ys = [self.get_var_traj(dv_id)[start_ind:end_ind]
+                    for dv_id in self.key_column.keys()]
+
+            self.tcks[(start_time,end_time)] = [scipy.interpolate.splrep(curTimes,scipy.asarray(y),k=k,s=0) for y in ys]
+
+        #return self.tcks # do we want to return this?
+
+    def evaluate_interpolated_trajs(self,time,subinterval,der=0) :
+        """
+        This is a version of evaluate_interpolated_traj that returns all the
+        values of the dynamic variables and requires you to pass in the
+        appropriate subinterval between events (that can be found in Trajectory.tcks.keys() )
+        Faster than calling evaluate_interpolated_traj repeatedly
+        """
+        local_tcks = self.tcks
+
+        nDVs = len(self.net.dynamicVars.keys())
+        dv_y = [scipy.interpolate.splev(time, local_tcks[subinterval][dv_ind],der=der) for dv_ind in
+                range(0,nDVs)]
+
+        return dv_y
+
+    def evaluate_interpolated_traj(self,dv_id,time,subinterval=None,der=0) :
+        """ Needs Trajectory.build_interpolated_traj() to be called first
+        Input :
+        dvid : the name of the component of the trajectory you wish to evaluate
+        time : a vector of times or a scalar
+        subinterval : an optional argument specifying the time interval between events that the
+        time argument lies (but given a valid time, it will be found automatically)
+        der : the derivative of the spline function you want, the order of the derivative will be
+        constrained by the order of the interpolated spline
+        Output :
+        A single scalar value (if time input is a scalar)
+        or
+        (returned_times, interpolated_trajectory at those times) if times is a vector
+
+        Note: it is necessary to have a returned_times argument too, in case the times passed in
+        happens to have a timepoint that corresponds to and event time, which often has two trajectory
+        values associated with it
+        """
+        if scipy.isscalar(time) :
+            time = scipy.asarray([time]) # if a scalar was passed in, convert to an array
+        else :
+            time = scipy.asarray(time)
+        local_tcks = self.tcks
+        sorted_intervals = scipy.sort(local_tcks.keys(),axis=0)
+
+        if subinterval is not None : # confine things to just one interval
+            if subinterval not in local_tcks.keys() :
+                raise "Not a valid subinterval (not in Trajectory.tcks.keys())"
+            else :
+                sorted_intervals = [[subinterval[0],subinterval[1]]]
+                interval_start_ind = 0
+                interval_end_ind = 0
+        else :
+            # sorted_intervals ends up being a list of lists, each length 2, not tuples anymore
+            for interval_ind, interval in enumerate(sorted_intervals) :
+                start_time, end_time = interval[0],interval[1]
+                if (time[0] >= start_time) :
+                    interval_start_ind = interval_ind
+                if (time[-1] <= end_time) :
+                    interval_end_ind = interval_ind
+                    break
+
+        dv_y = []
+        returned_times = []
+        dv_ind = self.key_column.keyToIndex[dv_id]
+        for interval in sorted_intervals[interval_start_ind:(interval_end_ind+1)] :
+            currTimes = scipy.compress( scipy.logical_and((time>=interval[0]),(time<=interval[1])) , time )
+            startslice, endslice = 0, None
+            if len(currTimes) > 1 :
+                if (currTimes[0]==currTimes[1]) :
+                # skip the first time point because it's repeated
+                    startslice = 1
+                if (currTimes[-1]==currTimes[-2]) :
+                # skip the last time point because it's repeated
+                    endslice = -1
+                dv_y.extend( scipy.interpolate.splev(currTimes[startslice:endslice],
+                                local_tcks[(interval[0],interval[1])][dv_ind],der=der) )
+                returned_times.extend(currTimes[startslice:endslice])
+            elif len(currTimes) == 1: # explicitly check, because len(currTimes) could = 0
+                dv_y.extend( [ scipy.interpolate.splev(currTimes, local_tcks[(interval[0],interval[1])][dv_ind],der=der) ])
+                returned_times.extend(currTimes[startslice:endslice])
+
+        if len(returned_times) == 1 :
+            return dv_y[0]
+        else :
+            return returned_times,dv_y
+
+
     # Deprecated
     def last_dynamic_var_values(self):
         """
         Return a list of the dynamic variable values at the last timepoint in
         the trajectory.
         """
-        return [self.values[-1, self.key_column.get(dv_id)] for dv_id in 
+        return [self.values[-1, self.key_column.get(dv_id)] for dv_id in
                 self.dynamicVarKeys]
 
     getVariableTrajectory = get_var_traj
+
+    try:
+        import psyco
+        psyco.bind(scipy.interpolate.splrep)
+        psyco.bind(scipy.interpolate.splev)
+        psyco.bind(evaluate_interpolated_trajs)
+        psyco.bind(evaluate_interpolated_traj)
+
+    except ImportError:
+        pass
