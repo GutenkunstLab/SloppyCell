@@ -1268,9 +1268,9 @@ class Network:
             d2 = self.takeDerivative(rule, wrt)
             if d2 != '0':
                 d = ExprManip.diff_expr(input, id)
-                output += ' + %s *(%s)' % (d, d2)
+                output += ' + (%s) *(%s)' % (d, d2)
 
-        return output
+        return ExprManip.simplify_expr(output)
 
     def copy(self, new_id=None, new_name=None):
         """
