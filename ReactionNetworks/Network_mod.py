@@ -379,8 +379,8 @@ class Network:
         t = list(t)
         t.sort()
 
-        self.trajectory = self.integrate(t, params, addTimes = True)
-    
+        self.trajectory = self.integrate(t, params)
+
     def CalculateSensitivity(self, vars, params):
         t = sets.Set([0])
 
@@ -429,9 +429,6 @@ class Network:
        # the timepoints)
        return result
 
-    #
-    # The actual integration
-    #
     def integrate(self, times, params = None,
                   returnEvents = False, addTimes = True,
                   rtol = None):
@@ -461,11 +458,11 @@ class Network:
         # te, ye, and ie are the times, dynamic variable values, and indices
         #  of fired events
         t, oa, te, ye, ie = Integration.Integrate(self, times, rtol = rtol)
-        
+
         indexKeys = self.dynamicVars.keys() + self.assignedVars.keys()
         keyToColumn = KeyedList(zip(indexKeys, range(len(indexKeys))))
 
-	trajectory = Trajectory_mod.Trajectory(self, keyToColumn)
+        trajectory = Trajectory_mod.Trajectory(self, keyToColumn)
         trajectory.appendFromODEINT(t, oa)
 
         if returnEvents:
@@ -519,7 +516,7 @@ class Network:
                 tStepped, oaStepped, teStepped, yeStepped, ieStepped = \
                         Integration.Integrate(self, times, rtol = rtol)
                 #XXX: Should pull values corresponding to times out of tStepped,
-                # oaStepped since param change might mean events fire at 
+                # oaStepped since param change might mean events fire at
                 # different times or not at all.
 		deriv = (oaStepped - oaInitial)/stepsize
 		self.set_initial_var_value(id, saved)
@@ -588,7 +585,7 @@ class Network:
         """
         Return the variable typical values as a KeyedList.
         """
-        return KeyedList([(id, self.get_var_typical_value(id)) for id in 
+        return KeyedList([(id, self.get_var_typical_value(id)) for id in
                           self.variables.keys()])
 
     def set_var_ic(self, id, value, warn=True):
@@ -615,7 +612,7 @@ class Network:
         """
         Return the variable initial conditions as a KeyedList
         """
-        return KeyedList([(id, self.get_var_ic(id)) for id in 
+        return KeyedList([(id, self.get_var_ic(id)) for id in
                           self.variables.keys()])
 
     def set_var_vals(self, kl, time = 0):
@@ -637,8 +634,17 @@ class Network:
         """
         Return the current variable values as a KeyedList
         """
-        return KeyedList([(id, self.get_var_val(id)) for id in 
+        return KeyedList([(id, self.get_var_val(id)) for id in
                           self.variables.keys()])
+
+    def get_initial_velocities(self) :
+        """
+        Returns the vector field evaluated at the initial conditions
+        """
+        ics = [self.evaluate_expr(self.getInitialVariableValue(dvid)) for dvid in self.dynamicVars.keys()]
+        # the evaluate_expr is in case an initial condition is a parameter
+        initialv = self.get_ddv_dt(ics,0.0)
+        return initialv
 
     def set_var_ics(self, kl):
         """
@@ -651,6 +657,7 @@ class Network:
         """
         Set the current stored value of the variable with the given id.
         """
+
         if warn and self.assignedVars.has_key(id):
             print 'WARNING! Attempt to assign a value to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the value of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
 
@@ -669,7 +676,7 @@ class Network:
 
     def update_optimizable_vars(self, params):
         """
-        Update the net's optimizable vars from a passed-in KeyedList, 
+        Update the net's optimizable vars from a passed-in KeyedList,
          dictionary, or sequence.
 
         Only those variables that intersect between the net and params are
@@ -709,7 +716,7 @@ class Network:
         for id, var in pending:
             self.dynamicVars.getByKey(id).value = \
                     self.evaluate_expr(var.initialValue, 0)
-	
+
 	self.updateAssignedVars(time = 0)
 
     def set_dyn_var_ics(self, values):
@@ -769,11 +776,16 @@ class Network:
                 self.diff_eq_rhs.set(id, ExprManip.simplify_expr(rhs))
 
     def getRatesForDV(self,dvName,time) :
+        """ Determine the individual reaction rates for dynamic variable dvName at
+        a particular time.
+        Returns the numerical rate for each reaction that changes dvName, and
+        the stoichiometry of each reaction
+        """
         connectedReactions = {}
         # this is very messy way to do this but just for the moment...
         for paramname in self.parameters.keys() :
             exec(paramname+'='+self.parameters.getByKey(paramname).value.__repr__())
-        for dynamicVarName in self.trajectory.keyToColumn.keys() :
+        for dynamicVarName in self.trajectory.key_column.keys() :
             tr = self.trajectory.getVariableTrajectory(dynamicVarName)
             timepoints = self.trajectory.timepoints
             minval = min(abs(timepoints-time)) # closest value to time in timepoints
@@ -788,6 +800,36 @@ class Network:
                     rateexprval = eval(rateexpr)
                     connectedReactions[id] = [rxn.stoichiometry,rateexpr,rateexprval]
         return connectedReactions
+
+    def PrintFakeData(self, times):
+        ##make vars
+        vars = {}
+        for var in self.dynamicVars.keys() :
+            vars[var] = times
+            self.Calculate(vars)
+            results = self.GetResult(vars)
+            output = open("fakedata"+self.id+".py", 'w')
+            output.write("import SloppyCell.Collections as Collections\n")
+            output.write("fakedata = Collections.Experiment('fakeExpt" + self.id + "')\n")
+            output.write("fakedata.longname = 'Data generated directly from network "+self.name+"'\n")
+            output.write("fakedata.SetFixedScaleFactors({\'"+results.keys()[0]+"\':1.0")
+        for chemName in results.keys()[1:] :
+            output.write(",\'"+chemName+"\':1.0 \n")
+
+        output.write("})\n")
+        output.write("fakedata.SetData({\'"+self.id+"\':{\n")
+        for chemName in results.keys():
+            output.write("\t\t\t'"+chemName+"':{\n")
+            for timepoint in results[chemName].keys():
+                stddev = results[chemName][timepoint]*.1
+                if stddev <= .01 :
+                    stddev = .01
+                output.write("\t\t\t\t"+str(timepoint)+": ("+str(results[chemName][timepoint])+", "+str(stddev)+"),\n")
+            output.write("\t\t\t},##end "+chemName+" data\n")
+        output.write("\t\t},##end calc data\n")
+        output.write("\t})##end fakedata.SetData\n")
+        output.write("fakeDataColl = Collections.ExperimentCollection([fakedata])\n")
+        output.close()
 
     def _make_get_ddv_dt(self):
         self.ddv_dt = scipy.zeros(len(self.dynamicVars), scipy.Float)
@@ -818,7 +860,7 @@ class Network:
 
         for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
             rhs = self.diff_eq_rhs.getByKey(rhsId)
-            # Take all derivatives of the rhs with respect to other 
+            # Take all derivatives of the rhs with respect to other
             #  dynamic variables
             for wrtIndex, wrtId in enumerate(self.dynamicVars.keys()):
                 deriv = self.takeDerivative(rhs, wrtId)
@@ -915,7 +957,7 @@ class Network:
             dtrigger_ddvValue = {}
             for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
                 dtrigger_ddv = self.takeDerivative(trigger, dynId)
-                dtrigger_ddvValue[dynId] = self.evaluate_expr(dtrigger_ddv, 
+                dtrigger_ddvValue[dynId] = self.evaluate_expr(dtrigger_ddv,
                                                               time)
 
             dtrigger_dovValue = {}
@@ -1016,7 +1058,7 @@ class Network:
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
 
         for ii, event in enumerate(self.complexEvents.values()):
-            functionBody += 'self._eventValues[%i] = %s\n\t' % (ii, 
+            functionBody += 'self._eventValues[%i] = %s\n\t' % (ii,
                                                                 event.trigger)
             functionBody += 'self._eventTerminals[%i] = %s\n\t' % \
                     (ii, event.is_terminal)
@@ -1052,7 +1094,7 @@ class Network:
                 # We use the chain rule to get derivatives wrt time.
                 deriv = self.takeDerivative(trigger, id)
                 if deriv != '0':
-                    rhs.append('(%s) * ddv_dt[%i]' % 
+                    rhs.append('(%s) * ddv_dt[%i]' %
                                (deriv, self.dynamicVars.indexByKey(id)))
 
             # We need to include the partial derivative wrt time.
@@ -1383,5 +1425,7 @@ def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
     #  with the proper name.
     setattr(obj, func, 
             types.MethodType(locals()[func], obj, obj.__class__))
+
     if HAVE_PSYCO and bind:
         psyco.bind(getattr(obj, func))
+
