@@ -8,8 +8,8 @@ import sets
 
 import scipy
 
-import SloppyCell.lsodar
-odeintr = SloppyCell.lsodar.odeintr
+import SloppyCell.lsodar as lsodar
+odeintr = lsodar.odeintr
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
 import Trajectory_mod
@@ -18,6 +18,15 @@ import Trajectory_mod
 global_rtol = 1e-6
 
 return_derivs = False # do we want time derivatives of all trajectories returned?
+
+class dynException:
+    """exception class for premature integration termination."""
+    def __init__(self,traj,te=None,ye=None,ie=None):
+        self.traj = traj
+        self.te = te
+        self.ye = ye
+        self.ie = ie
+
 
 def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
               return_events=False):
@@ -107,11 +116,19 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
                 IC = scipy.log(IC)
             next_requested = scipy.compress(times > start, times)[0]
             integrate_to = min(start + root_grace_t, next_requested)
-            temp = odeintr(func, copy.copy(IC), [start, integrate_to],
-                           Dfun = Dfun,
+            try:
+                temp = odeintr(func, copy.copy(IC), [start, integrate_to], 
+                           Dfun = Dfun, 
                            mxstep = 10000, rtol = rtol, atol = atol,
                            int_pts = fill_traj,
                            full_output = True, return_derivs = return_derivs)
+            except lsodar.odeintrException, excptInst:
+                ### need to return as much of the trajectory as we have so far
+                # since integration failed, return all the traj we got
+                fill_traj = True
+                break
+            if temp[5] < 0:
+                break
 
             # We don't append the last point, to prevent a needless 'event
             #  looking' duplication of times in the trajectory.
@@ -141,14 +158,20 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
 
         if getattr(net, 'integrateWithLogs', False):
             IC = scipy.log(IC)
-        temp = odeintr(func, copy.copy(IC), curTimes,
-                       root_func = net.root_func,
+        try:
+            temp = odeintr(func, copy.copy(IC), curTimes, 
+                       root_func = net.root_func, 
                        root_term = [True]*len(net.events),
                        Dfun = Dfun,
                        mxstep = 10000, rtol = rtol, atol = atol,
                        int_pts = fill_traj,
                        insert_events = True,
                        full_output = True, return_derivs = return_derivs)
+        except lsodar.odeintrException, excptInst:
+            ### need to return as much of the trajectory as we have so far
+            # since integration failed, return all the traj we got
+            fill_traj = True
+            break
 
         if getattr(net, 'integrateWithLogs', False):
             yout = scipy.concatenate((yout, scipy.exp(temp[0])))
@@ -182,7 +205,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
             delay = net.fireEvent(event, yout[-1], te[-1])
             pendingEvents[round(te[-1] + delay, 12)] = event
 
-    net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
+    ##### net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
 
     if not fill_traj:
         yout = _reduce_times(yout, tout, times)
@@ -196,6 +219,14 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
 
     trajectory.appendFromODEINT(tout, yout, holds_dt=return_derivs)
     trajectory.add_event_info((te,ye,ie))
+    net.trajectory = trajectory
+    
+    # raise exception if exited integration loop prematurely
+    if start < times[-1]:
+        if return_events:
+            raise dynException(trajectory, te, ye, ie)
+        else:
+            raise dynException(trajectory)
 
     return trajectory
 
@@ -406,8 +437,9 @@ def _Ddv_and_DdvDov_dtTrunc(y, time, net, ovIndex):
 
 def _reduce_times(yout, tout, times):
     jj = 0
+    maxjj = len(tout)
     for ii, twanted in enumerate(times):
-        while tout[jj] != twanted:
+        while (tout[jj] != twanted) & (jj<maxjj-1):
             jj += 1
         yout[ii] = yout[jj]
 

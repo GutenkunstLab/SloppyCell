@@ -31,7 +31,14 @@ _iwork_vars = {'nst': 10,
               'mused': 18,
               }
 
+class odeintrException:
+    """exception class for catching integrator errors."""
+    def __init__(self,msg,incompleteData):
+        self.msg = msg
+        self.incompleteData = incompleteData
+
 def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=None, atol=None, tcrit=None, h0=0.0, hmax=0.0, hmin=0.0, ixpr=0, mxstep=500, mxhnil=0, mxordn=12, mxords=5, printmessg=0, root_term = [], root_func=None, int_pts=False, insert_events=False, return_derivs = None):
+
     """Integrate a system of ordinary differential equations.
 
     Description:
@@ -269,7 +276,10 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=Non
             # Problem!
             print _msgs[istate]
             print "Run with full_output = 1 to get quantitative information."
-            break
+            outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
+            if full_output:
+                outputs = outputs + (info_dict,)
+            raise odeintrException(_msgs[istate],outputs)
         else:
             if printmessg:
                 print _msgs[istate]
@@ -325,6 +335,7 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=Non
     outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
     if return_derivs:
         outputs = outputs + (scipy.array(dout),)
+
     if full_output:
         outputs = outputs + (info_dict,)
 

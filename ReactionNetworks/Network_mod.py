@@ -45,6 +45,14 @@ try:
 except ImportError:
     HAVE_DYNAMICS = False
 
+class netException:
+    """exception class for integrator errors."""
+    def __init__(self, traj, te=None, ye=None, ie=None):
+        self.traj = traj
+        self.te = te
+        self.ye = ye
+        self.ie = ie
+
 class Network:
     # Here are all the functions we dynamically generate. To add a new one,
     #  called, for example, fooFunc, you need to define _make_fooFunc, which
@@ -379,7 +387,13 @@ class Network:
         t = list(t)
         t.sort()
 
-        self.trajectory = self.integrate(t, params)
+        try:
+            self.trajectory = self.integrate(t, params)
+        except netException, excptInst:
+            self.trajectory = excptInst.traj
+            print 'Network id',self.id
+            print 'Network name',self.name
+            raise 'Integration ended prematurely.  Check trajectory for results.'
 
     def CalculateSensitivity(self, vars, params):
         t = sets.Set([0])
@@ -433,8 +447,14 @@ class Network:
                   returnEvents = False, addTimes = True,
                   rtol = None):
         if HAVE_DYNAMICS and hasattr(Dynamics, 'integrate'):
-            return Dynamics.integrate(self, times, params)
-
+##            return Dynamics.integrate(self, times, params)
+            try:
+                tempTraj = Dynamics.integrate(self, times, params)
+##                return tempTraj
+            except Dynamics.dynException, excptInst:
+                raise netException(excptInst.traj, excptInst.te, excptInst.ye, excptInst.ie)
+            return tempTraj
+        
         print 'Warning: Using older integrator. It is known to be buggy in its handling of events. I strongly suggest building the new integrator.'
 
         self.compile()
