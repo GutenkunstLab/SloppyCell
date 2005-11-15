@@ -29,7 +29,7 @@ Instructions
    1. Install required dependencies. We recommend installing the 
       `Enthought Python distribution <http://www.enthought.com/python/>`_ to 
       satisfy the Python and SciPy dependencies. Here is a version of
-      `libsbml built against Python 2.3 <libsbml_for_python23_win.zip>`.
+      `libsbml built against Python 2.3 <libsbml_for_python23_win.zip>`_.
    2. To build SloppyCell on Windows.
 
       a. Install `MinGW <http::/http://www.mingw.org/>`_
