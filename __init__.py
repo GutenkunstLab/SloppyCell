@@ -10,7 +10,7 @@ logging.getLogger().debug('Logger started.')
 from optparse import OptionParser
 parser = OptionParser(version="SloppyCell version: %s" % _VERSION)
 parser.add_option("--debug", dest="debug", metavar="FILE",
-                  help="write debugging information to FILE"
+                  help="write debugging information to FILE. "
                   "If FILE is 'console' info will be sent to stderr")
 (options, args) = parser.parse_args()
 if options.debug:
