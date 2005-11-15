@@ -1,11 +1,6 @@
 import glob
 import unittest
 
-import logging
-import sys
-if '--debug' in sys.argv:
-    logging.getLogger().setLevel(logging.DEBUG)
-
 def run_all_tests():
     all_tests = unittest.TestSuite()
 

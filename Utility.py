@@ -1,4 +1,5 @@
 import cPickle
+import logging
 import smtplib
 from email.MIMEText import MIMEText
 
@@ -53,3 +54,12 @@ def eig(mat):
     v = scipy.take(v, order, axis=1)
 
     return e, v
+
+def enable_debugging_msgs(filename=None):
+    logging.getLogger().setLevel(logging.DEBUG)
+    if filename is not None and filename != 'console':
+        handler = logging.FileHandler(filename)
+        formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+        handler.setFormatter(formatter)
+        logging.getLogger().addHandler(handler)
+    logging.debug('Debug messages enabled.')
