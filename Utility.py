@@ -57,8 +57,11 @@ def eig(mat):
 
 def enable_debugging_msgs(filename=None):
     logging.getLogger().setLevel(logging.DEBUG)
+    # We need to add a file handler
     if filename is not None and filename != 'console':
         handler = logging.FileHandler(filename)
+        # For some reason the default file handler format is different.
+        # Let's change it back to the default
         formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
         handler.setFormatter(formatter)
         logging.getLogger().addHandler(handler)
