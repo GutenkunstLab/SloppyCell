@@ -2,10 +2,6 @@ import random
 import sets
 import unittest
 
-import logging
-logging.debug('Importing test_Differentiation')
-logger = logging.getLogger('test_Differentiation')
-
 from math import *
 
 import SloppyCell.ExprManip as ExprManip
@@ -61,12 +57,9 @@ class test_Differentiation(unittest.TestCase):
                  ]
 
         for expr, wrt in cases: 
-            logger.debug('Differentiating %s wrt %s.' % (expr, wrt))
             d = ExprManip.diff_expr(expr, wrt)
-            logger.debug('Result is %s.' % d)
             ad = eval(d)
             fd = self._num_diff(expr, wrt, x=x, y=y, z=z)
-            logger.debug('Numerical results are: finite difference, %f; symbolic, %f.\n' % (fd, ad))
             # We test that our numeric and analytic derivatives differ by less
             #  than 0.1%
             if ad != 0:

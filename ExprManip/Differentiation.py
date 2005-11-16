@@ -1,6 +1,8 @@
 from compiler.ast import *
 import copy
 import cPickle
+import logging
+logger = logging.getLogger('ExprManip.Differentiation')
 
 import AST
 from AST import strip_parse
@@ -27,15 +29,19 @@ def diff_expr(expr, wrt):
     """
     Return the derivative of the expression with respect to a given variable.
     """
+    logger.debug('Taking derivative of %s wrt %s' % (expr, wrt))
     key = '%s__derivWRT__%s' % (expr, wrt)
     if __deriv_saved.has_key(key):
-        return __deriv_saved[key]
+        deriv = __deriv_saved[key]
+        logger.debug('Found saved result %s.' % deriv)
+        return deriv
 
     ast = AST.strip_parse(expr)
     deriv = _diff_ast(ast, wrt)
     deriv = Simplify._simplify_ast(deriv)
     deriv  = AST.ast2str(deriv)
     __deriv_saved[key] = deriv
+    logger.debug('Computed result %s.' % deriv)
     return deriv
 
 # This dictionary stores how to differentiate various functions. The keys are 
