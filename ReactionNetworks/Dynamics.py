@@ -5,6 +5,8 @@ __docformat__ = "restructuredtext en"
 
 import copy
 import sets
+import logging
+logger = logging.getLogger('ReactionNetworks.Dynamics')
 
 import scipy
 
@@ -17,7 +19,11 @@ import Trajectory_mod
 # XXX: Need to incorporate root_grace_t into integrate_sensitivity
 global_rtol = 1e-6
 
-return_derivs = False # do we want time derivatives of all trajectories returned?
+# Return time derivatives of all trajectories?
+return_derivs = False 
+
+# Filter out NaNs in sensitivity integration (replaces with zeros)?
+filter_sens_NaNs = False
 
 class dynException:
     """exception class for premature integration termination."""
@@ -231,6 +237,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
     return trajectory
 
 def integrate_sensitivity(net, times, params=None, rtol=1e-7):
+    #logger.warn('integrate_sensitivity has been deprecated in favor of integrate_sensitivity_2')
     net.compile()
 
     if params is not None:
@@ -256,7 +263,7 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
             atol = [rtol[ii]*net.get_var_typical_val(id) for (ii, id)
                     in enumerate(net.dynamicVars.keys())]
         else:
-            sys.stderr.write("Non-scalar rtol of improper length passed into integrate_sensitivity!")
+            logger.warn("Non-scalar rtol of improper length passed into integrate_sensitivity!")
 
     start = times[0]
     # IC is zero unless IC is a function of parameters
@@ -346,13 +353,14 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
                             ICTrunc, curTimes,
                             args = (net, ovIndex),
                             mxstep = 10000,
-                            rtol = rtolForThis, atol = atolForThis, return_derivs = return_derivs)
+                            rtol = rtolForThis, atol = atolForThis, 
+                            return_derivs = return_derivs)
 
             yout[-len(curTimes):, (ovIndex + 1) * nDyn:(ovIndex + 2)*nDyn] =\
                     copy.copy(temp2[0][:,nDyn:])
 
-            # temp2[2] is the derivative of the trajectory w.r.t time now because
-            # no events are being returned
+            # temp2[2] is the derivative of the trajectory w.r.t time now 
+            # because no events are being returned
             if return_derivs :
                 youtdt[-len(curTimes):, (ovIndex + 1) * nDyn:(ovIndex + 2)*nDyn] =\
                     copy.copy(temp2[5][:,nDyn:])
@@ -372,7 +380,8 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
             youtdt = _reduce_times(youtdt, tout, times)
         tout = times
 
-    ddv_dpTrajectory = Trajectory_mod.Trajectory(net, is_sens=True, holds_dt = return_derivs)
+    ddv_dpTrajectory = Trajectory_mod.Trajectory(net, is_sens=True, 
+                                                 holds_dt = return_derivs)
     if return_derivs :
         yout = scipy.concatenate((yout,youtdt), axis = 1)
     
@@ -400,21 +409,45 @@ def dyn_var_fixed_point(net, dv0 = None):
     return scipy.exp(dvFixed)
 
 def _Ddv_and_DdvDov_dtTrunc_2(sens_y, time, net, ovIndex, tcks):
-    dv_y = [scipy.interpolate.splev(time, tck) for tck in tcks]
+    if getattr(net, 'integrateWithLogs', False):
+        dv_y = [scipy.exp(scipy.interpolate.splev(time, tck)) for tck in tcks]
+    else:
+        dv_y = [scipy.interpolate.splev(time, tck) for tck in tcks]
+
     D2dv_Dov_dt = _D2dv_Dov_dtTrunc(dv_y, sens_y, time, net, ovIndex)
 
     return D2dv_Dov_dt
 
 def Dfun_sens(sens_y, time, net, ovIndex, tcks):
-    dv_y = [scipy.interpolate.splev(time, tck) for tck in tcks]
+    if getattr(net, 'integrateWithLogs', False):
+        dv_y = [scipy.exp(scipy.interpolate.splev(time, tck)) for tck in tcks]
+    else:
+        dv_y = [scipy.interpolate.splev(time, tck) for tck in tcks]
+
     return scipy.transpose(net.get_d2dv_ddvdt(dv_y,time))
 
 def _D2dv_Dov_dtTrunc(dv, Ddv_Dov, time, net, ovIndex):
     # The partial derivative of the dynamic vars wrt the ovIndex optimizable var
     partials = net.get_d2dv_dovdt(dv, time, indices = [ovIndex])[:, ovIndex]
 
+    # XXX: Filter out nans and replace them with zeros
+    if filter_sens_NaNs and scipy.any(scipy.isnan(partials)):
+        nan_ii = scipy.compress(scipy.isnan(partials), 
+                                scipy.arange(len(partials)))
+        # The array must be contiguous for put
+        partials = scipy.array(partials)
+        scipy.put(partials, nan_ii, 0)
+        logger.warning('NaNs in partials at indices %s!' % str(nan_ii))
+
     # The partial derivative of the dynamic vars wrt the other dynamic vars
     J = net.get_d2dv_ddvdt(dv, time)
+    if filter_sens_NaNs and scipy.any(scipy.isnan(J)):
+        nan_ii = scipy.compress(scipy.isnan(J), 
+                                scipy.arange(len(J)))
+        # The array must be contiguous for put
+        J = scipy.array(J)
+        scipy.put(J, nan_ii, 0)
+        logger.warning('NaNs in J at indices %s!' % str(nan_ii))
 
     # Now we do the chain rule to the the total derivative of the dynamic vars
     #  wrt the specified optimizable var.
@@ -461,9 +494,9 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
     start = times[0]
     # IC is zero unless IC is a function of parameters
     IC = scipy.zeros(n_dyn * (n_opt + 1), scipy.Float)
-    # In the case where return_derivs = True, start_vals still only contains dynamic
-    # vars and assigned vars, because the time derivatives are not part of the network's
-    # variable list (which Trajectory_mod uses)
+    # In the case where return_derivs = True, start_vals still only contains 
+    # dynamic vars and assigned vars, because the time derivatives are not 
+    # part of the network's variable list (which Trajectory_mod uses)
     start_vals = traj.get_var_vals(start)
     net.set_var_vals(start_vals)
     # Handle sensitivities of initial conditions
@@ -473,7 +506,7 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
             for ovInd, ovName in enumerate(net.optimizableVars.keys()) :
                 DwrtOV = net.takeDerivative(init_val, ovName)
                 IC[n_dyn*(ovInd+1) + dvInd] = net.evaluate_expr(DwrtOV,
-                                                               time=start)
+                                                                time=start)
 
     yout = scipy.zeros((len(times), len(IC)), scipy.Float)
     youtdt = scipy.zeros((len(times), len(IC)), scipy.Float)
@@ -503,9 +536,15 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
         k = min(5, end_ind - start_ind - 1)
         ys = [traj.get_var_traj(dv_id)[start_ind:end_ind] for dv_id
               in net.dynamicVars.keys()]
-        tcks = [scipy.interpolate.splrep(curTimes, y, k=k, s=0) for y in ys]
+
+        if getattr(net, 'integrateWithLogs', False):
+            tcks = [scipy.interpolate.splrep(curTimes, scipy.log(y), k=k, s=0) 
+                    for y in ys]
+        else:
+            tcks = [scipy.interpolate.splrep(curTimes, y, k=k, s=0) for y in ys]
 
         for ov_ind, opt_id in enumerate(net.optimizableVars.keys()):
+            logger.debug('Integrating sensitivity wrt %s from %f to %f' % (opt_id, start_time, end_time))
             IC_this= copy.copy(IC[(ov_ind + 1) * n_dyn:
                                    (ov_ind + 2) * n_dyn])
 
@@ -518,7 +557,8 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
                            args = (net, ov_ind, tcks),
                            Dfun = Dfun_sens,
                            mxstep = 10000,
-                           rtol = rtol, atol = atol, return_derivs = return_derivs,
+                           rtol = rtol, atol = atol, 
+                           return_derivs = return_derivs,
                            tcrit = (times[-1],))
 
             yout[start_ind:end_ind, (ov_ind + 1) * n_dyn:(ov_ind + 2)*n_dyn] =\
