@@ -2,9 +2,7 @@ _VERSION = 'CVS'
 _TEMP_DIR = '.SloppyCell'
 
 import logging
-# I think I need to send one message to the root logger to get it started so the
-#  lower level loggers can work.
-logging.getLogger().debug('Logger started.')
+logging.basicConfig()
 
 # This is a slightly complicated, but nice, way to parse for a debug option.
 from optparse import OptionParser
