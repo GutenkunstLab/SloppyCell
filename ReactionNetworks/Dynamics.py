@@ -88,9 +88,9 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
     else:
         func = net.get_ddv_dt
         Dfun = lambda y, t: scipy.transpose(net.get_d2dv_ddvdt(y, t))
-        ### This is messy but if we have a variable whose typical value is 1.0e6 say
-        ### drops to almost zero during an integration, then we have to avoid
-        ### integration errors making it significantly negative
+        ### This is messy but if we have a variable whose typical value is 1.0e6
+        ### say drops to almost zero during an integration, then we have to 
+        ### avoid integration errors making it significantly negative
         if rtol is not None:
             atol = [rtol*net.get_var_typical_val(id) for id
                     in net.dynamicVars.keys()]
@@ -111,6 +111,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
     event_just_fired = False
 
     while start < times[-1]:
+        logging.debug('Integrating interval starting at %g' % start)
         if round(start, 12) in pendingEvents.keys():
             IC = net.executeEvent(pendingEvents[round(start, 12)], IC, start)
             del pendingEvents[round(start, 12)]
@@ -194,7 +195,9 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
         # Check the directions of our root crossings to see whether events
         #  actually fired.
         for te_this, ye_this, ie_this in zip(temp[2], temp[3], temp[4]):
-            if getattr(net, 'integrateWithLogs', False): ye_this = scipy.exp(ye_this)
+            logger.debug('Checking direction of root %i crossing at time %g.' % (ie_this, te_this))
+            if getattr(net, 'integrateWithLogs', False): 
+                ye_this = scipy.exp(ye_this)
             root_derivs = net.root_func_dt(ye_this,
                                            net.get_ddv_dt(ye_this, te_this),
                                            te_this)
@@ -206,7 +209,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
 
         # If an event fired
         if event_just_fired:
-            #print 'event %i fired at %f' % (ie[-1], te[-1])
+            logger.debug('Firing event %i at time %g.' % (ie[-1], te[-1]))
             event = net.events[ie[-1]]
             delay = net.fireEvent(event, yout[-1], te[-1])
             pendingEvents[round(te[-1] + delay, 12)] = event
@@ -529,7 +532,7 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
             # We don't currently do delays in sensitivity integration, but
             #  we'll keep this here for when we do.
             IC = net.executeEvent(pendingEvents[start_time], IC, start_time)
-            pendingEvents.pop(start)
+            pendingEvents.pop(start_time)
 
         curTimes = traj.get_times()[start_ind:end_ind]
 
