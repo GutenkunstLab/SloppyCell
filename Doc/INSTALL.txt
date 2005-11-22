@@ -44,7 +44,7 @@ Instructions
       b. Descend into the SloppyCell-0.2 directory. (``cd SloppyCell-0.2``)
 
    4. Run the installation script. (``python setup.py install``) 
-   5. Run the included test routines. (``cd ../Testing; python test.py``)
+   5. Run the included test routines. (``cd Testing; python test.py``)
 
 .. topic:: On OS X and Linux
 
@@ -57,7 +57,7 @@ Instructions
    3. Unpack the tarball. (``tar xzf SloppyCell-0.2.tar.gz``)
    4. Descend into the SloppyCell-0.2 directory. (``cd SloppyCell-0.2``)
    5. Run the installation script. (``python setup.py install``) 
-   6. Run the included test routines. (``cd ../Testing; python test.py``)
+   6. Run the included test routines. (``cd Testing; python test.py``)
 
 $Date$
 
