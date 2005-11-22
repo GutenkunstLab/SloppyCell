@@ -1,5 +1,12 @@
+"""
+Methods for loading from and saving to SBML files.
+"""
+__docformat__ = "restructuredtext en"
+
 import os
 import sys
+import logging
+logger = logging.getLogger('RxnNets.SBMLInterface')
 
 import libsbml
 
@@ -110,6 +117,34 @@ def toSBMLString(net):
     sbmlStr = libsbml.writeSBMLToString(d)
 
     return sbmlStr
+
+def _print_sbml_fatals(doc):
+    for ii in range(doc.getNumFatals()):
+        logger.critical(d.getFatal(ii).getMessage())
+
+def to_SBML_l2v1(from_name, to_name):
+    """
+    Convert an SBML file to level 2, version 1 using lisbml.
+
+    from_name  Name of file to read SBML from.
+    to_name    File to output SBML to.
+    """
+    doc = libsbml.readSBML(os.path.abspath(from_name))
+    if isinstance(doc, int):
+        logger.critical('Fatal Errors reading SBML from file %s!' % from_name)
+        _print_sbml_fatals(doc)
+    errors = doc.setLevel(2)
+    if errors:
+        logger.critical('Fatal Errors converting %f to level 2!' % from_name)
+        _print_sbml_fatals(doc)
+    errors = doc.setVersion(1)
+    if errors:
+        logger.critical('Fatal Errors converting %f to level 2, version 1!'
+                        % from_name)
+        _print_sbml_fatals(doc)
+    success = libsbml.writeSBML(doc, to_name)
+    if not success:
+        logger.critical('Error writing to %s' % to_name)
 
 def fromSBMLFile(fileName, id = None):
     f = file(fileName, 'r')
