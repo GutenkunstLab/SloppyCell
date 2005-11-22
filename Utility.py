@@ -56,9 +56,15 @@ def eig(mat):
     return e, v
 
 def enable_debugging_msgs(filename=None):
+    """
+    Enable output of debugging messages.
+
+    If filename=='console' messages will be sent to stderr.
+    """
     logging.getLogger().setLevel(logging.DEBUG)
-    # We need to add a file handler
+
     if filename is not None and filename != 'console':
+        # We need to add a file handler
         handler = logging.FileHandler(filename)
         # For some reason the default file handler format is different.
         # Let's change it back to the default
@@ -66,3 +72,9 @@ def enable_debugging_msgs(filename=None):
         handler.setFormatter(formatter)
         logging.getLogger().addHandler(handler)
     logging.debug('Debug messages enabled.')
+
+def disable_debugging_msgs():
+    """
+    Disable output of debugging messages.
+    """
+    logging.getLogger().setLevel(logging.WARN)
