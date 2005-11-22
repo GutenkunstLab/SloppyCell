@@ -1,9 +1,9 @@
 import os
 
 try:
-    import SBMLInterface
-    from SBMLInterface import toSBMLFile as to_SBML_file
-    from SBMLInterface import fromSBMLFile as from_SBML_file
+    import SBMLInterface as SBML
+    to_SBML_file = SBML.toSBMLFile
+    from_SBML_file = SBML.fromSBMLFile
 except ImportError:
     print 'SBML import and export not available.'
 
