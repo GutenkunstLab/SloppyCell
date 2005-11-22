@@ -64,6 +64,10 @@ def enable_debugging_msgs(filename=None):
     logging.getLogger().setLevel(logging.DEBUG)
 
     if filename is not None and filename != 'console':
+        # Remove other handlers
+        for h in logging.getLogger().handlers:
+            logging.getLogger().removeHandler(h)
+
         # We need to add a file handler
         handler = logging.FileHandler(filename)
         # For some reason the default file handler format is different.
@@ -78,3 +82,8 @@ def disable_debugging_msgs():
     Disable output of debugging messages.
     """
     logging.getLogger().setLevel(logging.WARN)
+    # Remove all other handlers
+    for h in logging.getLogger().handlers:
+        logging.getLogger().removeHandler(h)
+    # Restore basic configuration
+    logging.basicConfig()
