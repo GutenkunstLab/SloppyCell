@@ -10,6 +10,9 @@ import sets
 import types
 import os
 
+import logging
+logger = logging.getLogger('ReactionNetworks.Network_mod')
+
 import scipy
 
 import SloppyCell
@@ -342,6 +345,8 @@ class Network:
         """
         Check whether a given id is already in use by this Network.
         """
+        if id == 'time':
+            logger.warn("Specifying 'time' as a variable is dangerous! Are you sure you know what you're doing?")
         if id in self.variables.keys()\
            or id in self.reactions.keys()\
            or id in self.functionDefinitions.keys()\
@@ -584,7 +589,7 @@ class Network:
     #
     def _get_var_attr(self, id, attr):
         if self.variables.has_key(id):
-            return getattr(self.variables.get(id), attr)
+            return getattr(self.get_variable(id), attr)
         else:
             raise ValueError, 'Id %s not found in network.' % id
 
@@ -592,7 +597,7 @@ class Network:
         """
         Set the typical value for a variable.
         """
-        var = self.variables.getByKey(id)
+        var = self.get_variable(id)
         var.typicalValue = value
 
     def get_var_typical_val(self, id):
@@ -615,7 +620,7 @@ class Network:
         if warn and id in self.assignedVars.keys():
             print 'WARNING! Attempt to assign an initial condition to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the initial condition of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
 
-        var = self.variables.getByKey(id)
+        var = self.get_variable(id)
         var.initialValue = value
         if var.is_constant:
             var.value = value
@@ -681,7 +686,7 @@ class Network:
         if warn and self.assignedVars.has_key(id):
             print 'WARNING! Attempt to assign a value to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the value of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
 
-        var = self.variables.get(id)
+        var = self.get_variable(id)
         var.value = val
         if do_assignments:
             self.updateAssignedVars(time)
@@ -690,9 +695,19 @@ class Network:
         """
         Set the typical value of the variable with the given id.
         """
-        self.variables.getByKey(id).typicalValue = val
+        self.get_variable(id).typicalValue = val
 
     setTypicalVariableValue = set_var_typical_val
+
+    def get_variable(self, id):
+        """
+        Return the class instance with a given variable id.
+        """
+        var = self.variables.get(id)
+        if var:
+            return var
+        else:
+            raise KeyError, 'Variable %s not found in network %s!' % (id, self.get_id())
 
     def update_optimizable_vars(self, params):
         """
@@ -753,29 +768,31 @@ class Network:
             self.assignedVars.getByKey(id).value = self.evaluate_expr(rhs, time)
 
     def set_var_optimizable(self, id, is_optimizable):
-        self.variables.get(id).is_optimizable = is_optimizable
+        self.get_variable(id).is_optimizable = is_optimizable
         self._makeCrossReferences()
 
     def set_var_constant(self, id, is_constant):
-        self.variables.get(id).is_constant = is_constant
+        self.get_variable(id).is_constant = is_constant
         self._makeCrossReferences()
 
     def get_var_constant(self, id):
-        return self.variables.get(id).is_constant
+        return self.get_variable(id).is_constant
 
     #
     # Generate the differential equations and functions to calculate them.
     #
 
     def _makeDiffEqRHS(self):
+        logger.debug('Making diff equation rhs')
         diff_eq_terms = {}
 
-        for rnx_id, rxn in self.reactions.items():
+        for rxn_id, rxn in self.reactions.items():
             rateExpr = rxn.kineticLaw
+            logger.debug('Parsing reaction %s.' % rxn_id)
 
 	    for reactantId, dReactant in rxn.stoichiometry.items():
-                if self.variables.getByKey(reactantId).is_boundary_condition or\
-                   self.variables.getByKey(reactantId).is_constant or\
+                if self.get_variable(reactantId).is_boundary_condition or\
+                   self.get_variable(reactantId).is_constant or\
                    self.assignmentRules.has_key(reactantId):
                     # Variables that are boundary conditions, are constant, or
                     #  are assigned aren't modified by reactions, so we move on
