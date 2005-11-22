@@ -1,5 +1,7 @@
 import scipy
 
+_SIGMA_CUTOFF = 1e-14
+
 # This specifies the uncertainties assumed.
 def sigmaFunc(traj, data_id):
     """
@@ -7,9 +9,9 @@ def sigmaFunc(traj, data_id):
     divided by 10.
     """
     sigma = traj.get_var_typical_val(data_id)/10.0
-    cutoff = 1e-12
-    if sigma < cutoff:
-        print 'sigma < %g for variable %s!' % (cutoff, data_id)
+    if sigma < _SIGMA_CUTOFF:
+        print 'sigma < cutoff value (%g) for variable %s! Taking sigma = 1.' % (_SIGMA_CUTOFF, data_id)
+        return 1
     return sigma
 
 def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, fixed_sf=False,
