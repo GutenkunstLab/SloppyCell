@@ -10,8 +10,23 @@ parser = OptionParser(version="SloppyCell version: %s" % _VERSION)
 parser.add_option("--debugSC", dest="debug", metavar="FILE",
                   help="write debugging information to FILE. "
                   "If FILE is 'console' info will be sent to stderr.")
-(options, args) = parser.parse_args()
-if options.debug:
+
+# Need to be careful with parse_args in IPYTHON. If import from the ipython
+#  command line, the parser may get confused by ipython's arguments.
+debug = False
+try:
+    # Detect ipython by looking for __IPYTHON__
+    __IPYTHON__
+    try:
+        (options, args) = parser.parse_args()
+        debug = options.debug
+    except SystemExit:
+        pass
+except NameError:
+    (options, args) = parser.parse_args()
+    debug = options.debug
+
+if debug:
     import Utility
     Utility.enable_debugging_msgs(options.debug)
 
