@@ -14,6 +14,12 @@ import SloppyCell.Collections as Collections
 import KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
+try:
+    import pypar
+    HAVE_PYPAR=True
+except:
+    HAVE_PYPAR=False
+    
 class Model:
     """
     A Model object connects a set of experimental data with the objects used to
@@ -53,6 +59,45 @@ class Model:
         self.chisqVerbose = False
 
         self.observers = KeyedList()
+
+        if HAVE_PYPAR:
+            import pypar
+            if pypar.rank()!=0: # The workers loop here
+                while True:
+                    if self.MasterSwitch(): break
+
+    def __del__(self):
+        if HAVE_PYPAR:
+            import pypar
+            if pypar.rank()==0:
+                self.MasterSwitch(0)
+            pypar.finalize()
+        
+    def MasterSwitch(self, flag=0):
+        """
+        This is the master switch which the master calls
+        to get the workers into the function of interest.
+        The flag indicates which function the workers should
+        call. (Don't use negative flags, they may be truncated.)
+        """
+        if not HAVE_PYPAR: return
+        
+        import pypar
+        myid=pypar.rank()
+
+        # Broadcast the flag
+        flag=pypar.broadcast(flag,0)
+        
+        if flag==0: # Exit
+            return True
+        elif flag==1:
+            # Broadcast the parameters over
+            pypar.broadcast(self.params,0)
+            
+            if myid!=0: # Send the workers off to the function
+                temp=self.CalculateSensitivitiesForAllDataPoints(self.params)
+
+        return False
 
     def copy(self):
         return copy.deepcopy(self)
@@ -262,6 +307,12 @@ class Model:
          dictionary[experiment][calculation][dependent variable]
                    [independent variabled][parameter] -> sensitivity.
         """
+        if HAVE_PYPAR:
+            import pypar
+            if pypar.rank()==0:
+                self.params.update(params)
+                self.MasterSwitch(1)
+
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
 	self.GetCalculationCollection().CalculateSensitivity(varsByCalc, params)
         self.calcSensitivityVals = self.GetCalculationCollection().\
