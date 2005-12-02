@@ -35,6 +35,16 @@ def root_func(y, t):
     out[0] = y[0] - 1e-4
     out[1] = y[2] - 1e-2
     return out
+
+def func_w_args(y, t, arg1, arg2):
+    ydot = scipy.zeros(1, scipy.Float)
+    ydot[0] = -1
+    assert arg1 == 1.2, 'Argument 1 passed incorrectly!'
+    assert arg2 == 2.3, 'Argument 2 passed incorrectly1'
+
+    return ydot
+
+
         
 y0 = [1.0, 0, 0]
 t = scipy.array([0] + [4 * 10**x for x in range(-1, 11)])
@@ -275,6 +285,15 @@ class test_lsodar(unittest.TestCase):
         func_deriv = func(y[out_index], tout[out_index])
         for ii in range(len(y0)):
             self.assertAlmostEqual(int_deriv[ii], func_deriv[ii], 6)
+
+    def test_args(self):
+        """ Test passing of additional function arguments """
+        def func_w_args(y, t, arg1, arg2):
+            assert arg1 == 1.2, 'Argument 1 passed incorrectly!'
+            assert arg2 == 2.3, 'Argument 2 passed incorrectly1'
+            return [-1]
+
+        y = odeintr(func_w_args, [0], t, args = (1.2, 2.3))
 
 no_lsodar_msg = 'lsodar not working!'
 if _HAVE_LSODAR:
