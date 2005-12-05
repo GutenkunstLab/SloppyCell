@@ -92,7 +92,7 @@ class Model:
             return True
         elif flag==1:
             # Broadcast the parameters over
-            pypar.broadcast(self.params,0)
+            self.params = pypar.broadcast(self.params,0)
             
             if myid!=0: # Send the workers off to the function
                 temp=self.CalculateSensitivitiesForAllDataPoints(self.params)
@@ -314,16 +314,16 @@ class Model:
                 self.MasterSwitch(1)
 
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
-	self.GetCalculationCollection().CalculateSensitivity(varsByCalc, params)
+        self.GetCalculationCollection().CalculateSensitivity(varsByCalc, params)
         self.calcSensitivityVals = self.GetCalculationCollection().\
                 GetSensitivityResults(varsByCalc)
-        # might as well fill up the values for the trajectory (calcVals) 
+        # might as well fill up the values for the trajectory (calcVals)
         #  while we're at it:
-	# no need to Calculate because the values are stored after the call to
+        # no need to Calculate because the values are stored after the call to
         #  CalculateSensitivity
-	# self.GetCalculationCollection().Calculate(varsByCalc, params)
+        # self.GetCalculationCollection().Calculate(varsByCalc, params)
         self.calcVals = self.GetCalculationCollection().GetResults(varsByCalc)
-	return self.calcSensitivityVals
+        return self.calcSensitivityVals
 
     def ComputeInternalVariables(self):
         self.internalVars['scaleFactors'] = self.compute_scale_factors()
