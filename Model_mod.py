@@ -91,14 +91,65 @@ class Model:
         if flag==0: # Exit
             return True
         elif flag==1:
-            # Broadcast the parameters over
-            self.params = pypar.broadcast(self.params,0)
+            # Synchronize the parameters and initial conditions
+            self.synchronize()
             
             if myid!=0: # Send the workers off to the function
                 temp=self.CalculateSensitivitiesForAllDataPoints(self.params)
 
         return False
 
+    def synchronize(self):
+        """
+        This function takes care of transfering
+        over the parameters of this class (self.params)
+        to all the worker nodes. Specifically, the
+        issues of type mismatch (float / int) and sign
+        mismatch (signed int / unsigned int) should
+        be resolved.
+
+        Also, this function synchronizes the initial
+        conditions, incase the user has modified them.
+
+        Please make sure the parameters and initial
+        conditions are set in the model (i.e. self.params, etc.)
+        before calling this function
+        """
+        if not HAVE_PYPAR: return
+        
+        import pypar
+        myid=pypar.rank()
+
+        # Build the list of type and sign information
+        num_types = len(scipy.ScalarType)
+        if myid==0:
+            types = [] # [parameter_index][signed (0='>=0',1='<0')]
+            for index in range(len(self.params)):
+                if type(self.params[index]) in scipy.ScalarType:
+                    types.append([
+                        scipy.ScalarType.index(type(self.params[index])),
+                        int(self.params[index]<0)])
+                else: # Unknown type
+                    types.append([num_types,0])
+        else: # Workers just need to make the blank array
+            types = [[0,0] for index in range(len(self.params))]
+
+        # Broadcast the types
+        types = pypar.broadcast(types,0)
+
+        # Set the types of the parameters for the workers
+        if myid>0:
+            for index in range(len(self.params)):
+                t, sign = types[index]
+                if t==num_types: continue # Don't know what the type is...
+                self.params[index] = scipy.ScalarType[t](1-2*sign)
+
+        # Broadcast the parameters
+        self.params.update(pypar.broadcast(self.params.values(),0))
+
+        # Broadcast the initial conditions
+        self.set_ICs(pypar.broadcast(self.get_ICs(),0))
+        
     def copy(self):
         return copy.deepcopy(self)
         
@@ -107,6 +158,38 @@ class Model:
         Return a copy of the current model parameters
         """
         return self.calcColl.GetParameters()
+
+    def get_ICs(self):
+        """
+        Get the initial conditions currently present in a model
+        for dynamic variables that are not assigned variables.
+
+        Outputs:
+          Dictionary --> result[calcName][dynVarName]=initialValue
+        """
+        ics={}
+        for calcName, calc in self.calcColl.items():
+            ics[calcName]={}
+            for name, value in calc.dynamicVars.items():
+                if name in calc.assignedVars.keys(): continue
+                ics[calcName][name] = float(value.initialValue)
+        return ics
+
+    def set_ICs(self, ics):
+        """
+        Sets the initial conditions into the model. Uses the input
+        format defined by 'getICs'.
+
+        Inputs:
+         ics -- Initial conditions to set {calcName: {name:intialValue} }
+
+        Outputs:
+         None
+        """
+        for calcName, calcICs in ics.items():
+            for name, initialValue in calcICs.items():
+                if name in self.calcColl[calcName].dynamicVars.keys():
+                    self.calcColl[calcName].dynamicVars.get(name).initialValue = initialValue
 
     def _evaluate(self, params):
         """
