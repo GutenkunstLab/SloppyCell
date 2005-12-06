@@ -22,6 +22,12 @@ global_rtol = 1e-6
 return_derivs = False # do we want time derivatives of all trajectories returned?
 reduce_space = 0 # we may want to not return every timepoint but only 0, reduce_space, 2*reduce_space etc.
 
+try:
+    import pypar
+    HAVE_PYPAR=True
+except:
+    HAVE_PYPAR=False
+
 class dynException:
     """exception class for premature integration termination."""
     def __init__(self,traj,te=None,ye=None,ie=None):
@@ -242,10 +248,13 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
     return trajectory
 
 def integrate_sensitivity(net, times, params=None, rtol=1e-7):
-    import pypar
-    numproc = pypar.size()
-    myid = pypar.rank()
-    node = pypar.get_processor_name()
+    if HAVE_PYPAR:
+        import pypar
+        numproc = pypar.size()
+        myid = pypar.rank()
+        node = pypar.get_processor_name()
+    else:
+        numproc, myid, node = 1,0,'serial'
 
     logger.debug('I am proc %d of %d on node %s in DynamicsPar' % (myid, numproc, node))
 
@@ -511,10 +520,13 @@ def _reduce_times(yout, tout, times):
 
 
 def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
-    import pypar
-    numproc = pypar.size()
-    myid = pypar.rank()
-    node = pypar.get_processor_name()
+    if HAVE_PYPAR:
+        import pypar
+        numproc = pypar.size()
+        myid = pypar.rank()
+        node = pypar.get_processor_name()
+    else:
+        numproc, myid, node = 1, 0, 'serial'
 
     rtol = min(rtol, global_rtol)
     traj = integrate(net, times, params, fill_traj=True,
