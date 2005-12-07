@@ -122,19 +122,16 @@ class Model:
 
         # Build the list of type and sign information
         num_types = len(scipy.ScalarType)
-        if myid==0:
-            types = [] # [parameter_index][signed (0='>=0',1='<0')]
-            for index in range(len(self.params)):
-                if type(self.params[index]) in scipy.ScalarType:
-                    types.append([
-                        scipy.ScalarType.index(type(self.params[index])),
-                        int(self.params[index]<0)])
-                else: # Unknown type
-                    types.append([num_types,0])
-        else: # Workers just need to make the blank array
-            types = [[0,0] for index in range(len(self.params))]
+        types = [] # [parameter_index][signed (0='>=0',1='<0')]
+        for index in range(len(self.params)):
+            if type(self.params[index]) in scipy.ScalarType:
+                types.append([
+                    scipy.ScalarType.index(type(self.params[index])),
+                    int(self.params[index]<0)])
+            else: # Unknown type
+                types.append([num_types,0])
 
-        # Broadcast the types
+        # Broadcast the types -- the workers types will be overwritten
         types = pypar.broadcast(types,0)
 
         # Set the types of the parameters for the workers
@@ -147,8 +144,28 @@ class Model:
         # Broadcast the parameters
         self.params.update(pypar.broadcast(self.params.values(),0))
 
-        # Broadcast the initial conditions
-        self.set_ICs(pypar.broadcast(self.get_ICs(),0))
+        # Build a dictionary of types
+        ics = self.get_ICs()
+        ics_types = ics.copy()
+        for key, value in ics.items():
+            if type(value) in scipy.ScalarType:
+                ics_types.set(key, [
+                    scipy.ScalarType.index(type(value)),
+                    int(value<0)])
+            else: # Unknown type
+                ics_types.set(key, [num_types,0])
+
+        # Broadcast the initial condition types
+        ics_types = pypar.broadcast(ics_types,0)
+
+        # Set the types of the ics for the workers
+        if myid>0:
+            for key, (t,sign) in ics_types.items():
+                if t==num_types: continue
+                ics.set(key, scipy.ScalarType[t](1-2*sign))
+
+        # Finally, broadcast the ics
+        self.set_ICs(pypar.broadcast(ics,0))
         
     def copy(self):
         return copy.deepcopy(self)
@@ -165,14 +182,13 @@ class Model:
         for dynamic variables that are not assigned variables.
 
         Outputs:
-          Dictionary --> result[calcName][dynVarName]=initialValue
+          KeyedList with keys (calcName,varName) --> initialValue
         """
-        ics={}
+        ics=KeyedList()
         for calcName, calc in self.calcColl.items():
-            ics[calcName]={}
-            for name, value in calc.dynamicVars.items():
-                if name in calc.assignedVars.keys(): continue
-                ics[calcName][name] = float(value.initialValue)
+            for varName in calc.dynamicVars.keys():
+                if varName in calc.assignedVars.keys(): continue
+                ics.set( (calcName,varName), calc.get_var_ic(varName))
         return ics
 
     def set_ICs(self, ics):
@@ -181,15 +197,14 @@ class Model:
         format defined by 'getICs'.
 
         Inputs:
-         ics -- Initial conditions to set {calcName: {name:intialValue} }
+         ics -- Initial conditions to set in KeyedList form:
+                  keys: (calcName, varName) --> intialValue
 
         Outputs:
          None
         """
-        for calcName, calcICs in ics.items():
-            for name, initialValue in calcICs.items():
-                if name in self.calcColl[calcName].dynamicVars.keys():
-                    self.calcColl[calcName].dynamicVars.get(name).initialValue = initialValue
+        for (calcName, varName), initialValue in ics.items():
+            self.calcColl[calcName].set_var_ic(varName, initialValue)
 
     def _evaluate(self, params):
         """
@@ -392,7 +407,7 @@ class Model:
         """
         if HAVE_PYPAR:
             import pypar
-            if pypar.rank()==0:
+            if pypar.rank()==0 and pypar.size()>1:
                 self.params.update(params)
                 self.MasterSwitch(1)
 
