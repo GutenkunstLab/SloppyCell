@@ -103,69 +103,47 @@ class Model:
         """
         This function takes care of transfering
         over the parameters of this class (self.params)
-        to all the worker nodes. Specifically, the
-        issues of type mismatch (float / int) and sign
-        mismatch (signed int / unsigned int) should
-        be resolved.
+        to all the worker nodes. 
 
         Also, this function synchronizes the initial
         conditions, incase the user has modified them.
 
         Please make sure the parameters and initial
         conditions are set in the model (i.e. self.params, etc.)
-        before calling this function
+        before calling this function.
+        """
+        # Pickle and broadcast the parameters
+        self.params = self.pickle_broadcast(self.params,0)
+        
+        # Pickle and broadcast the initial conditions
+        self.set_ICs(self.pickle_broadcast(self.get_ICs(),0))
+
+    def pickle_broadcast(self, data, root=0):
+        """
+        This function will pickle and broadcast the data,
+        returning the data received.
+
+        ** This function could be put elsewhere,
+        ** it has no model dependence
+
+        Inputs:
+          data -- data to send
+          root -- root node
         """
         if not HAVE_PYPAR: return
-        
-        import pypar
-        myid=pypar.rank()
 
-        # Build the list of type and sign information
-        num_types = len(scipy.ScalarType)
-        types = [] # [parameter_index][signed (0='>=0',1='<0')]
-        for index in range(len(self.params)):
-            if type(self.params[index]) in scipy.ScalarType:
-                types.append([
-                    scipy.ScalarType.index(type(self.params[index])),
-                    int(self.params[index]<0)])
-            else: # Unknown type
-                types.append([num_types,0])
+        import pypar, pickle, string
+        myid = pypar.rank()
 
-        # Broadcast the types -- the workers types will be overwritten
-        types = pypar.broadcast(types,0)
+        s = pickle.dumps(data) # Pickle the data
 
-        # Set the types of the parameters for the workers
-        if myid>0:
-            for index in range(len(self.params)):
-                t, sign = types[index]
-                if t==num_types: continue # Don't know what the type is...
-                self.params[index] = scipy.ScalarType[t](1-2*sign)
+        # Synchronize the string lengths
+        l = pypar.broadcast(len(s),root)
+        if myid!=root: s = string.zfill('',l)
 
-        # Broadcast the parameters
-        self.params.update(pypar.broadcast(self.params.values(),0))
+        pypar.broadcast_string(s,root)
 
-        # Build a dictionary of types
-        ics = self.get_ICs()
-        ics_types = ics.copy()
-        for key, value in ics.items():
-            if type(value) in scipy.ScalarType:
-                ics_types.set(key, [
-                    scipy.ScalarType.index(type(value)),
-                    int(value<0)])
-            else: # Unknown type
-                ics_types.set(key, [num_types,0])
-
-        # Broadcast the initial condition types
-        ics_types = pypar.broadcast(ics_types,0)
-
-        # Set the types of the ics for the workers
-        if myid>0:
-            for key, (t,sign) in ics_types.items():
-                if t==num_types: continue
-                ics.set(key, scipy.ScalarType[t](1-2*sign))
-
-        # Finally, broadcast the ics
-        self.set_ICs(pypar.broadcast(ics,0))
+        return pickle.loads(s)
         
     def copy(self):
         return copy.deepcopy(self)
