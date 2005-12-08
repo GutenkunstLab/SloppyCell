@@ -1,3 +1,11 @@
+"""
+Methods for generating "perfect data" hessians.
+"""
+__docformat__ = "restructuredtext en"
+
+import logging
+logger = logging.getLogger('RxnNets.PerfectData')
+
 import scipy
 
 _SIGMA_CUTOFF = 1e-14
@@ -10,12 +18,31 @@ def sigmaFunc(traj, data_id):
     """
     sigma = traj.get_var_typical_val(data_id)/10.0
     if sigma < _SIGMA_CUTOFF:
-        print 'sigma < cutoff value (%g) for variable %s! Taking sigma = 1.' % (_SIGMA_CUTOFF, data_id)
-        return 1
+        logger.warn('sigma < cutoff value (%g) for variable %s! '
+                    'Taking sigma = 1.' % (_SIGMA_CUTOFF, data_id))
+        sigma = 1
+
     return sigma
 
 def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, fixed_sf=False,
                        return_dict=False):
+    """
+    Calculate the "perfect data" hessian in log parameters given a sensitivity
+    trajectory.
+
+    sens_traj   Sensitivity trajectory of Network being considered.
+    data_ids    A sequence of variable id's to assume we have data for. If 
+                data_ids is None, all dynamic and assigned variables will be 
+                used.
+    opt_ids     A sequence of parameter id's to calculate derivatives with 
+                respect to. The hessian is (len(opt_ids) x len(opt_ids)).
+                If opt_ids is None, all optimizable variables are considered.
+    fixed_sf    If True, calculate the hessian assuming fixed scale factors.
+    return_dict If True, returned values are (hess, hess_dict). hess_dict is a
+                dictionary keyed on the elements of data_ids; each corresponding
+                value is the hessian assuming data only on a single variable.
+                hess is the sum of all these hessians
+    """
     if data_ids is None:
         data_ids = sens_traj.dynamicVarKeys + sens_traj.assignedVarKeys
     if opt_ids is None:
