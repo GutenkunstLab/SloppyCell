@@ -10,20 +10,16 @@ def run_all_tests():
     for file in testfiles:
         module = file[:-3]
         mod = __import__(file[:-3])
+        all_test_mods.append(mod)
         if hasattr(mod, 'suite'):
-            all_test_mods.append(mod)
             all_tests.addTest(mod.suite)
 
     unittest.TextTestRunner(verbosity=2).run(all_tests)
 
     for mod in all_test_mods:
         if hasattr(mod, 'message'):
-            mesgs.append(mod.message)
-
-    print
-    for mesg in mesgs:
-        print mesg
-        print
+            print
+            print mod.message
 
 if __name__ == '__main__':
     run_all_tests()
