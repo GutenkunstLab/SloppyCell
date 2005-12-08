@@ -60,27 +60,50 @@ class Model:
 
         self.observers = KeyedList()
 
-        if HAVE_PYPAR:
-            import pypar
-            if pypar.rank()!=0: # The workers loop here
-                while True:
-                    if self.MasterSwitch(): break
-
-    def MasterSwitch(self, flag=0):
+    def MasterSwitch(self, flag=-1):
         """
         This is the master switch which the master calls
         to get the workers into the function of interest.
         The flag indicates which function the workers should
         call. (Don't use negative flags, they may be truncated.)
+
+        In a parallel-ly executed script, the format should be
+
+            if pypar.rank()==0:
+                # Doing some calculations with model 'm'.
+                # Anything done outside of this loop WILL BE
+                # DONE BY ALL PROCESSES.
+            m.MasterSwitch()
+
+        Thus, the workers will hit this function first with
+        a flag of -1, telling them to start looping over
+        model 'm' waiting for the root to give them work
+        (within the if statement). When the root is done
+        with the work inside the loop, it will hit this fx
+        with a flag of -1, telling it to signal the workers
+        to stop and go back to the original script.
+
+        Please note that, in parallel, any call of Model functions:
+            CaclulateSensitivitiesForAllDataPoints
+        outside of code with this structure will likely result
+        in an error, since it will confuse the communication.
         """
         if not HAVE_PYPAR: return
         
         import pypar
         myid=pypar.rank()
 
-        # Broadcast the flag
+        # Initiate looping the workers over this model
+        if flag==-1:
+            if myid==0: # root node will stop the workers
+                flag=0
+            else:
+                while True:
+                    if self.MasterSwitch(0): return
+                
+        # Broadcast the flag from the root
         flag=pypar.broadcast(flag,0)
-        
+
         if flag==0: # Exit
             return True
         elif flag==1:
@@ -1075,3 +1098,14 @@ class Model:
     def GetInternalVariables(self):
         return self.internalVars
 
+def end_pypar():
+    """
+    Used by atexit to call pypar.finalize only at the end,
+    and only once.
+    """
+    if HAVE_PYPAR:
+        import pypar
+        pypar.finalize()
+
+import atexit
+atexit.register(end_pypar)
