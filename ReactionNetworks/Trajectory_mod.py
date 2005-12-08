@@ -1,5 +1,8 @@
 from __future__ import division
 
+import logging
+logger = logging.getLogger('RxnNets.Trajectory_mod')
+
 import os
 import copy
 import types
@@ -36,24 +39,20 @@ class Trajectory:
                          'pi': scipy.pi,
                          }
 
-    def __len__(self):
-        return len(self.timepoints)
-
     def __init__(self, net, key_column=None, is_sens=False, holds_dt=False):
         if key_column is not None:
             self.key_column = key_column
         else:
             keys = net.dynamicVars.keys() + net.assignedVars.keys()
             if is_sens:
-                keys += [(cname, pname) for cname in keys
-                         for pname in net.optimizableVars.keys()]
-            if holds_dt :
-                keyscopy = keys[:] # slicing gives a copy
-                for keyname in keyscopy :
-                    if isinstance(keyname,str) :
-                        keys += [(keyname,'time')]
-                    else : # key is a tuple
-                        keys += [keyname + ('time',)]
+                keys.extend([(cname, pname) for cname in keys
+                             for pname in net.optimizableVars.keys()])
+            if holds_dt:
+                for keyname in copy.copy(keys):
+                    if isinstance(keyname,str):
+                        keys.append((keyname,'time'))
+                    else: # key is a tuple
+                        keys.append(keyname + ('time',))
 
             self.key_column = KeyedList(zip(keys, range(len(keys))))
 
@@ -76,7 +75,6 @@ class Trajectory:
         self.event_info = ([],[],[])
         self.tcks = {} # need this to store the interpolation information
         self.dytcks = {} # to store interpolated vector field info
-        self.net = net
 
         # We make a copy of the Network's namespace.
         self._func_strs = copy.copy(net._func_strs)
@@ -97,15 +95,46 @@ class Trajectory:
             # We didn't find our our structure, so we have to make the function
             #  bodies. We don't want to make the sensitivity body unless we have
             #  to.
-            self._assignment_functionBody = self.make__assignment(net)
+            self._assignment_functionBody = self._make__assignment(net)
             if is_sens:
                 self._sens_assignment_functionBody =\
-                        self.make__sens_assignment(net)
+                        self._make__sens_assignment(net)
 
             self._known_structures.append(copy.deepcopy(curr_structure))
             bodies = (self._assignment_functionBody, 
                       getattr(self, '_sens_assignment_functionBody', None))
             self._known_function_bodies.append(bodies)
+
+    def __len__(self):
+        return len(self.timepoints)
+
+    def __getitem__(self, this_slice):
+        # XXX: This is very memory ineffcient. A whole copy is made and then
+        #      items discarded. Should really fix this.
+        new_traj = copy.deepcopy(self)
+        if not isinstance(this_slice, slice):
+            # This is generally just the case where we have a single index.
+            this_slice = slice(this_slice, this_slice+1, None)
+        new_traj.timepoints = self.timepoints[this_slice]
+        new_traj.values = self.values[this_slice]
+
+        # XXX: For now just clear out the interoplating info. This could
+        #      be handled cleanly in the future
+        if self.tcks or new_traj.dytcks:
+            logger.warn('Interpolating functions must be recreated after '
+                        'slicing a trajectory. Could be fixed.')
+            new_traj.tcks = {} 
+            new_traj.dytcks = {} 
+
+        return new_traj
+
+    def time_slice(self, start, stop):
+        """
+        Return a new trajectory containing only times from start to stop.
+        """
+        start_index = self._get_time_index(start)
+        stop_index = self._get_time_index(stop)
+        return self[start_index:stop_index+1]
 
     def keys(self):
         return self.var_keys
@@ -113,17 +142,17 @@ class Trajectory:
     def get_times(self):
         return self.timepoints
 
-    def add_event_info(self,eventinfo) :
+    def add_event_info(self, eventinfo):
         self.event_info = eventinfo  # the information is a triple (te,ye,ie)
 
     def append(self, other):
         if self.key_column != other.key_column:
             raise ValueError, 'Trajectories in append have different column keys!'
         if self.const_var_values != other.const_var_values:
-            print 'WARNING: Constant variable values differ between appended trajectories!'
+            logger.warn('Constant variable values differ between appended trajectories!')
 
         if self.timepoints[-1] > other.timepoints[0]:
-            print 'WARNING: Appending trajectory with earlier timepoints!'
+            logger.warn('Appending trajectory with earlier timepoints!')
 
         self.timepoints = scipy.concatenate((self.timepoints, other.timepoints))
         self.values = scipy.concatenate((self.values, other.values))
@@ -150,8 +179,8 @@ class Trajectory:
         index = scipy.argmin(abs(self.timepoints - time))
         time_range = self.timepoints[-1] - self.timepoints[0]
         if abs(self.timepoints[index] - time)/time_range > eps:
-            print 'Time %f requested, closest time stored in trajectory is %f.'\
-                    % (time, self.timepoints[index])
+            logger.warn('Time %f requested, closest time stored in trajectory '
+                        'is %f.' % (time, self.timepoints[index]))
         return index
 
     def get_var_vals(self, time, eps=1e-6):
@@ -167,7 +196,7 @@ class Trajectory:
 
     def get_var_val(self, var_id, time, eps=1e-6):
         """
-        Return the values of the given variable at the given time.
+        Return the value of the given variable at the given time.
 
         Prints a warning if the difference between the requested time and the
         stored time is greater than a fraction eps of the trajectory length.
@@ -194,7 +223,7 @@ class Trajectory:
         elif self.const_var_values.has_key(var_id):
             return self.const_var_values.get(var_id)
 
-    def make__assignment(self, net):
+    def _make__assignment(self, net):
         functionBody = ['def _assignment(self, values, times, start, end):']
 
         if len(net.assignmentRules) > 0:
@@ -209,7 +238,7 @@ class Trajectory:
 
         return '\n\t'.join(functionBody) + '\n'
 
-    def make__sens_assignment(self, net):
+    def _make__sens_assignment(self, net):
         functionBody = ['def _sens_assignment(self, values, times, start, end):'
                         ]
 
@@ -356,9 +385,10 @@ class Trajectory:
         return input
 
     def build_interpolated_traj(self) :
-        """ Given that a trajectory exists, build_interpolated_traj will create the
-        coefficients for the spline interpolatation.
-        The spline can then be evaluated using Trajectory.evaluate_interpolated_traj or
+        """ Given that a trajectory exists, build_interpolated_traj will create 
+        the coefficients for the spline interpolatation.
+        The spline can then be evaluated using 
+        Trajectory.evaluate_interpolated_traj or
         Trajectory.evaluate_interpolated_trajs """
         te,ye,ie = self.event_info
         teIndices = []
@@ -371,18 +401,20 @@ class Trajectory:
             for tevent in te :
                 teIndices.append(mlab.find(self.timepoints==tevent)[1])
 
-            # don't expect there to be an event at 0, if there is this will be messed up
+            # don't expect there to be an event at 0, if there is this will be
+            # messed up
             teIndicesWith0 = list(teIndices[0:])
             teIndicesWith0.insert(0,0)
-            # put in the last time point aswell, again a problem if there's an event at
-            # the last time
+            # put in the last time point as well, again a problem if there's an
+            # event at the last time
             teIndices.extend([len(self.timepoints)])
             intervals = zip(teIndicesWith0,teIndices)
 
         self.tcks = {}
 
         for (start_ind,end_ind) in intervals :
-            start_time, end_time = self.timepoints[start_ind], self.timepoints[end_ind-1]
+            start_time, end_time = self.timepoints[start_ind], \
+                    self.timepoints[end_ind-1]
             curTimes = self.timepoints[start_ind:end_ind]
             k = min(5,end_ind-start_ind-1)
             ys = [self.get_var_traj(dv_id)[start_ind:end_ind]
@@ -396,34 +428,41 @@ class Trajectory:
         """
         This is a version of evaluate_interpolated_traj that returns all the
         values of the dynamic variables and requires you to pass in the
-        appropriate subinterval between events (that can be found in Trajectory.tcks.keys() )
+        appropriate subinterval between events (that can be found in 
+        Trajectory.tcks.keys() )
         Faster than calling evaluate_interpolated_traj repeatedly
         """
         local_tcks = self.tcks
 
-        nDVs = len(self.net.dynamicVars.keys())
-        dv_y = [scipy.interpolate.splev(time, local_tcks[subinterval][dv_ind],der=der) for dv_ind in
-                range(0,nDVs)]
+        nDVs = len(dynamicVarKeys)
+        dv_y = [scipy.interpolate.splev(time, local_tcks[subinterval][dv_ind],
+                                        der=der) for dv_ind in range(0,nDVs)]
 
         return dv_y
 
     def evaluate_interpolated_traj(self,dv_id,time,subinterval=None,der=0) :
         """ Needs Trajectory.build_interpolated_traj() to be called first
-        Input :
-        dvid : the name of the component of the trajectory you wish to evaluate
-        time : a vector of times or a scalar
-        subinterval : an optional argument specifying the time interval between events that the
-        time argument lies (but given a valid time, it will be found automatically)
-        der : the derivative of the spline function you want, the order of the derivative will be
-        constrained by the order of the interpolated spline
-        Output :
+
+        Arguments:
+        dvid         the name of the component of the trajectory you wish to 
+                     evaluate
+        time         a vector of times or a scalar
+        subinterval  an optional argument specifying the time interval 
+                     between events that the time argument lies (but given a 
+                     valid time, it will be found automatically)
+        der          the derivative of the spline function you want, the order
+                     of the derivative will be constrained by the order of the 
+                     interpolated spline
+        Outputs:
         A single scalar value (if time input is a scalar)
         or
-        (returned_times, interpolated_trajectory at those times) if times is a vector
+        (returned_times, interpolated_trajectory at those times) if times is a
+        vector
 
-        Note: it is necessary to have a returned_times argument too, in case the times passed in
-        happens to have a timepoint that corresponds to and event time, which often has two trajectory
-        values associated with it
+        Note: It is necessary to have a returned_times argument too, in case 
+              the times passed in happens to have a timepoint that corresponds 
+              to an event time, which often has two trajectory values associated
+              with it.
         """
         if scipy.isscalar(time) :
             time = scipy.asarray([time]) # if a scalar was passed in, convert to an array
@@ -492,6 +531,5 @@ class Trajectory:
         psyco.bind(scipy.interpolate.splev)
         psyco.bind(evaluate_interpolated_trajs)
         psyco.bind(evaluate_interpolated_traj)
-
     except ImportError:
         pass
