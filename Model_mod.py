@@ -66,13 +66,6 @@ class Model:
                 while True:
                     if self.MasterSwitch(): break
 
-    def __del__(self):
-        if HAVE_PYPAR:
-            import pypar
-            if pypar.rank()==0:
-                self.MasterSwitch(0)
-            pypar.finalize()
-        
     def MasterSwitch(self, flag=0):
         """
         This is the master switch which the master calls
