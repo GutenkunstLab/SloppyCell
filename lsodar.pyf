@@ -41,6 +41,7 @@ python module _lsodar ! in
             double precision intent(in), dimension(((itol==2)+(itol==4))*(neq-1)+1) :: atol
             integer intent(in) :: itask
             integer intent(in, out) :: istate
+            ! iopt is set to 1 so we always check for additional inputs
             integer intent(hide), parameter :: iopt=1
         
             double precision dimension(lrw) :: rwork
