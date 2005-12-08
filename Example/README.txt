@@ -15,7 +15,7 @@ Import all the SloppyCell tools::
   from SloppyCell.ReactionNetworks import *
 
 
-Load up the basic model from an SBML file obtained from `BioModels.net`_. ``base`` is the Python variable name for our network, and ``base`` is the id we give our Network for later incorporation into a Model.::
+Load up the basic model from an SBML file obtained from `BioModels.net`_. ``base_net`` is the Python variable name for our network, and ``base`` is the id we give our Network for later incorporation into a Model.::
 
   base_net = IO.from_SBML_file('BIOMD0000000005.xml', 'base')
 
