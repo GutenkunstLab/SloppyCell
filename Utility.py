@@ -7,6 +7,9 @@ import scipy
 
 from scipy import linspace, logspace
 
+import random
+import copy
+
 def send_email(to_addr, from_addr=None, subject='', message=''):
     """
     Send a plain-text email to a single address.
@@ -55,6 +58,17 @@ def eig(mat):
 
     return e, v
 
+def bootstrap(data,num_iterates=100):
+    """
+    Use sampling with replication to calculate variance in estimates.
+    """
+    len_data = len(data)
+    sampled_data = []
+    for ii in range(num_iterates):
+        sampled_data.append([random.choice(data) for ii in range(len_data)])
+
+    return sampled_data
+        
 def enable_debugging_msgs(filename=None):
     """
     Enable output of debugging messages.
@@ -87,3 +101,4 @@ def disable_debugging_msgs():
         logging.getLogger().removeHandler(h)
     # Restore basic configuration
     logging.basicConfig()
+
