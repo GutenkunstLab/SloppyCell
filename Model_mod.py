@@ -656,8 +656,8 @@ class Model:
         The two previous statements hold for both scalar and vector valued
         epsf.
         """
-        return jacobian_fd(self, params, epsf, 
-                           relativeScale, stepSizeCutoff)
+        return self.jacobian_fd(params, epsf, 
+                                relativeScale, stepSizeCutoff)
 
     def GetJandJtJ(self,params) :
 	
