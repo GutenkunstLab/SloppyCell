@@ -791,7 +791,13 @@ class Model:
             relativeScale = False
 
             jacobian = scipy.asarray(jacobian)
-            if len(jacobian.shape) == 2: # Need to sum up the total jacobian
+            if len(jacobian.shape) == 0:
+                resDict = self.resDict(params)
+                new_jacobian = scipy.zeros(len(params),scipy.Float)
+                for key, value in resDict.items():
+                    new_jacobian += 2.0*value*scipy.array(jacobian[0][key])
+                jacobian = new_jacobian
+            elif len(jacobian.shape) == 2: # Need to sum up the total jacobian
                 residuals = scipy.asarray(self.res(params))
                 jacobian = 2.0*residuals*jacobian
 
