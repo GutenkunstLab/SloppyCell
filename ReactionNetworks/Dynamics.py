@@ -595,10 +595,12 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
             # We don't currently do delays in sensitivity integration, but
             #  we'll keep this here for when we do.
             IC = net.executeEvent(pendingEvents[start_time], IC, start_time)
-            pendingEvents.pop(start)
+            pendingEvents.pop(start_time)
 
         curTimes = traj.get_times()[start_ind:end_ind]
 
+        # The order of the spline to fit. If we have too few points, we have
+        #  to go smaller than 5.
         k = min(5, end_ind - start_ind - 1)
         ys = [traj.get_var_traj(dv_id)[start_ind:end_ind] for dv_id
               in net.dynamicVars.keys()]
