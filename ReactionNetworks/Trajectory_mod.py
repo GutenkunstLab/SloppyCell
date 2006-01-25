@@ -8,7 +8,6 @@ import copy
 import types
 
 import scipy
-import matplotlib.mlab as mlab
 
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
@@ -399,7 +398,7 @@ class Trajectory:
             # At an event there are two time points in the trajectory that
             # are the same (=tevent) but we want the second one
             for tevent in te :
-                teIndices.append(mlab.find(self.timepoints==tevent)[1])
+                teIndices.append(scipy.nonzero(self.timepoints==tevent)[1])
 
             # don't expect there to be an event at 0, if there is this will be
             # messed up

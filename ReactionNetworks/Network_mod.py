@@ -30,7 +30,6 @@ atexit.register(ExprManip.save_derivs, os.path.join(SloppyCell._TEMP_DIR,
 import Integration
 import Reactions
 import SloppyCell.Collections as Collections
-import matplotlib.mlab as mlab
 
 from Components import *
 import Trajectory_mod
@@ -826,7 +825,7 @@ class Network:
             tr = self.trajectory.getVariableTrajectory(dynamicVarName)
             timepoints = self.trajectory.timepoints
             minval = min(abs(timepoints-time)) # closest value to time in timepoints
-            minindex = mlab.find(minval==abs(timepoints-time)) # this is actually an array
+            minindex = scipy.nonzero(minval==abs(timepoints-time)) # this is actually an array
             chemval = tr[minindex[0]]
             exec(dynamicVarName+'='+chemval.__repr__())
 

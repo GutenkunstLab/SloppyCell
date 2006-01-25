@@ -1,7 +1,6 @@
 import unittest
 
 import scipy,copy
-import matplotlib.mlab as mlab
 from SloppyCell.ReactionNetworks import *
 
 from TestNetwork import net
@@ -23,13 +22,13 @@ class test_TimeDerivs(unittest.TestCase):
         sensTraj = Dynamics.integrate_sensitivity(net,scipy.linspace(0.0,.001,1000))
         x_vals = Traj.getVariableTrajectory('x')
         x_vals_deriv = scipy.diff(x_vals)/scipy.diff(Traj.timepoints)
-        relerror = mlab.norm( x_vals_deriv-Traj.getVariableTrajectory(('x','time'))[:-1] )/mlab.norm(x_vals_deriv)
+        relerror = scipy.linalg.norm( x_vals_deriv-Traj.getVariableTrajectory(('x','time'))[:-1] )/scipy.linalg.norm(x_vals_deriv)
 
         x_vals_wrtA = sensTraj.getVariableTrajectory(('x','A'))
         x_vals_wrtA_deriv = scipy.diff(x_vals_wrtA)/scipy.diff(sensTraj.timepoints)
 
-        relerror2 = mlab.norm( x_vals_wrtA_deriv-sensTraj.getVariableTrajectory(('x','A','time'))[:-1] )\
-                    /mlab.norm(x_vals_wrtA_deriv)
+        relerror2 = scipy.linalg.norm( x_vals_wrtA_deriv-sensTraj.getVariableTrajectory(('x','A','time'))[:-1] )\
+                    /scipy.linalg.norm(x_vals_wrtA_deriv)
 
         self.assertAlmostEqual(relerror, 0.0, 5,'Failed on time deriv of x in Traj')
         self.assertAlmostEqual(relerror2, 0.0, 5,'Failed on time deriv of sensitivity of x wrt A in sensTraj')
