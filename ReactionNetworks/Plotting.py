@@ -343,7 +343,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
                 lines.append(l)
                 # Let's print the pretty name for our variable if we can.
                 name = net.get_component_name(dataId)
-                labels.append('%s in %s for %s' % (printedName, netId, exptId))
+                labels.append('%s in %s for %s' % (name, netId, exptId))
 
     for netId, net in nets.items():
         del net.times_to_add
