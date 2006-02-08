@@ -14,7 +14,8 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
       version 0.1 that we might as well jump two units in release number.
 
       Highlights include preliminary multi-processor support, a Windows binary
-      installer, better sensitivity integration, and bug fixes beyond count.
+      installer, better sensitivity integration, debugging support, and bug
+      fixes beyond count.
 
       Grab it from our `download page <http://sourceforge.net/project/showfiles.php?group_id=140498>`_.
 
