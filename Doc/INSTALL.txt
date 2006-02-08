@@ -7,7 +7,7 @@ Dependencies
 Required to run
 +++++++++++++++
 * Python_
-* Scipy 0.3.2_
+* Scipy 0.3.2_ (only compatible with Pyton 2.3)
 * matplotlib_
 
 Required to build
