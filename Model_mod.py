@@ -4,6 +4,9 @@ Model class that unites theory with data.
 
 __docformat__ = "restructuredtext en"
 
+import logging
+logger = logging.getLogger('Model_mod')
+
 import copy
 import sets
 
@@ -14,11 +17,14 @@ import SloppyCell.Collections as Collections
 import KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
+import os
+logger.debug('cwd before importing pypar: %s' % os.getcwd())
 try:
     import pypar
     HAVE_PYPAR=True
 except:
     HAVE_PYPAR=False
+logger.debug('cwd after importing pypar: %s' % os.getcwd())
     
 class Model:
     """
