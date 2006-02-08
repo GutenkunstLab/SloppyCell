@@ -153,8 +153,8 @@ def plot_model_data(model, expts = None, style = 'errorbars',
       show_legend: Boolean that control whether or not to show the legend
       loc: Location of the legend. See help(Plotting.legend) for options.
     """
-    plot_model_results(model, expts, style, show_legend, loc, 
-                       plot_trajectories = False)
+    return plot_model_results(model, expts, style, show_legend, loc, 
+                              plot_trajectories = False)
 
 def plot_model_results(model, expts = None, style='errorbars',
                        show_legend = True, loc = 'upper left',
@@ -238,6 +238,8 @@ def plot_model_results(model, expts = None, style='errorbars',
 
     if show_legend:
         legend(lines, labels, loc=loc)
+
+    return lines, labels
 
 def plot_ensemble_results(model, ensemble, expts = None, 
                           style='errorbars',
@@ -353,6 +355,8 @@ def plot_ensemble_results(model, ensemble, expts = None,
 
     for net in nets.values():
         net.times_to_add = None
+
+    return lines, labels
 
 
 def plot_trajectory(traj, vars = None,
