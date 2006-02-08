@@ -115,7 +115,7 @@ class Experiment:
     def set_data(self, data):
         self.data = copy.copy(data)
 
-    def UpdateData(self, newData):
+    def update_data(self, newData):
         self.data.update(newData)
 
     def get_data(self):
@@ -136,6 +136,7 @@ class Experiment:
 
     SetData = set_data
     GetData = get_data
+    UpdateData = update_data
     SetFixedScaleFactors = set_fixed_sf
     GetFixedScaleFactors = get_fixed_sf
 
