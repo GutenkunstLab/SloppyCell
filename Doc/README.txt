@@ -8,6 +8,16 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
 .. topic:: News
 
+   February 7th, 2006: **SloppyCell 0.3 released!**
+
+      At long last we're making an official release. So much has changed since
+      version 0.1 that we might as well jump two units in release number.
+
+      Highlights include preliminary multi-processor support, a Windows binary
+      installer, better sensitivity integration, and bug fixes beyond count.
+
+      Grab it from our `download page <http://sourceforge.net/project/showfiles.php?group_id=140498>`_.
+
    October 18th, 2005: **Welcome ICSB Participants!**
 
       Perhaps we have some visitors who saw our posters at the 6th International
@@ -42,11 +52,12 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 .. The top level of the SloppyCell package provides support for describing Models, Calculations and Experiments.  Models combine Calculations and Experiments to support the definition of a cost function (the residual misfit between Calculations and Experiments).  The most widely used type of Calculation is that described by a ReactionNetwork.  The ReactionNetworks subdirectory contains code to support the construction of networks from sets of chemicals, reactions, and parameters.
 
 - `Installation guide <INSTALL.html>`_
-- `Usage example <Example/README.html>`_ (incomplete, see SloppyCell/Example)
+- `Usage example <Example/README.html>`_ (incomplete, see the Example directory 
+  in the source)
 - `Mailing list`_
 - Sourceforge `project page`_
-- `CVS snapshot <SloppyCell-CVS.tar.gz>`_ generated nightly
-- `API documentation <api/index.html>`_ generated nightly
+- `CVS snapshot <SloppyCell-CVS.tar.gz>`_ generated CVS_GEN_DATE
+- `API documentation <api/index.html>`_ generated API_DOC_GEN_DATE
 
 .. topic:: Citing SloppyCell:
 

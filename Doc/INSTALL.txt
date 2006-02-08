@@ -28,23 +28,18 @@ Instructions
 
    1. Install required dependencies. We recommend installing the 
       `Enthought Python distribution <http://www.enthought.com/python/>`_ to 
-      satisfy the Python and SciPy dependencies. Here is a version of
+      satisfy the Python, SciPy, and compiler dependencies. Here is a version of
       `libsbml built against Python 2.3 <libsbml_for_python23_win.zip>`_.
-   2. To build SloppyCell on Windows.
+   2. To build SloppyCell on Windows using the compiler included in the 
+      Enthought distribution.
 
-      a. Install `MinGW <http::/http://www.mingw.org/>`_
-      b. Unpack the tarball. (``tar xzf SloppyCell-0.2.tar.gz``)
-      c. Descend into the SloppyCell-0.2 directory. (``cd SloppyCell-0.2``)
-      d. Build SloppyCell. (``python setup.py build -cmingw32``) 
+      a. Unpack the tarball. (``tar xzf SloppyCell-0.3.tar.gz``)
+      b. Descend into the SloppyCell-0.3 directory. (``cd SloppyCell-0.3``)
+      c. Build SloppyCell. (``python setup.py build -cmingw32``) 
+      d. Run the installation script. (``python setup.py install``) 
+      e. Run the included test routines. (``cd Testing; python test.py``)
 
-   3. Or try installing this `binary version <SloppyCell-0.2-win32.zip>`_
-      (built by Robert Clewley).
-
-      a. Un-zip the binary.
-      b. Descend into the SloppyCell-0.2 directory. (``cd SloppyCell-0.2``)
-
-   4. Run the installation script. (``python setup.py install``) 
-   5. Run the included test routines. (``cd Testing; python test.py``)
+   3. Or just run the executable installer from our `download page <http://sourceforge.net/project/showfiles.php?group_id=140498>`_.
 
 .. topic:: On OS X and Linux
 
@@ -53,11 +48,10 @@ Instructions
       `MacEnthon <http://download.enthought.com/MacEnthon/>`_ which will install
       Scipy, matplotlib, and IPython. A pre-built version of g77 (Fortran77 
       compiler) for OSX 10.3 is available at http://hpc.sf.net.)
-   2. `Download <http://sourceforge.net/project/showfiles.php?group_id=140498>`_ SloppyCell-0.2.tgz.
-   3. Unpack the tarball. (``tar xzf SloppyCell-0.2.tar.gz``)
-   4. Descend into the SloppyCell-0.2 directory. (``cd SloppyCell-0.2``)
-   5. Run the installation script. (``python setup.py install``) 
-   6. Run the included test routines. (``cd Testing; python test.py``)
+   2. Unpack the tarball. (``tar xzf SloppyCell-0.3.tar.gz``)
+   3. Descend into the SloppyCell-0.3 directory. (``cd SloppyCell-0.3``)
+   4. Run the installation script. (``python setup.py install``) 
+   5. Run the included test routines. (``cd Testing; python test.py``)
 
 $Date$
 
