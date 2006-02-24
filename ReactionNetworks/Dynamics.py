@@ -459,7 +459,14 @@ def dyn_var_fixed_point(net, dv0 = None):
          of the net is used.
     """
     if dv0 is None:
-        dv0 = net.getDynamicVarValues()
+        dv0 = scipy.array(net.getDynamicVarValues())
+        # We take the absolute value of dv0 to avoid problems from small 
+        #  numerical noise negative values.
+        if scipy.any(dv0 < 0):
+            logger.warning('Negative values in initial guess for fixed point. '
+                           'Taking absolute values. The most negative value '
+                           'was %g.' % min(dv0))
+            dv0 = scipy.absolute(dv0)
 
     ddv_dtFromLogs = lambda logDV: net.get_ddv_dt(scipy.exp(logDV), 0)
     fprime = lambda logDV: net.get_d2dv_ddvdt(scipy.exp(logDV), 0)\
