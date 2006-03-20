@@ -2,10 +2,8 @@ SloppyCell Example
 ==================
 
 In this example, we'll first reproduce the results of and build upon the work in
-avaiable for free `on Pubmed`__ 
-
-.. _Tyson 1991: http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=1831270&query_hl=1
-__ Tyson1991
+JJ Tyson "Modeling the cell division cycle: cdc2 and cyclin interactions." *PNAS* **88** (16): 7328-32 (1991).
+avaiable for free `on Pubmed`_.
 
 Creating the Networks
 ---------------------
@@ -104,6 +102,8 @@ network being perturbed.
    :scale: 50
    :align: center
 
-   Our reproduction of figure 3 from Tyson1991_.
+   Our reproduction of figure 3 from `Tyson (1991)`_.
 
 .. _BioModels.net: http://www.biomodels.net
+.. _on Pubmed: http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=1831270&query_hl=1
+.. _Tyson (1991): http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=1831270&query_hl=1
