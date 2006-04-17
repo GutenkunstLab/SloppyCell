@@ -24,8 +24,16 @@ def ColorWheel(colors = ('b', 'g', 'r', 'c', 'm', 'k'),
                 for c in colors:
                    yield c + s + l
 
-vals_cW = ColorWheel(colors = ('b', 'r', 'g', 'c', 'm', 'y', 'k'), 
-                        lines = None)
+vals_cW = 0
+def reset_vals_cw():
+    """
+    Reset the ColorWheel used for plotting eigenvalues.
+    """
+    global vals_cW
+    vals_cW = ColorWheel(colors = ('b', 'r', 'g', 'c', 'm', 'y', 'k'), 
+                         lines = None)
+reset_vals_cw()
+
 def plot_eigvals(vals, label=None, offset=0, indicate_neg=True, join=False):
     posVals = abs(scipy.compress(scipy.real(vals) > 0, vals))
     posRange = scipy.compress(scipy.real(vals) > 0, range(len(vals)))
@@ -65,6 +73,9 @@ def plot_eigvect(vect, labels=None, num_label = 5):
     # The 0.4 centers the bars on their numbers, accounting for the default
     #  bar width of 0.8
     vect = scipy.real(vect)
+    max_index = scipy.argmax(abs(vect))
+    if vect[max_index] < 0:
+        vect = -vect
     bar(scipy.arange(len(vect)) - 0.4, vect/scipy.linalg.norm(vect))
     a = axis()
     a[0:2] = [-.03*len(vect) - 0.4, (len(vect) - 1)*1.03 + 0.4]
