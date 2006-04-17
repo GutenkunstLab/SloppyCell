@@ -214,7 +214,8 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
             delay = net.fireEvent(event, yout[-1], te[-1])
             pendingEvents[round(te[-1] + delay, 12)] = event
 
-    ##### net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
+    if len(yout) and len(tout):
+        net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
 
     if not fill_traj:
         yout = _reduce_times(yout, tout, times)
