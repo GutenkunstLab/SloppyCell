@@ -31,6 +31,34 @@ def fmin_log_params(m, params, *args, **kwargs):
     else:
         return scipy.exp(pmin)
 
+def fmin_xform(m, params, xforms, invforms, *args, **kwargs):
+    """
+    Nelder-Mead the cost over an arbitrary transform on the parameters.
+
+    m         Model to minimize the cost for
+    params    initial parameter estimate
+    xforms    sequence of transforms (of length, len(params)) to apply to the 
+              parameters before optimizing
+    invforms  sequences of inverse transforms to get back to straight parameters
+    *args     passed on to scipy.optimize.fmin
+    **kwargs  passed on to scipy.optimize.fmin
+    """
+    def func(xp, invforms):
+        p = [inv(xp_val) for (xp_val, inv) in zip(xp, invforms)]
+        return m.cost(p)
+
+    params = scipy.array([x(xp_val) for (xp_val, x) in zip(params, xforms)])
+    pmin = scipy.optimize.fmin(func, params, args = (invforms,),
+                               *args, **kwargs)
+
+    pmin = [inv(xp_val) for (xp_val, inv) in zip(pmin, invforms)]
+    if isinstance(params, KeyedList):
+        pout = params.copy()
+        pout.update(pmin)
+        return pout
+    else:
+        return pmin
+
 def leastsq_log_params(m, params, *args, **kwargs):
     func = m.res_log_params
 
