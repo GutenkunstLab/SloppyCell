@@ -451,7 +451,7 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
 
     return ddv_dpTrajectory
 
-def dyn_var_fixed_point(net, dv0 = None):
+def dyn_var_fixed_point(net, dv0=None, with_logs=True):
     """
     Return the dynamic variables values at the closest fixed point of the net.
 
@@ -468,14 +468,21 @@ def dyn_var_fixed_point(net, dv0 = None):
                            'was %g.' % min(dv0))
             dv0 = scipy.absolute(dv0)
 
-    ddv_dtFromLogs = lambda logDV: net.get_ddv_dt(scipy.exp(logDV), 0)
-    fprime = lambda logDV: net.get_d2dv_ddvdt(scipy.exp(logDV), 0)\
-            *scipy.exp(logDV)
+    if with_logs:
+        ddv_dtFromLogs = lambda logDV: net.get_ddv_dt(scipy.exp(logDV), 0)
+        fprime = lambda logDV: net.get_d2dv_ddvdt(scipy.exp(logDV), 0)\
+                *scipy.exp(logDV)
 
-    dvFixed = scipy.optimize.fsolve(ddv_dtFromLogs, x0 = scipy.log(dv0),
-                                    fprime = fprime, col_deriv = True)
+        dvFixed = scipy.optimize.fsolve(ddv_dtFromLogs, x0 = scipy.log(dv0),
+                                        fprime = fprime, col_deriv = True)
 
-    return scipy.exp(dvFixed)
+        return scipy.exp(dvFixed)
+    else:
+        func = lambda dv: net.get_ddv_dt(dv, 0)
+        fprime = lambda dv: net.get_d2dv_ddvdt(dv, 0)
+        dvFixed = scipy.optimize.fsolve(func, x0 = dv0,
+                                        fprime = fprime, col_deriv = True)
+        return dvFixed
 
 def _Ddv_and_DdvDov_dtTrunc_2(sens_y, time, net, ovIndex, tcks):
     dv_y = [scipy.interpolate.splev(time, tck) for tck in tcks]
