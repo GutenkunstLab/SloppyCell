@@ -10,20 +10,22 @@ eig = scipy.linalg.eig
 set_seeds = scipy.stats.seed
 set_seeds(72529486,916423761)
 
-def autocorrelation(series):
+def autocorrelation(series, upto=scipy.inf):
     """
     Return the autocorrelation of a series
+
+    upto  maximum lag to calculate autocorrelation to
     """
     series = scipy.array(series)
     slen = len(series)
     smean = scipy.mean(series)
-    acorr = scipy.zeros(len(series), scipy.Float)
+    acorr = scipy.zeros(min(len(series), upto), scipy.Float)
     c0 = scipy.sum((series - smean)**2)/slen
 
     acorr[0] = 1.0
     for ii in range(1, len(acorr)):
-        acorr[ii] = scipy.sum((series[:-ii]-smean) * (series[ii:]-smean))\
-                /(slen*c0)
+        terms = (series[:-ii]-smean) * (series[ii:]-smean)
+        acorr[ii] = scipy.mean(terms)/c0
 
     return acorr
 
