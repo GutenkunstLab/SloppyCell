@@ -1,5 +1,12 @@
 import scipy
-from pylab import *
+try:
+    from pylab import *
+except RuntimeError:
+    # When running in parallel we found that this import could raise a 
+    # 'RuntimeError: could not open display' rather than an ImportError, so
+    # we catch and raise an error we know how to handle
+    raise ImportError
+
 rc('lines', linewidth=2)
 
 def ColorWheel(colors = ('b', 'g', 'r', 'c', 'm', 'k'), 
