@@ -355,7 +355,7 @@ class Model:
         params = scipy.array(params)
         
         if stepSizeCutoff==None:
-            stepSizeCutoff = scipy.sqrt(scipy.limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
             
 	if relativeScale is True :
             eps = epsf * abs(params)
@@ -604,7 +604,7 @@ class Model:
 	orig_vals = scipy.array(params)
 
         if stepSizeCutoff is None:
-            stepSizeCutoff = scipy.sqrt(scipy.limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
             
 	if relativeScale:
             eps_l = scipy.maximum(eps * abs(params), stepSizeCutoff)
@@ -781,7 +781,7 @@ class Model:
 
 	nOv = len(params)
         if stepSizeCutoff is None:
-            stepSizeCutoff = scipy.sqrt(scipy.limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
             
         params = scipy.asarray(params)
 	if relativeScale:
@@ -850,7 +850,7 @@ class Model:
                 calculated
         """
 	nOv = len(params)
-        if len(scipy.asarray(eps)) == 1:
+        if scipy.isscalar(eps):
             eps = scipy.ones(len(params), scipy.Float) * eps
 
 	## compute cost at f(x)
@@ -909,14 +909,21 @@ class Model:
 	localIntVars = self.internalVars
 
 	paramlist = scipy.array(currParams)
+
+        # epsf may be an array or scalar
+        if scipy.isscalar(epsf):
+            min_epsf = epsf
+        else:
+            min_epsf = min(epsf)
+
 	if relativeScale is True :
             ## eps should be epsf*abs(typicalvalue) JJW 7.22.05
-	       eps = epsf * abs(paramlist)
-	       for i in range(0,len(eps)) :
-		  if eps[i] < min(scipy.asarray(epsf)) :
-			eps[i] = min(scipy.asarray(epsf))
-	else :
-	       eps = epsf * scipy.ones(len(paramlist),scipy.Float)
+            eps = epsf * abs(paramlist)
+            for i in range(0,len(eps)) :
+                if eps[i] < min_epsf:
+                    eps[i] = min_epsf
+	else:
+            eps = epsf * scipy.ones(len(paramlist),scipy.Float)
 
 	secondDeriv = scipy.zeros((nOp,nOp),scipy.Float)
 	

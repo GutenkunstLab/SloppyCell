@@ -8,6 +8,7 @@ import copy
 import types
 
 import scipy
+import scipy.interpolate
 
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
@@ -366,7 +367,7 @@ class Trajectory:
 	    elif len(splitId) == 2:
 	    	idname = tuple(splitId)
             else:
-                raise 'Problem with id %s in Trajectory._sub_var_names'
+                raise 'Problem with id %s in Trajectory._sub_var_names' % id
 
 	    if idname in self.key_column.keys():
                 mapping = 'values[start:end, %i]' % self.key_column.get(idname)
@@ -377,7 +378,7 @@ class Trajectory:
             elif idname == 'time':
                 mapping = 'times[start:end]'
             else:
-                raise 'Problem with idname %s in Trajectory._sub_var_names'
+                raise 'Problem with idname %s in Trajectory._sub_var_names' % id
 
             input = ExprManip.sub_for_var(input, id, mapping)
 
