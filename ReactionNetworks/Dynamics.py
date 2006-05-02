@@ -7,6 +7,8 @@ import copy
 import sets
 
 import scipy
+import scipy.interpolate
+
 import logging
 logger = logging.getLogger('ReactionNetworks.Dynamics')
 
@@ -15,6 +17,8 @@ odeintr = lsodar.odeintr
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
 import Trajectory_mod
+
+import SloppyCell.Utility as Utility
 
 # XXX: Need to incorporate root_grace_t into integrate_sensitivity
 global_rtol = 1e-6
@@ -28,13 +32,8 @@ try:
 except:
     HAVE_PYPAR=False
 
-class dynException:
-    """exception class for premature integration termination."""
-    def __init__(self,traj,te=None,ye=None,ie=None):
-        self.traj = traj
-        self.te = te
-        self.ye = ye
-        self.ie = ie
+class DynamicsException(Utility.SloppyCellException):
+    pass
 
 
 def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
@@ -131,7 +130,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
                            mxstep = 10000, rtol = rtol, atol = atol,
                            int_pts = fill_traj,
                            full_output = True, return_derivs = return_derivs)
-            except lsodar.odeintrException, excptInst:
+            except Utility.SloppyCellException:
                 ### need to return as much of the trajectory as we have so far
                 # since integration failed, return all the traj we got
                 fill_traj = True
@@ -176,7 +175,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
                        int_pts = fill_traj,
                        insert_events = True,
                        full_output = True, return_derivs = return_derivs)
-        except lsodar.odeintrException, excptInst:
+        except Utility.SloppyCellException:
             ### need to return as much of the trajectory as we have so far
             # since integration failed, return all the traj we got
             fill_traj = True
@@ -241,10 +240,8 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
 
     # raise exception if exited integration loop prematurely
     if start < times[-1]:
-        if return_events:
-            raise dynException(trajectory, te, ye, ie)
-        else:
-            raise dynException(trajectory)
+        logger.warn('Integration ended prematurely in network %s.' % net.id)
+        raise DynamicsException(trajectory, te, ye, ie)
 
     return trajectory
 

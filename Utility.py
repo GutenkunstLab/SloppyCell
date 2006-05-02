@@ -102,3 +102,5 @@ def disable_debugging_msgs():
     # Restore basic configuration
     logging.basicConfig()
 
+class SloppyCellException(Exception):
+    pass

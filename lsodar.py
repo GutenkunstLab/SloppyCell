@@ -5,6 +5,7 @@ import sets
 import scipy
 
 import SloppyCell._lsodar as _lsodar
+import SloppyCell.Utility as Utility
 
 _msgs = {2: "Integration successful.",
          3: "Integration successful. Root found.",
@@ -31,11 +32,8 @@ _iwork_vars = {'nst': 10,
               'mused': 18,
               }
 
-class odeintrException:
-    """exception class for catching integrator errors."""
-    def __init__(self,msg,incompleteData):
-        self.msg = msg
-        self.incompleteData = incompleteData
+class odeintrException(Utility.SloppyCellException):
+    pass
 
 def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=None, atol=None, tcrit=None, h0=0.0, hmax=0.0, hmin=0.0, ixpr=0, mxstep=500, mxhnil=0, mxordn=12, mxords=5, printmessg=0, root_term = [], root_func=None, int_pts=False, insert_events=False, return_derivs = None):
 
@@ -298,7 +296,7 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=Non
 
                 # Collect derivatives
                 if return_derivs:
-                    t_ask = treached * (1- scipy.limits.double_resolution)
+                    t_ask = treached * (1- scipy.misc.limits.double_resolution)
                     dky, iflag = _lsodar.dintdy(t_ask, 1, rwork[20+ng:],
                                                 neq)
                     dout.append(dky)
