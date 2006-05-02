@@ -14,9 +14,10 @@ def print_hess_elements(**args):
         print 'hessian element %i, %i: %g' % (ii, jj, elem)
 
 class CostPrinter:
-    def __init__(self, skip=1, print_params=False):
+    def __init__(self, skip=1, print_params=False, print_best_params=False):
         self.skip = skip
         self.print_params = print_params
+        self.print_best_params = print_best_params
         self.reset()
 
     def __call__(self, **args):
@@ -32,6 +33,8 @@ class CostPrinter:
                                                               self.lowest_cost)
                 if self.print_params:
                     print params
+                if self.print_best_params:
+                    print self.best_params
             self.ii += 1
 
     def reset(self):
