@@ -42,6 +42,7 @@ def fmin_xform(m, params, xforms, invforms, *args, **kwargs):
     invforms  sequences of inverse transforms to get back to straight parameters
     *args     passed on to scipy.optimize.fmin
     **kwargs  passed on to scipy.optimize.fmin
+              For information on these, consult help(scipy.optimize.fmin)
     """
     def func(xp, invforms):
         p = [inv(xp_val) for (xp_val, inv) in zip(xp, invforms)]
