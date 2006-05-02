@@ -3,6 +3,10 @@ import os
 import sets
 
 import scipy
+try:
+    import scipy.misc.limits as limits
+except ImportError:
+    limits = scipy.limits
 
 import SloppyCell._lsodar as _lsodar
 import SloppyCell.Utility as Utility
@@ -296,7 +300,7 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=Non
 
                 # Collect derivatives
                 if return_derivs:
-                    t_ask = treached * (1- scipy.misc.limits.double_resolution)
+                    t_ask = treached * (1- limits.double_resolution)
                     dky, iflag = _lsodar.dintdy(t_ask, 1, rwork[20+ng:],
                                                 neq)
                     dout.append(dky)

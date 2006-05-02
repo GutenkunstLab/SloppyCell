@@ -11,6 +11,10 @@ import copy
 import sets
 
 import scipy
+try:
+    import scipy.misc.limits as limits
+except ImportError:
+    limits = scipy.limits
 
 import SloppyCell.Residuals as Residuals
 import SloppyCell.Collections as Collections
@@ -355,7 +359,7 @@ class Model:
         params = scipy.array(params)
         
         if stepSizeCutoff==None:
-            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(limits.double_epsilon)
             
 	if relativeScale is True :
             eps = epsf * abs(params)
@@ -604,7 +608,7 @@ class Model:
 	orig_vals = scipy.array(params)
 
         if stepSizeCutoff is None:
-            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(limits.double_epsilon)
             
 	if relativeScale:
             eps_l = scipy.maximum(eps * abs(params), stepSizeCutoff)
@@ -781,7 +785,7 @@ class Model:
 
 	nOv = len(params)
         if stepSizeCutoff is None:
-            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(limits.double_epsilon)
             
         params = scipy.asarray(params)
 	if relativeScale:
