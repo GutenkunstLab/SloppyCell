@@ -63,7 +63,7 @@ def plot_singvals(vals, label=None, offset=0, join=False):
 
 PlotEigenvalueSpectrum = plot_eigvals
 
-def plot_eigvect(vect, labels=None, num_label = 5):
+def plot_eigvect(vect, labels=None, bottom = 0, num_label = 5):
     """
     Plot a given eigenvector.
 
@@ -76,7 +76,8 @@ def plot_eigvect(vect, labels=None, num_label = 5):
     max_index = scipy.argmax(abs(vect))
     if vect[max_index] < 0:
         vect = -vect
-    bar(scipy.arange(len(vect)) - 0.4, vect/scipy.linalg.norm(vect))
+    bar(scipy.arange(len(vect)) - 0.4, vect/scipy.linalg.norm(vect), 
+        bottom=bottom)
     a = axis()
     a[0:2] = [-.03*len(vect) - 0.4, (len(vect) - 1)*1.03 + 0.4]
 
