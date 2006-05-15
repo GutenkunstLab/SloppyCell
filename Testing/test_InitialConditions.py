@@ -9,7 +9,7 @@ net.compile()
 net.setInitialVariableValue('A', 1.0)
 net.setInitialVariableValue('B', 2.0)
 
-class test_scale_factors(unittest.TestCase):
+class test_ics(unittest.TestCase):
     def test_default_initial_conditions(self):
         """Test that default ICs are handled correctly"""
         traj = net.integrate(scipy.linspace(0, 5, 5))
@@ -48,7 +48,7 @@ class test_scale_factors(unittest.TestCase):
         self.assertAlmostEqual(ICx, 4.0, 6, 'Failed on changing parameter IC')
 
 
-suite = unittest.makeSuite(test_scale_factors)
+suite = unittest.makeSuite(test_ics)
 
 if __name__ == '__main__':
     unittest.main()
