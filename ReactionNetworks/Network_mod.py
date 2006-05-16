@@ -23,9 +23,10 @@ import SloppyCell.ExprManip as ExprManip
 # We load a dictionary of previously-taken derivatives for efficiency
 ExprManip.load_derivs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
 # This will save the diffs dictionary upon exit from the python interpreter
-import atexit
-atexit.register(ExprManip.save_derivs, os.path.join(SloppyCell._TEMP_DIR, 
-                                                    'diff.pickle'))
+if SloppyCell.my_rank == 0:
+    import atexit
+    atexit.register(ExprManip.save_derivs, os.path.join(SloppyCell._TEMP_DIR, 
+                                                        'diff.pickle'))
 
 import Integration
 import Reactions
@@ -710,7 +711,9 @@ class Network:
     getInitialVariableValue = get_var_ic
 
     def getDynamicVarValues(self):
-        return [var.value for var in self.dynamicVars.values()]
+        # We need to evaluate_expr here to handle ones that are assigned to
+        #  parameters
+        return [self.evaluate_expr(var.value) for var in self.dynamicVars.values()]
 
     def resetDynamicVariables(self):
         # Resets all dynamical variables to their initial values. This is
