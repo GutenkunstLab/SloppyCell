@@ -28,3 +28,5 @@ import PerfectData
 
 import Network_mod
 Network = Network_mod.Network
+
+from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
