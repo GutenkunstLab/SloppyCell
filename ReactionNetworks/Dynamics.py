@@ -19,6 +19,7 @@ KeyedList = SloppyCell.KeyedList_mod.KeyedList
 import Trajectory_mod
 
 import SloppyCell.Utility as Utility
+from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
 
 # XXX: Need to incorporate root_grace_t into integrate_sensitivity
 global_rtol = 1e-6
@@ -26,11 +27,8 @@ global_rtol = 1e-6
 return_derivs = False # do we want time derivatives of all trajectories returned?
 reduce_space = 0 # we may want to not return every timepoint but only 0, reduce_space, 2*reduce_space etc.
 
-try:
+if HAVE_PYPAR:
     import pypar
-    HAVE_PYPAR=True
-except:
-    HAVE_PYPAR=False
 
 class DynamicsException(Utility.SloppyCellException):
     pass
@@ -241,7 +239,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
     # raise exception if exited integration loop prematurely
     if start < times[-1]:
         logger.warn('Integration ended prematurely in network %s.' % net.id)
-        raise DynamicsException(trajectory, te, ye, ie)
+        raise DynamicsException()
 
     return trajectory
 
@@ -257,6 +255,7 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
     logger.debug('I am proc %d of %d on node %s in DynamicsPar' % (myid, numproc, node))
 
     net.compile()
+    fill_traj = net.add_int_times
 
     if params is not None:
         net.update_optimizable_vars(params)
@@ -322,6 +321,8 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
     for curid in range(numproc) :
         last_ovIndex[curid] = cur_ovIndex[curid] + load[curid] - 1
 
+    # Records whether we broke out of the integration because of an exception
+    broke_out = False
     while start < times[-1]:
         if start in pendingEvents.keys():
             IC = net.executeEvent(pendingEvents[start], IC, start)
@@ -344,15 +345,21 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
         nRoots = len(net.events)
         Dfun_temp = lambda y, t: scipy.transpose(net.get_d2dv_ddvdt(y, t))
 
-        temp = odeintr(func, copy.copy(IC[:nDyn]),
-                    curTimes,
-                    root_func = net.root_func,
-                    root_term = [True]*nRoots,
-                    Dfun = Dfun_temp,
-                    mxstep = 10000, rtol = rtol, atol = atolDv,
-                    int_pts = net.add_int_times,
-                    insert_events = True,
-                    full_output = True, return_derivs = return_derivs)
+        try:
+            temp = odeintr(func, copy.copy(IC[:nDyn]),
+                           curTimes,
+                           root_func = net.root_func,
+                           root_term = [True]*nRoots,
+                           Dfun = Dfun_temp,
+                           mxstep = 10000, rtol = rtol, atol = atolDv,
+                           int_pts = fill_traj,
+                           insert_events = True,
+                           full_output = True, return_derivs = return_derivs)
+        except Utility.SloppyCellException:
+            logger.warn('Sensitivity integration failed for node %i during '
+                        'initial integration' % my_rank)
+            broke_out = True
+            break
 
         curTimes = temp[1]
         newSpace = scipy.zeros((len(curTimes), nDyn * (nOpt + 1)), scipy.Float)
@@ -386,20 +393,31 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
             else:
                 atolForThis = None
 
-            temp2 = odeintr(_Ddv_and_DdvDov_dtTrunc,
-                            ICTrunc, curTimes,
-                            args = (net, ovIndex),
-                            mxstep = 10000,
-                            rtol = rtolForThis, atol = atolForThis, return_derivs = return_derivs)
+            try:
+                temp2 = odeintr(_Ddv_and_DdvDov_dtTrunc,
+                                ICTrunc, curTimes,
+                                args = (net, ovIndex),
+                                mxstep = 10000,
+                                rtol = rtolForThis, atol = atolForThis, 
+                                return_derivs = return_derivs)
+            except Utility.SloppyCellException:
+                logger.warn('Sensitivity integration failed for node %i during '
+                            'optimizable variable %s' % (my_rank, ovId))
+                broke_out = True
+                break
+
 
             yout[-len(curTimes):, (ovIndex + 1) * nDyn:(ovIndex + 2)*nDyn] =\
                     copy.copy(temp2[0][:,nDyn:])
 
-            # temp2[2] is the derivative of the trajectory w.r.t time now because
-            # no events are being returned
+            # temp2[2] is the derivative of the trajectory w.r.t time now 
+            # because no events are being returned
             if return_derivs :
                 youtdt[-len(curTimes):, (ovIndex + 1) * nDyn:(ovIndex + 2)*nDyn] =\
-                    copy.copy(temp2[5][:,nDyn:])
+                        copy.copy(temp2[5][:,nDyn:])
+        # Break out one more level if we broke on inner
+        if broke_out:
+            break
 
         start, IC = tout[-1], copy.copy(yout[-1])
 
@@ -408,9 +426,11 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
             delay = net.fireEventAndUpdateDdv_Dov(event, yout[-1], te[-1])
             pendingEvents[te[-1] + delay] = event
 
-    net.updateVariablesFromDynamicVars(yout[-1][:nDyn], tout[-1])
+    if len(yout) and len(tout):
+        net.updateVariablesFromDynamicVars(yout[-1][:nDyn], tout[-1])
 
-    if not net.add_int_times:
+    # If we broke_out, fill the trajectory with what we have
+    if not fill_traj or broke_out and len(yout) and len(tout):
         yout = _reduce_times(yout, tout, times)
         if return_derivs :
             youtdt = _reduce_times(youtdt, tout, times)
@@ -429,23 +449,35 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
     if myid==0 and numproc>1: # I am the master
         for procno in range(1,numproc) :
             logger.debug('%s receiving package from %d ' % (pypar.Get_processor_name(),procno) )
-            yout[:,(cur_ovIndex[procno]+1)*nDyn:(last_ovIndex[procno]+2)*nDyn] = pypar.receive(procno,tag=1)
+            result = pypar.receive(procno, tag=1)
+            if result == 'worker failed!':
+                broke_out = True
+                continue
+            yout[:,(cur_ovIndex[procno]+1)*nDyn:(last_ovIndex[procno]+2)*nDyn] = result
             if return_derivs :
                 youtdt[:,(cur_ovIndex[procno]+1)*nDyn:(last_ovIndex[procno]+2)*nDyn] = pypar.receive(procno,tag=2)
 
     elif numproc>1 :  # I am a slave
         logger.debug('%s sending package ' % pypar.Get_processor_name())
+        # If I didn't complete successfully, send a failur message to the master
+        if broke_out == True:
+            pypar.send('worker failed!', 0, tag=1)
         pypar.send(yout[:,(cur_ovIndex[myid] + 1)*nDyn:(last_ovIndex[myid] + 2)*nDyn],0,tag=1)  # send to the master
         if return_derivs :
             pypar.send(youtdt[:,(cur_ovIndex[myid] + 1)*nDyn:(last_ovIndex[myid] + 2)*nDyn],0,tag=2)
-
-    # big communication overhead, but gets everybody on the same page
-    # pypar.broadcast(yout,0)
-    # pypar.broadcast(youtdt,0)
     
     if return_derivs :
         yout = scipy.concatenate((yout,youtdt), axis = 1)
     ddv_dpTrajectory.appendSensFromODEINT(tout, yout,holds_dt=return_derivs)
+
+    net.trajectory = ddv_dpTrajectory
+    if broke_out:
+        logger.warn('Sensitivity integration failed for network %s!' % net.get_id())
+        raise DynamicsException()
+
+    # big communication overhead, but gets everybody on the same page
+    # pypar.broadcast(yout,0)
+    # pypar.broadcast(youtdt,0)
 
     return ddv_dpTrajectory
 
