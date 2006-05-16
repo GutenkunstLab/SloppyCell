@@ -1,38 +1,45 @@
+import logging
+logger = logging.getLogger('Ensembles')
 import copy
-import scipy
 import time
+
+import scipy
+import scipy.linalg
+import scipy.stats
+if hasattr(scipy.stats, 'seed'): 
+    # We're using old scipy
+    set_seeds = scipy.stats.seed
+else:
+    # We're using new scipy
+    import numpy.random
+    set_seeds = lambda s1, s2: numpy.random.seed([s1, s2])
 
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
+import SloppyCell.Utility as Utility
 
-eig = scipy.linalg.eig
-
-set_seeds = scipy.stats.seed
 set_seeds(72529486,916423761)
 
-def autocorrelation(series, upto=scipy.inf):
+def autocorrelation(series):
     """
-    Return the autocorrelation of a series
-
-    upto  maximum lag to calculate autocorrelation to
+    Return the normalized autocorrelation of a series using the FFT.
     """
-    series = scipy.array(series)
-    slen = len(series)
-    smean = scipy.mean(series)
-    acorr = scipy.zeros(min(len(series), upto), scipy.Float)
-    c0 = scipy.sum((series - smean)**2)/slen
-
-    acorr[0] = 1.0
-    for ii in range(1, len(acorr)):
-        terms = (series[:-ii]-smean) * (series[ii:]-smean)
-        acorr[ii] = scipy.mean(terms)/c0
-
-    return acorr
+    # We need to de-mean the series. Also, we want to pad with zeros to avoid
+    #  assuming our series is periodic.
+    f = scipy.fft(scipy.asarray(series)-scipy.mean(series), n = 2*len(series))
+    # The inverse fft of |f|**2 is the autocorrelation
+    ac = scipy.ifft(abs(f)**2)
+    # But we padded with zeros, so it's too long
+    ac = ac[:len(series)]
+    # And we need to adjust to remove the effect of the zeros we added
+    ac *= len(series)/(len(series) - 1.0*scipy.arange(len(series)))
+    # Return the normalized ac
+    return ac/ac[0]
 
 def ensemble_log_params(m, params, hess, 
                         steps=scipy.inf, max_run_hours=scipy.inf,
                         temperature=1.0, step_scale=1.0,
-                        sing_val_cutoff=1e-4, seeds=None):
+                        sing_val_cutoff=0, seeds=None):
     """
     Generate a Bayesian ensemble of parameter sets consistent with the data in
     the model.
@@ -65,13 +72,15 @@ def ensemble_log_params(m, params, hess,
      _The_American_Statistician_ 49(4), 327-335
     """
     if scipy.isinf(steps) and scipy.isinf(max_run_hours):
-        raise ValueError, 'Both steps and max_run_hours cannot be infinity, or the code will never stop!'
+        logger.warn('Both steps and max_run_hours are infinite! Code will not stop by itself!')
 
     if seeds is not None:
         set_seeds(seeds[0], seeds[1])
 
-    curr_params = params.copy()
-    param_keys = curr_params.keys()
+    if isinstance(params, KeyedList):
+        param_keys = params.keys()
+
+    curr_params = copy.deepcopy(params)
     curr_cost = m.cost(curr_params)
     ens, ens_costs = [curr_params], [curr_cost]
 
@@ -86,7 +95,7 @@ def ensemble_log_params(m, params, hess,
 
     while len(ens) < steps+1:
         # Have we run too long?
-        if (time.time() - start_time)/3600 > max_run_hours:
+        if (time.time() - start_time)/3600 >= max_run_hours:
             break
 
         # Generate the trial move from the quadratic approximation
@@ -99,16 +108,30 @@ def ensemble_log_params(m, params, hess,
         # If we had non-log parameters, it would be:
         # next_params = curr_params + scaled_step
 
-        next_cost = m.cost(next_params)
+        try:
+            next_cost = m.cost(next_params)
+        except Utility.SloppyCellException, X:
+            logger.warn('Exception in cost evaluation at step %i, cost set to '
+                        'infinity.' % len(ens))
+            logger.warn('Parameters tried: %s' % str(next_params))
+            next_cost = scipy.inf
+
     	if _accept_move(next_cost - curr_cost, temperature):
             accepted_moves += 1.
             curr_params = next_params
             curr_cost = next_cost
 
-        ens.append(KeyedList(zip(param_keys, curr_params)))
+        if isinstance(params, KeyedList):
+            ens.append(KeyedList(zip(param_keys, curr_params)))
+        else:
+            ens.append(curr_params)
         ens_costs.append(curr_cost)
 
-    ratio = accepted_moves/len(ens)
+    if len(ens) > 1:
+        ratio = accepted_moves/(len(ens) - 1)
+    else:
+        ratio = 0
+
     return ens, ens_costs, ratio
 
 def _accept_move(delta_cost, temperature):
@@ -118,7 +141,7 @@ def _accept_move(delta_cost, temperature):
         p = scipy.rand()
         return (p < scipy.exp(-delta_cost/temperature))
 
-def _sampling_matrix(hessian, cutoff=1e-4):
+def _sampling_matrix(hessian, cutoff=0):
     ## basically need SVD of hessian - singular values and eigenvectors
     ## hessian = u * diag(singVals) * vh
     u, sing_vals, vh = scipy.linalg.svd(hessian)
@@ -163,7 +186,13 @@ def _trial_move(sampling_mat, sing_vals, cutoff_sing_val):
     return trialMove
 
 def _quadratic_cost(trialMove, hessian):
-    quadratic = scipy.dot(scipy.transpose(trialMove), 
+    """
+    The cost from the quadratic approximation of a trialMove, given the hessian.
+
+    (Note: the hessian here is assumed to be the second derivative matrix of the
+     cost, without an additional factor of 1/2.)
+    """
+    quadratic = 0.5*scipy.dot(scipy.transpose(trialMove), 
                           scipy.dot(hessian, trialMove))
     return quadratic
 
