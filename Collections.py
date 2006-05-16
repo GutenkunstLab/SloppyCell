@@ -1,7 +1,12 @@
 import sets, copy
 
+import SloppyCell
+import SloppyCell.Utility as Utility
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
+
+if SloppyCell.HAVE_PYPAR:
+    import pypar
 
 class ExperimentCollection(dict):
     """
@@ -218,11 +223,50 @@ class CalculationCollection(dict):
         return calcVals
 
     def Calculate(self, varsByCalc, params = None):
+        # This function has been parallelized. Each worker (including the root
+        # node) does a subset of the calculations.
+        my_rank, num_procs = SloppyCell.my_rank, SloppyCell.num_procs
+
         if params is not None:
             self.params.update(params)
-	
-        for (calcName, vars) in varsByCalc.items():
-            self[calcName].Calculate(varsByCalc[calcName], self.params)
+
+        results = {}
+        # Divide up the jobs amongst the various workers
+        calcs_for_me = varsByCalc.keys()[my_rank::num_procs]
+
+        # We need to be quite careful here about exceptions.
+        # If a worker encounters an Exception, it sends it back to the master
+        #  to deal with. This prevents the workers from crashing out before the 
+        #  master.
+        for calc in calcs_for_me:
+            if my_rank != 0:
+                try:
+                    self[calc].Calculate(varsByCalc[calc], self.params)
+                except Exception, X:
+                    results[calc] = X
+                else:
+                    results[calc] = self[calc].GetResult(varsByCalc[calc])
+            else:
+                # I don't want to catch and re-raise exceptions if I don't
+                #  have to because it makes the trace-backs much less useful.
+                self[calc].Calculate(varsByCalc[calc], self.params)
+                results[calc] = self[calc].GetResult(varsByCalc[calc])
+
+        # If we're running parallel. Collect our results on the root node.
+        if my_rank > 0:
+            pypar.send(results, 0)
+        elif num_procs > 1 and my_rank == 0:
+            for worker in range(1, num_procs):
+                worker_results = pypar.receive(worker)
+                results.update(worker_results)
+            # The root node checks if the workers had any exceptions and
+            #  reraises them. It is very important that this be done *after*
+            #  receiving results from every worker.
+            for result in results.values():
+                if isinstance(result, Exception):
+                    raise result
+
+        return results 
 
     def GetSensitivityResults(self, requestedByCalc):
         """
@@ -245,9 +289,14 @@ class CalculationCollection(dict):
         if params is not None :
             self.params.update(params)
 		
+        calcSensVals, calcVals = {}, {}
         for (calcName, vars) in varsByCalc.items():
             calcPOrder = self[calcName].GetParameters().keys()
             self[calcName].CalculateSensitivity(varsByCalc[calcName], self.params)
+            calcSensVals[calcName] = self[calcName].GetSensitivityResult(varsByCalc[calcName])
+            calcVals[calcName] = self[calcName].GetResult(varsByCalc[calcName])
+
+        return calcVals, calcSensVals
 
     def GetParameters(self):
         """
