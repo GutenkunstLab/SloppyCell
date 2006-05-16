@@ -27,3 +27,18 @@ data = {'x': {1.0: (1.0, 0.1),
 expt1.set_data({'test': data})
 
 m = Model([expt1], [net])
+
+# Making a model with > 1 network so we can test parallel code
+net2 = net.copy('test2')
+net2.add_species('z', 'global')
+net2.add_assignment_rule('z', 'y**x + sqrt(time)')
+
+# Make another experiment
+expt2 = Experiment('expt2')
+data = {'z': {0.5: (2.0, 0.2),
+              2.5: (0.5, 0.05)
+              }
+        }
+expt2.set_data({'test2': data})
+
+m2 = Model([expt1, expt2], [net, net2])
