@@ -16,19 +16,14 @@ try:
 except ImportError:
     limits = scipy.limits
 
+import SloppyCell
 import SloppyCell.Residuals as Residuals
 import SloppyCell.Collections as Collections
 import KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
-import os
-logger.debug('cwd before importing pypar: %s' % os.getcwd())
-try:
+if SloppyCell.HAVE_PYPAR:
     import pypar
-    HAVE_PYPAR=True
-except:
-    HAVE_PYPAR=False
-logger.debug('cwd after importing pypar: %s' % os.getcwd())
     
 class Model:
     """
@@ -70,12 +65,12 @@ class Model:
 
         self.observers = KeyedList()
 
-    def MasterSwitch(self, flag=-1):
+    def MasterSwitch(self, command=None):
         """
         This is the master switch which the master calls
         to get the workers into the function of interest.
-        The flag indicates which function the workers should
-        call. (Don't use negative flags, they may be truncated.)
+        The command indicates which function the workers should
+        call.
 
         In a parallel-ly executed script, the format should be
 
@@ -85,45 +80,44 @@ class Model:
                 # DONE BY ALL PROCESSES.
             m.MasterSwitch()
 
-        Thus, the workers will hit this function first with
-        a flag of -1, telling them to start looping over
-        model 'm' waiting for the root to give them work
-        (within the if statement). When the root is done
-        with the work inside the loop, it will hit this fx
-        with a flag of -1, telling it to signal the workers
-        to stop and go back to the original script.
+        When called with command=None, workers will wait for the master 
+        to send them a command. If that command is 'exit', they return
+        from MasterSwitch and thus stop listening.
+        When called with command=None, the master will send 'exit' to
+        all the workers.
 
         Please note that, in parallel, any call of Model functions:
             CaclulateSensitivitiesForAllDataPoints
         outside of code with this structure will likely result
         in an error, since it will confuse the communication.
         """
-        if not HAVE_PYPAR: return
+        my_rank, num_procs = SloppyCell.my_rank, SloppyCell.num_procs
+        if num_procs == 1:
+            return
         
-        import pypar
-        myid=pypar.rank()
-
-        # Initiate looping the workers over this model
-        if flag==-1:
-            if myid==0: # root node will stop the workers
-                flag=0
-            else:
-                while True:
-                    if self.MasterSwitch(0): return
-                
-        # Broadcast the flag from the root
-        flag=pypar.broadcast(flag,0)
-
-        if flag==0: # Exit
-            return True
-        elif flag==1:
-            # Synchronize the parameters and initial conditions
+        if my_rank == 0:
+            # I am the master
+            if command == None:
+                # Shut down all the workers 
+                command = 'exit'
+            # Tell workers what to do
+            for worker in range(1, num_procs):
+                pypar.send(command, destination=worker)
+            # Make sure we're synchronized before they do anything
             self.synchronize()
-            
-            if myid!=0: # Send the workers off to the function
-                temp=self.CalculateSensitivitiesForAllDataPoints(self.params)
-
-        return False
+        else:
+            # I am a worker 
+            while True:
+                # Recieve command from master
+                command = pypar.receive(source=0)
+                if command == 'exit':
+                    break
+                # Synchronize up
+                self.synchronize()
+                if command == 'calculate':
+                    self.CalculateForAllDataPoints(self.params)
+                elif command == 'calc_sens':
+                    self.CalculateSensitivitiesForAllDataPoints(self.params)
 
     def synchronize(self):
         """
@@ -138,8 +132,17 @@ class Model:
         conditions are set in the model (i.e. self.params, etc.)
         before calling this function.
         """
+        # Send out all the parameters. We have to use individual send/recieves
+        #  because broadcast doesn't automagically generate appropriate buffers
+        #  while send and recieve do.
+        if pypar.rank() == 0:
+            for worker in range(1, pypar.size()):
+                pypar.send(self.params, worker)
+        else:
+            self.params = pypar.receive(0)
+
         # Pickle and broadcast the parameters
-        self.params = self.pickle_broadcast(self.params,0)
+        #self.params = self.pickle_broadcast(self.params,0)
         
         # Pickle and broadcast the initial conditions
         self.set_ICs(self.pickle_broadcast(self.get_ICs(),0))
@@ -156,12 +159,13 @@ class Model:
           data -- data to send
           root -- root node
         """
-        if not HAVE_PYPAR: return
+        if not SloppyCell.HAVE_PYPAR: 
+            return
 
-        import pypar, pickle, string
+        import pypar, cPickle, string
         myid = pypar.rank()
 
-        s = pickle.dumps(data) # Pickle the data
+        s = cPickle.dumps(data) # Pickle the data
 
         # Synchronize the string lengths
         l = pypar.broadcast(len(s),root)
@@ -169,7 +173,7 @@ class Model:
 
         pypar.broadcast_string(s,root)
 
-        return pickle.loads(s)
+        return cPickle.loads(s)
         
     def copy(self):
         return copy.deepcopy(self)
@@ -393,10 +397,14 @@ class Model:
          dictionary[experiment][calculation][dependent variable]
                    [independent variabled] -> calculated value.
         """
+        if SloppyCell.num_procs > 1 and SloppyCell.my_rank == 0:
+            self.params.update(params)
+            self.MasterSwitch('calculate')
+
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
-	self.GetCalculationCollection().Calculate(varsByCalc, params)
-        self.calcVals = self.GetCalculationCollection().\
-                GetResults(varsByCalc)
+	self.calcVals = self.GetCalculationCollection().Calculate(varsByCalc, params)
+        #self.calcVals = self.GetCalculationCollection().\
+        #        GetResults(varsByCalc)
         return self.calcVals
 
     def CalculateSensitivitiesForAllDataPoints(self, params):
@@ -409,22 +417,20 @@ class Model:
          dictionary[experiment][calculation][dependent variable]
                    [independent variabled][parameter] -> sensitivity.
         """
-        if HAVE_PYPAR:
-            import pypar
-            if pypar.rank()==0 and pypar.size()>1:
-                self.params.update(params)
-                self.MasterSwitch(1)
+        if SloppyCell.num_procs > 0 and SloppyCell.my_rank == 0:
+            self.MasterSwitch('calc_sens')
 
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
-        self.GetCalculationCollection().CalculateSensitivity(varsByCalc, params)
-        self.calcSensitivityVals = self.GetCalculationCollection().\
-                GetSensitivityResults(varsByCalc)
+        self.calcVals, self.calcSensitivityVals =\
+                self.GetCalculationCollection().CalculateSensitivity(varsByCalc, params)
+        #self.calcSensitivityVals = self.GetCalculationCollection().\
+        #        GetSensitivityResults(varsByCalc)
         # might as well fill up the values for the trajectory (calcVals)
         #  while we're at it:
         # no need to Calculate because the values are stored after the call to
         #  CalculateSensitivity
         # self.GetCalculationCollection().Calculate(varsByCalc, params)
-        self.calcVals = self.GetCalculationCollection().GetResults(varsByCalc)
+        #self.calcVals = self.GetCalculationCollection().GetResults(varsByCalc)
         return self.calcSensitivityVals
 
     def ComputeInternalVariables(self):
@@ -1120,15 +1126,3 @@ class Model:
 
     def GetInternalVariables(self):
         return self.internalVars
-
-def end_pypar():
-    """
-    Used by atexit to call pypar.finalize only at the end,
-    and only once.
-    """
-    if HAVE_PYPAR:
-        import pypar
-        pypar.finalize()
-
-import atexit
-atexit.register(end_pypar)
