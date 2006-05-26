@@ -9,6 +9,7 @@ logger = logging.getLogger('Model_mod')
 
 import copy
 import sets
+import sys, traceback # For exception handling
 
 import scipy
 try:
@@ -19,6 +20,7 @@ except ImportError:
 import SloppyCell
 import SloppyCell.Residuals as Residuals
 import SloppyCell.Collections as Collections
+import SloppyCell.Utility as Utility
 import KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
@@ -105,19 +107,34 @@ class Model:
                 pypar.send(command, destination=worker)
             # Make sure we're synchronized before they do anything
             self.synchronize()
-        else:
-            # I am a worker 
-            while True:
-                # Recieve command from master
-                command = pypar.receive(source=0)
-                if command == 'exit':
-                    break
-                # Synchronize up
-                self.synchronize()
-                if command == 'calculate':
-                    self.CalculateForAllDataPoints(self.params)
-                elif command == 'calc_sens':
-                    self.CalculateSensitivitiesForAllDataPoints(self.params)
+        else: # I am a worker 
+            # If any uncaught exception bubbles up to here. The worker will
+            #  try to save it's state.
+            try:
+                while True:
+                    # Recieve command from master
+                    command = pypar.receive(source=0)
+                    if command == 'exit':
+                        break
+                    # Synchronize up
+                    self.synchronize()
+                    if command == 'calculate':
+                        self.CalculateForAllDataPoints(self.params)
+                    elif command == 'calc_sens':
+                        self.CalculateSensitivitiesForAllDataPoints(self.params)
+            # Handle any uncaught exceptions for the worker
+            except Exception, X:
+                logger.critical('Uncaught exception on node %i' % my_rank)
+                # Assemble and print a nice traceback
+                tb = traceback.format_exception(sys.exc_type, sys.exc_value, 
+                                                sys.exc_traceback)
+                logger.critical(''.join(tb))
+                logger.cricical('Current parameters are %s.'
+                                % str(self.get_params()))
+                # Try to save the Model that crashed
+                dump_file_name = '.SloppyCell/Model.%i.crash.bp' % my_rank
+                Utility.save(self, dump_file_name)
+                logger.critical('Model state saved to %s.' % dump_file_name)
 
     def synchronize(self):
         """

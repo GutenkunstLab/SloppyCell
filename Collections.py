@@ -235,36 +235,41 @@ class CalculationCollection(dict):
         calcs_for_me = varsByCalc.keys()[my_rank::num_procs]
 
         # We need to be quite careful here about exceptions.
-        # If a worker encounters an Exception, it sends it back to the master
-        #  to deal with. This prevents the workers from crashing out before the 
-        #  master.
+        # If a worker encounters a SloppyCellException, we assume it's probably
+        #  an integration error. So we send it to the master and let it deal
+        #  with it how it likes.
+        # If a worker encounters any other exception, it's probably a sign of
+        #  a bug in the code, so we don't catch it here and instead let 
+        #  Model.MasterSwitch deal with it.
         for calc in calcs_for_me:
             if my_rank != 0:
                 try:
                     self[calc].Calculate(varsByCalc[calc], self.params)
-                except Exception, X:
+                except Utility.SloppyCellException, X:
+                    logger.debug('SloppyCellException caught by processor %i'
+                                 % my_rank)
                     results[calc] = X
                 else:
                     results[calc] = self[calc].GetResult(varsByCalc[calc])
             else:
-                # I don't want to catch and re-raise exceptions if I don't
-                #  have to because it makes the trace-backs much less useful.
+                # We don't want to catch and re-raise exceptions on the master
+                #  node because it makes tracebacks much less useful.
                 self[calc].Calculate(varsByCalc[calc], self.params)
                 results[calc] = self[calc].GetResult(varsByCalc[calc])
 
         # If we're running parallel. Collect our results on the root node.
-        if my_rank > 0:
-            pypar.send(results, 0)
-        elif num_procs > 1 and my_rank == 0:
+        if num_procs > 1 and my_rank == 0:
             for worker in range(1, num_procs):
                 worker_results = pypar.receive(worker)
                 results.update(worker_results)
-            # The root node checks if the workers had any exceptions and
-            #  reraises them. It is very important that this be done *after*
+            # The root node checks if the workers had any SloppyCellExceptions 
+            #  and reraises them. It is very important that this be done *after*
             #  receiving results from every worker.
             for result in results.values():
-                if isinstance(result, Exception):
+                if isinstance(result, Utility.SloppyCellException):
                     raise result
+        elif my_rank > 0:
+            pypar.send(results, 0)
 
         return results 
 
