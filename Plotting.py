@@ -110,6 +110,8 @@ def plot_priors(model,priorIDs=None,params=None,sameScale=False):
     If no priors are specified, plots them all.
     If no params are provided, uses the model params.
     If sameScale is true, recenters everything so all prior optima are at 0.
+    Labeling is awkward and hence avoided here.  I suggest using the
+    pylab.text command with parameter names after the plot has been generated.
     """
     if params is None:
         params=model.get_params()
@@ -128,10 +130,10 @@ def plot_priors(model,priorIDs=None,params=None,sameScale=False):
             parVals.append(params.getByKey(res.pKey))
 
     if sameScale is False:
-        errorbar(scipy.arange(len(priorVals)),priorVals,yerr=priorErrs,fmt=None)
+        errorbar(scipy.arange(len(priorVals)),priorVals,yerr=priorErrs,fmt='bo',ecolor='k',capsize=6)
         errorbar(scipy.arange(len(priorVals)),scipy.log(parVals),fmt='go')
     else:
-        errorbar(scipy.arange(len(priorVals)),scipy.zeros(len(priorVals)),yerr=priorErrs,fmt=None)
+        errorbar(scipy.arange(len(priorVals)),scipy.zeros(len(priorVals)),yerr=priorErrs,fmt=None,ecolor='k',capsize=6)
         errorbar(scipy.arange(len(priorVals)),scipy.log(parVals)-priorVals,fmt='go')
-    
+
             
