@@ -7,6 +7,8 @@ except RuntimeError:
     # we catch and raise an error we know how to handle
     raise ImportError
 
+import Residuals
+
 rc('lines', linewidth=2)
 
 def ColorWheel(colors = ('b', 'g', 'r', 'c', 'm', 'k'), 
@@ -101,3 +103,35 @@ def plot_eigvect(vect, labels=None, bottom = 0, num_label = 5):
         a[3] += 0.1
 
     axis(a)
+
+def plot_priors(model,priorIDs=None,params=None,sameScale=False):
+    """
+    Plots specified priors and parameter values.
+    If no priors are specified, plots them all.
+    If no params are provided, uses the model params.
+    If sameScale is true, recenters everything so all prior optima are at 0.
+    """
+    if params is None:
+        params=model.get_params()
+    residuals = model.GetResiduals()
+    if priorIDs is None:
+        priorIDs = residuals.keys()
+
+    priorVals=[]
+    priorErrs=[]
+    parVals=[]
+    for resID in priorIDs:
+        res = residuals.getByKey(resID)
+        if isinstance(res, Residuals.PriorInLog):
+            priorVals.append(res.logPVal)
+            priorErrs.append(res.sigmaLogPVal)
+            parVals.append(params.getByKey(res.pKey))
+
+    if sameScale is False:
+        errorbar(scipy.arange(len(priorVals)),priorVals,yerr=priorErrs,fmt=None)
+        errorbar(scipy.arange(len(priorVals)),scipy.log(parVals),fmt='go')
+    else:
+        errorbar(scipy.arange(len(priorVals)),scipy.zeros(len(priorVals)),yerr=priorErrs,fmt=None)
+        errorbar(scipy.arange(len(priorVals)),scipy.log(parVals)-priorVals,fmt='go')
+    
+            
