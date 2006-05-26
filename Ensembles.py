@@ -39,7 +39,9 @@ def autocorrelation(series):
 def ensemble_log_params(m, params, hess, 
                         steps=scipy.inf, max_run_hours=scipy.inf,
                         temperature=1.0, step_scale=1.0,
-                        sing_val_cutoff=0, seeds=None):
+                        sing_val_cutoff=0, seeds=None,
+                        recalc_interval=scipy.inf, recalc_func=None,
+                        save_hours=scipy.inf, save_to=None):
     """
     Generate a Bayesian ensemble of parameter sets consistent with the data in
     the model.
@@ -57,6 +59,16 @@ def ensemble_log_params(m, params, hess,
      sing_val_cutoff -- Truncate the quadratic approximation at eigenvalues
                         smaller than this fraction of the largest.
      seeds -- A tuple of two integers to seed the random number generator
+     recalc_interval --- The sampling matrix will be recalulated each time this
+                         many trial moves have been attempted.
+     recalc_func --- Function used to calculate the sampling matrix. It should
+                     take only a parameters argument and return the matrix.
+                     If this is None, default is to use 
+                     m.GetJandJtJInLogParameteters
+    save_hours --- If save_to is not None, the ensemble will be saved to
+                      that file every 'save_hours' hours.
+    save_to --- Filename to save ensemble to.
+
 
     Outputs:
      ens, ens_costs, ratio
@@ -72,7 +84,8 @@ def ensemble_log_params(m, params, hess,
      _The_American_Statistician_ 49(4), 327-335
     """
     if scipy.isinf(steps) and scipy.isinf(max_run_hours):
-        logger.warn('Both steps and max_run_hours are infinite! Code will not stop by itself!')
+        logger.warn('Both steps and max_run_hours are infinite! '
+                    'Code will not stop by itself!')
 
     if seeds is not None:
         set_seeds(seeds[0], seeds[1])
@@ -84,19 +97,35 @@ def ensemble_log_params(m, params, hess,
     curr_cost = m.cost(curr_params)
     ens, ens_costs = [curr_params], [curr_cost]
 
+    # We work with arrays of params through the rest of the code
     curr_params = scipy.array(curr_params)
 
-    # Generate the sampling matrix used to generate candidate moves
-    samp_mat, sing_vals, cutoff_sing_val = _sampling_matrix(hess, 
-                                                            sing_val_cutoff)
+    if recalc_func is None:
+        recalc_func = lambda p : m.GetJandJtJInLogParameters(scipy.log(p))[1]
 
-    accepted_moves = 0
+    accepted_moves, ratio = 0, scipy.nan
     start_time = time.time()
-
+    next_save_time = time.time() + save_hours*3600
     while len(ens) < steps+1:
         # Have we run too long?
-        if (time.time() - start_time)/3600 >= max_run_hours:
+        if (time.time() - start_time) >= max_run_hours*3600:
             break
+
+        # This will always be true our first run through
+        if len(ens)%recalc_interval == 1:
+            if len(ens) > 1:
+                logger.debug('Beginning calculation of JtJ using params %s'
+                             % str(ens[-1]))
+                try:
+                    hess = recalc_func(curr_params)
+                    logger.debug('JtJ recalculated after %i steps' 
+                                 % (len(ens) - 1))
+                except SloppyCell.Utility.SloppyCellException:
+                    logger.warn('Calculation of new JtJ failed! ' 
+                                'Continuing with previous JtJ')
+            # Generate the sampling matrix used to generate candidate moves
+            samp_mat, sing_vals, cutoff_sing_val = \
+                    _sampling_matrix(hess, sing_val_cutoff)
 
         # Generate the trial move from the quadratic approximation
         deltaParams = _trial_move(samp_mat, sing_vals, cutoff_sing_val)
@@ -111,8 +140,8 @@ def ensemble_log_params(m, params, hess,
         try:
             next_cost = m.cost(next_params)
         except Utility.SloppyCellException, X:
-            logger.warn('Exception in cost evaluation at step %i, cost set to '
-                        'infinity.' % len(ens))
+            logger.warn('SloppyCellException in cost evaluation at step %i, '
+                        'cost set to infinity.' % len(ens))
             logger.warn('Parameters tried: %s' % str(next_params))
             next_cost = scipy.inf
 
@@ -126,11 +155,18 @@ def ensemble_log_params(m, params, hess,
         else:
             ens.append(curr_params)
         ens_costs.append(curr_cost)
-
-    if len(ens) > 1:
         ratio = accepted_moves/(len(ens) - 1)
-    else:
-        ratio = 0
+
+        # Save to a file
+        if save_to is not None and time.time() >= next_save_time:
+            Utility.save((ens, ens_costs, ratio), save_to)
+            logger.debug('Ensemble of length %i saved to %s.' 
+                         % (len(ens), save_to))
+            next_save_time = time.time() + save_hours*3600
+
+    if save_to is not None:
+        Utility.save((ens, ens_costs, ratio), save_to)
+        logger.debug('Ensemble of length %i saved to %s.' % (len(ens), save_to))
 
     return ens, ens_costs, ratio
 
