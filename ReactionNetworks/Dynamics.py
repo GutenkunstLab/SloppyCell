@@ -20,6 +20,8 @@ import Trajectory_mod
 
 import SloppyCell.Utility as Utility
 from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
+if HAVE_PYPAR:
+    import pypar
 
 # XXX: Need to incorporate root_grace_t into integrate_sensitivity
 global_rtol = 1e-6
@@ -27,10 +29,10 @@ global_rtol = 1e-6
 return_derivs = False # do we want time derivatives of all trajectories returned?
 reduce_space = 0 # we may want to not return every timepoint but only 0, reduce_space, 2*reduce_space etc.
 
-if HAVE_PYPAR:
-    import pypar
+class IntegrationException(Utility.SloppyCellException):
+    pass
 
-class DynamicsException(Utility.SloppyCellException):
+class FixedPointException(Utility.SloppyCellException):
     pass
 
 
@@ -239,7 +241,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=None,
     # raise exception if exited integration loop prematurely
     if start < times[-1]:
         logger.warn('Integration ended prematurely in network %s.' % net.id)
-        raise DynamicsException()
+        raise IntegrationException()
 
     return trajectory
 
@@ -415,6 +417,7 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
             if return_derivs :
                 youtdt[-len(curTimes):, (ovIndex + 1) * nDyn:(ovIndex + 2)*nDyn] =\
                         copy.copy(temp2[5][:,nDyn:])
+
         # Break out one more level if we broke on inner
         if broke_out:
             break
@@ -430,7 +433,7 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
         net.updateVariablesFromDynamicVars(yout[-1][:nDyn], tout[-1])
 
     # If we broke_out, fill the trajectory with what we have
-    if not fill_traj or broke_out and len(yout) and len(tout):
+    if not (fill_traj or broke_out) and len(yout) and len(tout):
         yout = _reduce_times(yout, tout, times)
         if return_derivs :
             youtdt = _reduce_times(youtdt, tout, times)
@@ -453,18 +456,27 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
             if result == 'worker failed!':
                 broke_out = True
                 continue
-            yout[:,(cur_ovIndex[procno]+1)*nDyn:(last_ovIndex[procno]+2)*nDyn] = result
+            try:
+                yout[:,(cur_ovIndex[procno]+1)*nDyn:(last_ovIndex[procno]+2)*nDyn] = result
+            except TypeError:
+                broke_out = True
+
             if return_derivs :
-                youtdt[:,(cur_ovIndex[procno]+1)*nDyn:(last_ovIndex[procno]+2)*nDyn] = pypar.receive(procno,tag=2)
+                try:
+                    youtdt[:,(cur_ovIndex[procno]+1)*nDyn:(last_ovIndex[procno]+2)*nDyn] = pypar.receive(procno,tag=2)
+                except TypeError:
+                    broke_out = True
 
     elif numproc>1 :  # I am a slave
         logger.debug('%s sending package ' % pypar.Get_processor_name())
-        # If I didn't complete successfully, send a failur message to the master
+        # If I didn't complete successfully, send a failure message to the 
+        #  master
         if broke_out == True:
             pypar.send('worker failed!', 0, tag=1)
-        pypar.send(yout[:,(cur_ovIndex[myid] + 1)*nDyn:(last_ovIndex[myid] + 2)*nDyn],0,tag=1)  # send to the master
-        if return_derivs :
-            pypar.send(youtdt[:,(cur_ovIndex[myid] + 1)*nDyn:(last_ovIndex[myid] + 2)*nDyn],0,tag=2)
+        else:
+            pypar.send(yout[:,(cur_ovIndex[myid] + 1)*nDyn:(last_ovIndex[myid] + 2)*nDyn],0,tag=1)  # send to the master
+            if return_derivs :
+                pypar.send(youtdt[:,(cur_ovIndex[myid] + 1)*nDyn:(last_ovIndex[myid] + 2)*nDyn],0,tag=2)
     
     if return_derivs :
         yout = scipy.concatenate((yout,youtdt), axis = 1)
@@ -473,7 +485,7 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-7):
     net.trajectory = ddv_dpTrajectory
     if broke_out:
         logger.warn('Sensitivity integration failed for network %s!' % net.get_id())
-        raise DynamicsException()
+        raise IntegrationException()
 
     # big communication overhead, but gets everybody on the same page
     # pypar.broadcast(yout,0)
@@ -487,7 +499,11 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True):
 
     dv0  Initial guess for the fixed point. If not given, the current state
          of the net is used.
+    with_logs   If True, the calculation is done in terms of logs of variables,
+                so that they cannot be negative.
     """
+    net.compile()
+
     if dv0 is None:
         dv0 = scipy.array(net.getDynamicVarValues())
         # We take the absolute value of dv0 to avoid problems from small 
@@ -502,16 +518,22 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True):
         ddv_dtFromLogs = lambda logDV: net.get_ddv_dt(scipy.exp(logDV), 0)
         fprime = lambda logDV: net.get_d2dv_ddvdt(scipy.exp(logDV), 0)\
                 *scipy.exp(logDV)
-
-        dvFixed = scipy.optimize.fsolve(ddv_dtFromLogs, x0 = scipy.log(dv0),
-                                        fprime = fprime, col_deriv = True)
-
-        return scipy.exp(dvFixed)
+        x0 = scipy.log(dv0)
     else:
         func = lambda dv: net.get_ddv_dt(dv, 0)
         fprime = lambda dv: net.get_d2dv_ddvdt(dv, 0)
-        dvFixed = scipy.optimize.fsolve(func, x0 = dv0,
-                                        fprime = fprime, col_deriv = True)
+        x0 = dv0
+
+    dvFixed, infodict, ier, mesg = scipy.optimize.fsolve(func, x0=x0,
+                                                         fprime=fprime, 
+                                                         col_deriv=True,
+                                                         full_output=True)
+    if ier != 1:
+        raise FixedPointException
+
+    if with_logs:
+        return scipy.exp(dvFixed)
+    else:
         return dvFixed
 
 def _Ddv_and_DdvDov_dtTrunc_2(sens_y, time, net, ovIndex, tcks):
