@@ -515,7 +515,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True):
             dv0 = scipy.absolute(dv0)
 
     if with_logs:
-        ddv_dtFromLogs = lambda logDV: net.get_ddv_dt(scipy.exp(logDV), 0)
+        func = lambda logDV: net.get_ddv_dt(scipy.exp(logDV), 0)
         fprime = lambda logDV: net.get_d2dv_ddvdt(scipy.exp(logDV), 0)\
                 *scipy.exp(logDV)
         x0 = scipy.log(dv0)
