@@ -39,7 +39,7 @@ _iwork_vars = {'nst': 10,
 class odeintrException(Utility.SloppyCellException):
     pass
 
-def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=None, atol=None, tcrit=None, h0=0.0, hmax=0.0, hmin=0.0, ixpr=0, mxstep=500, mxhnil=0, mxordn=12, mxords=5, printmessg=0, root_term = [], root_func=None, int_pts=False, insert_events=False, return_derivs = None):
+def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-6, atol=1e-12, tcrit=None, h0=0.0, hmax=0.0, hmin=0.0, ixpr=0, mxstep=500, mxhnil=0, mxordn=12, mxords=5, printmessg=0, root_term = [], root_func=None, int_pts=False, insert_events=False, return_derivs = None):
 
     """Integrate a system of ordinary differential equations.
 
@@ -130,8 +130,8 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=Non
                    max-norm of (e / ewt) <= 1
               where ewt is a vector of positive error weights computed as
                    ewt = rtol * abs(y) + atol
-              rtol and atol can be either vectors the same length as y or
-              scalars.
+              atol can be either a vector the same length as y or a scalar.
+              rtol must be a scalar.
       tcrit -- a vector of critical points (e.g. singularities) where
                integration care should be taken.
 
@@ -174,32 +174,14 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=Non
     ng = len(root_term)
 
     # Now we take care of the tolerance settings
-    try: 
-        rlen = len(rtol)
-    except TypeError: 
-        rtol_seq = False
-        if rtol is None:
-            rtol = 1e-6
-    else: 
-        if rlen != neq:
-            raise ValueError, 'Vector array of tolerances must have same length as number of equations!'
-        rtol_seq = True
-    try: 
-        alen = len(atol)
-    except TypeError:
-        atol_seq = False
-        if atol is None:
-            atol = 1e-12
-    else: 
-        if alen != neq:
-            raise ValueError, 'Vector array of tolerances must have same length as number of equations!'
-        atol_seq = True
+    if not scipy.isscalar(rtol):
+        raise ValueError, 'rtol must be a scalar.'
 
-    # Figure out what itol should be.
-    itol = {(False, False): 1,
-            (False, True): 2,
-            (True, False): 3,
-            (True, True): 4}[rtol_seq, atol_seq]
+    if not scipy.isscalar(atol) and len(atol) != neq:
+        raise ValueError, 'atol must be a scalar or a vector with same length as number of equations.'
+
+    # itol is 2 if atol is a vector, 1 otherwise.
+    itol = 2 - scipy.isscalar(atol)
 
     itask = 1
     # Do we have critical points?
