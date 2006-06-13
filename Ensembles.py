@@ -18,8 +18,6 @@ import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 import SloppyCell.Utility as Utility
 
-set_seeds(72529486,916423761)
-
 def autocorrelation(series):
     """
     Return the normalized autocorrelation of a series using the FFT.
@@ -89,6 +87,7 @@ def ensemble_log_params(m, params, hess,
 
     if seeds is not None:
         set_seeds(seeds[0], seeds[1])
+    logger.debug('Seed for this ensemble: %s.' % str(scipy.stats.get_seed()))
 
     if isinstance(params, KeyedList):
         param_keys = params.keys()
@@ -120,7 +119,7 @@ def ensemble_log_params(m, params, hess,
                     hess = recalc_func(curr_params)
                     logger.debug('JtJ recalculated after %i steps' 
                                  % (len(ens) - 1))
-                except SloppyCell.Utility.SloppyCellException:
+                except Utility.SloppyCellException:
                     logger.warn('Calculation of new JtJ failed! ' 
                                 'Continuing with previous JtJ')
             # Generate the sampling matrix used to generate candidate moves
@@ -162,6 +161,7 @@ def ensemble_log_params(m, params, hess,
             Utility.save((ens, ens_costs, ratio), save_to)
             logger.debug('Ensemble of length %i saved to %s.' 
                          % (len(ens), save_to))
+            logger.debug('Acceptance ratio so far is %f.' % ratio)
             next_save_time = time.time() + save_hours*3600
 
     if save_to is not None:
@@ -182,8 +182,8 @@ def _sampling_matrix(hessian, cutoff=0):
     ## hessian = u * diag(singVals) * vh
     u, sing_vals, vh = scipy.linalg.svd(hessian)
 
-    print "Hessian decomposed. Condition number is: %g "  % \
-            (max(sing_vals)/min(sing_vals))
+    logger.debug("Hessian decomposed. Condition number is: %g."
+                 % (max(sing_vals)/min(sing_vals)))
 
     ## scroll through the singular values and find the ones whose inverses will
     ## be huge and set them to zero also, load up the array of singular values 
