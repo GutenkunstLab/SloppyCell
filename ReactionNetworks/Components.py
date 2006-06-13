@@ -74,8 +74,15 @@ class Event:
         self.new_values = {}
 
     def __eq__(self, other):
-        return self.__class__ == other.__class__ and \
-                (self.__dict__ == other.__dict__)
+        # This is a little tricky, because Event objects get modified when their
+        #  corresponding event fires. (Probably a poor design.)
+        # So we need to only compare the important attributes.
+        attrs_to_compare = ['__class__', 'id', 'trigger', 'event_assignments',
+                            'delay', 'name']
+        for attr in attrs_to_compare:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
 
     def __ne__(self, other):
         return not (self == other)
