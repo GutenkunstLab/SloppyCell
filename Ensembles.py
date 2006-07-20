@@ -34,7 +34,7 @@ def autocorrelation(series):
     # Return the normalized ac
     return ac/ac[0]
 
-def ensemble_log_params(m, params, hess, 
+def ensemble_log_params(m, params, hess=None, 
                         steps=scipy.inf, max_run_hours=scipy.inf,
                         temperature=1.0, step_scale=1.0,
                         sing_val_cutoff=0, seeds=None,
@@ -87,7 +87,8 @@ def ensemble_log_params(m, params, hess,
 
     if seeds is not None:
         set_seeds(seeds[0], seeds[1])
-    logger.debug('Seed for this ensemble: %s.' % str(scipy.stats.get_seed()))
+    else:
+        print 'Seed for this ensemble: %s.' % str(scipy.stats.get_seed())
 
     if isinstance(params, KeyedList):
         param_keys = params.keys()
@@ -102,9 +103,8 @@ def ensemble_log_params(m, params, hess,
     if recalc_func is None:
         recalc_func = lambda p : m.GetJandJtJInLogParameters(scipy.log(p))[1]
 
-    accepted_moves, ratio = 0, scipy.nan
-    start_time = time.time()
-    next_save_time = time.time() + save_hours*3600
+    accepted_moves, cost_exceptions, ratio = 0, 0, scipy.nan
+    start_time = last_save_time = time.time()
     while len(ens) < steps+1:
         # Have we run too long?
         if (time.time() - start_time) >= max_run_hours*3600:
@@ -112,7 +112,7 @@ def ensemble_log_params(m, params, hess,
 
         # This will always be true our first run through
         if len(ens)%recalc_interval == 1:
-            if len(ens) > 1:
+            if (not hess) or (len(ens) > 1):
                 logger.debug('Beginning calculation of JtJ using params %s'
                              % str(ens[-1]))
                 try:
@@ -141,7 +141,8 @@ def ensemble_log_params(m, params, hess,
         except Utility.SloppyCellException, X:
             logger.warn('SloppyCellException in cost evaluation at step %i, '
                         'cost set to infinity.' % len(ens))
-            logger.warn('Parameters tried: %s' % str(next_params))
+            logger.warn('Parameters tried: %s.' % str(next_params))
+            cost_exceptions += 1
             next_cost = scipy.inf
 
     	if _accept_move(next_cost - curr_cost, temperature):
@@ -157,18 +158,22 @@ def ensemble_log_params(m, params, hess,
         ratio = accepted_moves/(len(ens) - 1)
 
         # Save to a file
-        if save_to is not None and time.time() >= next_save_time:
-            Utility.save((ens, ens_costs, ratio), save_to)
-            logger.debug('Ensemble of length %i saved to %s.' 
-                         % (len(ens), save_to))
-            logger.debug('Acceptance ratio so far is %f.' % ratio)
-            next_save_time = time.time() + save_hours*3600
+        if save_to is not None\
+           and time.time() >= last_save_time + save_hours * 3600:
+            _save_ens(ens, ens_costs, ratio, save_to, cost_exceptions)
+            last_save_time = time.time()
 
     if save_to is not None:
-        Utility.save((ens, ens_costs, ratio), save_to)
-        logger.debug('Ensemble of length %i saved to %s.' % (len(ens), save_to))
+        _save_ens(ens, ens_costs, ratio, save_to, cost_exceptions)
 
     return ens, ens_costs, ratio
+
+def _save_ens(ens, ens_costs, ratio, save_to, cost_exceptions):
+    Utility.save((ens, ens_costs, ratio), save_to)
+    logger.debug('Ensemble of length %i saved to %s.' % (len(ens), save_to))
+    logger.debug('Acceptance ratio so far is %f.' % ratio)
+    logger.debug('Cost threw an exception %i times.' % cost_exceptions)
+
 
 def _accept_move(delta_cost, temperature):
     if delta_cost < 0.0:
