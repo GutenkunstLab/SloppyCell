@@ -36,6 +36,10 @@ class Variable:
         self.typicalValue = typicalValue
         self.is_constant, self.is_optimizable = is_constant, is_optimizable
 
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and \
+                (self.__dict__ == other.__dict__)
+
 class Compartment(Variable):
     def __init__(self, id, initial_size, name, typical_value, 
                  is_constant, is_optimizable):
