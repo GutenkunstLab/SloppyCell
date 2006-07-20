@@ -302,8 +302,17 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-
             # We've found a root
             if istate == 3:
                 jroot = list(jroot)
-                if jroot.count(1) != 1:
-                    print 'Multiple roots found at a single point!?! jroot is %s' % jroot
+                outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
+                if full_output:
+                    outputs = outputs + (info_dict,)
+                if jroot.count(1) > 1:
+                    print 'Multiple roots found at a single point!?! '\
+                            'jroot is %s' % jroot
+                    raise odeintrException(_msgs[istate],outputs)
+                elif jroot.count(1) == 0:
+                    print 'LSODAR claimed root found, but jroot is empty. '\
+                            'jroot is %s' % jroot
+                    raise odeintrException(_msgs[istate],outputs)
 
                 # Which root did we hit?
                 crossed = jroot.index(1)
