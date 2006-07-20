@@ -9,9 +9,6 @@ import TestNetwork
 m2 = copy.deepcopy(TestNetwork.m2)
 params = m2.get_params()
 
-import atexit
-atexit.register(m2.MasterSwitch)
-
 class test_parallel(unittest.TestCase):
     def test_cost(self):
         """ Test basic cost evaluation """
@@ -46,10 +43,9 @@ class test_parallel(unittest.TestCase):
         """ Test that JtJ calculation doesn't crash """
         jtj = m2.GetJandJtJInLogParameters(scipy.log(params))
 
-suite = unittest.makeSuite(test_parallel)
+if num_procs > 1:
+    suite = unittest.makeSuite(test_parallel)
 
 if __name__ == '__main__':
     if num_procs == 1:
         print 'Only one processor detected! Not running in parallel!'
-    if my_rank == 0:
-        unittest.main()
