@@ -15,11 +15,10 @@ net.compile()
 class test_TimeDerivs(unittest.TestCase):
     def test_TimeDerivs(self):
         """Test time derivatives of the trajectory and the sensitivity trajectory """
-        Dynamics.return_derivs = True
         net.add_int_times = False
         # need really finely spaced time points for the finite differencing to work
-        Traj = Dynamics.integrate(net,scipy.linspace(0.0,.001,1000))
-        sensTraj = Dynamics.integrate_sensitivity(net,scipy.linspace(0.0,.001,1000))
+        Traj = Dynamics.integrate(net,scipy.linspace(0.0,.001,1000), return_derivs=True)
+        sensTraj = Dynamics.integrate_sensitivity(net,scipy.linspace(0.0,.001,1000), return_derivs=True)
         x_vals = Traj.getVariableTrajectory('x')
         x_vals_deriv = scipy.diff(x_vals)/scipy.diff(Traj.timepoints)
         relerror = scipy.linalg.norm( x_vals_deriv-Traj.getVariableTrajectory(('x','time'))[:-1] )/scipy.linalg.norm(x_vals_deriv)

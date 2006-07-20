@@ -373,6 +373,9 @@ class Network:
     #
     # Methods to become a 'SloppyCell.Model'
     #
+    def calculate(self, vars, params=None):
+        self.Calculate(vars, params)
+        return self.GetResult(vars)
 
     def Calculate(self, vars, params = None):
         # Add in the times required by all the variables, then convert back to 
@@ -438,7 +441,10 @@ class Network:
                   returnEvents = False, addTimes = True,
                   rtol = None):
         if HAVE_DYNAMICS and hasattr(Dynamics, 'integrate'):
-            return Dynamics.integrate(self, times, params)
+            if self.add_tail_times:
+                times = scipy.concatenate((times, [1.05*times[-1]]))
+            return Dynamics.integrate(self, times, params, 
+                                      fill_traj=self.add_int_times)
         
         print 'Warning: Using older integrator. It is known to be buggy in its handling of events. I strongly suggest building the new integrator.'
 
@@ -479,7 +485,10 @@ class Network:
                              returnEvents = False, addTimes = True,
                              rtol=None):
         if HAVE_DYNAMICS and hasattr(Dynamics, 'integrate'):
-            return Dynamics.integrate_sensitivity(self, times, params, rtol)
+            if self.add_tail_times:
+                times = scipy.concatenate((times, [1.05*times[-1]]))
+            return Dynamics.integrate_sensitivity(self, times, params, rtol,
+                                                  fill_traj=self.add_int_times)
 
         self.compile()
 
@@ -738,7 +747,10 @@ class Network:
 
     def set_dyn_var_ics(self, values):
         for ii, id in enumerate(self.dynamicVars.keys()):
-            self.set_initial_var_value(id, values[ii])
+            if hasattr(values, 'get'):
+                self.set_var_ic(id, values.get(id))
+            else:
+                self.set_var_ic(id, values[ii])
 
     def updateVariablesFromDynamicVars(self, values, time):
         for ii in range(len(self.dynamicVars)):
@@ -938,15 +950,19 @@ class Network:
 
         return delay
 
-    def fireEventAndUpdateDdv_Dov(self, event, values, time):
+    def fireEventAndUpdateDdv_Dov(self, event, values, time, opt_vars=None):
         # XXX: This a big mess, but it works. Should refactor.
+        if opt_vars is None:
+            opt_vars = self.optimizableVars.keys()
+
         self.updateVariablesFromDynamicVars(values, time)
 
-        nDV, nOV = len(self.dynamicVars), len(self.optimizableVars)
+        #nDV, nOV = len(self.dynamicVars), len(self.optimizableVars)
+        nDV, nOV = len(self.dynamicVars), len(opt_vars)
         delay, trigger = event.delay, event.trigger
 
         # If the delay is a math expression, calculate its value
-        if type(delay) == types.StringType:
+        if isinstance(delay, str):
             if len(ExprManip.extract_vars(delay)) > 0:
                 raise exceptions.NotImplementedError, "We don't support math form delays in sensitivity! (Yet)"
             else:
@@ -969,7 +985,7 @@ class Network:
         # dTf_dov = -(sum_dv dTrigger_ddv ddv_dov - dTrigger_dov)/(sum_dv dTrigger_ddv ddv_dt)
         # XXX: Handle trigger has explicit time dependence.
         if event.timeTriggered:
-            dTf_dov = dict(zip(self.optimizableVars.keys(), [0] * nOV))
+            dTf_dov = dict(zip(opt_vars, [0] * nOV))
         else:
             if 'time' in ExprManip.extract_vars(trigger):
                 raise exceptions.NotImplementedError, "We don't support explicit time dependence in complex event triggers for sensitivity! (Yet) Tigger was: %s" % trigger
@@ -980,13 +996,13 @@ class Network:
                                                               time)
 
             dtrigger_dovValue = {}
-            for ovIndex, optId in enumerate(self.optimizableVars.keys()):
+            for optId in opt_vars:
                 dtrigger_dov = self.takeDerivative(trigger, optId)
                 dtrigger_dovValue[optId] = self.evaluate_expr(dtrigger_dov,
                                                               time)
 
             dTf_dov = {}
-            for ovIndex, optId in enumerate(self.optimizableVars.keys()):
+            for ovIndex, optId in enumerate(opt_vars):
                 numerator, denominator = 0, 0
                 for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
                     indexInOA = dvIndex + (ovIndex + 1)*nDV
@@ -1009,7 +1025,7 @@ class Network:
                 drhs_ddvValue[dynId] = self.evaluate_expr(drhs_ddv, time)
 
             drhs_dovValue = {}
-            for ovIndex, optId in enumerate(self.optimizableVars.keys()):
+            for optId in opt_vars:
                 drhs_dov = self.takeDerivative(rhs, optId)
                 drhs_dovValue[optId] = self.evaluate_expr(drhs_dov, time)
 
@@ -1017,7 +1033,7 @@ class Network:
             drhs_dtimeValue = self.evaluate_expr(drhs_dtime, time)
 
             # Calculate the perturbations to the sensitivities
-            for ovIndex, optId in enumerate(self.optimizableVars.keys()):
+            for ovIndex, optId in enumerate(opt_vars):
                 for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
                     event.new_values[executionTime].setdefault((lhsId, optId), 0)
                     indexInOA = dvIndex + (ovIndex + 1)*nDV
@@ -1049,6 +1065,8 @@ class Network:
         for id, value in event.new_values[round(time, 8)].items():
             if type(id) == types.StringType:
                 dynamicVarValues[self.dynamicVars.indexByKey(id)] = value
+        # Clear out the new_values entry
+        del event.new_values[round(time, 8)]
 
         return dynamicVarValues
 
@@ -1064,6 +1082,8 @@ class Network:
 
             else:
                 values[self.dynamicVars.indexByKey(id)] = value
+        # Clear out the new_values entry
+        del event.new_values[round(time, 8)]
 
         return values
 
@@ -1213,6 +1233,7 @@ class Network:
         #  exist beforehand. Also note that __setstate__ will exec all our
         #  dynamic functions upon copying.
         if self.functionDefinitions != getattr(self, '_last_funcDefs', None):
+            logger.debug('Network %s: compiling function defs.' % self.id)
             # Eval our function definitions. Note that these need to be done
             #  in order, and at each point we need to refer back to 
             #  self.namespace, so that, for example, if f(x) = 1  + g(x)
@@ -1224,6 +1245,7 @@ class Network:
 
         curr_structure = self._get_structure()
         if curr_structure != getattr(self, '_last_structure', None):
+            logger.debug('Network %s: compiling structure.' % self.id)
             self._makeCrossReferences()
             self._makeDiffEqRHS()
             for func in self._dynamic_structure_funcs:
@@ -1232,6 +1254,7 @@ class Network:
             self._last_structure = copy.deepcopy(curr_structure)
 
         if self.events != getattr(self, '_last_events', None):
+            logger.debug('Network %s: compiling events.' % self.id)
             for func in self._dynamic_event_funcs:
                 exec 'self.%s_functionBody = self._make_%s()' % (func, func)
                 _exec_dynamic_func(self, func, self.namespace)
@@ -1311,6 +1334,9 @@ class Network:
         for func in self._dynamic_structure_funcs + self._dynamic_event_funcs:
             odict[func] = None
         odict['namespace'] = None
+        # Let's not pickle these...
+        odict['trajectory'] = None
+        odict['ddv_dpTrajectory'] = None
 
         return odict
 

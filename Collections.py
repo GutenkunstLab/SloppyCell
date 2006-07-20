@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger('Collections')
+
 import sets, copy
 
 import SloppyCell
@@ -205,92 +208,74 @@ class CalculationCollection(dict):
         for pName, pValue in calc.GetParameters().items():
             self.params.setdefault(pName, pValue)
 
-    def GetResults(self, requestedByCalc):
-        """
-        GetResultsByCalc(requestedByCalc, params) -> dictionary
-
-        Given requestedByCalc, a dictionary of the form:
-         dict[calc name][dep var][ind var], and a set of parameters
-        (dictionary or appropriately ordered list), returns a dictionary of
-        results. The dictionary is of the form:
-         dictionary[calculation][dependent variables][independent variable]
-          -> result
-        """
-        calcVals = {}
-        for (calcName, requested) in requestedByCalc.items():
-            calcVals[calcName] = self[calcName].GetResult(requested)
-
-        return calcVals
-
     def Calculate(self, varsByCalc, params = None):
-        # This function has been parallelized. Each worker (including the root
-        # node) does a subset of the calculations.
-        my_rank, num_procs = SloppyCell.my_rank, SloppyCell.num_procs
+        """
+        Calculate model predictions for everything in varsByCalc.
 
+        varsByCalc is a dictionary of the form:
+            dict[calc name][dep var] = ind var
+        
+        The return dictionary is of the form:
+            dictionary[calc name][dep var][ind var] = result
+        """
         if params is not None:
             self.params.update(params)
 
         results = {}
-        # Divide up the jobs amongst the various workers
-        calcs_for_me = varsByCalc.keys()[my_rank::num_procs]
 
-        # We need to be quite careful here about exceptions.
-        # If a worker encounters a SloppyCellException, we assume it's probably
-        #  an integration error. So we send it to the master and let it deal
-        #  with it how it likes.
-        # If a worker encounters any other exception, it's probably a sign of
-        #  a bug in the code, so we don't catch it here and instead let 
-        #  Model.MasterSwitch deal with it.
-        for calc in calcs_for_me:
-            if my_rank != 0:
-                try:
-                    self[calc].Calculate(varsByCalc[calc], self.params)
-                except Utility.SloppyCellException, X:
-                    logger.debug('SloppyCellException caught by processor %i'
-                                 % my_rank)
-                    results[calc] = X
-                else:
-                    results[calc] = self[calc].GetResult(varsByCalc[calc])
-            else:
-                # We don't want to catch and re-raise exceptions on the master
-                #  node because it makes tracebacks much less useful.
-                self[calc].Calculate(varsByCalc[calc], self.params)
-                results[calc] = self[calc].GetResult(varsByCalc[calc])
+        calcs_to_do = varsByCalc.keys()
+        # Record which calculation each node is doing
+        calc_assigned = {}
+        while calcs_to_do:
+            # The number of calculations to do this round. We want to use
+            #  all the processors if possible.
+            len_this_block = min(SloppyCell.num_procs, len(calcs_to_do))
 
-        # If we're running parallel. Collect our results on the root node.
-        if num_procs > 1 and my_rank == 0:
-            for worker in range(1, num_procs):
-                worker_results = pypar.receive(worker)
-                results.update(worker_results)
-            # The root node checks if the workers had any SloppyCellExceptions 
-            #  and reraises them. It is very important that this be done *after*
-            #  receiving results from every worker.
-            for result in results.values():
-                if isinstance(result, Utility.SloppyCellException):
-                    raise result
-        elif my_rank > 0:
-            pypar.send(results, 0)
+            for worker in range(1, len_this_block):
+                calc = calcs_to_do.pop()
+                calc_assigned[worker] = calc
+                logger.debug('Assigning calculation %s to worker %i.'
+                             % (calc, worker))
+                command = 'Network.calculate(net, vars, params)'
+                args = {'net': self[calc], 'vars': varsByCalc[calc],
+                        'params': self.params}
+                pypar.send((command, args), worker)
 
-        return results 
+            # The master does his share here
+            calc = calcs_to_do.pop()
+            # We use the finally statement because we want to ensure that we
+            #  *always* wait for replies from the workers, even if the master
+            #  encounters an exception in his evaluation.
+            try:
+                results[calc] = self[calc].calculate(varsByCalc[calc], 
+                                                     self.params)
+            finally:
+                # Collect results from the workers
+                for worker in range(1, len_this_block):
+                    logger.debug('Receiving result from worker %i.' % worker)
+                    results[calc_assigned[worker]] = pypar.receive(worker)
+                # If the master encounts an exception, we'll break out of the
+                #  function ***here***
 
-    def GetSensitivityResults(self, requestedByCalc):
-        """
-        Given requestedByCalc, a dictionary of the form:
-         dict[calc name][dep var][ind var], and a set of parameters
-        (dictionary or appropriately ordered list), returns a dictionary of
-        results. The dictionary is of the form:
-         dictionary[calculation][dependent variables][independent variable]
-	 [parameter]
-          -> result
-        """
-        calcSensVals = {}
-        for (calcName, requested) in requestedByCalc.items():
-            calcSensVals[calcName] = self[calcName].GetSensitivityResult(requested)
+            # Check the results we received. If any is a SloppyCellException, 
+            #  reraise it.
+            for val in results.values():
+                if isinstance(val, Utility.SloppyCellException):
+                    raise val
 
-        return calcSensVals
-
+        return results
 
     def CalculateSensitivity(self, varsByCalc, params = None):
+        """
+        Calculate sensitivities for model predictions of everything in 
+        varsByCalc.
+
+        varsByCalc is a dictionary of the form:
+            dict[calc name][dep var] = ind var
+        
+        The return dictionary is of the form:
+            dictionary[calc name][dep var][ind var][param] = result
+        """
         if params is not None :
             self.params.update(params)
 		

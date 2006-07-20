@@ -67,131 +67,13 @@ class Model:
 
         self.observers = KeyedList()
 
-    def MasterSwitch(self, command=None):
+    def compile(self):
         """
-        This is the master switch which the master calls
-        to get the workers into the function of interest.
-        The command indicates which function the workers should
-        call.
-
-        In a parallel-ly executed script, the format should be
-
-            if pypar.rank()==0:
-                # Doing some calculations with model 'm'.
-                # Anything done outside of this loop WILL BE
-                # DONE BY ALL PROCESSES.
-            m.MasterSwitch()
-
-        When called with command=None, workers will wait for the master 
-        to send them a command. If that command is 'exit', they return
-        from MasterSwitch and thus stop listening.
-        When called with command=None, the master will send 'exit' to
-        all the workers.
-
-        Please note that, in parallel, any call of Model functions:
-            CaclulateSensitivitiesForAllDataPoints
-        outside of code with this structure will likely result
-        in an error, since it will confuse the communication.
+        Compile all the calculations contained within the Model.
         """
-        my_rank, num_procs = SloppyCell.my_rank, SloppyCell.num_procs
-        if num_procs == 1:
-            return
-        
-        if my_rank == 0:
-            # I am the master
-            if command == None:
-                # Shut down all the workers 
-                command = 'exit'
-            # Tell workers what to do
-            for worker in range(1, num_procs):
-                pypar.send(command, destination=worker)
-            # Make sure we're synchronized before they do anything
-            self.synchronize()
-        else: # I am a worker 
-            # If any uncaught exception bubbles up to here. The worker will
-            #  try to save it's state.
-            try:
-                while True:
-                    # Recieve command from master
-                    command = pypar.receive(source=0)
-                    if command == 'exit':
-                        break
-                    # Synchronize up
-                    self.synchronize()
-                    if command == 'calculate':
-                        self.CalculateForAllDataPoints(self.params)
-                    elif command == 'calc_sens':
-                        self.CalculateSensitivitiesForAllDataPoints(self.params)
-            # Handle any uncaught exceptions for the worker
-            except Exception, X:
-                logger.critical('Uncaught exception on node %i' % my_rank)
-                # Assemble and print a nice traceback
-                tb = traceback.format_exception(sys.exc_type, sys.exc_value, 
-                                                sys.exc_traceback)
-                logger.critical(''.join(tb))
-                logger.cricical('Current parameters are %s.'
-                                % str(self.get_params()))
-                # Try to save the Model that crashed
-                dump_file_name = '.SloppyCell/Model.%i.crash.bp' % my_rank
-                Utility.save(self, dump_file_name)
-                logger.critical('Model state saved to %s.' % dump_file_name)
+        for calc in self.get_calcs().values():
+            calc.compile()
 
-    def synchronize(self):
-        """
-        This function takes care of transfering
-        over the parameters of this class (self.params)
-        to all the worker nodes. 
-
-        Also, this function synchronizes the initial
-        conditions, incase the user has modified them.
-
-        Please make sure the parameters and initial
-        conditions are set in the model (i.e. self.params, etc.)
-        before calling this function.
-        """
-        # Send out all the parameters. We have to use individual send/recieves
-        #  because broadcast doesn't automagically generate appropriate buffers
-        #  while send and recieve do.
-        if pypar.rank() == 0:
-            for worker in range(1, pypar.size()):
-                pypar.send(self.params, worker)
-        else:
-            self.params = pypar.receive(0)
-
-        # Pickle and broadcast the parameters
-        #self.params = self.pickle_broadcast(self.params,0)
-        
-        # Pickle and broadcast the initial conditions
-        self.set_ICs(self.pickle_broadcast(self.get_ICs(),0))
-
-    def pickle_broadcast(self, data, root=0):
-        """
-        This function will pickle and broadcast the data,
-        returning the data received.
-
-        ** This function could be put elsewhere,
-        ** it has no model dependence
-
-        Inputs:
-          data -- data to send
-          root -- root node
-        """
-        if not SloppyCell.HAVE_PYPAR: 
-            return
-
-        import pypar, cPickle, string
-        myid = pypar.rank()
-
-        s = cPickle.dumps(data) # Pickle the data
-
-        # Synchronize the string lengths
-        l = pypar.broadcast(len(s),root)
-        if myid!=root: s = string.zfill('',l)
-
-        pypar.broadcast_string(s,root)
-
-        return cPickle.loads(s)
-        
     def copy(self):
         return copy.deepcopy(self)
         
@@ -414,12 +296,11 @@ class Model:
          dictionary[experiment][calculation][dependent variable]
                    [independent variabled] -> calculated value.
         """
-        if SloppyCell.num_procs > 1 and SloppyCell.my_rank == 0:
-            self.params.update(params)
-            self.MasterSwitch('calculate')
+        self.params.update(params)
 
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
-	self.calcVals = self.GetCalculationCollection().Calculate(varsByCalc, params)
+        self.calcVals = self.GetCalculationCollection().Calculate(varsByCalc, 
+                                                                  params)
         #self.calcVals = self.GetCalculationCollection().\
         #        GetResults(varsByCalc)
         return self.calcVals
@@ -434,9 +315,6 @@ class Model:
          dictionary[experiment][calculation][dependent variable]
                    [independent variabled][parameter] -> sensitivity.
         """
-        if SloppyCell.num_procs > 0 and SloppyCell.my_rank == 0:
-            self.MasterSwitch('calc_sens')
-
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
         self.calcVals, self.calcSensitivityVals =\
                 self.GetCalculationCollection().CalculateSensitivity(varsByCalc, params)
@@ -1055,8 +933,8 @@ class Model:
 	response = scipy.zeros((m,m),scipy.Float)
 	ident = scipy.eye(m,typecode=scipy.Float)
 	hinv = scipy.linalg.pinv2(h,1e-40)
-	tmp = scipy.matrixmultiply(hinv,scipy.transpose(j))
-	tmp2 = scipy.matrixmultiply(j,tmp)
+	tmp = scipy.dot(hinv,scipy.transpose(j))
+	tmp2 = scipy.dot(j,tmp)
 	response = ident - tmp2
 
 	return response
@@ -1078,7 +956,7 @@ class Model:
 	[m,n] = j.shape
 	response = scipy.zeros((n,m),scipy.Float)
 	hinv = scipy.linalg.pinv2(h,1e-40)
-	response = -scipy.matrixmultiply(hinv,scipy.transpose(j))
+	response = -scipy.dot(hinv,scipy.transpose(j))
 
 	return response
         
