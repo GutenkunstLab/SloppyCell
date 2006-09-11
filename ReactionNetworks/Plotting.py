@@ -99,11 +99,13 @@ def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=
         dataByCalc = expt.GetData()
         for calc in dataByCalc:
             for chem in dataByCalc[calc]:
-                fmt = cW.next()
+                color, sym, dash = cW.next()
+
                 if with_data:
                     for time, (data, error) in dataByCalc[calc][chem].items()[::skip]:
-                        errorbar(time, data, yerr=error, fmt=fmt,
-                                         ecolor=fmt, capsize=6)
+                        errorbar(time, data, yerr=error, color=color,
+                                 mfc = color, marker=sym,
+                                 ecolor=color, capsize=6)
 
                 predicted = scipy.array(calcVals[calc][chem].items())
                 order = scipy.argsort(predicted[:,0])
@@ -111,7 +113,8 @@ def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=
                 predicted[:,1] = predicted[:,1] *\
                         model.GetScaleFactors()[exptName][chem]
                 lines.append(plot(predicted[:,0], predicted[:,1],
-                                          fmt[::2], linewidth = 3))
+                                  color=color, linestyle=dash,
+                                  linewidth = 3))
                 legend.append(chem + ' in ' + str(calc))# + ' for ' + str(exptName))
 
 
@@ -127,15 +130,16 @@ def PlotDataForExperiments(model, experiments, skip = 1):
         dataByCalc = expt.GetData()
         for calc in dataByCalc:
             for chem in dataByCalc[calc]:
-                fmt = cW.next()
+                color, sym, dash = cW.next()
                 d = scipy.zeros((len(dataByCalc[calc][chem].values()[::skip]),
                                             3), scipy.Float)
                 for ii, (time, (data, error))\
                         in enumerate(dataByCalc[calc][chem].items()[::skip]):
                     d[ii] = [time, data, error]
 
-                errorbar(d[:,0], d[:,1], yerr=d[:,2], fmt=fmt[:-1],
-                         ecolor=fmt, capsize=6)
+                errorbar(d[:,0], d[:,1], yerr=d[:,2], color=color,
+                         mfc=color, marker=sym,
+                         ecolor=color, capsize=6)
 
 def plot_model_data(model, expts = None, style = 'errorbars',
                     show_legend = True, loc = 'upper left'):
@@ -199,20 +203,22 @@ def plot_model_results(model, expts = None, style='errorbars',
             net = calcColl[calcId]
             traj = getattr(net, 'trajectory', None)
             for dataId, dataDict in dataByCalc[calcId].items():
-                fmt = cW.next()
+                color, sym, dash = cW.next()
 
                 if plot_data:
                     # Pull the data out of the dictionary and into an array
                     d = scipy.array([[t, v, e] for (t, (v, e))
                                      in dataDict.items()])
                     if style is 'errorbars':
-                        l = errorbar(d[:,0], d[:,1], yerr=d[:,2], 
-                                     fmt=fmt[:-1], ecolor='k', capsize=6)[0]
+                        l = errorbar(d[:,0], d[:,1], yerr=d[:,2], color=color,
+                                     mfc = color, linestyle='', marker=sym,
+                                     ecolor='k', capsize=6)[0]
                     elif style is 'lines':
                         # Make sure we order the data before plotting
                         order = scipy.argsort(d[:,0], 0)
                         d = scipy.take(d, order, 0)
-                        l = plot(d[:,0], d[:,1], fmt[::2])
+                        l = plot(d[:,0], d[:,1], color=color,
+                                 linestyle=dash)
 
                 if plot_trajectories:
                     if traj is None:
@@ -223,7 +229,8 @@ def plot_model_results(model, expts = None, style='errorbars',
 
                     scaleFactor = model.GetScaleFactors()[exptId][dataId]
                     result = scaleFactor*traj.getVariableTrajectory(dataId)
-                    plot(traj.timepoints, result, fmt[::2], linewidth=3)
+                    plot(traj.timepoints, result, color=color, 
+                         linestyle=dash,linewidth=3)
 
                     # We superimpose a dotted black line to distinguish
                     #  theory from data in this case
@@ -314,7 +321,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
         sortedCalcIds.sort()
         for netId in sortedCalcIds:
             for dataId, dataDict in dataByCalc[netId].items():
-                fmt = cW.next()
+                color, sym, dash = cW.next()
 
                 if plot_data:
                     # Pull the data out of the dictionary and into an array
@@ -322,12 +329,14 @@ def plot_ensemble_results(model, ensemble, expts = None,
                                      in dataDict.items()])
                     if style is 'errorbars':
                         l = errorbar(d[:,0], d[:,1], yerr=d[:,2], 
-                                     fmt=fmt[:-1], ecolor='k', capsize=6)[0]
+                                     color=color, markerfacecolor=color,
+                                     marker=sym, ecolor='k', capsize=6)[0]
                     elif style is 'lines':
                         # Make sure we order the data before plotting
                         order = scipy.argsort(d[:,0], 0)
                         d = scipy.take(d, order, 0)
-                        l = plot(d[:,0], d[:,1], fmt[::2])
+                        l = plot(d[:,0], d[:,1], color=color,
+                                 linestyle=dash)
 
                 if plot_trajectories:
                     times = model.get_calcs()[netId].trajectory.get_times()
@@ -340,7 +349,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
                     # Plot the polygon
                     xpts = scipy.concatenate((times, times[::-1]))
                     ypts = scipy.concatenate((lower_vals, upper_vals[::-1]))
-                    fill(xpts, ypts, fmt[0], alpha=0.4)
+                    fill(xpts, ypts, color=color, alpha=0.4)
 
                 lines.append(l)
                 # Let's print the pretty name for our variable if we can.
@@ -374,10 +383,11 @@ def plot_trajectory(traj, vars = None,
     cW = ColorWheel(symbols=None)
     lines, labels = [], []
     for id in vars:
-        fmt = cW.next()
+        color, sym, dash = cW.next()
         label = str(id)
-        line = plot_func(traj.timepoints, traj.getVariableTrajectory(id), fmt, 
-                          linewidth=3, label=label)
+        line = plot_func(traj.timepoints, traj.getVariableTrajectory(id),
+                         color = color, mfc = color, marker=sym, linestyle=dash,
+                         linewidth=3, label=label)
         lines.append(line)
         labels.append(label)
 
@@ -407,14 +417,15 @@ def plot_ensemble_trajs(best_traj=None, mean_traj=None,
     lines = []
     labels = []
     for var in vars:
-        fmt = cW.next()
+        color, sym, dash = cW.next()
         if best_traj is not None:
             l = plot(best_traj.timepoints, best_traj.getVariableTrajectory(var),
-                     fmt[0]+'-', linewidth=2)
+                     linestyle='-', color=color, linewidth=2)
         if mean_traj is not None:
             times = mean_traj.timepoints
             mean_vals = mean_traj.getVariableTrajectory(var)
-            plot(times, mean_vals, fmt[0]+'--', linewidth=2)
+            plot(times, mean_vals, linestyle = '--', linewidth=2,
+                 color=color)
         if mean_traj is not None and std_traj is not None and std_devs > 0:
             # Calculate the bounds
             std_vals = std_traj.getVariableTrajectory(var)
@@ -424,7 +435,7 @@ def plot_ensemble_trajs(best_traj=None, mean_traj=None,
             # Plot the polygon
             xpts = scipy.concatenate((times, times[::-1]))
             ypts = scipy.concatenate((lower_vals, upper_vals[::-1]))
-            fill(xpts, ypts, fmt[0], alpha=0.4)
+            fill(xpts, ypts, color=color, alpha=0.4)
 
         lines.append(l)
         labels.append(var)

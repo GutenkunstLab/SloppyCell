@@ -31,7 +31,7 @@ def ColorWheel(colors = ('b', 'g', 'r', 'c', 'm', 'k'),
         for l in lines:
            for s in symbols:
                 for c in colors:
-                   yield c + s + l
+                   yield (c, s, l)
 
 vals_cW = 0
 def reset_vals_cw():
@@ -51,16 +51,19 @@ def plot_eigvals(vals, label=None, offset=0, indicate_neg=True, join=False):
 
     sym = vals_cW.next()
     if indicate_neg:
-        if len(negVals) > 0:
-            semilogy(negRange+offset, negVals, 'r'+sym[1:], zorder=1)
         if sym[0] == 'r':
             sym = vals_cW.next()
+        if len(negVals) > 0:
+            semilogy(negRange+offset, negVals, color = 'r', marker=sym[1],
+                     linestyle='', mfc = 'r', zorder=1)
 
-    line = semilogy(posRange+offset, posVals, sym, label = label, zorder=0)
+    line = semilogy(posRange+offset, posVals, color=sym[0], marker=sym[1], 
+                    label = label, zorder=0, markerfacecolor=sym[0],
+                    linestyle='')
 
     if join:
-        plot(scipy.arange(len(vals)) + offset, abs(vals), sym[0]+'--', 
-             zorder=-1)
+        plot(scipy.arange(len(vals)) + offset, abs(vals), color = sym[0],
+             linestyle='-', zorder=-1)
 
     a = axis()
     axis([-0.05*len(vals) + offset, 1.05*(len(vals) - 1) + offset, a[2], a[3]])
