@@ -128,7 +128,10 @@ class Model:
         resvals = [res.GetValue(self.calcVals, self.internalVars, self.params)
                    for res in self.residuals.values()]
 
-        chisq = scipy.sum(scipy.asarray(resvals)**2)
+        # Occasionally it's useful to use residuals with a sqrt(-1) in them,
+        #  to get negative squares. Then, however, we might get small imaginary
+        #  parts in our results, which this shaves off.
+        chisq = scipy.real_if_close(scipy.sum(scipy.asarray(resvals)**2))
         if scipy.isnan(chisq):
             print 'Warning: Chi-Squared in NAN, setting to INF'
             chisq = scipy.inf
