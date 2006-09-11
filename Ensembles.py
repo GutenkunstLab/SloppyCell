@@ -105,13 +105,14 @@ def ensemble_log_params(m, params, hess=None,
 
     accepted_moves, cost_exceptions, ratio = 0, 0, scipy.nan
     start_time = last_save_time = time.time()
+    samp_mat = None
     while len(ens) < steps+1:
         # Have we run too long?
         if (time.time() - start_time) >= max_run_hours*3600:
             break
 
         # This will always be true our first run through
-        if len(ens)%recalc_interval == 1:
+        if (len(ens)%recalc_interval == 1) or (not samp_mat):
             if (not hess) or (len(ens) > 1):
                 logger.debug('Beginning calculation of JtJ using params %s'
                              % str(ens[-1]))
