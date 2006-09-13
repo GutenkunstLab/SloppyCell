@@ -36,3 +36,5 @@ logger.debug('Node %i is on host %s.' % (my_rank, my_host))
 import os
 if my_rank == 0 and not os.path.isdir(_TEMP_DIR): 
     os.mkdir(_TEMP_DIR)
+
+import OldScipySupport

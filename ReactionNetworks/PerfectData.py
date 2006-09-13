@@ -7,6 +7,7 @@ import logging
 logger = logging.getLogger('RxnNets.PerfectData')
 
 import scipy
+import scipy.integrate
 
 _SIGMA_CUTOFF = 1e-14
 
@@ -52,7 +53,7 @@ def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, fixed_sf=False,
     for data_id in data_ids:
         data_sigma = sigmaFunc(sens_traj, data_id)
         if scipy.isscalar(data_sigma):
-            data_sigma = scipy.zeros(len(sens_traj), scipy.Float) + data_sigma
+            data_sigma = scipy.zeros(len(sens_traj), scipy.float_) + data_sigma
 
         if fixed_sf:
             sf_derivs[data_id] = dict([(id, 0) for id in opt_ids])
@@ -110,7 +111,7 @@ def get_sf_derivs(traj, dataId, data_sigma, optIds):
 
 def computeLMHessianContribution(traj, dataId, data_sigma, optIds, 
                                  scaleFactorDerivs):
-    LMHessian = scipy.zeros((len(optIds), len(optIds)), scipy.Float)
+    LMHessian = scipy.zeros((len(optIds), len(optIds)), scipy.float_)
 
     # We break up our integral at event firings.
     for start, end in get_intervals(traj):

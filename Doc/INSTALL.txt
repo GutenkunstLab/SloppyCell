@@ -7,7 +7,7 @@ Dependencies
 Required to run
 +++++++++++++++
 * Python_
-* `Scipy 0.3.2`_ (only compatible with Pyton 2.3)
+* Scipy_
 * matplotlib_
 
 Required to build
@@ -56,7 +56,7 @@ Instructions
 $Date$
 
 .. _Python: http://www.python.org
-.. _SciPy 0.3.2: http://www.scipy.org
+.. _SciPy: http://www.scipy.org
 .. _matplotlib: http://matplotlib.sourceforge.net/
 .. _LibSBML: http://www.sbml.org/software/libsbml/
 .. _IPython: http://ipython.scipy.org/

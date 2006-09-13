@@ -42,9 +42,9 @@ perturbed_net.set_var_optimizable('k6', False)
 # We want to start from a fixed point. 
 #
 # First we integrate for a while.
-Dynamics.integrate(perturbed_net, [0, 100])
+Dynamics.integrate(perturbed_net, [0, 1000])
 # Then we find the nearest fixed point
-fp = Dynamics.dyn_var_fixed_point(perturbed_net)
+fp = Dynamics.dyn_var_fixed_point(perturbed_net, with_logs=False, xtol=1e-3)
 # Finally, we set our dynamic variables initial conditions to that fixed point.
 perturbed_net.set_dyn_var_ics(fp)
 

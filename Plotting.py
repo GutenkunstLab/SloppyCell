@@ -90,7 +90,7 @@ def plot_eigvect(vect, labels=None, bottom = 0, num_label = 5):
         vect = -vect
     bar(scipy.arange(len(vect)) - 0.4, vect/scipy.linalg.norm(vect), 
         bottom=bottom)
-    a = axis()
+    a = list(axis())
     a[0:2] = [-.03*len(vect) - 0.4, (len(vect) - 1)*1.03 + 0.4]
 
     if labels is not None:

@@ -8,6 +8,13 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
 .. topic:: News
 
+   September 13th, 2006: **"New" SciPy compatibility**
+
+      The CVS version of SloppyCell has been updated to work with new
+      versions of numpy and SciPy. Testing has been on (SciPy 0.5.1, 
+      numpy 1.0b5, matplotlib 0.87.5) and on (SciPy 0.3.2, Numeric 23.1, 
+      matplotlib 0.83.2).
+
    February 7th, 2006: **SloppyCell 0.3 released!**
 
       At long last we're making an official release. So much has changed since

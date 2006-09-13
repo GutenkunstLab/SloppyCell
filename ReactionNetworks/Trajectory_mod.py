@@ -57,8 +57,8 @@ class Trajectory:
             self.key_column = KeyedList(zip(keys, range(len(keys))))
 
         # These are the main storage
-        self.timepoints = scipy.zeros(0, scipy.Float)
-	self.values = scipy.zeros((0, len(self.key_column)), scipy.Float)
+        self.timepoints = scipy.zeros(0, scipy.float_)
+	self.values = scipy.zeros((0, len(self.key_column)), scipy.float_)
 
         self.var_keys = net.variables.keys()
         self.dynamicVarKeys = net.dynamicVars.keys()
@@ -164,7 +164,7 @@ class Trajectory:
         if self.key_column.has_key(id):
             return self.values[:, self.key_column.get(id)]
         elif self.const_var_values.has_key(id):
-            return scipy.ones(len(self.timepoints), scipy.Float) *\
+            return scipy.ones(len(self.timepoints), scipy.float_) *\
                     self.const_var_values.get(id)
         else:
             raise ValueError, 'Variable %s not found in trajectory.' % str(id)
@@ -281,7 +281,7 @@ class Trajectory:
 
         numAdded = odeint_array.shape[0]
         addedValues = scipy.zeros((numAdded, len(self.key_column)),
-                                  scipy.Float)
+                                  scipy.float_)
 
         self.values = scipy.concatenate((self.values, addedValues))
         self.timepoints = scipy.concatenate((self.timepoints, timepoints))
@@ -307,7 +307,7 @@ class Trajectory:
 
         numAdded = odeint_array.shape[0]
         addedValues = scipy.zeros((numAdded, len(self.key_column)),
-                                  scipy.Float)
+                                  scipy.float_)
 
         self.values = scipy.concatenate((self.values, addedValues))
         self.timepoints = scipy.concatenate((self.timepoints, timepoints))

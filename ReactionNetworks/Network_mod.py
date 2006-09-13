@@ -516,7 +516,7 @@ class Network:
                                                               rtol=rtol)
 	else:
             # We do it by finite differencing
-            oa = scipy.zeros((len(times), nDv*(nOv+1)), scipy.Float)
+            oa = scipy.zeros((len(times), nDv*(nOv+1)), scipy.float_)
             t, oaInitial, te, ye, ie = Integration.Integrate(self, times,
                                                              rtol=rtol)
             oa[:,0:nDv] = oaInitial
@@ -863,7 +863,7 @@ class Network:
         output.close()
 
     def _make_get_ddv_dt(self):
-        self.ddv_dt = scipy.zeros(len(self.dynamicVars), scipy.Float)
+        self.ddv_dt = scipy.zeros(len(self.dynamicVars), scipy.float_)
 
         functionBody = 'def get_ddv_dt(self, dynamicVars, time):\n\t'
         functionBody += 'ddv_dt = self.ddv_dt\n\t'
@@ -882,7 +882,7 @@ class Network:
 
     def _make_get_d2dv_ddvdt(self):
         self.d2dv_ddvdt = scipy.zeros((len(self.dynamicVars),
-                                     len(self.dynamicVars)), scipy.Float)
+                                     len(self.dynamicVars)), scipy.float_)
 
         functionBody = 'def get_d2dv_ddvdt(self, dynamicVars, time):\n\t'
         functionBody += 'd2dv_ddvdt = self.d2dv_ddvdt\n\t'
@@ -906,7 +906,7 @@ class Network:
 
     def _make_get_d2dv_dovdt(self):
         self.d2dv_dovdt = scipy.zeros((len(self.dynamicVars),
-                                       len(self.optimizableVars)), scipy.Float)
+                                       len(self.optimizableVars)), scipy.float_)
 
         functionBody = 'def get_d2dv_dovdt(self, dynamicVars, time, indices = None):\n\t'
         functionBody += 'd2dv_dovdt = self.d2dv_dovdt\n\t'
@@ -1089,7 +1089,7 @@ class Network:
 
 
     def _make_get_eventValues(self):
-        self._eventValues = scipy.zeros(len(self.complexEvents), scipy.Float)
+        self._eventValues = scipy.zeros(len(self.complexEvents), scipy.float_)
         self._eventTerminals = scipy.zeros(len(self.complexEvents))
         self._eventDirections = scipy.zeros(len(self.complexEvents))
 
@@ -1108,7 +1108,7 @@ class Network:
         return functionBody
 
     def _make_root_func(self):
-        self._root_func = scipy.zeros(len(self.events), scipy.Float)
+        self._root_func = scipy.zeros(len(self.events), scipy.float_)
 
         functionBody = 'def root_func(self, dynamicVars, time):\n\t'
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
@@ -1121,7 +1121,7 @@ class Network:
         return functionBody
 
     def _make_root_func_dt(self):
-        self._root_func_dt = scipy.zeros(len(self.events), scipy.Float)
+        self._root_func_dt = scipy.zeros(len(self.events), scipy.float_)
 
         functionBody = 'def root_func_dt(self, dynamicVars, ddv_dt, time):\n\t'
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
@@ -1150,7 +1150,7 @@ class Network:
 
     def _make_get_eventDerivs(self):
         self._eventDerivValues = scipy.zeros(len(self.complexEvents),
-                                             scipy.Float)
+                                             scipy.float_)
         
         functionBody = 'def get_eventDerivs(self, dynamicVars, ddv_dt, time):\n\t'
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
@@ -1281,11 +1281,11 @@ class Network:
         functionBody += 'constantVarValues = self.constantVarValues\n\n\t'
 
         for ii, id in enumerate(self.constantVars.keys()):
-            functionBody += '%s = constantVarValues[%i]\n\t' % (id, ii)
+            functionBody += '%s = float(constantVarValues[%i])\n\t' % (id, ii)
 
         functionBody += '\n\t'
         for ii, id in enumerate(self.dynamicVars.keys()):
-            functionBody += '%s = dynamicVars[%i]\n\t' % (id, ii)
+            functionBody += '%s = float(dynamicVars[%i])\n\t' % (id, ii)
 
         for variable, math in self.assignmentRules.items():
             functionBody += '%s = %s\n\t' % (variable, math)

@@ -1,6 +1,11 @@
 import scipy
 from SloppyCell.ReactionNetworks import *
 
+# This ensures that all our plots will have smooth curves between the data 
+#  points. It's a little faster to use Network.full_speed(), which only
+#  calculates the points whether there is actually data.
+Network.pretty_plotting()
+
 # We access the Networks we defined in Net.py
 from Nets import *
 
@@ -49,21 +54,24 @@ Plotting.title('Before fitting')
 # This is a bit of python logic here...
 # We loop through our parameters, and add loose priors on all their values. This
 #  prevents the optimization from wandering too far.
+# (These are quite tight priors. Real applications (with more constraining data)
+#  will probably want looser priors.)
 for id, val in params.items():
-    m.AddResidual(Residuals.PriorInLog('prior_on_%s' % id, id,
-                                       scipy.log(val), scipy.log(1e3)))
+    m.AddResidual(Residuals.PriorInLog('prior_on_%s' % id, id, scipy.log(val), 
+                                       scipy.log(1.5e2)))
 
 # And now we'll optimize. Note that optimization can be tricky. One needs to
 #  be in the right ball-park before the local routines can help much.
 #  Once you're close, it often helps to try several of the optimizers, as
 #  they have different strengths and may head different places.
+
 # First we'll try Nelder-Mead
 pmin1 = Optimization.fmin_log_params(m, params, xtol=1e-2)
 # Then we run Levenburg-Marquardt
 params = Optimization.leastsq_log_params(m, pmin1)
-
 # We save our parameter values, the reload them.
 Utility.save(params, 'min_params.bp')
+
 params = Utility.load('min_params.bp')
 
 print 'Final cost:', m.cost(params)
@@ -87,11 +95,13 @@ Plotting.plot_eigvals(evals)
 Plotting.figure(5)
 Plotting.plot_eigvect(evects[:,0], params.keys())
 
-## Now we'll build an ensemble of parameters.
+# Now we'll build an ensemble of parameters.
+# Make sure we run at full speed
 Network.full_speed()
-ens, ens_costs, ratio = Ensembles.ensemble_log_params(m, params, hess, 
+ens, ens_costs, ratio = Ensembles.ensemble_log_params(m, params,
                                                       steps = 2000,
-                                                      max_run_hours = 10/60.)
+                                                      max_run_hours = 10/60.,
+                                                      seeds=(113, 207))
 Utility.save((ens, ens_costs, ratio), 'ensemble.bp')
 (ens, ens_costs, ratio) = Utility.load('ensemble.bp')
 
@@ -118,3 +128,6 @@ Plotting.plot_ensemble_trajs(best_traj, mean_traj, std_traj,
 #
 sens_traj = Dynamics.integrate_sensitivity_2(growth_net, [0, 100])
 h_pd = PerfectData.hessian_log_params(sens_traj, fixed_sf=True)
+
+# This will pop up all the plots we've generated
+Plotting.show()

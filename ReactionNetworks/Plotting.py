@@ -30,7 +30,7 @@ def PlotEigenvectors(eigVects, net = None, title = None):
                            horizontalalignment='center',
                            verticalalignment='center')
 
-        a = axis()
+        a = list(axis())
         a[0:2] = [-.03*nOv, nOv*1.03]
         a[2] -= 0.1
         a[3] += 0.1
@@ -435,7 +435,7 @@ def plot_ensemble_trajs(best_traj=None, mean_traj=None,
             # Plot the polygon
             xpts = scipy.concatenate((times, times[::-1]))
             ypts = scipy.concatenate((lower_vals, upper_vals[::-1]))
-            fill(xpts, ypts, color=color, alpha=0.4)
+            fill(xpts, ypts, facecolor=color, alpha=0.4)
 
         lines.append(l)
         labels.append(var)

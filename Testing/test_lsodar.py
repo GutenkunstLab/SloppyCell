@@ -13,14 +13,14 @@ except ImportError:
 
 # This test problem is from the lsodar documentation.
 def func(y, t):
-    ydot = scipy.zeros(3, scipy.Float)
+    ydot = scipy.zeros(3, scipy.float_)
     ydot[0] = -0.04 * y[0] + 1e4*y[1]*y[2]
     ydot[1] = 0.04 * y[0] - 1e4*y[1]*y[2] - 3e7*y[1]**2
     ydot[2] = 3e7*y[1]**2
     return ydot
 
 def Dfun(y, t):
-    pd = scipy.zeros((3,3), scipy.Float)
+    pd = scipy.zeros((3,3), scipy.float_)
     pd[0,0] = -0.04
     pd[0,1] = 1e4*y[2]
     pd[0,2] = 1e4*y[1]
@@ -31,13 +31,13 @@ def Dfun(y, t):
     return pd
 
 def root_func(y, t):
-    out = scipy.zeros(2, scipy.Float)
+    out = scipy.zeros(2, scipy.float_)
     out[0] = y[0] - 1e-4
     out[1] = y[2] - 1e-2
     return out
 
 def func_w_args(y, t, arg1, arg2):
-    ydot = scipy.zeros(1, scipy.Float)
+    ydot = scipy.zeros(1, scipy.float_)
     ydot[0] = -1
     assert arg1 == 1.2, 'Argument 1 passed incorrectly!'
     assert arg2 == 2.3, 'Argument 2 passed incorrectly1'

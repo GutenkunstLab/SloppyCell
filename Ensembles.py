@@ -5,14 +5,6 @@ import time
 
 import scipy
 import scipy.linalg
-import scipy.stats
-if hasattr(scipy.stats, 'seed'): 
-    # We're using old scipy
-    set_seeds = scipy.stats.seed
-else:
-    # We're using new scipy
-    import numpy.random
-    set_seeds = lambda s1, s2: numpy.random.seed([s1, s2])
 
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
@@ -24,9 +16,10 @@ def autocorrelation(series):
     """
     # We need to de-mean the series. Also, we want to pad with zeros to avoid
     #  assuming our series is periodic.
-    f = scipy.fft(scipy.asarray(series)-scipy.mean(series), n = 2*len(series))
+    f = scipy.fft.rfft(scipy.asarray(series)-scipy.mean(series), 
+                       n = 2*len(series))
     # The inverse fft of |f|**2 is the autocorrelation
-    ac = scipy.ifft(abs(f)**2)
+    ac = scipy.fft.irfft(abs(f)**2)
     # But we padded with zeros, so it's too long
     ac = ac[:len(series)]
     # And we need to adjust to remove the effect of the zeros we added
@@ -85,11 +78,10 @@ def ensemble_log_params(m, params, hess=None,
         logger.warn('Both steps and max_run_hours are infinite! '
                     'Code will not stop by itself!')
 
-    if seeds is not None:
-        set_seeds(seeds[0], seeds[1])
-    else:
-        print 'Seed for this ensemble: %s.' % str(scipy.stats.get_seed())
-
+    if seeds is None:
+        logger.warn('Seeding random number generator based on system time. '\
+                    'Run will not be repeatable.')
+    scipy.random.seed(seeds)
     if isinstance(params, KeyedList):
         param_keys = params.keys()
 
@@ -112,8 +104,8 @@ def ensemble_log_params(m, params, hess=None,
             break
 
         # This will always be true our first run through
-        if (len(ens)%recalc_interval == 1) or (not samp_mat):
-            if (not hess) or (len(ens) > 1):
+        if (len(ens)%recalc_interval == 1) or (samp_mat is None):
+            if (hess is None) or (len(ens) > 1):
                 logger.debug('Beginning calculation of JtJ using params %s'
                              % str(ens[-1]))
                 try:
@@ -243,7 +235,10 @@ def net_ensemble_trajs(net, times, ensemble):
 
     all_trajs = [best_traj]
     for params in ensemble:
-        all_trajs.append(net.integrate(times, params, addTimes=False))
+        try:
+            all_trajs.append(net.integrate(times, params, addTimes=False))
+        except Utility.SloppyCellException:
+            pass
 
     all_values = [traj.values for traj in all_trajs]
 

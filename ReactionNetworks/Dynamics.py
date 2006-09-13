@@ -8,6 +8,7 @@ import sets
 
 import scipy
 import scipy.interpolate
+import scipy.optimize
 
 import logging
 logger = logging.getLogger('ReactionNetworks.Dynamics')
@@ -97,9 +98,9 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
 
     IC = net.getDynamicVarValues()
     start = times[0]
-    yout, tout = scipy.zeros((0, len(IC)), scipy.Float), []
+    yout, tout = scipy.zeros((0, len(IC)), scipy.float_), []
     # time derviative of trajectory
-    youtdt = scipy.zeros((0,len(IC)),scipy.Float)
+    youtdt = scipy.zeros((0,len(IC)),scipy.float_)
     # te, ye, and ie are the times, dynamic variable values, and indices
     #  of fired events
     te, ye, ie = [], [], []
@@ -279,7 +280,7 @@ def integrate_sens_subset(net, times, rtol=1e-6,
 
     start = times[0]
     # IC is zero unless IC is a function of parameters
-    IC = scipy.zeros(nDyn * (nOpt + 1), scipy.Float)
+    IC = scipy.zeros(nDyn * (nOpt + 1), scipy.float_)
 
     # Handle sensitivities of initial conditions
     for dvInd, (id, var) in enumerate(net.dynamicVars.items()):
@@ -292,8 +293,8 @@ def integrate_sens_subset(net, times, rtol=1e-6,
     # Copy in basic ICs
     IC[:nDyn] = net.getDynamicVarValues()
 
-    yout, tout = scipy.zeros((0, len(IC)), scipy.Float), []
-    youtdt = scipy.zeros((0, len(IC)), scipy.Float)
+    yout, tout = scipy.zeros((0, len(IC)), scipy.float_), []
+    youtdt = scipy.zeros((0, len(IC)), scipy.float_)
 
     te, ye, ie = [], [], []
     pendingEvents = {}
@@ -336,7 +337,7 @@ def integrate_sens_subset(net, times, rtol=1e-6,
             raise
 
         curTimes = temp[1]
-        newSpace = scipy.zeros((len(curTimes), nDyn * (nOpt + 1)), scipy.Float)
+        newSpace = scipy.zeros((len(curTimes), nDyn * (nOpt + 1)), scipy.float_)
         yout = scipy.concatenate((yout, newSpace))
         yout[-len(curTimes):, :nDyn] = copy.copy(temp[0][:,:nDyn])
         if return_derivs :
@@ -349,7 +350,7 @@ def integrate_sens_subset(net, times, rtol=1e-6,
         ie.extend(temp[4])
 
         for ovIndex, ovId in enumerate(opt_vars):
-            ICTrunc = scipy.zeros(2 * nDyn, scipy.Float)
+            ICTrunc = scipy.zeros(2 * nDyn, scipy.float_)
             ICTrunc[:nDyn] = copy.copy(IC[:nDyn])
             ICTrunc[nDyn:] = copy.copy(IC[(ovIndex + 1) * nDyn:
                                         (ovIndex + 2) * nDyn])
@@ -474,12 +475,12 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-6,
     tout = result[0]
     # Build the yout array
     n_dyn, n_opt = len(net.dynamicVars), len(net.optimizableVars)
-    yout = scipy.zeros((len(tout), n_dyn * (n_opt+ 1)), scipy.Float)
+    yout = scipy.zeros((len(tout), n_dyn * (n_opt+ 1)), scipy.float_)
 
     # We use the master's result for the non-sensitivity values
     yout[:, :n_dyn] = result[1][:, :n_dyn]
     if return_derivs:
-        youtdt = scipy.zeros((len(tout), n_dyn * (n_opt+ 1)), scipy.Float)
+        youtdt = scipy.zeros((len(tout), n_dyn * (n_opt+ 1)), scipy.float_)
         youtdt[:, :n_dyn] = result[2][:, :n_dyn]
     else:
         youtdt = None
@@ -631,7 +632,7 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
 
     start = times[0]
     # IC is zero unless IC is a function of parameters
-    IC = scipy.zeros(n_dyn * (n_opt + 1), scipy.Float)
+    IC = scipy.zeros(n_dyn * (n_opt + 1), scipy.float_)
     # In the case where return_derivs = True, start_vals still only contains dynamic
     # vars and assigned vars, because the time derivatives are not part of the network's
     # variable list (which Trajectory_mod uses)
@@ -646,8 +647,8 @@ def integrate_sensitivity_2(net, times, params=None, rtol = 1e-6):
                 IC[n_dyn*(ovInd+1) + dvInd] = net.evaluate_expr(DwrtOV,
                                                                time=start)
 
-    yout = scipy.zeros((len(times), len(IC)), scipy.Float)
-    youtdt = scipy.zeros((len(times), len(IC)), scipy.Float)
+    yout = scipy.zeros((len(times), len(IC)), scipy.float_)
+    youtdt = scipy.zeros((len(times), len(IC)), scipy.float_)
 
     for ii, dyn_id in enumerate(net.dynamicVars.keys()):
         yout[:,ii] = traj.get_var_traj(dyn_id)

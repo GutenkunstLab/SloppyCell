@@ -215,10 +215,10 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-
     lrn = 20 + neq*(mxordn+4) + 3*ng
     lrs = 20 + neq*(mxords+4) + lmat + 3*ng 
     lrw = max(lrn, lrs)
-    rwork = scipy.zeros(lrw, scipy.Float)
+    rwork = scipy.zeros(lrw, scipy.float_)
 
     liw = 20 + neq
-    iwork = scipy.zeros(liw, scipy.Int)
+    iwork = scipy.zeros(liw, scipy.int_)
 
     rwork[4] = h0
     rwork[5] = hmax

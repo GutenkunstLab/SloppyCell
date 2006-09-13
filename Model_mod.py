@@ -12,10 +12,6 @@ import sets
 import sys, traceback # For exception handling
 
 import scipy
-try:
-    import scipy.misc.limits as limits
-except ImportError:
-    limits = scipy.limits
 
 import SloppyCell
 import SloppyCell.Residuals as Residuals
@@ -265,12 +261,12 @@ class Model:
         params = scipy.array(params)
         
         if stepSizeCutoff==None:
-            stepSizeCutoff = scipy.sqrt(limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
             
 	if relativeScale is True :
             eps = epsf * abs(params)
 	else :
-            eps = epsf * scipy.ones(len(params),scipy.Float)
+            eps = epsf * scipy.ones(len(params),scipy.float_)
 
         for i in range(0,len(eps)):
             if eps[i] < stepSizeCutoff:
@@ -512,12 +508,12 @@ class Model:
 	orig_vals = scipy.array(params)
 
         if stepSizeCutoff is None:
-            stepSizeCutoff = scipy.sqrt(limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
             
 	if relativeScale:
             eps_l = scipy.maximum(eps * abs(params), stepSizeCutoff)
 	else:
-            eps_l = scipy.maximum(eps * scipy.ones(len(params),scipy.Float),
+            eps_l = scipy.maximum(eps * scipy.ones(len(params),scipy.float_),
                                   stepSizeCutoff)
 
 	J = {} # will hold the result
@@ -576,7 +572,7 @@ class Model:
     def GetJandJtJ(self,params) :
 	
 	j = self.GetJacobian(params)
-	mn = scipy.zeros((len(params),len(params)),scipy.Float)
+	mn = scipy.zeros((len(params),len(params)),scipy.float_)
 
 	for paramind in range(0,len(params)) :
 	  for paramind1 in range(0,len(params)) :
@@ -689,13 +685,13 @@ class Model:
 
 	nOv = len(params)
         if stepSizeCutoff is None:
-            stepSizeCutoff = scipy.sqrt(limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
             
         params = scipy.asarray(params)
 	if relativeScale:
             eps = epsf * abs(params)
 	else:
-            eps = epsf * scipy.ones(len(params),scipy.Float)
+            eps = epsf * scipy.ones(len(params),scipy.float_)
 
         # Make sure we don't take steps smaller than stepSizeCutoff
         eps = scipy.maximum(eps, stepSizeCutoff)
@@ -707,7 +703,7 @@ class Model:
             jacobian = scipy.asarray(jacobian)
             if len(jacobian.shape) == 0:
                 resDict = self.resDict(params)
-                new_jacobian = scipy.zeros(len(params),scipy.Float)
+                new_jacobian = scipy.zeros(len(params),scipy.float_)
                 for key, value in resDict.items():
                     new_jacobian += 2.0*value*scipy.array(jacobian[0][key])
                 jacobian = new_jacobian
@@ -730,7 +726,7 @@ class Model:
 	## compute cost at f(x)
 	f0 = self.cost(params)
 
-	hess = scipy.zeros((nOv, nOv), scipy.Float)
+	hess = scipy.zeros((nOv, nOv), scipy.float_)
 
 	## compute all (numParams*(numParams + 1))/2 unique hessian elements
         for i in range(nOv):
@@ -759,12 +755,12 @@ class Model:
         """
 	nOv = len(params)
         if scipy.isscalar(eps):
-            eps = scipy.ones(len(params), scipy.Float) * eps
+            eps = scipy.ones(len(params), scipy.float_) * eps
 
 	## compute cost at f(x)
 	f0 = self.cost_log_params(scipy.log(params))
 
-	hess = scipy.zeros((nOv, nOv), scipy.Float)
+	hess = scipy.zeros((nOv, nOv), scipy.float_)
 
 	## compute all (numParams*(numParams + 1))/2 unique hessian elements
         for i in range(nOv):
@@ -831,9 +827,9 @@ class Model:
                 if eps[i] < min_epsf:
                     eps[i] = min_epsf
 	else:
-            eps = epsf * scipy.ones(len(paramlist),scipy.Float)
+            eps = epsf * scipy.ones(len(paramlist),scipy.float_)
 
-	secondDeriv = scipy.zeros((nOp,nOp),scipy.Float)
+	secondDeriv = scipy.zeros((nOp,nOp),scipy.float_)
 	
 	if moreAcc == False :
 		for index in range(0,len(params)) :
@@ -880,9 +876,9 @@ class Model:
 	localIntVars = self.internalVars
 
 	paramlist = scipy.array(currParams)
-        eps = epsf * scipy.ones(len(paramlist),scipy.Float)
+        eps = epsf * scipy.ones(len(paramlist),scipy.float_)
 
-	secondDeriv = scipy.zeros((nOp,nOp),scipy.Float)
+	secondDeriv = scipy.zeros((nOp,nOp),scipy.float_)
 	if moreAcc == False :	
 		for index in range(0,len(params)) :
             		paramsPlus = currParams.__copy__()
@@ -933,8 +929,8 @@ class Model:
         """
         j,h = scipy.asarray(j), scipy.asarray(h)
 	[m,n] = j.shape
-	response = scipy.zeros((m,m),scipy.Float)
-	ident = scipy.eye(m,typecode=scipy.Float)
+	response = scipy.zeros((m,m),scipy.float_)
+	ident = scipy.eye(m,typecode=scipy.float_)
 	hinv = scipy.linalg.pinv2(h,1e-40)
 	tmp = scipy.dot(hinv,scipy.transpose(j))
 	tmp2 = scipy.dot(j,tmp)
@@ -957,7 +953,7 @@ class Model:
         """
         j,h = scipy.asarray(j), scipy.asarray(h)
 	[m,n] = j.shape
-	response = scipy.zeros((n,m),scipy.Float)
+	response = scipy.zeros((n,m),scipy.float_)
 	hinv = scipy.linalg.pinv2(h,1e-40)
 	response = -scipy.dot(hinv,scipy.transpose(j))
 
