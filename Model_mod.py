@@ -32,6 +32,9 @@ class Model:
     parameters, characterizing how well those parameters fit the data contained
     within the model.
     """
+
+    imag_cutoff = 1e-8
+
     def __init__(self, expts, calcs):
         """
         expts  A sequence of Experiments to be fit to.
@@ -127,7 +130,8 @@ class Model:
         # Occasionally it's useful to use residuals with a sqrt(-1) in them,
         #  to get negative squares. Then, however, we might get small imaginary
         #  parts in our results, which this shaves off.
-        chisq = scipy.real_if_close(scipy.sum(scipy.asarray(resvals)**2))
+        chisq = scipy.real_if_close(scipy.sum(scipy.asarray(resvals)**2), 
+                                    tol=self.imag_cutoff)
         if scipy.isnan(chisq):
             print 'Warning: Chi-Squared in NAN, setting to INF'
             chisq = scipy.inf
