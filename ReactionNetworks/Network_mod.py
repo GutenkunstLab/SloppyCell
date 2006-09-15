@@ -615,6 +615,7 @@ class Network:
             var.value = value
         self.constantVarValues = [self.evaluate_expr(var.value) for var in
                                   self.constantVars.values()]
+        self.constantVarValues = scipy.array(self.constantVarValues)
 
     def get_var_ic(self, id):
         """
@@ -722,7 +723,8 @@ class Network:
     def getDynamicVarValues(self):
         # We need to evaluate_expr here to handle ones that are assigned to
         #  parameters
-        return [self.evaluate_expr(var.value) for var in self.dynamicVars.values()]
+        return scipy.array([self.evaluate_expr(var.value) 
+                            for var in self.dynamicVars.values()])
 
     def resetDynamicVariables(self):
         # Resets all dynamical variables to their initial values. This is
@@ -1210,6 +1212,7 @@ class Network:
 
         self.constantVarValues = [self.evaluate_expr(var.value) for var in 
                                   self.constantVars.values()]
+        self.constantVarValues = scipy.array(self.constantVarValues)
 
         self.complexEvents = KeyedList()
         self.timeTriggeredEvents = KeyedList()
@@ -1280,12 +1283,45 @@ class Network:
     def addAssignmentRulesToFunctionBody(self, functionBody):
         functionBody += 'constantVarValues = self.constantVarValues\n\n\t'
 
-        for ii, id in enumerate(self.constantVars.keys()):
-            functionBody += '%s = float(constantVarValues[%i])\n\t' % (id, ii)
+        # In new SciPy (0.5.1), array access a[0] returns an array-scalar object
+        #  which has slow arithmetic, so we'll need to cast to floats.
+        # More recent versions have added an a.item(0) method which will return
+        #  a normal scalar, so if we can use that, we do.
+        a = scipy.array([1.0, 2.0])
+        try:
+            a.item(1)
+            numpy = 'improved'
+            # Old SciPy should raise an AttributeError here.
+            # New SciPy w/o the useful item method should raise a TypeError.
+        except TypeError:
+            numpy = 'new'
+        except AttributeError:
+            numpy = 'old'
 
-        functionBody += '\n\t'
-        for ii, id in enumerate(self.dynamicVars.keys()):
-            functionBody += '%s = float(dynamicVars[%i])\n\t' % (id, ii)
+        # We loop to assign our constantVarValues and our dynamicVars
+        #  to local variables for speed (avoid repeated accesses) and
+        #  for readability
+        for arg, var_names in zip(['constantVarValues', 'dynamicVars'],
+                                       [self.constantVars.keys(),
+                                        self.dynamicVars.keys()]):
+            if numpy == 'improved':
+                # In new numpy we protect ourselves with a 'try, except' clause
+                #  in case passed in values are not an array, but e.g. a list
+                #  or KeyedList.
+                functionBody += 'try:\n\t'
+                for ii, id in enumerate(var_names):
+                    functionBody += '\t%s = %s.item(%i)\n\t' % (id, arg, ii)
+                functionBody += 'except AttributeError:\n\t'
+                for ii, id in enumerate(var_names):
+                    functionBody += '\t%s = %s[%i]\n\t' % (id, arg, ii)
+            elif numpy == 'new':
+                for ii, id in enumerate(var_names):
+                    functionBody += '%s = float(%s[%i])\n\t' % (id, arg, ii)
+            elif numpy == 'old':
+                for ii, id in enumerate(var_names):
+                    functionBody += '%s = %s[%i]\n\t' % (id, arg, ii)
+
+            functionBody += '\n\t'
 
         for variable, math in self.assignmentRules.items():
             functionBody += '%s = %s\n\t' % (variable, math)
