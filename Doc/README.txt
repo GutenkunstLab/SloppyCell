@@ -8,6 +8,13 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
 .. topic:: News
 
+   September 15th, 2006: **Speed-up for new numpy**
+
+      The latest development versions of numpy have (at my request) added a
+      method to speed up array access. In our case, this can speed up 
+      integrations by ~30%. The latest CVS version of SloppyCell supports this
+      new interface while also supporting the older SciPy/numpy.
+
    September 13th, 2006: **"New" SciPy compatibility**
 
       The CVS version of SloppyCell has been updated to work with new
@@ -64,14 +71,14 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
   in the source)
 - `Mailing list`_
 - Sourceforge `project page`_
-- `CVS snapshot <SloppyCell-CVS.tar.gz>`_ generated CVS_GEN_DATE
+- CVS snapshot (`.tar.gz <SloppyCell-CVS.tar.gz>`_, `.zip <SloppyCell-CVS.zip>`_) generated CVS_GEN_DATE
 - `API documentation <api/index.html>`_ generated API_DOC_GEN_DATE
 
 .. topic:: Citing SloppyCell:
 
    There are no papers yet on SloppyCell itself. For now, please reference this website:
 
-      Ryan Gutenkunst, Fergal Casey, Josh Waterfall, Kevin Brown, Chris Myers, and Jim Sethna. SloppyCell. http://sloppycell.soureforge.net/ (2005)
+      Ryan Gutenkunst, Fergal Casey, Josh Waterfall, Kevin Brown, Chris Myers, and Jim Sethna. SloppyCell. http://sloppycell.sourceforge.net/ (2005)
   
 
 $Date$
