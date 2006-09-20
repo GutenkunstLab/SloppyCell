@@ -133,7 +133,7 @@ class Model:
         chisq = scipy.real_if_close(scipy.sum(scipy.asarray(resvals)**2), 
                                     tol=self.imag_cutoff)
         if scipy.isnan(chisq):
-            print 'Warning: Chi-Squared in NAN, setting to INF'
+            logger.warn('Chi^2 is NaN, converting to Infinity.')
             chisq = scipy.inf
         cost = 0.5 * chisq
         self._notify(event = 'evaluation', 
