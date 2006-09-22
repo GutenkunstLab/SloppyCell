@@ -19,6 +19,10 @@ class Residual:
     def dy(self, predictions, internalVars, params):
         return {}
 
+    def Dp(self, predictions, senspredictions, internalVars, internalVarsDerivs,
+           params):
+        return scipy.zeros(len(params), scipy.float_)
+
 class ScaledErrorInFit(Residual):
     def __init__(self, key, depVarKey, calcKey, indVarValue,  depVarMeasurement,
                  depVarSigma, exptKey):
