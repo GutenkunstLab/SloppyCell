@@ -12,7 +12,8 @@ except ImportError:
 #  distutils
 # I don't know why this kludge wasn't needed for Python 2.3
 import os
-del os.link
+if hasattr(os, 'link'):
+    del os.link
 
 lsodar = core.Extension(name = 'SloppyCell._lsodar',
                         sources = ['lsodar.pyf', 'odepack/opkdmain.f', 
