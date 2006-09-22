@@ -8,6 +8,11 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
 .. topic:: News
 
+   September 22nd, 2006: **New windows installer**
+
+      An installer for Python 2.4 on Windows is now available. See the 
+      `installation guide <INSTALL.html>`_ for details.
+
    September 15th, 2006: **Speed-up for new numpy**
 
       The latest development versions of numpy have (at my request) added a

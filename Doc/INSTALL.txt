@@ -16,30 +16,32 @@ Required to build
 
 Recommended
 +++++++++++
+* IPython_: A dramatic improvement over the standard python shell.
 * LibSBML_: Required for SBML import and export. Be sure to build ``--with-python``.
 * Psyco_: A just-in-time compiler for python, Psyco will speed up integrations by about 50% on supported platforms.
 * Graphviz_: SloppyCell can generate ``.dot`` files specifying network diagrams,which can be visualized using Graphviz. 
-* IPython_: A dramatic improvement over the standard python shell.
 
 
 Instructions
 ~~~~~~~~~~~~
 .. topic:: On Windows
 
-   1. Install required dependencies. We recommend installing the 
-      `Enthought Python distribution <http://www.enthought.com/python/>`_ to 
-      satisfy the Python, SciPy, and compiler dependencies. Here is a version of
-      `libsbml built against Python 2.3 <libsbml_for_python23_win.zip>`_.
-   2. To build SloppyCell on Windows using the compiler included in the 
-      Enthought distribution.
+   1. Install required dependencies. The binary of SloppyCell below requires
+      python2.4 and at least numpy 1.0rc1 and scipy 0.5.1.
+      
+      Enthought (as of 9/21/06) provides a python distribution including numpy,
+      scipy, and matplotlib, but on my machine the numpy appeared to be broken.
 
-      a. Unpack the tarball. (``tar xzf SloppyCell-0.3.tar.gz``)
-      b. Descend into the SloppyCell-0.3 directory. (``cd SloppyCell-0.3``)
-      c. Build SloppyCell. (``python setup.py build -cmingw32``) 
-      d. Run the installation script. (``python setup.py install``) 
-      e. Run the included test routines. (``cd Testing; python test.py``)
+   2. Download and run the `executable installer <SloppyCell-CVS.win32-py2.4.exe>`_ (built 9/21/06).
 
-   3. Or just run the executable installer from our `download page <http://sourceforge.net/project/showfiles.php?group_id=140498>`_.
+   3. To access libsbml from python, you'll need to `setup your PYTHONPATH and
+      LD_LIBRARY_PATH <http://sysbio.molgen.mpg.de/sbmlmerge/sbmlmerge_manual/node36.html>`_.
+
+   4. If you'd like to build SloppyCell yourself, I suggest following the
+      directions to install MinGW as described
+      `here <http://scipy.org/Installing_SciPy/Windows>`_. Then you should be
+      able to do a ``python setup.py build -cmingw32 bdist_wininst`` to build
+      your own installer.
 
 .. topic:: On OS X and Linux
 
