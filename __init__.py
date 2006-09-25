@@ -16,16 +16,20 @@ for arg in sys.argv:
             Utility.enable_debugging_msgs(words[1])
         else:
             Utility.enable_debugging_msgs(None)
+import os
+currdir = os.getcwd()
             
 try:
     import pypar
+    os.chdir(currdir)
     HAVE_PYPAR = True
     num_procs = pypar.size()
     my_rank = pypar.rank()
     my_host = pypar.get_processor_name()
     import atexit
     atexit.register(pypar.finalize)
-except:
+except ImportError:
+    os.chdir(currdir)
     HAVE_PYPAR = False
     num_procs = 1
     my_rank = 0
