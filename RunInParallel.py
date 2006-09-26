@@ -9,7 +9,10 @@ import SloppyCell
 SloppyCell.new_par = True
 import Collections
 
-from SloppyCell import num_procs, my_rank, my_host
+from SloppyCell import num_procs, my_rank, my_host, HAVE_PYPAR
+if HAVE_PYPAR:
+    import pypar
+
 import SloppyCell.Utility as Utility
 
 class Statement:
