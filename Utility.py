@@ -104,3 +104,6 @@ def disable_debugging_msgs():
 
 class SloppyCellException(Exception):
     pass
+
+import Redirector_mod
+Redirector = Redirector_mod.Redirector

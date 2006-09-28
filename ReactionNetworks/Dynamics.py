@@ -33,6 +33,26 @@ reduce_space = 0 # we may want to not return every timepoint but only 0, reduce_
 failed_args = []
 failed_kwargs = {}
 
+Dynamics_prev_level = None
+lsodar_prev_level = None
+def supress_warnings(supress=True):
+    """
+    Supress warnings that are normally printed to screen for difficult 
+    integrations.
+
+    Exceptions will still be raised on failures.
+    """
+    if supress:
+        Dynamics_prev_level = logger.level
+        logger.setLevel(logging.CRITICAL)
+        lsodar_prev_level = logger.level
+        lsodar.logger.setLevel(logging.CRITICAL)
+    else:
+        if Dynamics_prev_level:
+            logger.setLevel(Dynamics_prev_level)
+        if lsodar_prev_level:
+            lsodar.logger.setLevel(lsodar_prev_level)
+
 class IntegrationException(Utility.SloppyCellException):
     pass
 

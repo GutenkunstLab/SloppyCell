@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger('lsodar')
+
 import copy
 import os
 import sets
@@ -35,6 +38,8 @@ _iwork_vars = {'nst': 10,
               'leniw': 17,
               'mused': 18,
               }
+
+redir = Utility.Redirector()
 
 class odeintrException(Utility.SloppyCellException):
     pass
@@ -249,24 +254,28 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-
             rwork[0] = tcrit[tcrit_ii]
             twanted = min(tcrit[tcrit_ii], twanted)
 
+        redir.start()
         y, treached, istate, jroot = \
                 _lsodar.dlsodar(usefunc, copy.copy(y0), t0, twanted, 
                                 itol, rtol, atol, 
                                 itask, istate, rwork, iwork, 
                                 usejac, jt, 
                                 useg, ng)
+        messages = redir.stop()
 
         if istate < 0:
             # Problem!
-            print _msgs[istate]
-            print "Run with full_output = 1 to get quantitative information."
+            logger.warn(messages)
+            logger.warn(_msgs[istate])
+            logger.warn("Run with full_output = 1 to get quantitative "
+                        "information.")
             outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
             if full_output:
                 outputs = outputs + (info_dict,)
             raise odeintrException(_msgs[istate],outputs)
         else:
             if printmessg:
-                print _msgs[istate]
+                logger.warn(_msgs[istate])
 
             # If we need to record this point.
             if treached == t[tindex] or itask == 5 or\
@@ -306,12 +315,12 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-
                 if full_output:
                     outputs = outputs + (info_dict,)
                 if jroot.count(1) > 1:
-                    print 'Multiple roots found at a single point!?! '\
-                            'jroot is %s' % jroot
+                    logger.warn('Multiple roots found at a single point!?! '\
+                                'jroot is %s' % jroot)
                     raise odeintrException(_msgs[istate],outputs)
                 elif jroot.count(1) == 0:
-                    print 'LSODAR claimed root found, but jroot is empty. '\
-                            'jroot is %s' % jroot
+                    logger.warn('LSODAR claimed root found, but jroot is '\
+                                'empty. jroot is %s' % jroot)
                     raise odeintrException(_msgs[istate],outputs)
 
                 # Which root did we hit?
