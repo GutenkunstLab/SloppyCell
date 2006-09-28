@@ -188,8 +188,7 @@ class test_lsodar(unittest.TestCase):
         print
         y, tout, te, ye, ie, info_dict = odeintr(func, y0, t, Dfun=Dfun, 
                                                  full_output=True, rtol=1e-4,
-                                                 atol=[1e-6, 1e-10, 1e-6],
-                                                 printmessg=True)
+                                                 atol=[1e-6, 1e-10, 1e-6])
 
     def test_noterm_roots(self):
         """ Test basic root finding """
