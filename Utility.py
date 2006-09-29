@@ -73,14 +73,14 @@ def enable_debugging_msgs(filename=None):
     """
     Enable output of debugging messages.
 
-    If filename=='console' messages will be sent to stderr.
+    If filename is None messages will be sent to stderr.
     """
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.root.setLevel(logging.DEBUG)
 
-    if filename is not None and filename != 'console':
+    if filename is not None:
         # Remove other handlers
-        for h in logging.getLogger().handlers:
-            logging.getLogger().removeHandler(h)
+        for h in logging.root.handlers:
+            logging.root.removeHandler(h)
 
         # We need to add a file handler
         handler = logging.FileHandler(filename)
@@ -88,22 +88,29 @@ def enable_debugging_msgs(filename=None):
         # Let's change it back to the default
         formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
         handler.setFormatter(formatter)
-        logging.getLogger().addHandler(handler)
+        logging.root.addHandler(handler)
     logging.debug('Debug messages enabled.')
 
 def disable_debugging_msgs():
     """
     Disable output of debugging messages.
     """
-    logging.getLogger().setLevel(logging.WARN)
+    logging.root.setLevel(logging.WARN)
     # Remove all other handlers
-    for h in logging.getLogger().handlers:
-        logging.getLogger().removeHandler(h)
+    for h in logging.root.handlers:
+        logging.root.removeHandler(h)
     # Restore basic configuration
     logging.basicConfig()
+
+def disable_warnings():
+    logging.root.setLevel(logging.CRITICAL)
+
+def enable_warnings():
+    logging.root.setLevel(logging.WARNING)
 
 class SloppyCellException(Exception):
     pass
 
 import Redirector_mod
 Redirector = Redirector_mod.Redirector
+
