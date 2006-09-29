@@ -98,6 +98,13 @@ Plotting.plot_eigvect(evects[:,0], params.keys())
 # Now we'll build an ensemble of parameters.
 # Make sure we run at full speed
 Network.full_speed()
+# Building the ensemble may generate some warnings about integration errors.
+# Because our parameter space is very poorly constrained, the ensemble explores
+#  regions where the equations are very difficult to integrate, so sometimes
+#  the integrator won't converge. If this happens rarely, it shouldn't skew
+#  the final results too much.
+# In any case, the warning can be supressed with Utility.disable_warnings()
+#  and re-enabled with Utility.enable_warnings().
 ens, ens_costs, ratio = Ensembles.ensemble_log_params(m, params,
                                                       steps = 2000,
                                                       max_run_hours = 10/60.,
