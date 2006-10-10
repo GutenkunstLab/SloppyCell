@@ -1,7 +1,7 @@
 try:
-    import scipy_distutils.core as core
-except ImportError:
     import numpy.distutils.core as core
+except ImportError:
+    import scipy_distutils.core as core
 
 # This is a kludge so that sdist works on AFS systems.
 # AFS doesn't allow hard-linking across directories, but if we're on linux
