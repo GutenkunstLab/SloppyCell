@@ -9,7 +9,9 @@ import scipy
 if int(scipy.__version__.split('.')[1]) < 4:
     # Type names have changed
     scipy.float_ = scipy.Float
+    scipy.float64 = scipy.Float64
     scipy.int_ = scipy.Int
+    scipy.int32 = scipy.Int32
 
     # Create an empty class to move around the limits module
     # http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52308
