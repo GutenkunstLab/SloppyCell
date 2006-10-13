@@ -22,7 +22,7 @@ def net_DOT_file(net, filename = None):
     lines.append('')
     for rid, rxn in net.reactions.items():
         rxn_name = net.get_component_name(rid)
-        lines.append('\t"%s"[shape=rectangle][color=red]' % rxn_name)
+        lines.append('\t"%s"[shape=box][color=red]' % rxn_name)
         for rid, stoich in rxn.stoichiometry.items():
             rname = net.get_component_name(rid)
             if stoich < 0:
