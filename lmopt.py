@@ -247,12 +247,12 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             print 'Current cost', currentcost
             print "Move 1 gives cost of" , costlambda
             print "Move 2 gives cost of ", costlambdasmaller
-            fp = open('LMoutfile','a')
-            fp.write('Iteration number ' + niters.__str__() + '\n')
-            fp.write('Current cost ' + currentcost.__str__() + '\n')
-            fp.write('Move 1 gives cost of ' + costlambda.__str__() + '\n')
-            fp.write('Move 2 gives cost of ' + costlambdasmaller.__str__() + '\n')
-            fp.close()
+            #fp = open('LMoutfile','a')
+            #fp.write('Iteration number ' + niters.__str__() + '\n')
+            #fp.write('Current cost ' + currentcost.__str__() + '\n')
+            #fp.write('Move 1 gives cost of ' + costlambda.__str__() + '\n')
+            #fp.write('Move 2 gives cost of ' + costlambdasmaller.__str__() + '\n')
+            #fp.close()
 
         oldcost = currentcost
         oldres = res
@@ -367,7 +367,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             if ratio > .75 and trustradius<10.0 :
                 trustradius = 2.0*trustradius
 
-        save(x,'currentParamsLM')
+        #save(x,'currentParamsLM')
 
     if disp :
         if (niters>=maxiter) and (finish != 2) :
@@ -385,7 +385,9 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
     if isinstance(xcopy,KeyedList) :
         xcopy.update(x)
-        
+    else :
+        xcopy = x
+
     if full_output:
         retlist = xcopy, currentcost, func_calls, grad_calls, finish, Lambda, j
         if retall:
@@ -529,12 +531,12 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             print "Move 1 gives cost of" , costlambda
             print "Move 2 gives cost of ", costlambdasmaller
 
-            fp = open('LMoutfile','a')
-            fp.write('Iteration number ' + niters.__str__() + '\n')
-            fp.write('Current cost ' + currentcost.__str__() + '\n')
-            fp.write('Move 1 gives cost of ' + costlambda.__str__() + '\n')
-            fp.write('Move 2 gives cost of ' + costlambdasmaller.__str__() + '\n')
-            fp.close()
+            #fp = open('LMoutfile','a')
+            #fp.write('Iteration number ' + niters.__str__() + '\n')
+            #fp.write('Current cost ' + currentcost.__str__() + '\n')
+            #fp.write('Move 1 gives cost of ' + costlambda.__str__() + '\n')
+            #fp.write('Move 2 gives cost of ' + costlambdasmaller.__str__() + '\n')
+            #fp.close()
 
         if costlambdasmaller <= currentcost :
             Lambda = Lambda/Mult
@@ -630,7 +632,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             if ratio > .75 and trustradius<10.0 :
                 trustradius = 2.0*trustradius
 
-        save(x,'currentParamsLM')
+        #save(x,'currentParamsLM')
 
     if disp :
         if (niters>=maxiter) and (finish != 2) :
@@ -648,6 +650,8 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
 
     if isinstance(xcopy,KeyedList) :
         xcopy.update(x)
+    else :
+        xcopy = x
 
     if full_output:
         retlist = xcopy, currentcost, func_calls, grad_calls, finish, Lambda, lmh
@@ -902,6 +906,8 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             
     if isinstance(xcopy,KeyedList) :
         xcopy.update(x)
+    else :
+        xcopy = x
 
     if full_output:
         retlist = xcopy, currentcost, func_calls, grad_calls, finish, Lambda, j 
