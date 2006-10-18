@@ -19,9 +19,6 @@ import SloppyCell.Collections as Collections
 import SloppyCell.Utility as Utility
 import KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
-
-if SloppyCell.HAVE_PYPAR:
-    import pypar
     
 class Model:
     """
