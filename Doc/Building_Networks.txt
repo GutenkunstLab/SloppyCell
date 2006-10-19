@@ -1,0 +1,73 @@
+Building Sloppy Cell Networks
+=============================
+
+Networks in SloppyCell are based upon the Systems Biology Markup Language
+(`SBML <http://sbml.org>`_) specification.
+
+A Network is created quite simply. Networks can also be copied.::
+
+  net = Network(id, name='')
+  net2 = net.copy(new_id, new name='')
+
+A Network and all of its components must have an id. The id is a string 
+beginning with a letter followed by any number of digits or underscores. 
+Examples of valid ids are 'alphaGDP' and 'k_2'. 
+
+Optionally, components may have a name, which can be an arbitrary string. 
+Often it is useful for names to be TeX markup, such as '\alpha_{GDP}'.
+
+Variables
+---------
+A Network contains variables of several types: Compartments, Species, and 
+Parameters.
+
+Every Network must contain at least one Compartment, which is a location for
+Species to reside in. To add a Compartment::
+
+  net.add_compartment(id, initial_size=1.0, name='', typical_value=None, is_constant=True, is_optimizable=False)
+
+The typical_value of a variable is used by integration and optimization algorithms. If unspecified, it defaults to the initial condition for that variable if it is non-zero, and 1.0 if the initial condition is zero.
+
+Variables can be declared constant, meaning that they do not change during one simulation of the Network. Any constant variable may also be declared optimizable, which exposes it to the Model level, where it may be optimized.
+
+Once we have a compartment, we can begin to add Species.::
+
+  net.add_species(id, compartment, initial_conc=None, name='', typical_value=None, is_boundary_condition=False, is_constant=False, is_optimizable=False)
+
+Every Species in a Network must reside within a Compartment, specified by the second argument.
+
+Species may be declared as boundary conditions, which means that their values cannot be changed by Reactions but may be changed by Rules. (More on these later.)
+
+We can also add Parameters, which can not be reactants or products of
+Reactions.::
+
+    net.add_parameter(id, initial_value=0.0, name='',
+                      typical_value=None,
+                      is_constant=True, is_optimizable=True)
+
+Dynamics
+--------
+
+The dynamic behavior of a variable may be specied in several ways.
+
+First, the variable may be subject to an Assignment Rule. Such a rule specifies
+that the variable values is always each to the given right hand side expression.::
+
+  net.add_assignment_rule(var_id, rhs)
+
+Alternatively, the variable may be subject to a Rate Rule. Such a rule specifies that the derivative wrt time of that variable's value is given by the rhs expression.::
+
+  net.add_rate_rule(var_id, rhs)
+
+Events
+------
+
+Events represent discontinuous dynamics in the system. For example, a cell may divide when it reaches a given size, or some perturbation might have been applied at a certain time in an experiment.::
+   
+   net.add_event(id, trigger, event_assignments={}, delay=0, name='')
+
+``trigger`` is a Python math expression involving Network variables determining when the event fires. Two constructs are especially useful: ``gt(x, y)`` and ``lt(x,y)`` makes the event fire when x becomes greater than or less than y. For example, one might have ``trigger = 'gt(Erk+Mek, cos(time))'``.
+
+``event_assignments`` is a Python dictionary mapping variables to the new values they will get when the event executes. For example, cell division might have ``{'mass': 'mass/2'}``.
+
+``delay`` is the time difference between when the trigger becomes true (event fires) and when event assignments happen (even executes).

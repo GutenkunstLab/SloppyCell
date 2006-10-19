@@ -1,0 +1,22 @@
+Introduction to SloppyCell
+==========================
+
+SloppyCell revolves around two main types of objects, Networks and 
+Models. A Network object describes a set of interacting chemical species and any
+experimental procedure they are subject to. A Model unites one or more Networks
+with a set of experimental data.
+
+To get access to the suite of SloppyCell tools, each Python script in a 
+SloppyCell project begins with: ::
+
+  from SloppyCell.ReactionNetworks import *
+
+
+The first step in any project is building the relevant Network(s). To learn
+more about their construction, please see the `Building Networks Tutorial`_
+
+General Tidbits
+---------------
+
+
+.. _Building Networks Tutorial: Building_Networks.html

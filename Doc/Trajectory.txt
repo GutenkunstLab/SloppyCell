@@ -1,0 +1,11 @@
+SloppyCell Trajectory
+=====================
+
+Integrations in SloppyCell return Trajectory objects.
+
+Trajectories have the following methods:
+keys()
+get_var_traj(id)
+get_times()
+get_var_values(time)
+get_var_values_index(index)
