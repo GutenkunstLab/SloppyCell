@@ -1,11 +1,7 @@
-import os
-if os.getenv('PBS_O_WORKDIR'):
-    os.chdir(os.getenv('PBS_O_WORKDIR'))
-    os.sys.path.append(os.getcwd())
-
-import pypar
-
-import pylab
+try:
+    import pylab
+except ImportError:
+    pass
 
 import scipy, copy
 import SloppyCell.Utility
