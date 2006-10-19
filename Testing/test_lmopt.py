@@ -21,7 +21,7 @@ class test_lmopt(unittest.TestCase):
         res_func = m.res_log_params
         def res_func_prime(x) :
             j,jtj = m.GetJandJtJInLogParameters(x)
-            jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.Float)
+            jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.float_)
             for resind, resname in enumerate(m.residuals.keys()) :
                 jarray[resind,:] = j[resname]
             return jarray
@@ -45,7 +45,7 @@ class test_lmopt(unittest.TestCase):
         cost_func = m.cost_log_params
         def grad_and_lmhess_func(x) :
             j,jtj = m.GetJandJtJInLogParameters(x)
-            jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.Float)
+            jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.float_)
             for resind, resname in enumerate(m.residuals.keys()) :
                 jarray[resind,:] = j[resname]
             resvals = m.res_log_params(x)
@@ -71,7 +71,7 @@ class test_lmopt(unittest.TestCase):
         res_func = m.res_log_params
         def res_func_prime(x) :
             j,jtj = m.GetJandJtJInLogParameters(x)
-            jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.Float)
+            jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.float_)
             for resind, resname in enumerate(m.residuals.keys()) :
                 jarray[resind,:] = j[resname]
             return jarray

@@ -9,36 +9,24 @@ fmin_lmNoJ : Levenberg Marquardt using a cost function instead of
 fmin_lm_scale : scale invariant Levenberg Marquardt
 
 """
-import Numeric
-import MLab
-from scipy_base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
-     squeeze, isscalar, vectorize, asarray, absolute, sqrt
-import scipy_base
 import scipy
 from scipy import *
 import scipy.linalg
 import copy
-import math
 import SloppyCell.Utility
 save = SloppyCell.Utility.save # module that provides pickled save
 
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
-Num = Numeric
-max = MLab.max
-min = MLab.min
 abs = absolute
-import __builtin__
-pymin = __builtin__.min
-pymax = __builtin__.max
-_epsilon = sqrt(scipy_base.limits.double_epsilon)
+_epsilon = sqrt(scipy.misc.limits.double_epsilon)
 
         
 def approx_fprime(xk,f,epsilon,*args):
     f0 = apply(f,(xk,)+args)
-    grad = Num.zeros((len(xk),),'d')
-    ei = Num.zeros((len(xk),),'d')
+    grad = scipy.zeros((len(xk),),scipy.float_)
+    ei = scipy.zeros((len(xk),),scipy.float_)
     for k in range(len(xk)):
         ei[k] = epsilon
         grad[k] = (apply(f,(xk+ei,)+args) - f0)/epsilon
@@ -48,8 +36,8 @@ def approx_fprime(xk,f,epsilon,*args):
 def approx_fprime1(xk,f,epsilon,*args):
     """ centred difference formula to approximate fprime """
     #f0 = apply(f,(xk,)+args)
-    grad = Num.zeros((len(xk),),'d')
-    ei = Num.zeros((len(xk),),'d')
+    grad = scipy.zeros((len(xk),),scipy.float_)
+    ei = scipy.zeros((len(xk),),scipy.float_)
     epsilon = (epsilon**2.0)**(1.0/3.0)  # should be macheps^(1/3)
     for k in range(len(xk)):
         ei[k] = epsilon
@@ -61,14 +49,14 @@ def approx_fprime2(xk,f,epsilon,*args):
     """ centred difference formula to approximate the jacobian, given the residual 
     function """
     #f0 = apply(f,(xk,)+args)
-    grad = Num.zeros((len(xk),),'d')
-    ei = Num.zeros((len(xk),),'d')
+    grad = scipy.zeros((len(xk),),scipy.float_)
+    ei = scipy.zeros((len(xk),),scipy.float_)
     epsilon = (epsilon**2.0)**(1.0/3.0)  # should be macheps^(1/3)
     ei[0] = epsilon
     resminus = asarray(apply(f,(xk-ei,)+args))
     resplus = asarray(apply(f,(xk+ei,)+args))
     m = len(resminus)
-    jac = Num.zeros((m,len(xk)),'d')
+    jac = scipy.zeros((m,len(xk)),scipy.float_)
     jac[:,0] = (resplus-resminus)/(2.0*epsilon)
     ei[0] = 0.0
     for k in range(1,len(xk)):
@@ -159,8 +147,8 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             allvecs = [x]
     x1 = x0
     x2 = x0
-    d = zeros(n,Float)
-    move = zeros(n,Float)
+    d = zeros(n,scipy.float_)
+    move = zeros(n,scipy.float_)
     finish = 0
     if jinit!=None :
         j = jinit
@@ -195,7 +183,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         if (len(ssqrt) == n) :
             s = ssqrt**2
         elif (len(ssqrt)<n) :
-            s = zeros((n,),scipy.Float)
+            s = zeros((n,),scipy.scipy.float_)
             s[0:len(ssqrt)] = ssqrt**2
         #print "s is (in original) ", s
         #rhsvect = -mat(transpose(u))*mat(transpose(grad))
@@ -297,9 +285,9 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             NTrials2 = 0
             move = moveold[:]
             while (costmult > currentcost) and (NTrials < 10) :
-                num = -Num.dot(grad,move)[0]
+                num = -scipy.dot(grad,move)[0]
                 den = scipy.linalg.norm(grad)*scipy.linalg.norm(move)
-                gamma = math.acos(num/den)
+                gamma = scipy.acos(num/den)
                 NTrials = NTrials+1
                 # was (gamma>piOverFour) below but that doens't
                 # make much sense to me. I don't think you should
@@ -460,8 +448,8 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
         allvecs = [x]
     x1 = x0
     x2 = x0
-    d = zeros(n,Float)
-    move = zeros(n,Float)
+    d = zeros(n,scipy.float_)
+    move = zeros(n,scipy.float_)
     finish = 0
 
     grad, lmh = apply(fjtj,(x,))
@@ -479,7 +467,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
         oldlmh = lmh[:,:]
         oldgrad = grad[:]
 
-        rhsvect = -scipy.matrixmultiply(transpose(u),grad)
+        rhsvect = -scipy.dot(transpose(u),grad)
         # rhsvect = asarray(rhsvect)[:,0]
         move = abs(rhsvect)/(s+Lambda*ones(n)+1.0e-30*ones(n))
         move = list(move)
@@ -489,9 +477,9 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             Lambda = Mult*(1.0/trustradius*abs(rhsvect[maxindex])-s[maxindex])
             #print " Increasing lambda to ", Lambda
 
-        ## lmhreg = lmh + Lambda*eye(n,n,typecode='d')
+        ## lmhreg = lmh + Lambda*eye(n,n,typecode=scipy.float_)
         ## [u,s,v] = scipy.linalg.svd(lmhreg)
-        rhsvect = -scipy.matrixmultiply(transpose(u),grad)
+        rhsvect = -scipy.dot(transpose(u),grad)
         # rhsvect = asarray(rhsvect)[:,0]
 
         for i in range(0,len(s)) :
@@ -501,7 +489,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
                 d[i] = 1.0/(s[i]+Lambda)
             move[i] = d[i]*rhsvect[i]
         move = asarray(move)
-        move = matrixmultiply(asarray(u),move)
+        move = dot(asarray(u),move)
         x1 = x + move
         moveold = move[:]
 
@@ -513,7 +501,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
                 d[i] = 1.0/(s[i]+Lambda/Mult)
             move[i] = d[i]*rhsvect[i]
         move = asarray(move)
-        move = matrixmultiply(asarray(u),move)
+        move = dot(asarray(u),move)
         x2 = x + asarray(move)
 
         currentcost = apply(fcost,(x,))
@@ -570,9 +558,9 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             NTrials = 0
 
             while (costmult > currentcost) and (NTrials < 10) :
-                # num = -matrixmultiply(transpose(asarray(grad)),asarray(moveold) )
+                # num = -dot(transpose(asarray(grad)),asarray(moveold) )
                 # den = scipy.linalg.norm(grad)*scipy.linalg.norm(moveold)
-                gamma = .1 # math.acos(num/den)
+                gamma = .1 # scipy.acos(num/den)
                 NTrials = NTrials+1
                 if (gamma > 0) :
                     Lambdamult = Lambdamult*Mult
@@ -584,7 +572,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
                             d[i] = 1.0/(s[i] + Lambdamult)
                         move[i] = d[i]*rhsvect[i]
                     move = asarray(move)
-                    move = matrixmultiply(asarray(u),move)
+                    move = dot(asarray(u),move)
                     x1 = x + asarray(move)
 
                     func_calls+=1
@@ -619,8 +607,8 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
 
         # see if we need to reduce the trust region, compare the actual change in
         # cost to the linear and quadratic change in cost
-        model_change = scipy.matrixmultiply(scipy.transpose(oldgrad),move) + \
-        .5*scipy.matrixmultiply(scipy.transpose(move),scipy.matrixmultiply(oldlmh,move) )
+        model_change = scipy.dot(scipy.transpose(oldgrad),move) + \
+        .5*scipy.dot(scipy.transpose(move),scipy.dot(oldlmh,move) )
         #print oldcost-sum(newmodelval**2)
         #print trustradius
         if model_change>1.0e-16 :
@@ -665,8 +653,8 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
     return retlist
 
 def solve_lmsys(Lambda,s,g,rhsvect,currentcost,n) :
-    d = zeros(n,Float)
-    move = zeros(n,Float)
+    d = zeros(n,scipy.float_)
+    move = zeros(n,scipy.float_)
     for i in range(0,n) :
         if s[i] < 1.0e-20 :
             d[i] = 0.0
@@ -740,8 +728,8 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             allvecs = [x]
     x1 = x0
     x2 = x0
-    d = zeros(n,Float)
-    move = zeros(n,Float)
+    d = zeros(n,scipy.float_)
+    move = zeros(n,scipy.float_)
     finish = 0
 
     if app_fprime :
@@ -768,7 +756,7 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         if (len(ssqrt) == n) :
             s = ssqrt**2
         elif (len(ssqrt)<n) :
-            s = zeros((n,),scipy.Float)
+            s = zeros((n,),scipy.scipy.float_)
             s[0:len(ssqrt)] = ssqrt**2
         #rhsvect = -mat(transpose(u))*mat(transpose(grad))
         rhsvect = -mat(vt)*mat(transpose(grad))
