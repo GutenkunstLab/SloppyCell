@@ -46,7 +46,7 @@ def setup(paramfile,calcobject,senstrajfile,jtjfile) :
             v.jtjdict[(pname1,pname2)] = v.jtj[pindex1][pindex2]
 
     v.ovvarnames = v.clc.optimizableVars.keys() 
-    v.jtjtrunc = scipy.zeros((len(v.ovvarnames),len(v.ovvarnames)),scipy.Float)
+    v.jtjtrunc = scipy.zeros((len(v.ovvarnames),len(v.ovvarnames)),scipy.float_)
 
     # The number of optimizable variables for the calculation we are 
     # considering might be less than the number of parameters for the 
@@ -161,7 +161,7 @@ def variances(chemnames,logprior=1.0e20) :
         for j, pname in enumerate(ovvarnames) :
             sensarray_this_chem[:,j] = sensarray_this_chem[:,j]*curp.get(pname)
         
-        tmp = scipy.matrixmultiply(sensarray_this_chem,jtjinv)
+        tmp = scipy.dot(sensarray_this_chem,jtjinv)
         for i in range(len(tmp[:,0])) :
             var[name].append(scipy.dot(tmp[i,:],sensarray_this_chem[i,:]))
             
@@ -197,7 +197,7 @@ def variances_log_chems(chemnames,logprior=1.0e20) :
         for i in range(len(times)) :
             sensarray_this_chem[i,:] = sensarray_this_chem[i,:]/(traj_this_chem[i]+1.0e-6)
 
-        tmp = scipy.matrixmultiply(sensarray_this_chem,jtjinv)
+        tmp = scipy.dot(sensarray_this_chem,jtjinv)
         for i in range(len(tmp[:,0])) :
             var[name].append(scipy.dot(tmp[i,:],sensarray_this_chem[i,:]))
             
@@ -214,8 +214,8 @@ def single_variance(sensvect,logprior=1.0e20) :
     as a sensitivity w.r.t. log parameters """
     jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*scipy.eye(
         len(jtjtrunc),len(jtjtrunc)))    
-    tmp = scipy.matrixmultiply(jtjinv,sensvect)
-    var = scipy.matrixmultiply(sensvect,tmp)
+    tmp = scipy.dot(jtjinv,sensvect)
+    var = scipy.dot(sensvect,tmp)
     return var
 
 def variance_change(chemnames,sensvect_design,logprior=1.0e20) :
@@ -235,10 +235,10 @@ def variance_change(chemnames,sensvect_design,logprior=1.0e20) :
     jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*scipy.eye(n,n))
 
     #sensvect_design = scipy.resize(sensvect_design,(n,1))
-    jtjinv_design = scipy.matrixmultiply(jtjinv,sensvect_design)
+    jtjinv_design = scipy.dot(jtjinv,sensvect_design)
     #jtjinv_design = scipy.resize(jtjinv_design,(n,1))     # want a column vector    
 
-    denominator = 1.0 + scipy.matrixmultiply(sensvect_design,jtjinv_design)
+    denominator = 1.0 + scipy.dot(sensvect_design,jtjinv_design)
     
     varchange = {}
     optvarkeys = clc.optimizableVars.keys()
@@ -253,7 +253,7 @@ def variance_change(chemnames,sensvect_design,logprior=1.0e20) :
         for j, pname in enumerate(ovvarnames) :
             sensarray_this_chem[:,j] = sensarray_this_chem[:,j]*curp.get(pname)
         
-        product = scipy.matrixmultiply(sensarray_this_chem,jtjinv_design)
+        product = scipy.dot(sensarray_this_chem,jtjinv_design)
         # this product is a number of timepoints by one vector, we need to 
         # square each element for the final formula
         varchange[name] = -scipy.asarray(product**2/denominator)
@@ -273,9 +273,9 @@ def single_variance_change(sensvect,sensvect_design,logprior=1.0e20) :
     n = len(jtjtrunc)    
     jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*scipy.eye(n,n))
 
-    jtjinv_design = scipy.matrixmultiply(jtjinv,sensvect_design)
-    denominator = 1.0 + scipy.matrixmultiply(sensvect_design,jtjinv_design)
-    product = scipy.matrixmultiply(sensvect,jtjinv_design)
+    jtjinv_design = scipy.dot(jtjinv,sensvect_design)
+    denominator = 1.0 + scipy.dot(sensvect_design,jtjinv_design)
+    product = scipy.dot(sensvect,jtjinv_design)
     return -product**2/denominator
 
 def get_sens_vect(chemname,time) :
@@ -329,14 +329,14 @@ def var_change_weighted(weights,chemnames,sensarray_design,logprior=1.0e20) :
     ntimes = len(times)    
     k,n = sensarray_design.shape    
     jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*scipy.eye(n,n))
-    Vt = scipy.zeros((k,n),scipy.Float)
+    Vt = scipy.zeros((k,n),scipy.float_)
     for i in range(k) :
         Vt[i,:] = scipy.sqrt(weights[i])*sensarray_design[i,:]
-    design_jtjinv = scipy.matrixmultiply(Vt,jtjinv)
+    design_jtjinv = scipy.dot(Vt,jtjinv)
     #jtjinv_design = scipy.resize(jtjinv_design,(n,1))     # want a column vector    
 
     denominator = scipy.eye(k,k) + \
-            scipy.matrixmultiply(design_jtjinv,scipy.transpose(Vt))
+            scipy.dot(design_jtjinv,scipy.transpose(Vt))
     inv_denom = scipy.linalg.inv(denominator)
 
     varchange = {}
@@ -352,13 +352,13 @@ def var_change_weighted(weights,chemnames,sensarray_design,logprior=1.0e20) :
         for j, pname in enumerate(ovvarnames) :
             sensarray_this_chem[:,j] = sensarray_this_chem[:,j]*curp.get(pname)
         
-        product = scipy.matrixmultiply(design_jtjinv,
+        product = scipy.dot(design_jtjinv,
                 scipy.transpose(sensarray_this_chem))
         # each column vector of this matrix has to be dotted through the
         # denominator matrix --- each column is a different time point
         for j in range(ntimes) :    
-            quadprod = scipy.matrixmultiply(product[:,j],inv_denom)    
-            quadprod = scipy.matrixmultiply(quadprod,product[:,j])    
+            quadprod = scipy.dot(product[:,j],inv_denom)    
+            quadprod = scipy.dot(quadprod,product[:,j])    
             varchange[name].append(-quadprod)
         varchange[name] = scipy.asarray(varchange[name])
     
@@ -581,12 +581,12 @@ def reduce_size(array,skipsize) :
     size = array.shape
     newsize = len(scipy.arange(0,size[0],skipsize))    
     if len(size) == 1 : # a vector 
-        newvect = scipy.zeros((newsize,),scipy.Float)
+        newvect = scipy.zeros((newsize,),scipy.float_)
         for iind,i in enumerate(scipy.arange(0,size[0],skipsize)) :
             newvect[iind] = array[i]
         return newvect
     elif len(size) == 2 : # an array
-        newarray = scipy.zeros((newsize,size[1]),scipy.Float)
+        newarray = scipy.zeros((newsize,size[1]),scipy.float_)
         for iind,i in enumerate(scipy.arange(0,size[0],skipsize)) :
             newarray[iind] = array[i]
         return newarray
