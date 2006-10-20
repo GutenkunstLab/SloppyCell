@@ -536,9 +536,16 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6):
 
     if with_logs:
         func = lambda logDV: net.get_ddv_dt(scipy.exp(logDV), 0)
-        fprime = lambda logDV: net.get_d2dv_ddvdt(scipy.exp(logDV), 0)\
-                * scipy.exp(logDV)
+        def fprime(logDV):
+            fp = net.get_d2dv_ddvdt(scipy.exp(logDV), 0)
+            # Our derivatives run down the columns, so we need to 
+            #  take the tranpose twice to multiply down them.
+            return scipy.transpose(scipy.transpose(fp) * scipy.exp(logDV))
         x0 = scipy.log(dv0)
+        # To transform sigma_x to sigma_log_x, we divide by x. We can set
+        #  our sigma_log_x use to be the mean of what our xtol would yield
+        #  for each chemical.
+        xtol = scipy.mean(xtol/dv0)
     else:
         func = lambda dv: net.get_ddv_dt(dv, 0)
         fprime = lambda dv: net.get_d2dv_ddvdt(dv, 0)
@@ -546,7 +553,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6):
 
     try:
         dvFixed, infodict, ier, mesg = scipy.optimize.fsolve(func, x0=x0,
-                                                             fprime=fprime, 
+                                                             fprime=fprime,
                                                              col_deriv=True,
                                                              full_output=True,
                                                              xtol=xtol)
