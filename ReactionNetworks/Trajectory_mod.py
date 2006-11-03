@@ -356,6 +356,7 @@ class Trajectory:
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
     def _sub_var_names(self, input):
+        mapping_dict = {}
 	for id in ExprManip.extract_vars(input):
             # convert it back to something key_column will recognize
 	    # had to use a form  dynVarName__derivWRT__optParamName for the
@@ -379,8 +380,9 @@ class Trajectory:
                 mapping = 'times[start:end]'
             else:
                 raise 'Problem with idname %s in Trajectory._sub_var_names' % id
+            mapping_dict[id] = mapping
 
-            input = ExprManip.sub_for_var(input, id, mapping)
+        input = ExprManip.sub_for_vars(input, mapping_dict)
 
         return input
 

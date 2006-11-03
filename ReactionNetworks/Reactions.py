@@ -24,8 +24,7 @@ class Reaction:
         for base in self.oldStoichiometry:
             self.stoichiometry[kwargs[base]] = self.oldStoichiometry[base]
 
-        for base, instance in kwargs.items():
-            self.kineticLaw = ExprManip.sub_for_var(self.kineticLaw, base, instance)
+        self.kineticLaw = ExprManip.sub_for_vars(self.kineticLaw, kwargs)
 
 class HomodimerizationReaction(Reaction):
     def __init__(self, id, **kwargs):

@@ -200,14 +200,15 @@ def fromSBMLString(sbmlStr, id = None):
         kL = rxn.getKineticLaw()
         kLFormula = kL.getFormula()
 
+        substitution_dict = {}
         for p in kL.getListOfParameters():
             parameter = createNetworkParameter(p)
             if parameter.id in rn.variables.keys():
                 oldId = parameter.id
                 parameter.id = id + '_' + parameter.id
-                kLFormula = ExprManip.sub_for_var(kLFormula, oldId, 
-                                                  parameter.id)
+                substitution_dict[oldId] = parameter.id
             rn.addVariable(parameter)
+        kLFormula = ExprManip.sub_for_vars(kLFormula, substitution_dict) 
     
         # Assemble the stoichiometry. SBML has the annoying trait that 
         #  species can appear as both products and reactants and 'cancel out'

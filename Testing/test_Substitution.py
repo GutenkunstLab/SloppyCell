@@ -29,6 +29,28 @@ class test_Substitution(unittest.TestCase):
             subbed = ExprManip.sub_for_var(expr, out_var, in_expr)
             assert eval(answer) == eval(subbed)
 
+    def test_sub_for_vars(self):
+        cases = [('x', {'x':'y'},
+                  'y'),
+                 ('x + 1', {'x':'y'}, 
+                  'y + 1'),
+                 ('f(x)**2 - y + z', {'x':'y*z/(x-2)'}, 
+                  'f(y*z/(x-2))**2 - y + z'),
+                 ('x**2', {'x':'y+2'}, 
+                  '(y+2)**2'),
+                 ('p[0]**x', {'x':'y+2'}, 
+                  'p[0]**(y+2)'),
+                # In these cases substituting one-by-one will fail
+                 ('x*y', {'x':'y', 'y':'z'},
+                  'y*z'),
+                 ('z*y', {'z':'y', 'y':'z'},
+                  'y*z'),
+                 ]
+
+        for expr, mapping, answer in cases:
+            subbed = ExprManip.sub_for_vars(expr, mapping)
+            assert eval(answer) == eval(subbed)
+
     def test_sub_for_func(self):
         cases = [('f(x)', 'f', 'y', 'y+1',
                   'x+1'),

@@ -12,36 +12,51 @@ def sub_for_var(expr, out_name, in_expr):
     
     Perhaps regular expressions could do this more simply...
     """
-    ast = strip_parse(expr)
-    out_ast = strip_parse(out_name)
-    if out_ast.__class__ != Name:
-        raise ValueError, 'Expression to substitute for is not a variable name.'
-    out_name = out_ast.name
-    in_ast = strip_parse(in_expr)
+    return sub_for_vars(expr, {out_name:in_expr})
 
-    if ast.__class__ == Name and ast2str(ast) == out_name:
-        return ast2str(in_ast)
+def sub_for_vars(expr, mapping):
+    """
+    For each pair out_name:in_expr in mapping, the returned string has all
+    occurences of the variable out_name substituted by in_expr.
+    """
+    if len(mapping) == 0:
+        return expr
+
+    ast = strip_parse(expr)
+    ast_mapping = {}
+    for out_name, in_expr in mapping.items():
+        out_ast = strip_parse(out_name)
+        if out_ast.__class__ != Name:
+            raise ValueError, 'Expression %s to substitute for is not a '\
+        'variable name.' % out_name
+        ast_mapping[str(out_ast.name)] = strip_parse(in_expr)
+
+    if ast.__class__ == Name and ast_mapping.has_key(ast2str(ast)):
+        return ast2str(ast_mapping[ast2str(ast)])
     else:
-        _sub_subtree_for_var(ast, out_name, in_ast)
+        _sub_subtrees_for_vars(ast, ast_mapping)
         return ast2str(ast)
 
-def _sub_subtree_for_var(ast, out_name, in_ast):
+def _sub_subtrees_for_vars(ast, ast_mappings):
     """
-    Substitute in_ast for all occurances of the variable named out_name in ast
+    For each out_name, in_ast pair in mappings, substitute in_ast for all 
+    occurances of the variable named out_name in ast
     """
     for attr_name in AST._node_attrs[ast.__class__]:
         attr = getattr(ast, attr_name)
         if isinstance(attr, list):
             for ii, elem in enumerate(attr):
-                if elem.__class__ == Name and ast2str(elem) == out_name:
-                    attr[ii] = in_ast
+                if elem.__class__ == Name\
+                   and ast_mappings.has_key(ast2str(elem)):
+                    attr[ii] = ast_mappings[ast2str(elem)]
                 else:
-                    _sub_subtree_for_var(elem, out_name, in_ast)
+                    _sub_subtrees_for_vars(elem, ast_mappings)
         else:
-            if attr.__class__ == Name and ast2str(attr) == out_name:
-                setattr(ast, attr_name, in_ast)
+            if attr.__class__ == Name and ast_mappings.has_key(ast2str(attr)):
+                setattr(ast, attr_name, ast_mappings[ast2str(attr)])
             else:
-                _sub_subtree_for_var(attr, out_name, in_ast)
+                _sub_subtrees_for_vars(attr, ast_mappings)
+
 
 def sub_for_func(expr, func_name, func_vars, func_expr):
     """
@@ -88,10 +103,12 @@ def _sub_for_func_ast(ast, func_name, func_vars, func_expr_ast):
         #  for the function expression, substitute for its arguments, and
         #  return
         working_ast = copy.deepcopy(func_expr_ast)
+        mapping = {}
         for var_name, arg_ast in zip(func_vars, ast.args):
             subbed_arg_ast = _sub_for_func_ast(arg_ast, func_name, func_vars, 
                                                func_expr_ast)
-            _sub_subtree_for_var(working_ast, var_name, subbed_arg_ast)
+            mapping[var_name] = subbed_arg_ast
+        _sub_subtrees_for_vars(working_ast, mapping)
         return working_ast
     # Else we walk through the attributes of our ast, checking whether they
     #  need to be substituted. We do this because we can't, in general,
