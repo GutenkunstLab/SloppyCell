@@ -10,7 +10,6 @@ import scipy.stats
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 import SloppyCell.Utility as Utility
-import SloppyCell.ReactionNetworks.Dynamics as Dynamics
 
 def autocorrelation(series):
     """
@@ -255,6 +254,7 @@ def ensemble_trajs(net, times, ensemble):
     Return a list of trajectories evaluated at times for all parameter sets
     in ensemble.
     """
+    import SloppyCell.ReactionNetworks.Dynamics as Dynamics
     traj_set = []
     for params in ensemble:
         try:
