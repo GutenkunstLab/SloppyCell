@@ -5,10 +5,12 @@ import time
 
 import scipy
 import scipy.linalg
+import scipy.stats
 
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 import SloppyCell.Utility as Utility
+import SloppyCell.ReactionNetworks.Dynamics as Dynamics
 
 def autocorrelation(series):
     """
@@ -230,25 +232,65 @@ def _quadratic_cost(trialMove, hessian):
                           scipy.dot(hessian, trialMove))
     return quadratic
 
-def net_ensemble_trajs(net, times, ensemble):
-    best_traj = net.integrate(times, ensemble[0], addTimes=False)
-
-    all_trajs = [best_traj]
-    for params in ensemble[1:]:
-        try:
-            all_trajs.append(net.integrate(times, params, addTimes=False))
-        except Utility.SloppyCellException:
-            pass
-
-    all_values = [traj.values for traj in all_trajs]
+def traj_ensemble_stats(traj_set):
+    """
+    Return the mean and standard deviation trajectory objects for the given 
+    input list of trajectories. (All must be evaluated at the same points.)
+    """
+    all_values = [traj.values for traj in traj_set]
 
     mean_values = scipy.mean(all_values, 0)
     std_values = scipy.std(all_values, 0)
 
-    mean_traj = copy.deepcopy(best_traj)
+    mean_traj = copy.deepcopy(traj_set[0])
     mean_traj.values = mean_values
 
-    std_traj = copy.deepcopy(best_traj)
+    std_traj = copy.deepcopy(traj_set[0])
     std_traj.values = std_values
 
+    return mean_traj, std_traj
+
+def ensemble_trajs(net, times, ensemble):
+    """
+    Return a list of trajectories evaluated at times for all parameter sets
+    in ensemble.
+    """
+    traj_set = []
+    for params in ensemble:
+        try:
+            traj_set.append(Dynamics.integrate(net, times, params, 
+                                               fill_traj=False))
+        except Utility.SloppyCellException:
+            logger.warn('Exception in network integration')
+
+    return traj_set
+
+def net_ensemble_trajs(net, times, ensemble):
+    traj_set = ensemble_trajs(net, times, ensemble)
+    best_traj = traj_set[0]
+    mean_traj, std_traj = traj_ensemble_stats(traj_set)
     return best_traj, mean_traj, std_traj
+
+def traj_ensemble_quantiles(traj_set, 
+                            quantiles=(scipy.stats.norm.cdf(-2), 
+                                       scipy.stats.norm.cdf(2))):
+    """
+    Return a list of trajectories, each one corresponding the a given passed-in
+    quantile.
+    """
+    all_values = scipy.array([traj.values for traj in traj_set])
+    sorted_values = scipy.sort(all_values, 0)
+                   
+    q_trajs = []
+    for q in quantiles:
+        below = int(scipy.floor(q * (len(sorted_values)-1)))
+        q_below = 1.0*below/len(sorted_values)
+        above = int(scipy.ceil(q * (len(sorted_values)-1)))
+        q_above = 1.0*above/len(sorted_values)
+        # Linearly interpolate...
+        q_values = sorted_values[below] + (q - q_below)*(sorted_values[above] - sorted_values[below])/(q_above - q_below)
+        q_traj = copy.deepcopy(traj_set[0])
+        q_traj.values = q_values
+        q_trajs.append(q_traj)
+
+    return q_trajs
