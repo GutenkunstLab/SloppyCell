@@ -234,7 +234,7 @@ def net_ensemble_trajs(net, times, ensemble):
     best_traj = net.integrate(times, ensemble[0], addTimes=False)
 
     all_trajs = [best_traj]
-    for params in ensemble:
+    for params in ensemble[1:]:
         try:
             all_trajs.append(net.integrate(times, params, addTimes=False))
         except Utility.SloppyCellException:
