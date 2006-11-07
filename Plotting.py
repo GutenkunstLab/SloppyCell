@@ -1,8 +1,15 @@
 import scipy
+import SloppyCell
+# We've had yet more trouble running in parallel, but these errors were actually
+#  killing the job without raising any error. So let's just only even try
+#  importing if we're the master node.
+if SloppyCell.my_rank != 0:
+    raise ImportError
+
 try:
     from pylab import *
 except RuntimeError:
-    # When running in parallel we found that this import could raise a 
+    # When running in parallel we found that this import could raise a
     # 'RuntimeError: could not open display' rather than an ImportError, so
     # we catch and raise an error we know how to handle
     raise ImportError
