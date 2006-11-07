@@ -134,7 +134,8 @@ def _diff_ast(ast, wrt):
             if arg_d == _ZERO:
                 continue
             for ii, arg in enumerate(args):
-                Substitution._sub_subtree_for_var(arg_form_d, 'arg%i'%ii, arg)
+                Substitution._sub_subtrees_for_vars(arg_form_d, 
+                                                    {'arg%i'%ii:arg})
             outs.append(Mul((arg_form_d, arg_d)))
 
         # If all arguments had zero deriviative
