@@ -294,3 +294,15 @@ def traj_ensemble_quantiles(traj_set,
         q_trajs.append(q_traj)
 
     return q_trajs
+
+def PCA_eig_log_params(ens):
+    """
+    Return the Principle Component Analysis eigenvalues and eigenvectors (in 
+     log parameters) of an ensemble. (This function takes the logs for you.)
+    """
+    X = scipy.log(scipy.array(ens))
+    X -= scipy.mean(X, 0)
+    u, s, vh = scipy.linalg.svd(scipy.transpose(X))
+    # This return adjust things so that can be easily compared with the JtJ
+    #  eigensystem.
+    return len(X)/s[::-1]**2, u[:,::-1]
