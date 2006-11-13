@@ -271,9 +271,7 @@ def net_ensemble_trajs(net, times, ensemble):
     mean_traj, std_traj = traj_ensemble_stats(traj_set)
     return best_traj, mean_traj, std_traj
 
-def traj_ensemble_quantiles(traj_set, 
-                            quantiles=(scipy.stats.norm.cdf(-2), 
-                                       scipy.stats.norm.cdf(2))):
+def traj_ensemble_quantiles(traj_set, quantiles=(0.05, 0.5, 0.95)):
     """
     Return a list of trajectories, each one corresponding the a given passed-in
     quantile.
@@ -283,12 +281,18 @@ def traj_ensemble_quantiles(traj_set,
                    
     q_trajs = []
     for q in quantiles:
-        below = int(scipy.floor(q * (len(sorted_values)-1)))
-        q_below = 1.0*below/len(sorted_values)
-        above = int(scipy.ceil(q * (len(sorted_values)-1)))
-        q_above = 1.0*above/len(sorted_values)
-        # Linearly interpolate...
-        q_values = sorted_values[below] + (q - q_below)*(sorted_values[above] - sorted_values[below])/(q_above - q_below)
+        # Calculate the index corresponding to this quantile. The q is because
+        #  Python arrays are 0 indexed
+        index = q * (len(sorted_values) - 1)
+        below = int(scipy.floor(index))
+        above = int(scipy.ceil(index))
+        if above == below:
+            q_values = sorted_values[below]
+        else:
+            # Linearly interpolate...
+            q_below = (1.0*below)/(len(sorted_values)-1)
+            q_above = (1.0*above)/(len(sorted_values)-1)
+            q_values = sorted_values[below] + (q - q_below)*(sorted_values[above] - sorted_values[below])/(q_above - q_below)
         q_traj = copy.deepcopy(traj_set[0])
         q_traj.values = q_values
         q_trajs.append(q_traj)
