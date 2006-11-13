@@ -981,19 +981,30 @@ class Model:
 
             # Add in the PeriodChecks
             for period in expt.GetPeriodChecks():
-                calcKey, depVarKey, indVarValue = period['calcKey'], period['depVarKey'], period['startTime']
-                resName = (exptKey, calcKey, depVarKey, indVarValue, 'PeriodCheck')
-                res = Residuals.PeriodCheckResidual(resName, calcKey, depVarKey, indVarValue,
-                                                    period['period'], period['sigma'])
+                calcKey, depVarKey, indVarValue = period['calcKey'], \
+                        period['depVarKey'], period['startTime']
+                resName = (exptKey, calcKey, depVarKey, indVarValue, 
+                           'PeriodCheck')
+                res = Residuals.PeriodCheckResidual(resName, calcKey, depVarKey,
+                                                    indVarValue, 
+                                                    period['period'], 
+                                                    period['sigma'])
                 self.residuals.setByKey(resName, res)
 
             # Add in the AmplitudeChecks
             for amplitude in expt.GetAmplitudeChecks():
-                calcKey, depVarKey = amplitude['calcKey'], amplitude['depVarKey']
-                indVarValue0, indVarValue1 = amplitude['startTime'], amplitude['testTime']
-                resName = (exptKey, calcKey, depVarKey, indVarValue0, indVarValue1, 'AmplitudeCheck')
-                res = Residuals.AmplitudeCheckResidual(resName, calcKey, depVarKey, indVarValue0, indVarValue1,
-                                                       amplitude['period'], amplitude['sigma'], exptKey)
+                calcKey, depVarKey = amplitude['calcKey'], \
+                        amplitude['depVarKey']
+                indVarValue0, indVarValue1 = amplitude['startTime'],\
+                        amplitude['testTime']
+                resName = (exptKey, calcKey, depVarKey, indVarValue0, 
+                           indVarValue1, 'AmplitudeCheck')
+                res = Residuals.AmplitudeCheckResidual(resName, calcKey, 
+                                                       depVarKey, indVarValue0,
+                                                       indVarValue1,
+                                                       amplitude['period'], 
+                                                       amplitude['sigma'], 
+                                                       exptKey)
                 self.residuals.setByKey(resName, res)
                
     def get_expts(self):
