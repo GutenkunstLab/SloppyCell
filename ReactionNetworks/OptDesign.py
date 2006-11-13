@@ -1,13 +1,13 @@
-try:
-    import pylab
-except ImportError:
-    pass
-
 import scipy, copy
 import SloppyCell.Utility
 load = SloppyCell.Utility.load
 save = SloppyCell.Utility.save
 import SloppyCell.ReactionNetworks.Dynamics as Dynamics
+
+try:
+    import SloppyCell.Plotting as Plotting
+except ImportError:
+    pass
 
 def setup(paramfile,calcobject,senstrajfile,jtjfile) :
     """ Set up the quantities necessary to run the optimal design
@@ -418,20 +418,20 @@ def plot_variances(chemnames,logprior,scale=1.0,return_var = False) :
     allowed to fluctuate by a factor of 1000 """
     times, bestfit, var = variances(chemnames,logprior)
     for key in bestfit.keys() :
-        pylab.figure()    
-        pylab.plot(times,bestfit[key]/scale)
-        pylab.hold(True)    
-        pylab.plot(times,bestfit[key]/scale + scipy.sqrt(var[key])/scale,'r--')
-        pylab.plot(times,bestfit[key]/scale - scipy.sqrt(var[key])/scale,'r--')
-        pylab.title(key,fontsize=16)
-        pylab.xlabel('time (minutes)',fontsize=16)
-        pylab.ylabel('number of molecules',fontsize=16)
-        xtics = pylab.gca().get_xticklabels()
-        ytics = pylab.gca().get_yticklabels()
-        pylab.setp(xtics,size=16)
-        pylab.setp(ytics,size=16)
-        #pylab.axis([0.0,40.0,-.01,1.2e4])    
-    pylab.show()
+        Plotting.figure()    
+        Plotting.plot(times,bestfit[key]/scale)
+        Plotting.hold(True)    
+        Plotting.plot(times,bestfit[key]/scale + scipy.sqrt(var[key])/scale,'r--')
+        Plotting.plot(times,bestfit[key]/scale - scipy.sqrt(var[key])/scale,'r--')
+        Plotting.title(key,fontsize=16)
+        Plotting.xlabel('time (minutes)',fontsize=16)
+        Plotting.ylabel('number of molecules',fontsize=16)
+        xtics = Plotting.gca().get_xticklabels()
+        ytics = Plotting.gca().get_yticklabels()
+        Plotting.setp(xtics,size=16)
+        Plotting.setp(ytics,size=16)
+        #Plotting.axis([0.0,40.0,-.01,1.2e4])    
+    Plotting.show()
     if return_var :
         return times, bestfit, var
 
@@ -445,16 +445,16 @@ def plot_variances_log_chems(chemnames,logprior) :
     do not become negative """
     times, bestfit, var = variances_log_chems(chemnames,logprior)
     for key in bestfit.keys() :
-        pylab.figure()    
-        pylab.plot(times,bestfit[key])
-        pylab.hold(True)    
-        pylab.plot(times,bestfit[key]*scipy.exp(scipy.sqrt(var[key])),'r-')
-        pylab.plot(times,bestfit[key]*scipy.exp(-scipy.sqrt(var[key])),'r-')
-        pylab.title(key,fontsize=14)
-        pylab.xlabel('time')
-        pylab.ylabel('arb. units')
-        #pylab.axis([0.0,40.0,-.01,1.2e4])    
-    pylab.show()
+        Plotting.figure()    
+        Plotting.plot(times,bestfit[key])
+        Plotting.hold(True)    
+        Plotting.plot(times,bestfit[key]*scipy.exp(scipy.sqrt(var[key])),'r-')
+        Plotting.plot(times,bestfit[key]*scipy.exp(-scipy.sqrt(var[key])),'r-')
+        Plotting.title(key,fontsize=14)
+        Plotting.xlabel('time')
+        Plotting.ylabel('arb. units')
+        #Plotting.axis([0.0,40.0,-.01,1.2e4])    
+    Plotting.show()
 
 def plot_variance_newpoint(chemnames,sensvect_design,logprior=1.0e20,
         return_data = True) :
@@ -470,20 +470,20 @@ def plot_variance_newpoint(chemnames,sensvect_design,logprior=1.0e20,
     times,varchange = variance_change(chemnames,sensvect_design,logprior)    
 
     for key in bestfit.keys() :
-        pylab.figure()    
-        pylab.plot(times,bestfit[key])
-        pylab.hold(True)    
-        pylab.plot(times,bestfit[key] + scipy.sqrt(var[key]),'r-')
-        pylab.plot(times,bestfit[key] - scipy.sqrt(var[key]),'r-')
+        Plotting.figure()    
+        Plotting.plot(times,bestfit[key])
+        Plotting.hold(True)    
+        Plotting.plot(times,bestfit[key] + scipy.sqrt(var[key]),'r-')
+        Plotting.plot(times,bestfit[key] - scipy.sqrt(var[key]),'r-')
     
-        pylab.plot(times,bestfit[key] + scipy.sqrt(var[key]+varchange[key]),'k--')
-        pylab.plot(times,bestfit[key] - scipy.sqrt(var[key]+varchange[key]),'k--')
+        Plotting.plot(times,bestfit[key] + scipy.sqrt(var[key]+varchange[key]),'k--')
+        Plotting.plot(times,bestfit[key] - scipy.sqrt(var[key]+varchange[key]),'k--')
         
-        pylab.title(key,fontsize=14)
-        pylab.xlabel('time')
-        pylab.ylabel('arb. units')
-        pylab.axis([0.0,40.0,-.01,1.2e4])    
-    pylab.show()
+        Plotting.title(key,fontsize=14)
+        Plotting.xlabel('time')
+        Plotting.ylabel('arb. units')
+        Plotting.axis([0.0,40.0,-.01,1.2e4])    
+    Plotting.show()
     if return_data :
         newvar = {}
         for ky in var.keys() :
@@ -509,20 +509,20 @@ def plot_variance_newweights(weights,chemnames,sensarray_design,logprior=1.0e20,
     times,varchange = var_change_weighted(weights,chemnames,sensarray_design,logprior)    
 
     for key in bestfit.keys() :
-        pylab.figure()    
-        pylab.plot(times,scale*bestfit[key])
-        pylab.hold(True)    
-        pylab.plot(times,scale*bestfit[key] + scale*scipy.sqrt(var[key]),'r-')
-        pylab.plot(times,scale*bestfit[key] - scale*scipy.sqrt(var[key]),'r-')
+        Plotting.figure()    
+        Plotting.plot(times,scale*bestfit[key])
+        Plotting.hold(True)    
+        Plotting.plot(times,scale*bestfit[key] + scale*scipy.sqrt(var[key]),'r-')
+        Plotting.plot(times,scale*bestfit[key] - scale*scipy.sqrt(var[key]),'r-')
     
-        pylab.plot(times,scale*bestfit[key] + scale*scipy.sqrt(var[key]+varchange[key]),'k--')
-        pylab.plot(times,scale*bestfit[key] - scale*scipy.sqrt(var[key]+varchange[key]),'k--')
+        Plotting.plot(times,scale*bestfit[key] + scale*scipy.sqrt(var[key]+varchange[key]),'k--')
+        Plotting.plot(times,scale*bestfit[key] - scale*scipy.sqrt(var[key]+varchange[key]),'k--')
         
-        pylab.title(key,fontsize=14)
-        pylab.xlabel('time')
-        pylab.ylabel('arb. units')
-        pylab.axis([0.0,40.0,-.01,1.2e4])    
-    pylab.show()
+        Plotting.title(key,fontsize=14)
+        Plotting.xlabel('time')
+        Plotting.ylabel('arb. units')
+        Plotting.axis([0.0,40.0,-.01,1.2e4])    
+    Plotting.show()
 
     if return_data :
         newvar = {}
@@ -536,27 +536,27 @@ def plot_variances_subplot(chemnames,logprior) :
     # 9 at a time    
     nfigs = nallplots/9 # integer division -- no fractional part
     for figno in range(1,nfigs+1) :
-        pylab.figure()
+        Plotting.figure()
         for i in range(0,9) :    
-            pylab.subplot(3,3,i+1)    
+            Plotting.subplot(3,3,i+1)    
             chemind = i+(figno-1)*9    
-            pylab.plot(times,bestfit[chemnames[chemind]])
-            pylab.hold(True)
-            pylab.plot(times,bestfit[chemnames[chemind]] 
+            Plotting.plot(times,bestfit[chemnames[chemind]])
+            Plotting.hold(True)
+            Plotting.plot(times,bestfit[chemnames[chemind]] 
                     + scipy.sqrt(var[chemnames[chemind]]),'r-')
-            pylab.plot(times,bestfit[chemnames[chemind]] 
+            Plotting.plot(times,bestfit[chemnames[chemind]] 
                     - scipy.sqrt(var[chemnames[chemind]]),'r-')
             
-            yt = pylab.yticks()
-            pylab.axis([0,100.0,yt[0],yt[-1]])    
-            pylab.title(chemnames[chemind])
-            pylab.xlabel('time')
-            pylab.ylabel('arb. units')
-            xt = pylab.xticks()
-            pylab.xticks([xt[0],xt[-1]])
+            yt = Plotting.yticks()
+            Plotting.axis([0,100.0,yt[0],yt[-1]])    
+            Plotting.title(chemnames[chemind])
+            Plotting.xlabel('time')
+            Plotting.ylabel('arb. units')
+            xt = Plotting.xticks()
+            Plotting.xticks([xt[0],xt[-1]])
         
-        pylab.savefig('./figs/variance_wt_'+i.__str__()+'.ps')    
-    pylab.show()
+        Plotting.savefig('./figs/variance_wt_'+i.__str__()+'.ps')    
+    Plotting.show()
 
 
 #def fix_sf():
