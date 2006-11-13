@@ -24,6 +24,7 @@ def fmin_log_params(m, params, *args, **kwargs):
         try:
             return m.cost_log_params(log_params)
         except Utility.SloppyCellException:
+            logger.warn('Exception in cost evaluation. Cost set to inf.')
             return scipy.inf
 
     func = m.cost_log_params
@@ -53,7 +54,11 @@ def fmin_xform(m, params, xforms, invforms, *args, **kwargs):
     """
     def func(xp, invforms):
         p = [inv(xp_val) for (xp_val, inv) in zip(xp, invforms)]
-        return m.cost(p)
+        try:
+            return m.cost(p)
+        except Utility.SloppyCellException:
+            logger.warn('Exception in cost evaluation. Cost set to inf.')
+            return scipy.inf
 
     params = scipy.array([x(xp_val) for (xp_val, x) in zip(params, xforms)])
     pmin = scipy.optimize.fmin(func, params, args = (invforms,),
