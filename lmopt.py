@@ -259,7 +259,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                 j = asarray(apply(fprime,(x2,)+args))
                 grad_calls+=1
             grad = mat(res2)*mat(j)
-            if sum(sum(abs(2.0*grad))) < gtol :
+            if sum(abs(2.0*grad), axis=None) < gtol :
                 finish = 2
         elif costlambda <= currentcost :
             currentcost = costlambda
@@ -275,7 +275,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                 grad_calls+=1
 
             grad = mat(res1)*mat(j)
-            if sum(sum(abs(2.0*grad))) < gtol :
+            if sum(abs(2.0*grad), axis=None) < gtol :
                 finish = 2
         else :
             Lambdamult = Lambda
@@ -337,7 +337,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
                 grad = mat(res1)*mat(j)
                 currentcost = costmult
-                if sum(sum(abs(2.0*grad))) < gtol :
+                if sum(abs(2.0*grad), axis=None) < gtol :
                     finish = 2
         niters = niters + 1
 
@@ -536,7 +536,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             grad_calls+=1
 
             #if scipy.linalg.norm(asarray(grad)) < avegtol :
-            if sum(sum(abs(2.0*grad))) < gtol :
+            if sum(abs(2.0*grad), axis=None) < gtol :
                 finish = 2
         elif costlambda <= currentcost :
             currentcost = costlambda
@@ -548,7 +548,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             grad_calls+=1
 
             # if scipy.linalg.norm(asarray(grad)) < avegtol :
-            if sum(sum(abs(2.0*grad))) < gtol :
+            if sum(abs(2.0*grad), axis=None) < gtol :
                 finish = 2
         else :
             Lambdamult = Lambda
@@ -601,7 +601,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
                 grad_calls+=1
                 currentcost = costmult
                 # if scipy.linalg.norm(grad) < avegtol :
-                if sum(sum(abs(2.0*grad))) < gtol :
+                if sum(abs(2.0*grad), axis=None) < gtol :
                     finish = 2
         niters = niters + 1
 
@@ -807,7 +807,7 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                 j = asarray(apply(fprime,(x2,)))
                 grad_calls+=1
             grad = mat(res2)*mat(j)
-            if sum(sum(abs(2.0*grad))) < gtol :
+            if sum(abs(2.0*grad), axis=None) < gtol :
                 finish = 2
             move = move2
         elif costlambda <= currentcost :
@@ -823,7 +823,7 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                 grad_calls+=1
 
             grad = mat(res1)*mat(j)
-            if sum(sum(abs(2.0*grad))) < gtol :
+            if sum(abs(2.0*grad), axis=None) < gtol :
                 finish = 2
             move = move1
         else :
@@ -860,7 +860,7 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
                 grad = mat(res1)*mat(j)
                 currentcost = costmult
-                if sum(sum(abs(2.0*grad))) < gtol :
+                if sum(abs(2.0*grad), axis=None) < gtol :
                     finish = 2
         niters = niters + 1
 
