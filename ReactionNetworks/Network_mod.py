@@ -35,6 +35,8 @@ import SloppyCell.Collections as Collections
 from Components import *
 import Trajectory_mod
 
+import PerfectData
+
 # Optional since it's x86-only.
 try:
     import psyco
@@ -382,13 +384,22 @@ class Network:
         #  a sorted list.
         # Make sure we start from t = 0
         t = sets.Set([0])
+        ret_full_traj=False
         for var, times in vars.items():
-            t.union_update(sets.Set(times))
+            if var == 'full trajectory':
+                ret_full_traj = True
+                t.union_update(sets.Set(times))
+            elif self.variables.has_key(var):
+                t.union_update(sets.Set(times))
+            else:
+                raise ValueError('Unknown variable %s requested from network %s'
+                                 % (var, self.get_id()))
+
+        # This takes care of the normal data points
         t = list(t)
         t.sort()
-
-        self.trajectory = self.integrate(t, params)
-
+        self.trajectory = self.integrate(t, params, addTimes = ret_full_traj)
+        
     def CalculateSensitivity(self, vars, params):
         t = sets.Set([0])
 
@@ -416,8 +427,14 @@ class Network:
         result = {}
         times = self.trajectory.timepoints
         for id in vars:
-            traj = self.trajectory.getVariableTrajectory(id)
-            result[id] = dict(zip(times, traj))
+            if id == 'full trajectory':
+                self.trajectory.build_interpolated_traj()
+                result[id] = self.trajectory
+            elif self.variables.has_key(id):
+                traj = self.trajectory.getVariableTrajectory(id)
+                result[id] = dict(zip(times, traj))
+
+        #result.update(self.pd_returns)
 
         return result
 
@@ -440,119 +457,18 @@ class Network:
     def integrate(self, times, params = None,
                   returnEvents = False, addTimes = True,
                   rtol = None):
-        if HAVE_DYNAMICS and hasattr(Dynamics, 'integrate'):
-            if self.add_tail_times:
-                times = scipy.concatenate((times, [1.05*times[-1]]))
-            return Dynamics.integrate(self, times, params, 
-                                      fill_traj=self.add_int_times)
-        
-        print 'Warning: Using older integrator. It is known to be buggy in its handling of events. I strongly suggest building the new integrator.'
-
-        self.compile()
-
-        if params is not None:
-            self.setOptimizables(params)
-
-        # We can add extra times to try to catch events better
-        if addTimes:
-            times = sets.Set(times)
-            toAdd = scipy.linspace(min(times), max(times), 200)
-            times.union_update(sets.Set(toAdd))
-            times = list(times)
-            times.sort()
-
-        # If you ask for time = 0, we'll assume you want dynamic variable values
-        #  reset.
-        if times[0] == 0:
-            self.resetDynamicVariables()
-
-        # te, ye, and ie are the times, dynamic variable values, and indices
-        #  of fired events
-        t, oa, te, ye, ie = Integration.Integrate(self, times, rtol = rtol)
-
-        indexKeys = self.dynamicVars.keys() + self.assignedVars.keys()
-        keyToColumn = KeyedList(zip(indexKeys, range(len(indexKeys))))
-
-        trajectory = Trajectory_mod.Trajectory(self, keyToColumn)
-        trajectory.appendFromODEINT(t, oa)
-
-        if returnEvents:
-            return trajectory, te, ye, ie
-        else:
-            return trajectory
+        if self.add_tail_times or addTimes:
+            times = scipy.concatenate((times, [1.05*times[-1]]))
+        return Dynamics.integrate(self, times, params, 
+                                  fill_traj=(self.add_int_times or addTimes))
 
     def integrateSensitivity(self, times, params = None,
                              returnEvents = False, addTimes = True,
                              rtol=None):
-        if HAVE_DYNAMICS and hasattr(Dynamics, 'integrate'):
-            if self.add_tail_times:
-                times = scipy.concatenate((times, [1.05*times[-1]]))
-            return Dynamics.integrate_sensitivity(self, times, params, rtol,
-                                                  fill_traj=self.add_int_times)
-
-        self.compile()
-
-        if params is not None:
-            self.setOptimizables(params)
-
-        # We can add extra times to try to catch events better
-        if addTimes:
-            times = sets.Set(times)
-            toAdd = scipy.linspace(min(times), max(times), 200)
-            times.union_update(sets.Set(toAdd))
-            times = list(times)
-            times.sort()
-
-        # If you ask for time = 0, we'll assume you want dynamic variable values
-        #  reset.
-        if times[0] == 0:
-            self.resetDynamicVariables()
-
-        nOv, nDv, nAv = len(self.optimizableVars), len(self.dynamicVars),\
-                len(self.assignedVars)
-
-        if not self.fdSensitivities:
-            t, oa, te, ye, ie = Integration.Integrate_Ddv_Dov(self, times,
-                                                              rtol=rtol)
-	else:
-            # We do it by finite differencing
-            oa = scipy.zeros((len(times), nDv*(nOv+1)), scipy.float_)
-            t, oaInitial, te, ye, ie = Integration.Integrate(self, times,
-                                                             rtol=rtol)
-            oa[:,0:nDv] = oaInitial
-            for i, (id, var) in enumerate(self.optimizableVars.items()) :
-                saved = var.value
-
-                stepsize = 1.0e-6*abs(var.typicalValue) + 1.0e-12
-                self.set_initial_var_value(id, saved + stepsize)
-
-	        self.resetDynamicVariables()
-                tStepped, oaStepped, teStepped, yeStepped, ieStepped = \
-                        Integration.Integrate(self, times, rtol = rtol)
-                #XXX: Should pull values corresponding to times out of tStepped,
-                # oaStepped since param change might mean events fire at
-                # different times or not at all.
-		deriv = (oaStepped - oaInitial)/stepsize
-		self.set_initial_var_value(id, saved)
-
-                oa[:, nDv + i*nDv : nDv + (i+1)*nDv] = deriv
-
-	alldvs = self.dynamicVars.keys() + self.assignedVars.keys()
-        keyToColumnSensNames = alldvs + [(cname, pname) for
-                                         pname in self.optimizableVars.keys()
-                                         for cname in alldvs]
-        keyToColumnSens = [(name, index) for index, name in
-                           enumerate(keyToColumnSensNames)]
-	keyToColumnSens = KeyedList(keyToColumnSens)
-
-	ddv_dpTrajectory = Trajectory_mod.Trajectory(self, keyToColumnSens,
-                                              is_sens = True)
-	ddv_dpTrajectory.appendSensFromODEINT(t, oa)
-
-        if returnEvents:
-            return ddv_dpTrajectory, te, ye, ie
-        else:
-            return ddv_dpTrajectory
+        if self.add_tail_times:
+            times = scipy.concatenate((times, [1.05*times[-1]]))
+        return Dynamics.integrate_sensitivity(self, times, params, rtol,
+                                              fill_traj=self.add_int_times)
 
     def evaluate_expr(self, expr, time=0):
         """
@@ -595,11 +511,11 @@ class Network:
         """
         return self._get_var_attr(id, 'typicalValue')
 
-    def get_var_typical_vals(self, id):
+    def get_var_typical_vals(self):
         """
         Return the variable typical values as a KeyedList.
         """
-        return KeyedList([(id, self.get_var_typical_value(id)) for id in
+        return KeyedList([(id, self.get_var_typical_val(id)) for id in
                           self.variables.keys()])
 
     def set_var_ic(self, id, value, warn=True):
