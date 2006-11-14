@@ -3,6 +3,7 @@ import SloppyCell.Residuals as Residuals
 import SloppyCell.Observers as Observers
 import SloppyCell.Optimization as Optimization
 import SloppyCell.Utility as Utility
+import SloppyCell.Vandermonde as Vandermonde
 
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
