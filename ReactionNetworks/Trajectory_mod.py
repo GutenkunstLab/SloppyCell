@@ -223,6 +223,26 @@ class Trajectory:
         elif self.const_var_values.has_key(var_id):
             return self.const_var_values.get(var_id)
 
+    def get_dynvar_vals_index(self, index):
+        """
+        Return a KeyedList of the values of the trajectory's dynamic variables
+        at the given index.
+        """
+        out = KeyedList([(key, self.get_var_val_index(key, index)) for
+                          key in self.dynamicVarKeys])
+        return out
+
+    def get_dynvar_vals(self, time, eps=1e-6):
+        """
+        Return a KeyedList of the values of the trajectory's dynamic variables
+        at the given time.
+
+        Prints a warning if the difference between the requested time and the
+        stored time is greater than a fraction eps of the trajectory length.
+        """
+        index = self._get_time_index(time, eps)
+        return self.get_dynvar_vals_index(index)
+
     def _make__assignment(self, net):
         functionBody = ['def _assignment(self, values, times, start, end):']
 
