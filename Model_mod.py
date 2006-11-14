@@ -349,12 +349,15 @@ class Model:
         scale_factors = {}
 
         exptData = expt.GetData()
+        expt_integral_data = expt.GetIntegralDataSets()
         fixed_sf = expt.get_fixed_sf()
 
         # Get the variables measured in this experiment
         measuredVars = sets.Set()
         for calcId in exptData:
             measuredVars.union_update(sets.Set(exptData[calcId].keys()))
+        for dataset in expt_integral_data:
+            measuredVars.union_update(sets.Set(dataset['vars']))
 
         sf_groups = map(sets.Set, expt.get_shared_sf())
         # Flatten out the list of shared scale factors.
@@ -376,7 +379,9 @@ class Model:
                     scale_factors[var] = value
                 continue
             elif len(fixedAt) > 1:
-                    raise ValueError('Shared scale factors fixed at inconsistent values in experiment %s!' % expt.GetName())
+                    raise ValueError('Shared scale factors fixed at '
+                                     'inconsistent values in experiment '
+                                     '%s!' % expt.GetName())
 
             # Finally, compute the scale factor for this group
             theoryDotData, theoryDotTheory = 0, 0
@@ -387,6 +392,23 @@ class Model:
                         theory = self.calcVals[calc][var][indVar]
                         theoryDotData += (theory * data) / error**2
                         theoryDotTheory += theory**2 / error**2
+            for dataset in expt_integral_data:
+                calc = dataset['calcKey']
+                theory_traj = self.calcVals[calc]['full trajectory']
+                data_traj = dataset['trajectory']
+                uncert_traj = dataset['uncert_traj']
+                interval = dataset['interval']
+                T = interval[1] - interval[0]
+                for var in group.intersection(sets.Set(dataset['vars'])):
+                    TheorDotT = self._integral_theorytheory(var, theory_traj,
+                                                            uncert_traj, 
+                                                            interval)
+                    theoryDotTheory += TheorDotT/T
+                    TheorDotD = self._integral_theorydata(var, theory_traj,
+                                                          data_traj, 
+                                                          uncert_traj, 
+                                                          interval)
+                    theoryDotData += TheorDotD/T
 
             for var in group:
                 if theoryDotTheory != 0:
@@ -395,6 +417,26 @@ class Model:
                     scale_factors[var] = 1
 
         return scale_factors
+
+    def _integral_theorytheory(self, var, theory_traj, uncert_traj, interval):
+        def integrand(t):
+            theory = theory_traj.evaluate_interpolated_traj(var, t)
+            uncert = uncert_traj.evaluate_interpolated_traj(var, t)
+            return theory**2/uncert**2
+        val, error = scipy.integrate.quad(integrand, interval[0], interval[1],
+                                          limit=int(1e5))
+        return val
+
+    def _integral_theorydata(self, var, theory_traj, data_traj, uncert_traj, 
+                             interval):
+        def integrand(t):
+            theory = theory_traj.evaluate_interpolated_traj(var, t)
+            data = data_traj.evaluate_interpolated_traj(var, t)
+            uncert = uncert_traj.evaluate_interpolated_traj(var, t)
+            return theory*data/uncert**2
+        val, error = scipy.integrate.quad(integrand, interval[0], interval[1],
+                                          limit=int(1e5))
+        return val
 
     def ComputeInternalVariableDerivs(self):
         """
@@ -1006,6 +1048,18 @@ class Model:
                                                        amplitude['sigma'], 
                                                        exptKey)
                 self.residuals.setByKey(resName, res)
+
+            # Add in the integral data
+            for ds in expt.GetIntegralDataSets():
+                for var in ds['vars']:
+                    resName = (exptKey, ds['calcKey'], var, 'integral data')
+                    res = Residuals.IntegralDataResidual(resName, var,
+                                                          exptKey,
+                                                          ds['calcKey'],
+                                                          ds['trajectory'],
+                                                          ds['uncert_traj'],
+                                                          ds['interval'])
+                    self.residuals.setByKey(resName, res)
                
     def get_expts(self):
         return self.exptColl

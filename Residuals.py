@@ -244,3 +244,30 @@ class AmplitudeCheckResidual(Residual):
         for other residual types but v3 may have to be changed depending on how
         it is decided to key dp """
         raise NotImplementedError
+
+class IntegralDataResidual(Residual):
+    def __init__(self, name, var, exptKey, calc, traj, uncert_traj, interval):
+        self.name = name
+        self.var = var
+        self.exptKey = exptKey
+        self.calc = calc
+        self.traj = traj
+        self.uncert_traj = uncert_traj
+        self.interval = interval
+
+    def GetValue(self, predictions, internalVars, params):
+        sf = internalVars['scaleFactors'][self.exptKey][self.var]
+        data_traj = self.traj
+        uncert_traj = self.uncert_traj
+        theory_traj = predictions[self.calc]['full trajectory']
+        var = self.var
+        def integrand(t):
+            theory = theory_traj.evaluate_interpolated_traj(var, t)
+            data = data_traj.evaluate_interpolated_traj(var, t)
+            uncert = uncert_traj.evaluate_interpolated_traj(var, t)
+            return (sf*theory - data)**2/uncert**2
+        val, error = scipy.integrate.quad(integrand,
+                                          self.interval[0], self.interval[1],
+                                          limit = int(1e5))
+        T = self.interval[1] - self.interval[0]
+        return scipy.sqrt(val/T)

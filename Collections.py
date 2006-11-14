@@ -77,6 +77,11 @@ class ExperimentCollection(dict):
                     varsByCalc[calc].setdefault(depVar, sets.Set())
                 varsByCalc[calc][depVar].union_update([start, start+period,
                                                        test, test+period])
+
+            for data_set in expt.GetIntegralDataSets():
+                calc = data_set['calcKey']
+                varsByCalc.setdefault(data_set['calcKey'], {})
+                varsByCalc[calc][('full trajectory')] = data_set['interval']
                 
         # But I convert the sets back to sorted lists before returning
         for calc in varsByCalc:
@@ -113,6 +118,7 @@ class Experiment:
         self.set_shared_sf(shared_sf)
         self.periodChecks=[]
         self.amplitudeChecks=[]
+        self.integral_data=[]
         
     def SetName(self, name):
         self.name = name
@@ -174,6 +180,28 @@ class Experiment:
 
     def GetAmplitudeChecks(self):
         return self.amplitudeChecks
+
+    def GetIntegralDataSets(self):
+        return self.integral_data
+
+    def add_integral_data(self, calcKey, traj, uncert_traj, vars, 
+                          interval=None):
+        """
+        Add an integral data set to the experiment.
+
+        calcKey      The id of the calculation this data corresponds to
+        traj         The trajectory to compare against
+        uncert_traj  A trajectory of data uncertainties
+        vars         What variables to fit against
+        interval     The time interval to fit over, defaults to the entire traj
+        """
+        traj.build_interpolated_traj()
+        uncert_traj.build_interpolated_traj()
+        if interval == None:
+            interval = (traj.get_times()[0], traj.get_times()[-1])
+        self.integral_data.append({'calcKey': calcKey, 'trajectory': traj,
+                                   'uncert_traj': uncert_traj, 'vars': vars,
+                                   'interval': interval})
         
 
 class CalculationCollection(dict):
