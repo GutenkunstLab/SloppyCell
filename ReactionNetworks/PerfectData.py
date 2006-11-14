@@ -3,30 +3,136 @@ Methods for generating "perfect data" hessians.
 """
 __docformat__ = "restructuredtext en"
 
+import copy
 import logging
 logger = logging.getLogger('RxnNets.PerfectData')
+
+import sets
 
 import scipy
 import scipy.integrate
 
-_SIGMA_CUTOFF = 1e-14
+import Dynamics
 
-# This specifies the uncertainties assumed.
-def sigmaFunc(traj, data_id):
+def apply_func_to_traj(traj, func):
     """
-    This takes the uncertainty in a variable to be equal to its typical value 
-    divided by 10.
+    Return a trajectory with func applied to each variable stored in the
+    trajectory
     """
-    sigma = traj.get_var_typical_val(data_id)/10.0
-    if sigma < _SIGMA_CUTOFF:
-        logger.warn('sigma < cutoff value (%g) for variable %s! '
-                    'Taking sigma = 1.' % (_SIGMA_CUTOFF, data_id))
-        sigma = 1
+    ret_traj = copy.deepcopy(traj)
+    for var, col in traj.key_column.items():
+        vals = func(traj, var)
+        ret_traj.values[:,col] = vals
 
-    return sigma
+    return ret_traj 
+
+def update_typical_vals(networks, int_times, rtol = 1e-9, fraction=0.5,
+                        cutoff=1e-14): 
+    """
+    Update the typical var values for a group of networks.
+
+    Find the maximum of each variable over the integrations. In each network
+    the typical value is set to fraction of that maximum. If that maximum value
+    is less than cutoff, the typical value is set to 1.
+
+    networks    List of networks to work with
+    int_times   List of corresponding integration endpoints 
+                  (ie. [(0, 100), (0, 50)])
+    fraction    Relative size of typical value, compared to max value over
+                the integrations.
+    rtol        Relative tolerance for the integrations.
+    cutoff      Values below this are considered to be zero
+    """
+    max_vals = {}
+    for net, times in zip(networks, int_times):
+        traj = Dynamics.integrate(net, times, rtol=rtol, fill_traj=True)
+        for var_id in net.variables.keys():
+            curr_max = max(traj.get_var_traj(var_id))
+            max_vals[var_id] = max(curr_max, max_vals.get(var_id, 0))
+
+    for var_id, val in max_vals.items():
+        for net in networks:
+            if net.variables.has_key(var_id):
+                if val > cutoff:
+                    net.set_var_typical_val(var_id, val/2.)
+                else:
+                    net.set_var_typical_val(var_id, 1.0)
+
+    return max_vals
+
+def typ_val_uncert(fraction = 0.1, cutoff=1e-14):
+    """
+    This is an uncertainty that is fraction of the variable's typical value.
+    """
+    def sigmaFunc(traj, data_id):
+        sigma = traj.get_var_typical_val(data_id) * fraction
+        if sigma < cutoff:
+            logger.warn('sigma < cutoff value (%g) for variable %s! '
+                        'Taking sigma = 1.' % (_SIGMA_CUTOFF, data_id))
+            sigma = 1
+        return sigma
+    return sigmaFunc
+
+def discrete_data(net, params, pts, interval, vars=None, random=False,
+                  uncert_func=typ_val_uncert(0.1, 1e-14)):
+    """
+    Return a set of data points for the given network generated at the given
+    parameters.
+
+    net         Network to generate data for
+    params      Parameters for this evaluation of the network
+    pts         Number of data points to output
+    interval    Integration interval
+    vars        Variables to output data for, defaults to all species in net
+    random      If False data points are distributed evenly over interval
+                If True they are spread randomly and uniformly over each
+                variable
+    uncert_func Function that takes in a trajectory and a variable id and
+                returns what uncertainty should be assumed for that variable,
+                either as a scalar or a list the same length as the trajectory.
+    """
+    # Default for vars
+    if vars == None:
+        vars = net.species.keys()
+
+    # Assign observed times to each variable
+    var_times = {}
+    for var in vars:
+        if random:
+            var_times[var] = scipy.rand(pts) * (interval[1]-interval[0]) + interval[0]
+        else:
+            var_times[var] = scipy.linspace(interval[0], interval[1], pts)
+
+    # Create a sorted list of the unique times in the var_times dict
+    int_times = sets.Set(scipy.ravel(var_times.values()))
+    int_times.add(0)
+    int_times = list(int_times)
+    int_times.sort()
+
+    # Get the trajectory
+    traj = Dynamics.integrate(net, int_times, params, fill_traj=False)
+
+    # Build up our data dictionary
+    data = {}
+    for var, times in var_times.items():
+        var_data = {}
+        data[var] = var_data
+
+        # Calculate our uncertainties
+        var_uncerts = uncert_func(traj, var)
+        for time in times:
+            val = traj.get_var_val(var, time)
+            if scipy.isscalar(var_uncerts):
+                uncert = var_uncerts
+            else:
+                index = traj._get_time_index(time)
+                uncert = var_uncerts[index]
+            var_data[time] = (val, uncert)
+    return data
 
 def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, fixed_sf=False,
-                       return_dict=False):
+                       return_dict=False, 
+                       uncert_func=typ_val_uncert(0.1, 1e-14)):
     """
     Calculate the "perfect data" hessian in log parameters given a sensitivity
     trajectory.
@@ -43,6 +149,9 @@ def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, fixed_sf=False,
                 dictionary keyed on the elements of data_ids; each corresponding
                 value is the hessian assuming data only on a single variable.
                 hess is the sum of all these hessians
+    uncert_func Function that takes in a trajectory and a variable id and
+                returns what uncertainty should be assumed for that variable,
+                either as a scalar or a list the same length as the trajectory.
     """
     if data_ids is None:
         data_ids = sens_traj.dynamicVarKeys + sens_traj.assignedVarKeys
@@ -51,7 +160,7 @@ def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, fixed_sf=False,
 
     sf_derivs, hess_dict = {}, {}
     for data_id in data_ids:
-        data_sigma = sigmaFunc(sens_traj, data_id)
+        data_sigma = uncert_func(sens_traj, data_id)
         if scipy.isscalar(data_sigma):
             data_sigma = scipy.zeros(len(sens_traj), scipy.float_) + data_sigma
 
