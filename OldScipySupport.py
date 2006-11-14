@@ -43,3 +43,6 @@ if int(scipy.__version__.split('.')[1]) < 4:
     # Move around fft function
     scipy.old_fft = scipy.fft
     scipy.fft = Bunch(rfft = scipy.old_fft, irfft = scipy.ifft)
+
+    # Method renamed
+    scipy.outer = scipy.outerproduct
