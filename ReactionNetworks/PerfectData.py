@@ -26,7 +26,7 @@ def apply_func_to_traj(traj, func):
 
     return ret_traj 
 
-def update_typical_vals(networks, int_times, rtol = 1e-9, fraction=0.5,
+def update_typical_vals(networks, int_times, rtol = 1e-9, fraction=1.0,
                         cutoff=1e-14): 
     """
     Update the typical var values for a group of networks.
@@ -54,7 +54,7 @@ def update_typical_vals(networks, int_times, rtol = 1e-9, fraction=0.5,
         for net in networks:
             if net.variables.has_key(var_id):
                 if val > cutoff:
-                    net.set_var_typical_val(var_id, val/2.)
+                    net.set_var_typical_val(var_id, val*fraction)
                 else:
                     net.set_var_typical_val(var_id, 1.0)
 
