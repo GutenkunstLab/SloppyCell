@@ -267,7 +267,7 @@ class Network:
 
         Example:
             To define f(x, y, z) = y**2 - cos(x/z)
-            net.add_func_def('my_func', ('x', 'y'), 'y**2 - cos(x/z)')
+            net.add_func_def('my_func', ('x', 'y', 'z'), 'y**2 - cos(x/z)')
         """
         func = FunctionDefinition(id, variables, math, name)
         self._checkIdUniqueness(func.id)
