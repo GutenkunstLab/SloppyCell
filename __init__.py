@@ -1,5 +1,6 @@
 _VERSION = 'CVS'
-_TEMP_DIR = '.SloppyCell'
+import os
+_TEMP_DIR = os.path.join(os.getcwd(), '.SloppyCell')
 
 import logging
 logging.basicConfig()
@@ -16,7 +17,6 @@ for arg in sys.argv:
             Utility.enable_debugging_msgs(words[1])
         else:
             Utility.enable_debugging_msgs(None)
-import os
 currdir = os.getcwd()
             
 try:
@@ -37,7 +37,6 @@ except ImportError:
     my_host = socket.gethostname()
 logger.debug('Node %i is on host %s.' % (my_rank, my_host))
 
-import os
 if my_rank == 0 and not os.path.isdir(_TEMP_DIR): 
     os.mkdir(_TEMP_DIR)
 
