@@ -1,5 +1,8 @@
 import OptimizeSumDets as OSD
-import cluster
+try:
+    import cluster
+except ImportError:
+    pass
 import clusterScripts
 import VdmPairwise as Vdm
 import scipy

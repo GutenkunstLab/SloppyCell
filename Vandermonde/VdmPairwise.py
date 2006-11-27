@@ -1,5 +1,9 @@
 import scipy
-import pylab
+
+try:
+    import SloppyCell.Plotting as Plotting
+except:
+    pass
 
 # 1. calculate your jtj matrix
 # 2. use calcDmat to get Dmat
@@ -105,9 +109,9 @@ def calcLambdaMat_4(jtj,Dmat):
 def checkLambda(jtj,lMat,r2Mat,a,b):
     lambdas = scipy.arange(-1.,1.,0.001)
     residuals = [l*l*jtj[a,a]+(1.-l*l)*jtj[b,b]+2.*l*scipy.sqrt(1.-l*l)*jtj[a,b] for l in lambdas]
-    pylab.plot(lambdas,residuals)
-    pylab.plot([lMat[a,b]],[r2Mat[a,b]],'o')
-    pylab.title(str(a)+', '+str(b))
+    Plotting.plot(lambdas,residuals)
+    Plotting.plot([lMat[a,b]],[r2Mat[a,b]],'o')
+    Plotting.title(str(a)+', '+str(b))
     return
 
 def getMinIndex(listofNums):

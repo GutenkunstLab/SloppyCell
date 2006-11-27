@@ -1,7 +1,10 @@
 import scipy
 import RandomArray
 import time
-import pylab
+try:
+    import SloppyCell.Plotting as Plotting
+except ImportError:
+    pass
 
 def C(p, origMatrix, weightsRDP=0.,weights2D=0.,weightsLS=0.,weightPR=0.,weightPriors=0.,*args,**kwargs):
     """
@@ -409,7 +412,7 @@ def timeGammas(listNumGammas, numEvals=1000):
 def plotLevels(levels,offset=0):
     xs = [offset+0.6,offset+1.4]
     for lvl in levels:
-        pylab.semilogy(xs,[lvl,lvl],'k')
+        Plotting.semilogy(xs,[lvl,lvl],'k')
     return
 
 def eVec(k,n):
