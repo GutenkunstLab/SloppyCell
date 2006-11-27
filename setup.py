@@ -37,7 +37,8 @@ core.setup(name='SloppyCell',
            packages=['SloppyCell', 
                      'SloppyCell.ReactionNetworks', 
                      'SloppyCell.Testing',
-                     'SloppyCell.ExprManip'
+                     'SloppyCell.ExprManip',
+                     'SloppyCell.Vandermonde'
                      ],
            package_dir={'SloppyCell': ''},
 
