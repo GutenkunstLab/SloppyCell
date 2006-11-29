@@ -246,6 +246,10 @@ class Trajectory:
     def _make__assignment(self, net):
         functionBody = ['def _assignment(self, values, times, start, end):']
 
+        for id in self.const_var_values.keys():
+            functionBody.append("%s = self.const_var_values.get('%s')" % 
+                                (id, id))
+
         if len(net.assignmentRules) > 0:
             for id, rule in net.assignmentRules.items():
                 lhs = self._sub_var_names(id)
@@ -261,6 +265,10 @@ class Trajectory:
     def _make__sens_assignment(self, net):
         functionBody = ['def _sens_assignment(self, values, times, start, end):'
                         ]
+
+        for id in self.const_var_values.keys():
+            functionBody.append("%s = self.const_var_values.get('%s')" % 
+                                (id, id))
 
         if len(net.assignmentRules) > 0:
 	    for id, rule in net.assignmentRules.items():
@@ -393,9 +401,9 @@ class Trajectory:
 	    if idname in self.key_column.keys():
                 mapping = 'values[start:end, %i]' % self.key_column.get(idname)
             elif idname in self.const_var_values.keys():
-                # It must be a constantVars variable => substitute the
-                #  value alone
-                mapping = str(self.const_var_values.get(id))
+                # Don't substitute for constant variable names. Those will
+                #  be taken care of earlier in the method.
+                continue
             elif idname == 'time':
                 mapping = 'times[start:end]'
             else:
