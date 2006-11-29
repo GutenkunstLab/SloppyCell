@@ -44,7 +44,7 @@ redir = Utility.Redirector()
 class odeintrException(Utility.SloppyCellException):
     pass
 
-def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-6, atol=1e-12, tcrit=None, h0=0.0, hmax=0.0, hmin=0.0, ixpr=0, mxstep=500, mxhnil=0, mxordn=12, mxords=5, printmessg=0, root_term = [], root_func=None, int_pts=False, insert_events=False, return_derivs = None):
+def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-6, atol=1e-12, tcrit=None, h0=0.0, hmax=0.0, hmin=0.0, ixpr=0, mxstep=500, mxhnil=0, mxordn=12, mxords=5, printmessg=0, root_term = [], root_func=None, int_pts=False, insert_events=False, return_derivs = None, redirect_msgs=True):
 
     """Integrate a system of ordinary differential equations.
 
@@ -256,7 +256,8 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-
             rwork[0] = tcrit[tcrit_ii]
             twanted = min(tcrit[tcrit_ii], twanted)
 
-        redir.start()
+        if redirect_msgs:
+            redir.start()
         y, treached, istate, jroot = \
                 _lsodar.dlsodar(usefunc, copy.copy(y0), t0, twanted, 
                                 itol, rtol, atol, 
@@ -267,7 +268,8 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-
 
         if istate < 0:
             # Problem!
-            logger.warn(messages)
+            if redirect_msgs:
+                logger.warn(messages)
             logger.warn(_msgs[istate])
             logger.warn("Run with full_output = 1 to get quantitative "
                         "information.")

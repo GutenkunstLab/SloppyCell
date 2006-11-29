@@ -41,7 +41,8 @@ class FixedPointException(Utility.SloppyCellException):
 
 
 def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
-              return_events=False, return_derivs=False):
+              return_events=False, return_derivs=False,
+              redirect_msgs=True):
     """
     Integrate a Network, returning a Trajectory.
 
@@ -130,7 +131,8 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
                            Dfun = Dfun,
                            mxstep = 10000, rtol = rtol, atol = atol,
                            int_pts = fill_traj,
-                           full_output = True, return_derivs = return_derivs)
+                           full_output = True, return_derivs = return_derivs,
+                               redirect_msgs=redirect_msgs)
             except Utility.SloppyCellException, X:
                 ### need to return as much of the trajectory as we have so far
                 # since integration failed, return all the traj we got
@@ -177,7 +179,8 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
                        mxstep = 10000, rtol = rtol, atol = atol,
                        int_pts = fill_traj,
                        insert_events = True,
-                       full_output = True, return_derivs = return_derivs)
+                       full_output = True, return_derivs = return_derivs,
+                           redirect_msgs=redirect_msgs)
         except Utility.SloppyCellException, X:
             ### need to return as much of the trajectory as we have so far
             # since integration failed, return all the traj we got
