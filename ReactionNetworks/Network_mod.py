@@ -1192,7 +1192,14 @@ class Network:
         structure = (self.functionDefinitions, self.reactions, 
                      self.assignmentRules, self.rateRules, var_struct)
         for id, var in self.variables.items():
-            var_struct[id] = (var.is_constant, var.is_optimizable)
+            # If a constant variable is set equal to a function of other
+            #  variables, we should include that function, otherwise
+            #  our sensitivities will be wrong.
+            if isinstance(self.get_var_ic(id), str):
+                var_struct[id] = (var.is_constant, var.is_optimizable,
+                                  self.get_var_ic(id))
+            else:
+                var_struct[id] = (var.is_constant, var.is_optimizable)
 
         return structure
 
@@ -1263,6 +1270,19 @@ class Network:
             if d2 != '0':
                 d = ExprManip.diff_expr(input, id)
                 output += ' + (%s) *(%s)' % (d, d2)
+
+        # What other constant variables does input depend on?
+        constant_used = ExprManip.extract_vars(input)
+        constant_used.difference_update(sets.Set([wrt]))
+        constant_used.intersection_update(sets.Set(self.constantVars.keys()))
+        # Do the chain rule for those variables
+        for id in constant_used:
+            ic = self.get_var_ic(id)
+            if isinstance(ic, str):
+                d2 = self.takeDerivative(ic, wrt)
+                if d2 != '0':
+                    d = ExprManip.diff_expr(input, id)
+                    output += ' + (%s) *(%s)' % (d, d2)
 
         return ExprManip.simplify_expr(output)
 
