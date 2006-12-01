@@ -55,7 +55,7 @@ class Network:
     #  called, for example, fooFunc, you need to define _make_fooFunc, which
     #  generates the python code for the function in fooFunc_functionBody.
     _dynamic_structure_funcs = ['get_ddv_dt', 'get_d2dv_ddvdt', 
-                                'get_d2dv_dovdt']
+                                'get_d2dv_dovdt', 'res_function']
     _dynamic_event_funcs = ['get_eventValues', 'get_eventDerivs', 
                             'root_func', 'root_func_dt']
     _dynamic_funcs = _dynamic_structure_funcs + _dynamic_event_funcs
@@ -123,6 +123,7 @@ class Network:
         self.reactions = KeyedList()
         self.assignmentRules = KeyedList()
         self.rateRules = KeyedList()
+        self.algebraicRules = KeyedList()
         self.events = KeyedList()
 
         # Variables is primary storage for all compartments, species, and 
@@ -136,6 +137,7 @@ class Network:
         self.constantVars = KeyedList()
         self.optimizableVars = KeyedList()
         self.dynamicVars = KeyedList()
+        self.algebraicVars = KeyedList()
         self.compartments = KeyedList()
         self.parameters = KeyedList()
         self.species = KeyedList()
@@ -317,6 +319,15 @@ class Network:
         """
         self.set_var_constant(var_id, False)
         self.rateRules.set(var_id, rhs)
+        self._makeCrossReferences()
+
+    def add_algebraic_rule(self, rhs):
+        """
+        Add an algebraic rule to the Network.
+
+        An algebraic rule specifies that 0 = rhs.
+        """
+        self.algebraicRules.set(rhs, rhs)
         self._makeCrossReferences()
 
     def remove_component(self, id):
@@ -851,6 +862,47 @@ class Network:
         return functionBody
 
 
+    def _make_res_function(self):
+
+        self.residual = scipy.zeros(len(self.dynamicVars), scipy.float_)
+        functionBody = 'def res_function(time, y, yprime, ires):\n\t'
+        functionBody += 'residual = self.residual\n\t'
+        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
+        functionBody += '\n\t'
+
+        # numZeroRhs and numNonZeroRhs keep track of how many variables are entered
+        # into the resFunction as differential variables and how many are entered as
+        # algebraic variables
+        
+        numZeroRhs = 0
+        numNonZeroRhs = 0
+
+        for ii, (id, var) in enumerate(self.dynamicVars.items()):
+            rhs = self.diff_eq_rhs.getByKey(id)
+            # we only include the differential equation if the rhs is not zero
+            if rhs == '0':
+                numZeroRhs += 1
+                continue
+            elif rhs != '0':
+                numNonZeroRhs += 1
+                functionBody += '# Residual function for %s\n\t' % (id)
+                functionBody += 'residual[%i] = %s' % (ii-numZeroRhs, rhs)
+                # We only subtract the derivative variable for the differential variables
+                if self.algebraicVars.get(id) == None:
+                    functionBody += '- yprime[%i]' % (ii-numZeroRhs)
+                functionBody += '\n\t'
+
+        for jj, (rhs,rhs) in enumerate(self.algebraicRules.items()):
+            functionBody += '# Residual function corresponding to an algebraic \
+equation \n\t'
+            functionBody += 'residual[%i] = %s' % (jj + numNonZeroRhs, rhs)
+            functionBody += '\n\t'
+                
+        functionBody += '\n\n\treturn residual\n'
+
+        return functionBody
+
+
     #
     # Methods involved in events
     #
@@ -1038,6 +1090,10 @@ class Network:
 
         return functionBody
 
+    # ddaskr_root(...) is the function for events for the daskr integrator.
+    def ddaskr_root(t, y, yprime):
+      return root_func(t, y) 
+
     def _make_root_func_dt(self):
         self._root_func_dt = scipy.zeros(len(self.events), scipy.float_)
 
@@ -1099,6 +1155,7 @@ class Network:
     #
     # Internally useful things
     #
+
     def _makeCrossReferences(self):
         """
         Create the cross-reference lists for the Network.
@@ -1107,6 +1164,7 @@ class Network:
         self.constantVars = KeyedList()
         self.optimizableVars = KeyedList()
         self.dynamicVars = KeyedList()
+        self.algebraicVars = KeyedList()
 
         self.compartments = KeyedList()
         self.parameters = KeyedList()
@@ -1137,6 +1195,28 @@ class Network:
                 self.timeTriggeredEvents.set(id, event)
             else:
                 self.complexEvents.set(id, event)
+
+        # set the algebraicVars list to the same as dynamicVars, and then
+        # remove those variables that don't belong
+        # make sure to only remove variables that exist in the KeyedList
+        self.algebraicVars = self.dynamicVars.copy()
+        # remove the reaction variables
+        for rxn in self.reactions:
+            for chem, value in rxn.stoichiometry.items():
+                if value != 0 and self.algebraicVars.has_key(chem):
+                    self.algebraicVars.remove_by_key(chem)
+        # remove the rate variables
+        for var in self.rateRules.keys():
+            if self.algebraicVars.has_key(var):
+                self.algebraicVars.remove_by_key(var)
+        # remove the event variables
+        for e in self.events:
+            for var in e.event_assignments.keys():
+                if self.algebraicVars.has_key(var):
+                    self.algebraicVars.remove_by_key(var)
+
+
+
 
     def compile(self):
         """
