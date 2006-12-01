@@ -72,7 +72,13 @@ def toSBMLString(net):
         formula = r.replace('**', '^')
         sr.setMath(libsbml.parseFormula(formula))
         m.addRule(sr)
-    
+
+    for r, r in net.algebraicRules.items():
+        sr = libsbml.AlgebraicRule()
+        formula = r.replace('**', '^')
+        sr.setMath(libsbml.parseFormula(formula))
+        m.addRule(sr)
+        
     for id, rxn in net.reactions.items():
         srxn = libsbml.Reaction(id)
         srxn.setName(rxn.name)
@@ -234,10 +240,12 @@ def fromSBMLString(sbmlStr, id = None):
         if r.getTypeCode() == libsbml.SBML_ALGEBRAIC_RULE:
             print >> sys.stderr, '*'*20
             print >> sys.stderr, 'Warning: Alegbraic rule specied in SBML file.'
-            print >> sys.stderr, 'Algebraic constraints are not implemented in our system!'
+            print >> sys.stderr, 'Algebraic constraints are still being tested in our system!'
             print
             print >> sys.stderr, 'Rule is: %s' % libsbml.formulaToString(r.getMath())
             print >> sys.stderr, '*'*20
+            math = libsbml.formulaToString(r.getMath())
+            rn.add_algebraic_rule(math)
         else:
             variable = r.getVariable()
             math = libsbml.formulaToString(r.getMath())
