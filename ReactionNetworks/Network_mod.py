@@ -35,6 +35,8 @@ import SloppyCell.Collections as Collections
 from Components import *
 import Trajectory_mod
 
+import PerfectData
+
 # Optional since it's x86-only.
 try:
     import psyco
@@ -53,7 +55,7 @@ class Network:
     #  called, for example, fooFunc, you need to define _make_fooFunc, which
     #  generates the python code for the function in fooFunc_functionBody.
     _dynamic_structure_funcs = ['get_ddv_dt', 'get_d2dv_ddvdt', 
-                                'get_d2dv_dovdt', 'res_function']
+                                'get_d2dv_dovdt']
     _dynamic_event_funcs = ['get_eventValues', 'get_eventDerivs', 
                             'root_func', 'root_func_dt']
     _dynamic_funcs = _dynamic_structure_funcs + _dynamic_event_funcs
@@ -121,7 +123,6 @@ class Network:
         self.reactions = KeyedList()
         self.assignmentRules = KeyedList()
         self.rateRules = KeyedList()
-        self.algebraicRules = KeyedList()
         self.events = KeyedList()
 
         # Variables is primary storage for all compartments, species, and 
@@ -135,7 +136,6 @@ class Network:
         self.constantVars = KeyedList()
         self.optimizableVars = KeyedList()
         self.dynamicVars = KeyedList()
-        self.algebraicVars = KeyedList()
         self.compartments = KeyedList()
         self.parameters = KeyedList()
         self.species = KeyedList()
@@ -267,7 +267,7 @@ class Network:
 
         Example:
             To define f(x, y, z) = y**2 - cos(x/z)
-            net.add_func_def('my_func', ('x', 'y'), 'y**2 - cos(x/z)')
+            net.add_func_def('my_func', ('x', 'y', 'z'), 'y**2 - cos(x/z)')
         """
         func = FunctionDefinition(id, variables, math, name)
         self._checkIdUniqueness(func.id)
@@ -317,15 +317,6 @@ class Network:
         """
         self.set_var_constant(var_id, False)
         self.rateRules.set(var_id, rhs)
-        self._makeCrossReferences()
-
-    def add_algebraic_rule(self, rhs):
-        """
-        Add an algebraic rule to the Network.
-
-        An algebraic rule specifies that 0 = rhs.
-        """
-        self.algebraicRules.set(rhs, rhs)
         self._makeCrossReferences()
 
     def remove_component(self, id):
@@ -393,13 +384,22 @@ class Network:
         #  a sorted list.
         # Make sure we start from t = 0
         t = sets.Set([0])
+        ret_full_traj=False
         for var, times in vars.items():
-            t.union_update(sets.Set(times))
+            if var == 'full trajectory':
+                ret_full_traj = True
+                t.union_update(sets.Set(times))
+            elif self.variables.has_key(var):
+                t.union_update(sets.Set(times))
+            else:
+                raise ValueError('Unknown variable %s requested from network %s'
+                                 % (var, self.get_id()))
+
+        # This takes care of the normal data points
         t = list(t)
         t.sort()
-
-        self.trajectory = self.integrate(t, params)
-
+        self.trajectory = self.integrate(t, params, addTimes = ret_full_traj)
+        
     def CalculateSensitivity(self, vars, params):
         t = sets.Set([0])
 
@@ -427,8 +427,14 @@ class Network:
         result = {}
         times = self.trajectory.timepoints
         for id in vars:
-            traj = self.trajectory.getVariableTrajectory(id)
-            result[id] = dict(zip(times, traj))
+            if id == 'full trajectory':
+                self.trajectory.build_interpolated_traj()
+                result[id] = self.trajectory
+            elif self.variables.has_key(id):
+                traj = self.trajectory.getVariableTrajectory(id)
+                result[id] = dict(zip(times, traj))
+
+        #result.update(self.pd_returns)
 
         return result
 
@@ -451,119 +457,18 @@ class Network:
     def integrate(self, times, params = None,
                   returnEvents = False, addTimes = True,
                   rtol = None):
-        if HAVE_DYNAMICS and hasattr(Dynamics, 'integrate'):
-            if self.add_tail_times:
-                times = scipy.concatenate((times, [1.05*times[-1]]))
-            return Dynamics.integrate(self, times, params, 
-                                      fill_traj=self.add_int_times)
-        
-        print 'Warning: Using older integrator. It is known to be buggy in its handling of events. I strongly suggest building the new integrator.'
-
-        self.compile()
-
-        if params is not None:
-            self.setOptimizables(params)
-
-        # We can add extra times to try to catch events better
-        if addTimes:
-            times = sets.Set(times)
-            toAdd = scipy.linspace(min(times), max(times), 200)
-            times.union_update(sets.Set(toAdd))
-            times = list(times)
-            times.sort()
-
-        # If you ask for time = 0, we'll assume you want dynamic variable values
-        #  reset.
-        if times[0] == 0:
-            self.resetDynamicVariables()
-
-        # te, ye, and ie are the times, dynamic variable values, and indices
-        #  of fired events
-        t, oa, te, ye, ie = Integration.Integrate(self, times, rtol = rtol)
-
-        indexKeys = self.dynamicVars.keys() + self.assignedVars.keys()
-        keyToColumn = KeyedList(zip(indexKeys, range(len(indexKeys))))
-
-        trajectory = Trajectory_mod.Trajectory(self, keyToColumn)
-        trajectory.appendFromODEINT(t, oa)
-
-        if returnEvents:
-            return trajectory, te, ye, ie
-        else:
-            return trajectory
+        if self.add_tail_times or addTimes:
+            times = scipy.concatenate((times, [1.05*times[-1]]))
+        return Dynamics.integrate(self, times, params, 
+                                  fill_traj=(self.add_int_times or addTimes))
 
     def integrateSensitivity(self, times, params = None,
                              returnEvents = False, addTimes = True,
                              rtol=None):
-        if HAVE_DYNAMICS and hasattr(Dynamics, 'integrate'):
-            if self.add_tail_times:
-                times = scipy.concatenate((times, [1.05*times[-1]]))
-            return Dynamics.integrate_sensitivity(self, times, params, rtol,
-                                                  fill_traj=self.add_int_times)
-
-        self.compile()
-
-        if params is not None:
-            self.setOptimizables(params)
-
-        # We can add extra times to try to catch events better
-        if addTimes:
-            times = sets.Set(times)
-            toAdd = scipy.linspace(min(times), max(times), 200)
-            times.union_update(sets.Set(toAdd))
-            times = list(times)
-            times.sort()
-
-        # If you ask for time = 0, we'll assume you want dynamic variable values
-        #  reset.
-        if times[0] == 0:
-            self.resetDynamicVariables()
-
-        nOv, nDv, nAv = len(self.optimizableVars), len(self.dynamicVars),\
-                len(self.assignedVars)
-
-        if not self.fdSensitivities:
-            t, oa, te, ye, ie = Integration.Integrate_Ddv_Dov(self, times,
-                                                              rtol=rtol)
-	else:
-            # We do it by finite differencing
-            oa = scipy.zeros((len(times), nDv*(nOv+1)), scipy.float_)
-            t, oaInitial, te, ye, ie = Integration.Integrate(self, times,
-                                                             rtol=rtol)
-            oa[:,0:nDv] = oaInitial
-            for i, (id, var) in enumerate(self.optimizableVars.items()) :
-                saved = var.value
-
-                stepsize = 1.0e-6*abs(var.typicalValue) + 1.0e-12
-                self.set_initial_var_value(id, saved + stepsize)
-
-	        self.resetDynamicVariables()
-                tStepped, oaStepped, teStepped, yeStepped, ieStepped = \
-                        Integration.Integrate(self, times, rtol = rtol)
-                #XXX: Should pull values corresponding to times out of tStepped,
-                # oaStepped since param change might mean events fire at
-                # different times or not at all.
-		deriv = (oaStepped - oaInitial)/stepsize
-		self.set_initial_var_value(id, saved)
-
-                oa[:, nDv + i*nDv : nDv + (i+1)*nDv] = deriv
-
-	alldvs = self.dynamicVars.keys() + self.assignedVars.keys()
-        keyToColumnSensNames = alldvs + [(cname, pname) for
-                                         pname in self.optimizableVars.keys()
-                                         for cname in alldvs]
-        keyToColumnSens = [(name, index) for index, name in
-                           enumerate(keyToColumnSensNames)]
-	keyToColumnSens = KeyedList(keyToColumnSens)
-
-	ddv_dpTrajectory = Trajectory_mod.Trajectory(self, keyToColumnSens,
-                                              is_sens = True)
-	ddv_dpTrajectory.appendSensFromODEINT(t, oa)
-
-        if returnEvents:
-            return ddv_dpTrajectory, te, ye, ie
-        else:
-            return ddv_dpTrajectory
+        if self.add_tail_times:
+            times = scipy.concatenate((times, [1.05*times[-1]]))
+        return Dynamics.integrate_sensitivity(self, times, params, rtol,
+                                              fill_traj=self.add_int_times)
 
     def evaluate_expr(self, expr, time=0):
         """
@@ -606,11 +511,11 @@ class Network:
         """
         return self._get_var_attr(id, 'typicalValue')
 
-    def get_var_typical_vals(self, id):
+    def get_var_typical_vals(self):
         """
         Return the variable typical values as a KeyedList.
         """
-        return KeyedList([(id, self.get_var_typical_value(id)) for id in
+        return KeyedList([(id, self.get_var_typical_val(id)) for id in
                           self.variables.keys()])
 
     def set_var_ic(self, id, value, warn=True):
@@ -946,52 +851,6 @@ class Network:
         return functionBody
 
 
-    def _make_res_function(self):
-
-        self.residual = scipy.zeros(len(self.dynamicVars), scipy.float_)
-        functionBody = 'def res_function(time, y, yprime, ires):\n\t'
-        functionBody += 'residual = self.residual\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-        functionBody += '\n\t'
-
-        # numZeroRhs and numNonZeroRhs keep track of how many variables are entered
-        # into the resFunction as differential variables and how many are entered as
-        # algebraic variables
-        
-        numZeroRhs = 0
-        numNonZeroRhs = 0
-
-        for ii, (id, var) in enumerate(self.dynamicVars.items()):
-            rhs = self.diff_eq_rhs.getByKey(id)
-            # we only include the differential equation if the rhs is not zero
-            if rhs == '0':
-                numZeroRhs += 1
-                continue
-            elif rhs != '0':
-                numNonZeroRhs += 1
-                functionBody += '# Residual function for %s\n\t' % (id)
-                functionBody += 'residual[%i] = %s' % (ii-numZeroRhs, rhs)
-                # We only subtract the derivative variable for the differential variables
-                if self.algebraicVars.get(id) == None:
-                    functionBody += '- yprime[%i]' % (ii-numZeroRhs)
-                functionBody += '\n\t'
-
-        for jj, (rhs,rhs) in enumerate(self.algebraicRules.items()):
-            functionBody += '# Residual function corresponding to an algebraic \
-equation \n\t'
-            functionBody += 'residual[%i] = %s' % (jj + numNonZeroRhs, rhs)
-            functionBody += '\n\t'
-                
-
-        functionBody += '\n\n\treturn residual\n'
-
-        # print functionBody
-
-        return functionBody
-
-
-
-
     #
     # Methods involved in events
     #
@@ -1179,12 +1038,6 @@ equation \n\t'
 
         return functionBody
 
-
-    # ddaskr_root(...) is the function for events for the daskr integrator.
-    def ddaskr_root(t, y, yprime):
-      return root_func(t, y) 
-
-
     def _make_root_func_dt(self):
         self._root_func_dt = scipy.zeros(len(self.events), scipy.float_)
 
@@ -1254,7 +1107,6 @@ equation \n\t'
         self.constantVars = KeyedList()
         self.optimizableVars = KeyedList()
         self.dynamicVars = KeyedList()
-        self.algebraicVars = KeyedList()
 
         self.compartments = KeyedList()
         self.parameters = KeyedList()
@@ -1285,28 +1137,6 @@ equation \n\t'
                 self.timeTriggeredEvents.set(id, event)
             else:
                 self.complexEvents.set(id, event)
-
-        # set the algebraicVars list to the same as dynamicVars, and then
-        # remove those variables that don't belong
-        # make sure to only remove variables that exist in the KeyedList
-        self.algebraicVars = self.dynamicVars.copy()
-        # remove the reaction variables
-        for rxn in self.reactions:
-            for chem, value in rxn.stoichiometry.items():
-                if value != 0 and self.algebraicVars.has_key(chem):
-                    self.algebraicVars.remove_by_key(chem)
-        # remove the rate variables
-        for var in self.rateRules.keys():
-            if self.algebraicVars.has_key(var):
-                self.algebraicVars.remove_by_key(var)
-        # remove the event variables
-        for e in self.events:
-            for var in e.event_assignments.keys():
-                if self.algebraicVars.has_key(var):
-                    self.algebraicVars.remove_by_key(var)
-
-
-
 
     def compile(self):
         """
@@ -1339,7 +1169,6 @@ equation \n\t'
             self._makeDiffEqRHS()
             for func in self._dynamic_structure_funcs:
                 exec 'self.%s_functionBody = self._make_%s()' % (func, func)
-                print 'making ', func
                 _exec_dynamic_func(self, func, self.namespace)
             self._last_structure = copy.deepcopy(curr_structure)
 
@@ -1363,7 +1192,14 @@ equation \n\t'
         structure = (self.functionDefinitions, self.reactions, 
                      self.assignmentRules, self.rateRules, var_struct)
         for id, var in self.variables.items():
-            var_struct[id] = (var.is_constant, var.is_optimizable)
+            # If a constant variable is set equal to a function of other
+            #  variables, we should include that function, otherwise
+            #  our sensitivities will be wrong.
+            if isinstance(self.get_var_ic(id), str):
+                var_struct[id] = (var.is_constant, var.is_optimizable,
+                                  self.get_var_ic(id))
+            else:
+                var_struct[id] = (var.is_constant, var.is_optimizable)
 
         return structure
 
@@ -1434,6 +1270,19 @@ equation \n\t'
             if d2 != '0':
                 d = ExprManip.diff_expr(input, id)
                 output += ' + (%s) *(%s)' % (d, d2)
+
+        # What other constant variables does input depend on?
+        constant_used = ExprManip.extract_vars(input)
+        constant_used.difference_update(sets.Set([wrt]))
+        constant_used.intersection_update(sets.Set(self.constantVars.keys()))
+        # Do the chain rule for those variables
+        for id in constant_used:
+            ic = self.get_var_ic(id)
+            if isinstance(ic, str):
+                d2 = self.takeDerivative(ic, wrt)
+                if d2 != '0':
+                    d = ExprManip.diff_expr(input, id)
+                    output += ' + (%s) *(%s)' % (d, d2)
 
         return ExprManip.simplify_expr(output)
 
