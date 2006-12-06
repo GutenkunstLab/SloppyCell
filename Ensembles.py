@@ -11,6 +11,10 @@ import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 import SloppyCell.Utility as Utility
 
+from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
+if HAVE_PYPAR:
+    import pypar
+
 def autocorrelation(series):
     """
     Return the normalized autocorrelation of a series using the FFT.
@@ -249,19 +253,36 @@ def traj_ensemble_stats(traj_set):
 
     return mean_traj, std_traj
 
+def few_ensemble_trajs(net, times, elements):
+    import SloppyCell.ReactionNetworks.Dynamics as Dynamics
+    traj_set = []
+    for params in elements:
+        try:
+            traj = Dynamics.integrate(net, times, params, fill_traj=False)
+            if not scipy.any(scipy.isnan(traj.values)):
+                traj_set.append(traj)
+        except Utility.SloppyCellException:
+            logger.warn('Exception in network integration on node %i.'
+                        % my_rank)
+
+    return traj_set
+
 def ensemble_trajs(net, times, ensemble):
     """
     Return a list of trajectories evaluated at times for all parameter sets
     in ensemble.
     """
-    import SloppyCell.ReactionNetworks.Dynamics as Dynamics
     traj_set = []
-    for params in ensemble:
-        try:
-            traj_set.append(Dynamics.integrate(net, times, params, 
-                                               fill_traj=False))
-        except Utility.SloppyCellException:
-            logger.warn('Exception in network integration')
+    elems_assigned = [ensemble[node::num_procs] for node in range(num_procs)]
+    for worker in range(1, num_procs):
+        command = 'Ensembles.few_ensemble_trajs(net, times, elements)'
+        args = {'net': net, 'times': times, 'elements': elems_assigned[worker]}
+        pypar.send((command, args), worker)
+
+    traj_set = few_ensemble_trajs(net, times, elems_assigned[0])
+
+    for worker in range(1, num_procs):
+        traj_set.extend(pypar.receive(worker))
 
     return traj_set
 
@@ -304,7 +325,7 @@ def PCA_eig_log_params(ens):
     Return the Principle Component Analysis eigenvalues and eigenvectors (in 
      log parameters) of an ensemble. (This function takes the logs for you.)
     """
-    X = scipy.log(scipy.array(ens))
+    X = scipy.log(scipy.asarray(ens))
     X -= scipy.mean(X, 0)
     u, s, vh = scipy.linalg.svd(scipy.transpose(X))
     # This return adjust things so that can be easily compared with the JtJ
