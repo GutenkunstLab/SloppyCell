@@ -258,13 +258,15 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-
 
         if redirect_msgs:
             redir.start()
-        y, treached, istate, jroot = \
-                _lsodar.dlsodar(usefunc, copy.copy(y0), t0, twanted, 
-                                itol, rtol, atol, 
-                                itask, istate, rwork, iwork, 
-                                usejac, jt, 
-                                useg, ng)
-        messages = redir.stop()
+        try:
+            y, treached, istate, jroot = \
+                    _lsodar.dlsodar(usefunc, copy.copy(y0), t0, twanted, 
+                                    itol, rtol, atol, 
+                                    itask, istate, rwork, iwork, 
+                                    usejac, jt, 
+                                    useg, ng)
+        finally:
+            messages = redir.stop()
 
         if istate < 0:
             # Problem!
