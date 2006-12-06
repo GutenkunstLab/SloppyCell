@@ -39,7 +39,11 @@ class Trajectory:
                          'pi': scipy.pi,
                          }
 
-    def __init__(self, net, key_column=None, is_sens=False, holds_dt=False):
+    def __init__(self, net, key_column=None, is_sens=False, holds_dt=False,
+                 empty=False):
+        if empty:
+            return
+
         if key_column is not None:
             self.key_column = key_column
         else:
@@ -368,6 +372,35 @@ class Trajectory:
                     self.values[-numAdded:,
                             self.key_column.get((dvId, ovId,'time'))]\
                         = odeint_array[:, ii + (jj+1)*nDv + nDv*(nOv+1)]
+
+    def copy_subset(self, keys=None):
+        """
+        Return a copy of this trajectory containing only the variables specified
+        in keys.
+
+        If keys is None, all variables are included.
+        """
+        if keys == None:
+            keys = self.key_column.keys()
+
+        state = self.__getstate__()
+
+        # Only need those keys that are stored in the values array. The
+        #  rest will be copied easily.
+        keys = [key for key in keys if self.key_column.has_key(key)]
+        new_key_column = KeyedList(zip(keys, range(len(keys))))
+        state['key_column'] = new_key_column
+
+        new_values = scipy.zeros((len(self.values), len(new_key_column)), 
+                                 scipy.float_)
+        for key, new_col in new_key_column.items():
+            old_col = self.values[:, self.key_column.get(key)]
+            new_values[:, new_col] = old_col.copy()
+        state['values'] = new_values
+
+        new_traj = Trajectory(None, empty=True)
+        new_traj.__setstate__(state)
+        return new_traj
 
     def __getstate__(self):
         odict = copy.copy(self.__dict__)
