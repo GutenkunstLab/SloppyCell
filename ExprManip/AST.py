@@ -46,6 +46,7 @@ _OP_ORDER = {Name: 0,
              Div: 5,
              Sub: 10,
              Add: 10,
+             #Compare: 20,
              Discard: 100}
 
 # This is just an instance of Discard to use for the default
@@ -64,7 +65,8 @@ _node_attrs = {Name: (),
                UnaryAdd: ('expr',),
                Slice: ('lower', 'upper'),
                Sliceobj: ('nodes',),
-               Subscript: ('subs',)
+               Subscript: ('subs',),
+               #Compare: ('expr',)
                }
 
 
@@ -117,6 +119,13 @@ def ast2str(ast, outer = _FARTHEST_OUT, adjust = 0):
     elif isinstance(ast, Sliceobj):
         nodes = [ast2str(node) for node in ast.nodes]
         out = ':'.join(nodes)
+    #elif isinstance(ast, Compare):
+    #    expr = ast2str(ast.expr)
+    #    out_l = [expr]
+    #    for op, val in ast.ops:
+    #        out_l.append(op)
+    #        out_l.append(ast2str(val))
+    #    out = ' '.join(out_l)
 
     # Ensure parentheses by checking the _OP_ORDER of the outer and inner ASTs
     if _need_parens(outer, ast, adjust):

@@ -61,7 +61,9 @@ _KNOWN_FUNCS = {('acos', 1): ('1/sqrt(1-arg0**2)',),
                 ('sqrt', 1): ('1/(2*sqrt(arg0))',),
                 ('tan', 1): ('1/cos(arg0)**2',),
                 ('tanh', 1): ('1/cosh(arg0)**2',),
-                ('pow', 2): ('arg1 * arg0**(arg1-1)', 'log(arg0) * arg0**arg1')
+                ('pow', 2): ('arg1 * arg0**(arg1-1)', 
+                             'log(arg0) * arg0**arg1')
+                             #'log((arg0 == 0)+(arg0 != 0)*arg0) * arg0**arg1')
                 }
 for key, terms in _KNOWN_FUNCS.items():
     _KNOWN_FUNCS[key] = [strip_parse(term) for term in terms]
