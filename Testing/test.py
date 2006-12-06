@@ -9,7 +9,7 @@ def run_all_tests():
     all_test_mods = []
     for file in testfiles:
         module = file[:-3]
-        mod = __import__(file[:-3])
+        mod = __import__(module)
         all_test_mods.append(mod)
         if hasattr(mod, 'suite'):
             all_tests.addTest(mod.suite)
