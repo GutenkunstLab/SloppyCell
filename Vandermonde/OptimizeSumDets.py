@@ -1,5 +1,4 @@
 import scipy
-import RandomArray
 import time
 try:
     import SloppyCell.Plotting as Plotting
@@ -115,10 +114,10 @@ def ProcessQuarterMatrix(p):
 
 def BestMatrix(origMatrix, p=None, weightsRDP=1., weights2D=0., weightsLS=0., weightPR=0., weightPriors=0., seed=None, *args, **kwargs):
     if seed is not None:
-        RandomArray.seed(seed)
+        scipy.random.seed(seed)
     n = origMatrix.shape[0]
     if p is None:
-        p = (RandomArray.random(n*(n-1)/2)-0.5)
+        p = (scipy.random.random(n*(n-1)/2)-0.5)
     pOpt = scipy.optimize.fmin(C, p, args=(origMatrix,weightsRDP, weights2D, weightsLS, weightPR, weightPriors), *args, **kwargs)
     return C(pOpt, origMatrix, weightsRDP, weights2D, weightsLS, weightPR, weightPriors), pOpt
 
@@ -132,13 +131,13 @@ def OptimizeManyTimes(origMatrix,p=None,numOpts=10,weightsRDP=1., weights2D=0., 
     return C, pOpt
 
 def getGammas(numExps,distWidth=1.):
-    epsilons = RandomArray.random(numExps)-0.5
+    epsilons = scipy.random.random(numExps)-0.5
     gammas = 1.+epsilons
     return gammas
 
 def getAmounts(numExps,distWidth=1.):
 #    amounts=scipy.ones(numExps,'d')
-    amounts = RandomArray.random(numExps)-0.5
+    amounts = scipy.random.random(numExps)-0.5
     amounts = 1.+amounts
     return amounts
 
@@ -404,7 +403,7 @@ def timeGammas(listNumGammas, numEvals=1000):
     for numGammas in listNumGammas:
         gammas = getGammas(numGammas)
         jac = getJacobianG(gammas=gammas,times=scipy.arange(500.))
-        p = RandomArray.random(numGammas*(numGammas-1)/2)-0.5
+        p = scipy.random.random(numGammas*(numGammas-1)/2)-0.5
         timePerEval = timeCostEval(jac,p,numEvals)
         timesToCalc.append(timePerEval)
     return timesToCalc
