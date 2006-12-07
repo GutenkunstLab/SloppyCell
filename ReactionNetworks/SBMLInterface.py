@@ -158,7 +158,7 @@ def fromSBMLFile(fileName, id = None):
     f.close()
     return net
 
-def fromSBMLString(sbmlStr, id = None):
+def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
     r = libsbml.SBMLReader()
     d = r.readSBMLFromString(sbmlStr)
     m = d.getModel()
@@ -207,13 +207,32 @@ def fromSBMLString(sbmlStr, id = None):
         kLFormula = kL.getFormula()
 
         substitution_dict = {}
+        # Deal with parameters defined within reactions
         for p in kL.getListOfParameters():
             parameter = createNetworkParameter(p)
+            # If a parameter with this name already exists, **and it has a
+            # different value than this parameter** we rename this parameter
+            # instance by prefixing it with the rxn name so there isn't a
+            # clash.
             if parameter.id in rn.variables.keys():
-                oldId = parameter.id
-                parameter.id = id + '_' + parameter.id
-                substitution_dict[oldId] = parameter.id
-            rn.addVariable(parameter)
+                logger.warn('Parameter %s appears in two different reactions '
+                            'in SBML file.' % parameter.id)
+                if parameter.value != rn.variables.get(parameter.id).value or\
+                   duplicate_rxn_params:
+                    oldId = parameter.id
+                    parameter.id = id + '_' + parameter.id
+                    substitution_dict[oldId] = parameter.id
+                    logger.warn('It has different values in the two positions '
+                                'so we are creating a new parameter %s.'
+                                % (parameter.id))
+                else:
+                    logger.warn('It has the same value in the two positions '
+                                'so we are only defining one parameter %s. '
+                                'This behavior can be changed with the option '
+                                'duplicate_rxn_params = True' % (parameter.id))
+
+            if parameter.id not in rn.variables.keys():
+                rn.addVariable(parameter)
         kLFormula = ExprManip.sub_for_vars(kLFormula, substitution_dict) 
     
         # Assemble the stoichiometry. SBML has the annoying trait that 
