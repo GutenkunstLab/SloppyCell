@@ -1,6 +1,7 @@
 import cPickle
 import logging
 import smtplib
+import sets
 from email.MIMEText import MIMEText
 
 import scipy
@@ -114,3 +115,32 @@ class SloppyCellException(Exception):
 import Redirector_mod
 Redirector = Redirector_mod.Redirector
 
+def combine_hessians(hesses, key_sets):
+    """
+    Combine a number of hessians (with possibly different dimensions and 
+    orderings) into a single hessian.
+
+    hesses    A sequence of hessians to combine
+    key_sets  A sequence of sequences containing the parameter keys (in order)
+              for each hessian.
+    """
+
+    # Get a list of all the possible parameter keys
+    tot_keys = copy.copy(key_sets[0])
+    keys_seen = sets.Set(tot_keys)
+    for ks in key_sets[1:]:
+        new_keys = [key for key in ks if key not in keys_seen]
+        tot_keys.extend(new_keys)
+        keys_seen.union_update(sets.Set(new_keys))
+
+    # Add all the appropriate hessian elements together
+    key_to_index = dict(zip(tot_keys, range(len(tot_keys))))
+    tot_hess = scipy.zeros((len(tot_keys), len(tot_keys)), scipy.float_)
+    for hess, keys in zip(hesses, key_sets):
+        for ii, id1 in enumerate(keys):
+            tot_ii = key_to_index[id1]
+            for jj, id2 in enumerate(keys):
+                tot_jj = key_to_index[id2]
+                tot_hess[tot_ii, tot_jj] += hess[ii, jj]
+
+    return tot_hess, tot_keys
