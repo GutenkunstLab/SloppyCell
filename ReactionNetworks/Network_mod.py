@@ -865,7 +865,7 @@ class Network:
     def _make_res_function(self):
 
         self.residual = scipy.zeros(len(self.dynamicVars), scipy.float_)
-        functionBody = 'def res_function(time, y, yprime, ires):\n\t'
+        functionBody = 'def res_function(self, time, dynamicVars, yprime, ires):\n\t'
         functionBody += 'residual = self.residual\n\t'
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
         functionBody += '\n\t'
@@ -1091,8 +1091,9 @@ equation \n\t'
         return functionBody
 
     # ddaskr_root(...) is the function for events for the daskr integrator.
-    def ddaskr_root(t, y, yprime):
-      return root_func(t, y) 
+    def ddaskr_root(self, t, y, yprime):
+        # note that the order of inputs is reversed in root_func
+        return self.root_func(y, t) 
 
     def _make_root_func_dt(self):
         self._root_func_dt = scipy.zeros(len(self.events), scipy.float_)
