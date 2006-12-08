@@ -280,7 +280,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
 
 def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
               return_events=False, return_derivs=False,
-              redirect_msgs=True):
+              redirect_msgs=0):
     """
     Integrate a Network, returning a Trajectory.
 
@@ -464,10 +464,10 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
             global failed_args
             global failed_kwargs
             temp = X.args[1]
-            failed_args = (func, IC, curTimes)
+            failed_args = (res_func, IC, curTimes)
             failed_kwargs = {'root_func': root_func,
                              'root_term': [True]*len(net.events),
-                             'Dfun': Dfun,
+                             #'Dfun': Dfun,
                              'mxstep': 10000, 
                              'rtol': rtol, 
                              'atol': atol,
