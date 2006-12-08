@@ -91,7 +91,7 @@ class daeintException(Utility.SloppyCellException):
     pass
 
 
-def daeint(res, t, y0, yp0, rtol, atol, rt = None, nrt=0, jac = None, args=(),
+def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
             tstop=None, intermediate_output=0, ineq_constr=0, init_consistent=0,
             var_types=None, redir_output=0, max_steps=500):
 
@@ -198,12 +198,24 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, nrt=0, jac = None, args=(),
       to the times in tout.
       t_root -- the time of a terminating event.
       y_root -- the system state at time t_root.
-      i_root -- tells which event fired.
+      i_root -- tells which event(s) fired and how they fired.
+                If i_root(i) = 0, then event i did not fire. If nonzero,
+                i_root(i) shows the direction of the sign change in Ri.
+                i_root(i) = 1  means Ri changed from negative to positive.
+                i_root(i) = -1 means Ri changed from positive to negative.
+      
     """
 
     y = y0
     yp = yp0
     ires = 0
+    nrt = 0
+
+    # automatic determination of nrt by calling rt (if it is passed)
+    if rt == None:
+        nrt = 0
+    else:
+        nrt = len(rt(t[0], y, yp))
 
     # We calculate the number of equations in the residual function from the
     # length of the dependent variable array.
@@ -394,7 +406,7 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, nrt=0, jac = None, args=(),
 
         if redir_output == 0:
             redir.start()
-            
+
         treached, y, yp, rtol, atol, idid, jroot = \
                   _daskr.ddaskr(res, tcurrent, y, yp, twanted,
                                 info, rtol, atol,
