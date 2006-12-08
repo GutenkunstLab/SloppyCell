@@ -13,7 +13,8 @@ def dummy_func():
     pass
 
 # These messages correspond to the values of IDID on lines 992-1069 of ddaskr.f
-_msgs = {1: "Integration successful. Call the code again to continue the \
+_msgs = {0: "Unexepected status code. (IDID=0)",
+         1: "Integration successful. Call the code again to continue the \
 integration another step in the direction of TOUT. (IDID=1)",
          2: "Integration successful. Define a new TOUT and call the code \
 again.  TOUT must be different from T.  You cannot change the \
@@ -407,27 +408,26 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
         if redir_output == 0:
             redir.start()
 
-        treached, y, yp, rtol, atol, idid, jroot = \
-                  _daskr.ddaskr(res, tcurrent, y, yp, twanted,
-                                info, rtol, atol,
-                                rwork, iwork,
-                                jac, psol, rt, nrt,
-                                res_extra_args = args, jac_extra_args = args,
-                                rt_extra_args = args)
-
-        if redir_output == 0:
+        try:
+            treached, y, yp, rtol, atol, idid, jroot = \
+                    _daskr.ddaskr(res, tcurrent, y, yp, twanted,
+                                  info, rtol, atol,
+                                  rwork, iwork,
+                                  jac, psol, rt, nrt,
+                                  res_extra_args = args, jac_extra_args = args,
+                                  rt_extra_args = args)
+        finally:
             messages = redir.stop()
 
-
-
         # check for a negative value of idid so we know if there was a problem
-        if idid < 0:
+        if idid <= 0:
             # set appropriate options
             info[0]=1
             # idid=-1 is handled below
             if idid < -1:
                 # The task was interrupted
-                logger.warn(messages)
+                if messages is not None:
+                    logger.warn(messages)
                 logger.warn(_msgs[idid])
             # if idid=-1, 500 steps have been taken sine the last time idid=-1.
             # Whether we should continue depends on the value of max_steps.
