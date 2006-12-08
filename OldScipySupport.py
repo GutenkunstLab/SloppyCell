@@ -46,3 +46,16 @@ if int(scipy.__version__.split('.')[1]) < 4:
 
     # Method renamed
     scipy.outer = scipy.outerproduct
+
+    scipy.old_sum = scipy.sum
+    def new_sum(x, axis=None, dtype=None, out=None):
+        if (dtype is not None) or (out is not None):
+            raise ValueError, "This use of sum is incompatible with old scipy."
+        if (axis is not None):
+            return scipy.old_sum(x, axis)
+
+        output = x
+        for ax in range(len(x.shape)):
+            output = scipy.old_sum(output)
+        return output
+    scipy.sum = new_sum
