@@ -874,22 +874,31 @@ class Network:
         # into the resFunction as differential variables and how many are entered as
         # algebraic variables
         
-        numZeroRhs = 0
+        numAlgebraicRhs = 0
         numNonZeroRhs = 0
 
         for ii, (id, var) in enumerate(self.dynamicVars.items()):
             rhs = self.diff_eq_rhs.getByKey(id)
-            # we only include the differential equation if the rhs is not zero
+            # we need to know which rhs's equal zero, because those reprsent
+            # the algebraic rules and the zero derivatives.
             if rhs == '0':
-                numZeroRhs += 1
+                # it could be a differential variable with a 0 rhs
+                # in this case we still need to subtract the corresponding yprime from
+                # the residual equation
+                if self.algebraicVars.get(id) == None:
+                    functionBody += '# Residual function for %s\n\t' % (id)
+                    functionBody += 'residual[%i] = - yprime[%i]' % (ii-numAlgebraicRhs, ii-numAlgebraicRhs)
+                    functionBody += '\n\t'
+                else:
+                    numAlgebraicRhs += 1
                 continue
             elif rhs != '0':
                 numNonZeroRhs += 1
                 functionBody += '# Residual function for %s\n\t' % (id)
-                functionBody += 'residual[%i] = %s' % (ii-numZeroRhs, rhs)
+                functionBody += 'residual[%i] = %s' % (ii-numAlgebraicRhs, rhs)
                 # We only subtract the derivative variable for the differential variables
                 if self.algebraicVars.get(id) == None:
-                    functionBody += '- yprime[%i]' % (ii-numZeroRhs)
+                    functionBody += '- yprime[%i]' % (ii-numAlgebraicRhs)
                 functionBody += '\n\t'
 
         for jj, (rhs,rhs) in enumerate(self.algebraicRules.items()):
