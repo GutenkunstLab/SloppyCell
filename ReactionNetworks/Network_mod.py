@@ -57,7 +57,7 @@ class Network:
     _dynamic_structure_funcs = ['get_ddv_dt', 'get_d2dv_ddvdt', 
                                 'get_d2dv_dovdt', 'res_function']
     _dynamic_event_funcs = ['get_eventValues', 'get_eventDerivs', 
-                            'root_func', 'root_func_dt']
+                            'root_func', 'root_func_dt', 'root_func2']
     _dynamic_funcs = _dynamic_structure_funcs + _dynamic_event_funcs
 
     
@@ -82,29 +82,29 @@ class Network:
                          }
     # These are functions we need to create but that should be used commonly
     _standard_func_defs = [('gt', ['x', 'y'],  'x - y'),
-                         ('geq', ['x', 'y'],  'x - y'),
-                         ('lt', ['x', 'y'],  'y - x'),
-                         ('leq', ['x', 'y'],  'y - x'),
-                         ('pow', ['x', 'n'],  'x**n'),
-                         ('root', ['n', 'x'],  'x**(1/n)'),
-                         ('sqrt', ['x'],  'x**(.5)'),
-                         ('cot', ['x'],  '1/tan(x)'),
-                         ('arccot', ['x'],  'atan(1/x)'),
-                         ('coth', ['x'],  '1/tanh(x)'),
-                         ('arccoth', ['x'],  'arctanh(1/x)'),
-                         ('csc', ['x'],  '1/sin(x)'),
-                         ('arccsc', ['x'],  'asin(1/x)'),
-                         ('csch', ['x'],  '1/sinh(x)'),
-                         ('arccsch', ['x'],  'arcsinh(1/x)'),
-                         ('sec', ['x'],  '1/cos(x)'),
-                         ('arcsec', ['x'],  'acos(1/x)'),
-                         ('sech', ['x'],  '1/cosh(x)'),
-                         ('arcsech', ['x'],  'arccosh(1/x)'),
-                         # This atrocious two-argument form of log is
-                         #  used in the SBML test suite. Supporting it
-                         #  might be a pain.
-                         #('log', ['b','x'], 'log(x)/log(b)')
-                         ]
+                           ('geq', ['x', 'y'],  'x - y'),
+                           ('lt', ['x', 'y'],  'y - x'),
+                           ('leq', ['x', 'y'],  'y - x'),
+                           ('pow', ['x', 'n'],  'x**n'),
+                           ('root', ['n', 'x'],  'x**(1/n)'),
+                           ('sqrt', ['x'],  'x**(.5)'),
+                           ('cot', ['x'],  '1/tan(x)'),
+                           ('arccot', ['x'],  'atan(1/x)'),
+                           ('coth', ['x'],  '1/tanh(x)'),
+                           ('arccoth', ['x'],  'arctanh(1/x)'),
+                           ('csc', ['x'],  '1/sin(x)'),
+                           ('arccsc', ['x'],  'asin(1/x)'),
+                           ('csch', ['x'],  '1/sinh(x)'),
+                           ('arccsch', ['x'],  'arcsinh(1/x)'),
+                           ('sec', ['x'],  '1/cos(x)'),
+                           ('arcsec', ['x'],  'acos(1/x)'),
+                           ('sech', ['x'],  '1/cosh(x)'),
+                           ('arcsech', ['x'],  'arccosh(1/x)'),
+                           # This atrocious two-argument form of log is
+                           #  used in the SBML test suite. Supporting it
+                           #  might be a pain.
+                           #('log', ['b','x'], 'log(x)/log(b)')
+                           ]
     # Add our common function definitions to a func_strs list.
     _common_func_strs = []
     for id, vars, math in _standard_func_defs:
@@ -338,7 +338,8 @@ class Network:
         function definitions, assignment rules, and rate rules.
         """
         complists = [self.variables, self.reactions, self.functionDefinitions,
-                     self.events, self.assignmentRules, self.rateRules]
+                     self.events, self.assignmentRules, self.rateRules,
+                     self.algebraicRules]
         for complist in complists:
             # If the id is in a list and has a non-empty name
             if complist.has_key(id):
@@ -1086,6 +1087,30 @@ equation \n\t'
 
         return functionBody
 
+    def _make_root_func2(self):
+        self._root_func2 = scipy.zeros(len(self.events), scipy.float_)
+
+        functionBody = 'def root_func2(self, dynamicVars, time):\n\t'
+        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
+
+        _event_func_defs = [('gt', ['x', 'y'],  'x > y'),
+                            ('geq', ['x', 'y'],  'x >= y'),
+                            ('lt', ['x', 'y'],  'x < y'),
+                            ('leq', ['x', 'y'],  'x <= y'),
+                            ('and_func', ['x', 'y'], 'x and y')]
+
+        for ii, event in enumerate(self.events.values()):
+            trigger = event.trigger
+            for func_name, func_vars, func_expr in _event_func_defs:
+                trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
+                                                 func_expr)
+
+            functionBody += 'self._root_func2[%i] = (%s) - 0.5\n\t' % (ii, trigger)
+
+        functionBody += '\n\treturn self._root_func2\n'
+
+        return functionBody
+
     def _make_root_func(self):
         self._root_func = scipy.zeros(len(self.events), scipy.float_)
 
@@ -1101,8 +1126,8 @@ equation \n\t'
 
     # ddaskr_root(...) is the function for events for the daskr integrator.
     def ddaskr_root(self, t, y, yprime):
-        # note that the order of inputs is reversed in root_func
-        return self.root_func(y, t) 
+        # note that the order of inputs is reversed in root_func2
+        return self.root_func2(y, t) 
 
     def _make_root_func_dt(self):
         self._root_func_dt = scipy.zeros(len(self.events), scipy.float_)
@@ -1241,7 +1266,12 @@ equation \n\t'
         # Note that this runs at least once, since _last_structure doesn't
         #  exist beforehand. Also note that __setstate__ will exec all our
         #  dynamic functions upon copying.
-        if self.functionDefinitions != getattr(self, '_last_funcDefs', None):
+        curr_structure = self._get_structure()
+        last_structure = getattr(self, '_last_structure', None)
+        structure_changed = (curr_structure != last_structure)
+
+        if self.functionDefinitions != getattr(self, '_last_funcDefs', None)\
+           or structure_changed:
             logger.debug('Network %s: compiling function defs.' % self.id)
             # Eval our function definitions. Note that these need to be done
             #  in order, and at each point we need to refer back to 
@@ -1252,7 +1282,6 @@ equation \n\t'
                 self.namespace[func_id] = eval(func_str, self.namespace, {})
             self._last_funcDefs = copy.deepcopy(self.functionDefinitions)
 
-        curr_structure = self._get_structure()
         if curr_structure != getattr(self, '_last_structure', None):
             logger.debug('Network %s: compiling structure.' % self.id)
             self._makeCrossReferences()
@@ -1262,7 +1291,8 @@ equation \n\t'
                 _exec_dynamic_func(self, func, self.namespace)
             self._last_structure = copy.deepcopy(curr_structure)
 
-        if self.events != getattr(self, '_last_events', None):
+        if self.events != getattr(self, '_last_events', None)\
+           or structure_changed:
             logger.debug('Network %s: compiling events.' % self.id)
             for func in self._dynamic_event_funcs:
                 exec 'self.%s_functionBody = self._make_%s()' % (func, func)
@@ -1280,7 +1310,8 @@ equation \n\t'
         """
         var_struct = {}
         structure = (self.functionDefinitions, self.reactions, 
-                     self.assignmentRules, self.rateRules, var_struct)
+                     self.assignmentRules, self.rateRules, var_struct,
+                     self.algebraicRules)
         for id, var in self.variables.items():
             # If a constant variable is set equal to a function of other
             #  variables, we should include that function, otherwise

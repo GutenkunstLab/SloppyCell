@@ -41,6 +41,109 @@ class IntegrationException(Utility.SloppyCellException):
 class FixedPointException(Utility.SloppyCellException):
     pass
 
+def integrate_tidbit(net, int_func, Dfun, root_func, IC, curTimes, 
+                     rtol, atol, fill_traj, return_derivs,
+                     redirect_msgs):
+    if root_func is not None:
+        root_term = [True] * len(net.events)
+    else:
+        root_term = []
+
+    N_dyn_var = len(net.dynamicVars)
+    if net.integrateWithLogs:
+        IC = scipy.log(IC)
+
+        old_func = int_func
+        def int_func(input, time):
+            # Convert from logs of dyamic vars. We're integrating in logs
+            #  partially to avoid zeros, so we put a lowerbound on our
+            #  output dynamicVars
+            dv = scipy.maximum(scipy.exp(input[:N_dyn_var]), 
+                               scipy.misc.limits.double_tiny)
+            input = copy.copy(input)
+            input[:N_dyn_var] = dv
+            output = old_func(input, time)
+            output[:N_dyn_var] /= dv
+            return output
+
+        Dfun = None
+
+        old_root_func = root_func
+        def root_func(logDV, time):
+            dv = scipy.exp(input)
+            return old_root_func(dv, time)
+
+        atol = rtol
+        rtol = 0
+    else:
+        # rtol must be a scalar for lsodar
+        rtol = min(rtol)
+
+
+    int_args = {'y0': IC,
+                't': curTimes,
+
+                'func': int_func,
+                'Dfun': Dfun,
+                'root_func': root_func,
+                'root_term': root_term,
+
+                'rtol': rtol,
+                'atol': atol,
+
+                'int_pts': fill_traj,
+                'return_derivs': return_derivs,
+                'redirect_msgs': redirect_msgs,
+
+                'mxstep': 10000,
+                'insert_events': True,
+                'full_output': True,
+                }
+
+    exception_raised = False
+    try:
+        int_returns = odeintr(**int_args)
+    except Utility.SloppyCellException, X:
+        # When an exception happens, we'll try to return all the
+        # trajectory we can, thus we don't reraise yet.
+        exception_raised = X
+        # We store the arguments to odeintr that failed as
+        #  Dynamics.failed_kwargs for debugging purproses.
+        global failed_kwargs
+        failed_kwargs = int_args
+        # Recover what we have of int_returns from the exception,
+        #  so we can process it.
+        int_returns = X.args[1]
+
+    # Pull things out of what odeint returned
+    y_this, t_this = int_returns[0], int_returns[1]
+    t_root_this, y_root_this, i_root_this = int_returns[2:5]
+    info_dict = int_returns[-1]
+    if return_derivs:
+        ydt_this = int_returns[5]
+    else:
+        ydt_this = []
+
+    # Deal with integrateWithLogs
+    if net.integrateWithLogs:
+        y_this = scipy.exp(y_this)
+        y_root_this = scipy.exp(y_root_this)
+        if return_derivs:
+            ydt_this = y_this * ydt_this
+
+    return exception_raised, y_this, t_this, ydt_this,\
+            t_root_this, y_root_this, i_root_this
+
+def generate_tolerances(net, rtol):
+    if scipy.isscalar(rtol):
+        rtol = [rtol] * len(net.dynamicVars)
+    rtol = scipy.minimum(rtol, global_rtol)
+
+    # We set atol to be a minimum of 1e-6 to avoid variables with large typical
+    #  values going negative.
+    typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
+    atol = scipy.minimum(rtol * scipy.asarray(typ_vals), 1e-6)
+    return rtol, atol
 
 def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
               return_events=False, return_derivs=False,
@@ -64,168 +167,129 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
     return_derivs  If True, the returned trajectory records the time derivatives
                    of all quantities.
     """
-    times = scipy.array(times)
-    rtol = min(rtol, global_rtol)
-    net.compile()
-
     if params is not None:
         net.update_optimizable_vars(params)
-
     # If you ask for time = 0, we'll assume you want dynamic variable values
     #  reset.
     if times[0] == 0:
         net.resetDynamicVariables()
+    net.compile()
 
-    if getattr(net, 'integrateWithLogs', False):
-        def func(logDV, time):
-            dv = scipy.exp(logDV)
-            ddv_dt = net.get_ddv_dt(dv, time)
-            return ddv_dt / dv
-        Dfun = None
-        atol = rtol
-        rtol = 0
-        def root_func(logDV, time):
-            dv = scipy.exp(logDV)
-            ret = net.root_func(dv, time)
-            return ret
-    else:
-        func = net.get_ddv_dt
-        Dfun = lambda y, t: scipy.transpose(net.get_d2dv_ddvdt(y, t))
-        root_func = net.root_func
-        ### This is messy but if we have a variable whose typical value is 1.0e6 say
-        ### drops to almost zero during an integration, then we have to avoid
-        ### integration errors making it significantly negative
-        if rtol is not None:
-            atol = [min(rtol*net.get_var_typical_val(id),1e-6) for id
-                    in net.dynamicVars.keys()]
+    # This is a historical artifact from when we were using odeint. We need
+    #  to transpose our Dfun
+    Dfun = lambda y, t: scipy.transpose(net.get_d2dv_ddvdt(y, t))
 
+    rtol, atol = generate_tolerances(net, rtol)
+
+    init_time = times[0]
     IC = net.getDynamicVarValues()
-    start = times[0]
-    yout, tout = scipy.zeros((0, len(IC)), scipy.float_), []
+
+    yout = scipy.zeros((0, len(IC)), scipy.float_)
+    tout = scipy.zeros(0, scipy.float_)
+
     # time derviative of trajectory
     youtdt = scipy.zeros((0,len(IC)),scipy.float_)
+
     # te, ye, and ie are the times, dynamic variable values, and indices
     #  of fired events
     te, ye, ie = [], [], []
     pendingEvents = {}
+
     # After firing an event, we integrate for root_grace_t without looking for
     #  events to prevent finding the same one over and over again due to
     #  numerical imprecision
     root_grace_t = (times[-1] - times[0])/1e6
     event_just_fired = False
 
-    exception_raised = None
-
-    while start < times[-1]:
-        if round(start, 12) in pendingEvents.keys():
-            IC = net.executeEvent(pendingEvents[round(start, 12)], IC, start)
-            del pendingEvents[round(start, 12)]
+    while init_time < times[-1]:
+        if round(init_time, 12) in pendingEvents.keys():
+            IC = net.executeEvent(pendingEvents[round(init_time, 12)], IC, 
+                                  init_time)
+            del pendingEvents[round(init_time, 12)]
+        if pendingEvents:
+            nextEventTime = min(pendingEvents.keys())
+        else:
+            nextEventTime = scipy.inf
 
         # If an event just fired, we integrate for root_grace_t without looking
         #  for events, to prevent detecting the same event several times.
         if event_just_fired:
-            if getattr(net, 'integrateWithLogs', False):
-                IC = scipy.log(IC)
-            next_requested = scipy.compress(times > start, times)[0]
-            integrate_to = min(start + root_grace_t, next_requested)
-            try:
-                temp = odeintr(func, copy.copy(IC), [start, integrate_to],
-                           Dfun = Dfun,
-                           mxstep = 10000, rtol = rtol, atol = atol,
-                           int_pts = fill_traj,
-                           full_output = True, return_derivs = return_derivs,
-                               redirect_msgs=redirect_msgs)
-            except Utility.SloppyCellException, X:
-                ### need to return as much of the trajectory as we have so far
-                # since integration failed, return all the traj we got
-                exception_raised = X
-                print 'Exception in grace integration'
-                break
-            if temp[5] < 0:
-                break
+            # We integrate to the next requested timepoint, or for the
+            # root_grace_time
+            next_requested = scipy.compress(scipy.asarray(times) > init_time, 
+                                            times)[0]
+            integrate_to = min(init_time + root_grace_t, next_requested,
+                               nextEventTime)
+            curTimes = [init_time, integrate_to]
 
-            # We don't append the last point, to prevent a needless 'event
-            #  looking' duplication of times in the trajectory.
-            # temp[5] is the derivative of the trajectory w.r.t. time
-            if getattr(net, 'integrateWithLogs', False):
-                yout = scipy.concatenate( (yout, scipy.exp(temp[0][:-1])) )
-                if return_derivs :
-                    youtdt = scipy.concatenate( (youtdt,scipy.exp(temp[0][:-1])*temp[5][:-1]) )
-                start, IC = temp[1][-1], copy.copy(scipy.exp(temp[0][-1]))
-            else:
-                yout = scipy.concatenate((yout, temp[0][:-1]))
-                if return_derivs :
-                    youtdt = scipy.concatenate( (youtdt,temp[5][:-1]) )
-                start, IC = temp[1][-1], copy.copy(temp[0][-1])
-            tout.extend(temp[1][:-1])
+            outputs = integrate_tidbit(net, net.get_ddv_dt, Dfun, 
+                                       root_func=None,
+                                       IC=IC, curTimes=curTimes, 
+                                       rtol=rtol, atol=atol,
+                                       fill_traj=fill_traj, 
+                                       return_derivs=return_derivs,
+                                       redirect_msgs=redirect_msgs)
+
+            exception_raised, yout_this, tout_this, youtdt_this = outputs[:4]
+
+            # Where we start the next integration
+            init_time, IC = tout_this[-1], copy.copy(yout_this[-1])
+
+            # We strip out the last point in the additional trajectories, to
+            # avoid a suprious duplicated timepoint
+            tout = scipy.concatenate((tout, tout_this[:-1]))
+            yout = scipy.concatenate((yout, yout_this[:-1]))
+            if return_derivs:
+                youtdt = scipy.concatenate((ydt, youtdt_this[:-1]))
+
             event_just_fired = False
             logger.debug('Finished event grace time integration.')
 
+            if exception_raised:
+                break
+
+        # Update our trigger_status, which tells us whether the event
+        #  triggers are true or false at the beginning of this step.
+        trigger_status = copy.copy(net.root_func2(IC, init_time))
+
         # If we have pending events, only integrate until the next one.
-        if pendingEvents:
-            nextEventTime = min(pendingEvents.keys())
-            curTimes = scipy.compress((times > start) & (times < nextEventTime),
-                                      times)
-            curTimes = scipy.concatenate(([start], curTimes, [nextEventTime]))
+        curTimes = scipy.compress((scipy.asarray(times) > init_time)
+                                  & (scipy.asarray(times) < nextEventTime),
+                                  times)
+        if nextEventTime < times[-1]:
+            curTimes = scipy.concatenate(([init_time], curTimes, 
+                                          [nextEventTime]))
         else:
-            curTimes = scipy.compress(times > start, times)
-            curTimes = scipy.concatenate(([start], curTimes))
+            curTimes = scipy.concatenate(([init_time], curTimes))
 
-        if getattr(net, 'integrateWithLogs', False):
-            IC = scipy.log(IC)
-        try:
-            temp = odeintr(func, copy.copy(IC), curTimes,
-                       root_func = root_func,
-                       root_term = [True]*len(net.events),
-                       Dfun = Dfun,
-                       mxstep = 10000, rtol = rtol, atol = atol,
-                       int_pts = fill_traj,
-                       insert_events = True,
-                       full_output = True, return_derivs = return_derivs,
-                           redirect_msgs=redirect_msgs)
-        except Utility.SloppyCellException, X:
-            ### need to return as much of the trajectory as we have so far
-            # since integration failed, return all the traj we got
-            exception_raised = X
-            global failed_args
-            global failed_kwargs
-            temp = X.args[1]
-            failed_args = (func, IC, curTimes)
-            failed_kwargs = {'root_func': root_func,
-                             'root_term': [True]*len(net.events),
-                             'Dfun': Dfun,
-                             'mxstep': 10000, 
-                             'rtol': rtol, 
-                             'atol': atol,
-                             'int_pts': fill_traj,
-                             'insert_events': True,
-                             'full_output': True, 
-                             'return_derivs': return_derivs}
+        outputs = integrate_tidbit(net, net.get_ddv_dt, Dfun, 
+                                   root_func=net.root_func2,
+                                   IC=IC, curTimes=curTimes, 
+                                   rtol=rtol, atol=atol,
+                                   fill_traj=fill_traj, 
+                                   return_derivs=return_derivs,
+                                   redirect_msgs=redirect_msgs)
 
-        if getattr(net, 'integrateWithLogs', False):
-            yout = scipy.concatenate((yout, scipy.exp(temp[0])))
-            if return_derivs :
-                youtdt = scipy.concatenate( (youtdt, scipy.exp(temp[0])*temp[5] ) )
-        else:
-            yout = scipy.concatenate((yout, temp[0]))
-            if return_derivs :
-                youtdt = scipy.concatenate( (youtdt, temp[5] ) )
+        exception_raised, yout_this, tout_this, youtdt_this,\
+              t_root_this, y_root_this, i_root_this = outputs
 
-        tout.extend(temp[1])
-        start, IC = tout[-1], copy.copy(yout[-1])
+        # Where we start the next integration
+        init_time, IC = tout_this[-1], copy.copy(yout_this[-1])
+
+        tout = scipy.concatenate((tout, tout_this))
+        yout = scipy.concatenate((yout, yout_this))
+        if return_derivs:
+            youtdt = scipy.concatenate((youtdt, youtdt_this))
 
         if exception_raised:
             break
 
         # Check the directions of our root crossings to see whether events
         #  actually fired.
-        for te_this, ye_this, ie_this in zip(temp[2], temp[3], temp[4]):
-            if getattr(net, 'integrateWithLogs', False): 
-                ye_this = scipy.exp(ye_this)
-            root_derivs = net.root_func_dt(ye_this,
-                                           net.get_ddv_dt(ye_this, te_this),
-                                           te_this)
-            if root_derivs[ie_this] > 0:
+        for te_this, ye_this, ie_this in zip(t_root_this, y_root_this, 
+                                             i_root_this):
+            # Trigger was false before integration.
+            if trigger_status[ie_this] < 0:
                 te.append(te_this)
                 ye.append(ye_this)
                 ie.append(ie_this)
@@ -235,48 +299,50 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
         if event_just_fired:
             event = net.events[ie[-1]]
             logger.debug('Event %s fired at time=%g in network %s.'
-                         % (event.id, te[-1], net.id))
+                         % (event.id, te[-1], net.get_id()))
             delay = net.fireEvent(event, yout[-1], te[-1])
             pendingEvents[round(te[-1] + delay, 12)] = event
+
+    # End of while loop for integration.
 
     if len(yout) and len(tout):
         net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
 
-    if not fill_traj and not exception_raised:
-        yout = _reduce_times(yout, tout, times)
-        if return_derivs :
-            youtdt = _reduce_times(youtdt, tout, times)
-        tout = times
-    elif reduce_space :
-        filtered_times = [tout[i] for i in range(0,len(tout),reduce_space)]
-        filtered_times = scipy.sort( list( sets.Set(scipy.concatenate( (filtered_times,times) ) ) ) )
+    if reduce_space:
+        # reduce_space is a compromise between fill_traj = True and fill_traj =
+        # False. Here we use the fill_traj pts, but filter them out
+        # periodically. We have to add back in the requested times (using a Set
+        # to keep them unique).
+        additional_times = [tout[i] for i in range(0,len(tout),reduce_space)]
+        additional_times = sets.Set(additional_times)
         # make sure we don't miss data times
-        yout = _reduce_times(yout, tout, filtered_times)
-        if return_derivs :
-            youtdt = _reduce_times(youtdt, tout, filtered_times)
-        tout = filtered_times
+        additional_times.union_update(times)
+        times = scipy.sort(list(additional_times))
 
-    if hasattr(net, 'kludge'):
-        return tout, yout
+    if not exception_raised:
+        if (not fill_traj) or (reduce_space):
+            # If we succeeded, and were told not to return any times not called
+            #  for, the use _reduce_times to filter out uneeded points.
+            yout = _reduce_times(yout, tout, times)
+            if return_derivs :
+                youtdt = _reduce_times(youtdt, tout, times)
+            tout = times
 
-    trajectory = Trajectory_mod.Trajectory(net,holds_dt=return_derivs)
-    if return_derivs :
-        yout = scipy.concatenate((yout,youtdt),axis=1) # join columnwise
+    trajectory = Trajectory_mod.Trajectory(net, holds_dt=return_derivs)
+    if return_derivs:
+        yout = scipy.concatenate((yout,youtdt), axis=1) # join columnwise
 
     trajectory.appendFromODEINT(tout, yout, holds_dt=return_derivs)
     trajectory.add_event_info((te,ye,ie))
     net.trajectory = trajectory
 
-    # raise exception if exited integration loop prematurely
+    # Raise exception if exited integration loop prematurely
     if exception_raised:
         logger.warn('Integration ended prematurely in network %s on node %i.'
                     % (net.id, my_rank))
         raise exception_raised
 
     return trajectory
-
-
-
 
 def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
               return_events=False, return_derivs=False,
@@ -303,49 +369,19 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
     redirect_msgs  If False, the errors and other output generated by the
                    integrator will be returned to the display.
     """
+    times = scipy.asarray(times)
 
     # define a residual function that will work with the f2py interface
     def res_func(time, y, yprime, ires):
         return net.res_function(time, y, yprime, ires) 
 
-    times = scipy.array(times)
-    net.compile()
-
-    if params is not None:
-        net.update_optimizable_vars(params)
-
     # If you ask for time = 0, we'll assume you want dynamic variable values
     #  reset.
     if times[0] == 0:
         net.resetDynamicVariables()
-
-
-    # removed 'integrateWithLogs' functionality for now
-    """
-
-    if getattr(net, 'integrateWithLogs', False):
-        def func(logDV, time):
-            dv = scipy.exp(logDV)
-            ddv_dt = net.get_ddv_dt(dv, time)
-            return ddv_dt / dv
-        Dfun = None
-        atol = rtol
-        rtol = 0
-        def root_func(logDV, time):
-            dv = scipy.exp(logDV)
-            ret = net.root_func(dv, time)
-            return ret
-    else:
-        func = net.get_ddv_dt
-        Dfun = lambda y, t: scipy.transpose(net.get_d2dv_ddvdt(y, t))
-        root_func = net.root_func
-        ### This is messy but if we have a variable whose typical value is 1.0e6 say
-        ### drops to almost zero during an integration, then we have to avoid
-        ### integration errors making it significantly negative
-        if rtol is not None:
-            atol = [min(rtol*net.get_var_typical_val(id),1e-6) for id
-                    in net.dynamicVars.keys()]
-    """
+    if params is not None:
+        net.update_optimizable_vars(params)
+    net.compile()
 
     # get this initial state, time, and derivative.
     IC = net.getDynamicVarValues()
@@ -433,7 +469,6 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
             tout.extend(temp[1][:-1])
             event_just_fired = False
             logger.debug('Finished event grace time integration.')
-
 
         # If we have pending events, only integrate until the next one.
         if pendingEvents:
@@ -563,7 +598,7 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
 
 def integrate_sens_subset(net, times, rtol=1e-6, 
                           fill_traj=False, opt_vars=None, 
-                          return_derivs=False):
+                          return_derivs=False, redirect_msgs=True):
     nDyn, nOpt = len(net.dynamicVars), len(opt_vars)
 
     atolDv = [min(rtol*net.get_var_typical_val(id), 1e-6) for id
@@ -621,7 +656,8 @@ def integrate_sens_subset(net, times, rtol=1e-6,
                            mxstep = 10000, rtol = rtol, atol = atolDv,
                            int_pts = fill_traj,
                            insert_events = True,
-                           full_output = True, return_derivs = return_derivs)
+                           full_output = True, return_derivs = return_derivs,
+                           redirect_msgs = redirect_msgs)
         except Utility.SloppyCellException, X:
             logger.warn('Sensitivity integration failed for network %s on '
                         'node %i.' % (net.id, my_rank))
@@ -642,7 +678,10 @@ def integrate_sens_subset(net, times, rtol=1e-6,
 
         for ovIndex, ovId in enumerate(opt_vars):
             ICTrunc = scipy.zeros(2 * nDyn, scipy.float_)
-            ICTrunc[:nDyn] = copy.copy(IC[:nDyn])
+            if not getattr(net, 'integrateWithLogs', False):
+                ICTrunc[:nDyn] = copy.copy(IC[:nDyn])
+            else:
+                ICTrunc[:nDyn] = copy.copy(scipy.log(IC[:nDyn]))
             ICTrunc[nDyn:] = copy.copy(IC[(ovIndex + 1) * nDyn:
                                         (ovIndex + 2) * nDyn])
 
@@ -664,7 +703,8 @@ def integrate_sens_subset(net, times, rtol=1e-6,
                                         net.optimizableVars.indexByKey(ovId)),
                                 mxstep = 10000,
                                 rtol = rtolForThis, atol = atolForThis, 
-                                return_derivs = return_derivs)
+                                return_derivs = return_derivs,
+                                redirect_msgs = redirect_msgs)
             except Utility.SloppyCellException, X:
                 logger.warn('Sensitivity integration failed for network %s on '
                             'node %i during optimizable variable %s.'
@@ -723,7 +763,8 @@ def _parse_sens_result(result, net, opt_vars, yout, youtdt=None):
 
 
 def integrate_sensitivity(net, times, params=None, rtol=1e-6, 
-                          fill_traj=False, return_derivs=False):
+                          fill_traj=False, return_derivs=False,
+                          redirect_msgs=True):
     logger.debug('Entering integrate_sens on node %i' % my_rank)
     if not scipy.isscalar(rtol):
         rtol = 1e-6
@@ -745,15 +786,17 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-6,
         logger.debug('Sending to worker %i: %s' % (worker, 
                                                    str(vars_assigned[worker])))
         command = 'Dynamics.integrate_sens_subset(net, times,'\
-                'rtol, fill_traj, opt_vars, return_derivs)'
+                'rtol, fill_traj, opt_vars, return_derivs, redirect_msgs=redir)'
         args = {'net':net, 'times':times, 'rtol':rtol, 'fill_traj':fill_traj,
-                'opt_vars':vars_assigned[worker], 'return_derivs':return_derivs}
+                'opt_vars':vars_assigned[worker], 'return_derivs':return_derivs,
+                'redir': redirect_msgs}
         pypar.send((command, args), worker)
 
     logger.debug('Master doing vars %s' % str(vars_assigned[0]))
     try:
         result = integrate_sens_subset(net, times, rtol, fill_traj, 
-                                       vars_assigned[0], return_derivs)
+                                       vars_assigned[0], return_derivs,
+                                       redirect_msgs=redirect_msgs)
     except Utility.SloppyCellException:
         # If the master encounters an exception, we must still wait and get 
         #  replies from all the workers (even if we do nothing with them) so 
@@ -872,9 +915,16 @@ def Dfun_sens(sens_y, time, net, ovIndex, tcks):
 def _D2dv_Dov_dtTrunc(dv, Ddv_Dov, time, net, ovIndex):
     # The partial derivative of the dynamic vars wrt the ovIndex optimizable var
     partials = net.get_d2dv_dovdt(dv, time, indices = [ovIndex])[:, ovIndex]
+    if scipy.any(scipy.isnan(partials)) or scipy.any(scipy.isinf(partials)):
+        print 'partials has NaNs:', partials
+        opt_var = net.optimizableVars.keys()[ovIndex]
+        print 'opt_var = %s.' % opt_var
+        print 'dv:', dv
 
     # The partial derivative of the dynamic vars wrt the other dynamic vars
     J = net.get_d2dv_ddvdt(dv, time)
+    if scipy.any(scipy.isnan(J)) or scipy.any(scipy.isinf(J)):
+        print 'J has NaNs:', J
 
     # Now we do the chain rule to the the total derivative of the dynamic vars
     #  wrt the specified optimizable var.
@@ -886,14 +936,25 @@ def _D2dv_Dov_dtTrunc(dv, Ddv_Dov, time, net, ovIndex):
     return D2dv_Dov_dt
 
 def _Ddv_and_DdvDov_dtTrunc(y, time, net, ovIndex):
+    if scipy.any(scipy.isnan(y)) or scipy.any(scipy.isinf(y)):
+        print 'y has NaNs:', y
     nDV = len(net.dynamicVars)
 
     # XXX: Might want to fill in a global array here. Perhaps a small speed
     #      boost
-    Dc_Dt = net.get_ddv_dt(y[:nDV], time)
-    D2dv_Dov_dt = _D2dv_Dov_dtTrunc(y[:nDV], y[nDV:], time, net, ovIndex)
+    dv = y[:nDV]
+    if getattr(net, 'integrateWithLogs', False):
+        dv = scipy.maximum(scipy.exp(dv), scipy.misc.limits.double_tiny)
+    Dc_Dt = net.get_ddv_dt(dv, time)
+    D2dv_Dov_dt = _D2dv_Dov_dtTrunc(dv, y[nDV:], time, net, ovIndex)
 
-    return scipy.concatenate((Dc_Dt, D2dv_Dov_dt))
+    if not getattr(net, 'integrateWithLogs', False):
+        result = scipy.concatenate((Dc_Dt, D2dv_Dov_dt))
+    else:
+        result = scipy.concatenate((Dc_Dt/dv, D2dv_Dov_dt))
+    if scipy.any(scipy.isnan(result)) or scipy.any(scipy.isinf(result)):
+        print 'result has NaNs:', result
+    return result
 
 def _reduce_times(yout, tout, times):
     jj = 0
