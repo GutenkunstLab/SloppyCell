@@ -1,4 +1,3 @@
-# -*- coding: cp936 -*-
 import unittest 
 
 import scipy
