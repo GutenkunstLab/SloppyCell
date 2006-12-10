@@ -1,6 +1,8 @@
 import compiler
 from compiler.ast import *
 
+TINY = 1e-12
+
 def _node_equal(self, other):
     """
     Return whether self and other represent the same expressions.
@@ -9,7 +11,7 @@ def _node_equal(self, other):
     we need to write our own.
     """
     # We're not equal if other isn't a Node, or if other is a different class.
-    if not isinstance(other, Node) or self.__class__ != other.__class__:
+    if not isinstance(other, Node) or not isinstance(other, self.__class__):
         return False
     # Loop through all children, checking whether they are equal
     for self_child, other_child in zip(self.getChildren(), other.getChildren()):
@@ -46,7 +48,10 @@ _OP_ORDER = {Name: 0,
              Div: 5,
              Sub: 10,
              Add: 10,
-             #Compare: 20,
+             Compare: 11,
+             Not: 11,
+             And: 11,
+             Or: 11,
              Discard: 100}
 
 # This is just an instance of Discard to use for the default
@@ -66,7 +71,10 @@ _node_attrs = {Name: (),
                Slice: ('lower', 'upper'),
                Sliceobj: ('nodes',),
                Subscript: ('subs',),
-               #Compare: ('expr',)
+               Compare: ('expr', 'ops'),
+               Not: ('expr',),
+               Or: ('nodes',),
+               And: ('nodes',),
                }
 
 
@@ -91,17 +99,17 @@ def ast2str(ast, outer = _FARTHEST_OUT, adjust = 0):
                            ast2str(ast.right, ast))
     elif isinstance(ast, Sub):
         out = '%s - %s' % (ast2str(ast.left, ast),
-                           ast2str(ast.right, ast, adjust = 1))
+                           ast2str(ast.right, ast, adjust = TINY))
     elif isinstance(ast, Mul):
         out = '%s*%s' % (ast2str(ast.left, ast),
                            ast2str(ast.right, ast))
     elif isinstance(ast, Div):
         # The adjust ensures proper parentheses for x/(y*z)
         out = '%s/%s' % (ast2str(ast.left, ast),
-                           ast2str(ast.right, ast, adjust = 1))
+                           ast2str(ast.right, ast, adjust = TINY))
     elif isinstance(ast, Power):
         # The adjust ensures proper parentheses for (x**y)**z
-        out = '%s**%s' % (ast2str(ast.left, ast, adjust = 1),
+        out = '%s**%s' % (ast2str(ast.left, ast, adjust = TINY),
                           ast2str(ast.right, ast))
     elif isinstance(ast, UnarySub):
         out = '-%s' % ast2str(ast.expr, ast)
@@ -119,13 +127,21 @@ def ast2str(ast, outer = _FARTHEST_OUT, adjust = 0):
     elif isinstance(ast, Sliceobj):
         nodes = [ast2str(node) for node in ast.nodes]
         out = ':'.join(nodes)
-    #elif isinstance(ast, Compare):
-    #    expr = ast2str(ast.expr)
-    #    out_l = [expr]
-    #    for op, val in ast.ops:
-    #        out_l.append(op)
-    #        out_l.append(ast2str(val))
-    #    out = ' '.join(out_l)
+    elif isinstance(ast, Compare):
+        expr = ast2str(ast.expr, ast, adjust=6+TINY)
+        out_l = [expr]
+        for op, val in ast.ops:
+            out_l.append(op)
+            out_l.append(ast2str(val, ast, adjust=6+TINY))
+        out = ' '.join(out_l)
+    elif isinstance(ast, And):
+        nodes = [ast2str(node, ast, adjust=TINY) for node in ast.nodes]
+        out = ' and '.join(nodes)
+    elif isinstance(ast, Or):
+        nodes = [ast2str(node, ast, adjust=TINY) for node in ast.nodes]
+        out = ' or '.join(nodes)
+    elif isinstance(ast, Not):
+        out = 'not %s' % ast2str(ast.expr, ast, adjust=TINY)
 
     # Ensure parentheses by checking the _OP_ORDER of the outer and inner ASTs
     if _need_parens(outer, ast, adjust):

@@ -212,7 +212,12 @@ def _simplify_ast(ast):
     elif isinstance(ast, UnaryAdd):
         simple_expr = _simplify_ast(ast.expr)
         return simple_expr
-    else:
+    elif isinstance(ast, list):
+        simple_list = [_simplify_ast(elem) for elem in ast]
+        return simple_list
+    elif isinstance(ast, tuple):
+        return tuple(_simplify_ast(list(ast)))
+    elif AST._node_attrs.has_key(ast.__class__):
         # Handle node types with no special cases.
         for attr_name in AST._node_attrs[ast.__class__]:
             attr = getattr(ast, attr_name)
@@ -221,4 +226,6 @@ def _simplify_ast(ast):
                     attr[ii] = _simplify_ast(elem)
             else:
                 setattr(ast, attr_name, _simplify_ast(attr))
+        return ast
+    else:
         return ast
