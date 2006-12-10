@@ -1097,7 +1097,9 @@ equation \n\t'
                             ('geq', ['x', 'y'],  'x >= y'),
                             ('lt', ['x', 'y'],  'x < y'),
                             ('leq', ['x', 'y'],  'x <= y'),
-                            ('and_func', ['x', 'y'], 'x and y')]
+                            ('and_func', ['x', 'y'], 'x and y'),
+                            ('or_func', ['x', 'y'], 'x or y'),
+                            ('not_func', ['x'], 'not x']
 
         for ii, event in enumerate(self.events.values()):
             trigger = event.trigger
