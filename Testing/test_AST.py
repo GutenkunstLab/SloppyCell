@@ -20,8 +20,12 @@ class test_AST(unittest.TestCase):
                  '(x**y)**z', 'x**y**z', 'x - (x+y)', '(x+y) - z',
                  'g(x-0+2, y**2 - 0**0, z*y + x/1)', 'x/x', 'x/y',
                  '(x-x)/z', 'x**2 - y/z', 'x+1-1+2-3-x', '0+1*1', 'x-x+y',
-                 '(-2)**2', '-2**2'
-                 ]
+                 '(-2)**2', '-2**2', 'x < 0.5', 'x + y < 0.8', 'x > 0.5',
+                 'x+y < z - x', '(f(x) < 0.5) == False', 'x == x', 
+                 'x + y == 2*x - x + y', 'True and False', 
+                 'True and False or True', 'True or False', 
+                 '(True and not False) or True', 'not (True and False)',
+                 'x == x and y == y', 'x - x == 0 or y - x != 0']
         for expr in cases: 
             run = ast2str(strip_parse(expr))
             orig = eval(expr)

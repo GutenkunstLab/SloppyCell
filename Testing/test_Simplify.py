@@ -19,7 +19,8 @@ class test_Simplify(unittest.TestCase):
                  '(x**y)**z', 'x**y**z', 'x - (x+y)', '(x+y) - z',
                  'g(x-0+2, y**2 - 0**0, z*y + x/1)', 'x/x', 'x/y',
                  '(x-x)/z', 'x**2 - y/z', 'x+1-1+2-3-x', '0+1*1', 'x-x+y', 
-                 '(-2)**2', '-2**2'
+                 '(-2)**2', '-2**2', 'x/y == x/y', 'not True', 'x/x + y/y == 2',
+                 '3 + 4 > 6', '3 + (4 > 6)',
                  ]
 
         for expr in cases: 
