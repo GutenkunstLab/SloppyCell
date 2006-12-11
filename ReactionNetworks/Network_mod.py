@@ -1093,13 +1093,14 @@ equation \n\t'
         functionBody = 'def root_func2(self, dynamicVars, time):\n\t'
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
 
-        _event_func_defs = [('gt', ['x', 'y'],  'x > y'),
+        _event_func_defs = [('eq', ['x', 'y'],  'x == y'),
+                            ('gt', ['x', 'y'],  'x > y'),
                             ('geq', ['x', 'y'],  'x >= y'),
                             ('lt', ['x', 'y'],  'x < y'),
                             ('leq', ['x', 'y'],  'x <= y'),
                             ('and_func', ['x', 'y'], 'x and y'),
                             ('or_func', ['x', 'y'], 'x or y'),
-                            ('not_func', ['x'], 'not x']
+                            ('not_func', ['x'], 'not x')]
 
         for ii, event in enumerate(self.events.values()):
             trigger = event.trigger
