@@ -232,3 +232,18 @@ def _make_product(terms):
         return product 
     else:
         return Const(1)
+
+def recurse_down_tree(ast, func, args):
+    if isinstance(ast, list):
+        for ii, elem in enumerate(ast):
+            ast[ii] = func(elem, *args)
+    elif isinstance(ast, tuple):
+        ast = tuple(func(list(ast), *args))
+    elif _node_attrs.has_key(ast.__class__):
+        for attr_name in _node_attrs[ast.__class__]:
+            attr = getattr(ast, attr_name)
+            attr_mod = func(attr, *args)
+            setattr(ast, attr_name, attr_mod)
+
+    return ast
+

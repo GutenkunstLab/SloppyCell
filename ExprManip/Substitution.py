@@ -28,15 +28,7 @@ def sub_for_comps(expr, mapping):
 def _sub_subtrees_for_comps(ast, ast_mappings):
     if isinstance(ast, Compare) and ast_mappings.has_key(ast2str(ast)):
         return ast_mappings[ast2str(ast)]
-    elif isinstance(ast, list):
-        ast = [_sub_subtrees_for_comps(elem, ast_mappings) for elem in ast]
-    elif isinstance(ast, tuple):
-        ast = _sub_subtrees_for_comps(list(ast), ast_mappings)
-        ast = tuple(ast)
-    elif AST._node_attrs.has_key(ast.__class__):
-        for attr_name in AST._node_attrs[ast.__class__]:
-            attr = getattr(ast, attr_name)
-            setattr(ast, attr_name, _sub_subtrees_for_comps(attr, ast_mappings))
+    ast = AST.recurse_down_tree(ast, _sub_subtrees_for_comps, (ast_mappings,))
     return ast
 
 def sub_for_var(expr, out_name, in_expr):
@@ -75,15 +67,7 @@ def _sub_subtrees_for_vars(ast, ast_mappings):
     """
     if isinstance(ast, Name) and ast_mappings.has_key(ast2str(ast)):
         return ast_mappings[ast2str(ast)]
-    elif isinstance(ast, list):
-        ast = [_sub_subtrees_for_vars(elem, ast_mappings) for elem in ast]
-    elif isinstance(ast, tuple):
-        ast = _sub_subtrees_for_vars(list(ast), ast_mappings)
-        ast = tuple(ast)
-    elif AST._node_attrs.has_key(ast.__class__):
-        for attr_name in AST._node_attrs[ast.__class__]:
-            attr = getattr(ast, attr_name)
-            setattr(ast, attr_name, _sub_subtrees_for_vars(attr, ast_mappings))
+    ast = AST.recurse_down_tree(ast, _sub_subtrees_for_vars, (ast_mappings,))
     return ast
 
 def sub_for_func(expr, func_name, func_vars, func_expr):
@@ -138,21 +122,6 @@ def _sub_for_func_ast(ast, func_name, func_vars, func_expr_ast):
             mapping[var_name] = subbed_arg_ast
         _sub_subtrees_for_vars(working_ast, mapping)
         return working_ast
-    # Else we walk through the attributes of our ast, checking whether they
-    #  need to be substituted. We do this because we can't, in general,
-    #  substitute the function in-place.
-    elif isinstance(ast, list):
-        for ii, elem in enumerate(ast):
-            ast[ii] = _sub_for_func_ast(elem, func_name, func_vars, 
-                                        func_expr_ast)
-    elif isinstance(ast, tuple):
-        ast = tuple(_sub_for_func_ast(list(ast), func_name, func_vars,
-                                      func_expr_ast))
-    elif AST._node_attrs.has_key(ast.__class__):
-        for attr_name in AST._node_attrs[ast.__class__]:
-            attr = getattr(ast, attr_name)
-            attr_mod = _sub_for_func_ast(attr, func_name, func_vars,
-                                         func_expr_ast)
-            setattr(ast, attr_name, attr_mod)
-                    
+    ast = AST.recurse_down_tree(ast, _sub_for_func_ast, 
+                                (func_name, func_vars, func_expr_ast,))
     return ast

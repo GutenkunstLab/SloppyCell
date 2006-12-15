@@ -40,14 +40,10 @@ def _extract_vars_ast(ast, vars_found):
     Appends the asts of the variables used in ast to vars_found.
     """
     if isinstance(ast, Name):
-        vars_found.append(ast)
-    elif isinstance(ast, list) or isinstance(ast, tuple):
-        for elem in ast:
-            _extract_vars_ast(elem, vars_found)
-    elif AST._node_attrs.has_key(ast.__class__):
-        for attr_name in AST._node_attrs[ast.__class__]:
-            attr = getattr(ast, attr_name)
-            _extract_vars_ast(attr, vars_found)
+        if ast.name not in ['True', 'False']:
+            vars_found.append(ast)
+    ast = AST.recurse_down_tree(ast, _extract_vars_ast, (vars_found,))
+    return ast
 
 def extract_funcs(expr):
     """
@@ -63,14 +59,9 @@ def _extract_funcs_ast(ast, funcs_found):
     """
     Append ('name', #arg) for each function used in the ast to funcs_found.
     """
-    if isinstance(ast, list) or isinstance(ast, tuple):
-        for elem in ast:
-            _extract_funcs_ast(elem, funcs_found)
-    elif isinstance(ast, CallFunc):
+    if isinstance(ast, CallFunc):
         funcs_found.append((AST.ast2str(ast.node), len(ast.args)))
         for node in ast.args:
             _extract_funcs_ast(node, funcs_found)
-    elif AST._node_attrs.has_key(ast.__class__):
-        for attr_name in AST._node_attrs[ast.__class__]:
-            attr = getattr(ast, attr_name)
-            _extract_funcs_ast(attr, funcs_found)
+    ast = AST.recurse_down_tree(ast, _extract_funcs_ast, (funcs_found,))
+    return ast
