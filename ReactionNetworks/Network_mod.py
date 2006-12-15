@@ -871,43 +871,51 @@ class Network:
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
         functionBody += '\n\t'
 
-        # numZeroRhs and numNonZeroRhs keep track of how many variables are entered
-        # into the resFunction as differential variables and how many are entered as
-        # algebraic variables
+
+        # make a list of algebraic rules for accessing later
+        algebraicRuleList = []
+        for kk, (rhs,rhs) in enumerate(self.algebraicRules.items()):
+            algebraicRuleList.append(rhs)
+
+
+        # numAlgebraicRhs keeps track of how many variables are entered
+        # into the resFunction as algebraic variables
         
         numAlgebraicRhs = 0
-        numNonZeroRhs = 0
 
+        # loop over everything in the dynamicVars list
         for ii, (id, var) in enumerate(self.dynamicVars.items()):
             rhs = self.diff_eq_rhs.getByKey(id)
-            # we need to know which rhs's equal zero, because those reprsent
-            # the algebraic rules and the zero derivatives.
+            # if a rhs is 0 there are two possibilities
+            # it's a dynamic variable with 0 rhs
+            # it corresponds to an algebraic rule
             if rhs == '0':
                 # it could be a differential variable with a 0 rhs
                 # in this case we still need to subtract the corresponding yprime from
                 # the residual equation
                 if self.algebraicVars.get(id) == None:
                     functionBody += '# Residual function for %s\n\t' % (id)
-                    functionBody += 'residual[%i] = - yprime[%i]' % (ii-numAlgebraicRhs, ii-numAlgebraicRhs)
+                    functionBody += 'residual[%i] = - yprime[%i]' % (ii, ii)
                     functionBody += '\n\t'
                 else:
+                    # it's an algebraic equation
+                    # grab an algebraic rule from the list and increment the counter
+                    rhs = algebraicRuleList[numAlgebraicRhs]
+                    functionBody += '# Residual function corresponding to an algebraic \
+        equation \n\t'
+                    functionBody += 'residual[%i] = %s' % (ii, rhs)
+                    functionBody += '\n\t'
                     numAlgebraicRhs += 1
                 continue
+            # if the rhs = 0 it's a differential equation
             elif rhs != '0':
-                numNonZeroRhs += 1
                 functionBody += '# Residual function for %s\n\t' % (id)
-                functionBody += 'residual[%i] = %s' % (ii-numAlgebraicRhs, rhs)
+                functionBody += 'residual[%i] = %s' % (ii, rhs)
                 # We only subtract the derivative variable for the differential variables
                 if self.algebraicVars.get(id) == None:
-                    functionBody += '- yprime[%i]' % (ii-numAlgebraicRhs)
+                    functionBody += '- yprime[%i]' % (ii)
                 functionBody += '\n\t'
-
-        for jj, (rhs,rhs) in enumerate(self.algebraicRules.items()):
-            functionBody += '# Residual function corresponding to an algebraic \
-equation \n\t'
-            functionBody += 'residual[%i] = %s' % (jj + numNonZeroRhs, rhs)
-            functionBody += '\n\t'
-                
+        
         functionBody += '\n\n\treturn residual\n'
 
         return functionBody
