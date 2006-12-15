@@ -316,27 +316,26 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-
 
             # We've found a root
             if istate == 3:
-                jroot = list(jroot)
                 outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
+                # Which root(s) did we hit?
+                crossed = scipy.compress(jroot == 1, range(len(jroot)))
                 if full_output:
                     outputs = outputs + (info_dict,)
-                if jroot.count(1) > 1:
-                    logger.warn('Multiple roots found at a single point!?! '\
-                                'jroot is %s' % jroot)
-                    raise odeintrException(_msgs[istate],outputs)
-                elif jroot.count(1) == 0:
+                if len(jroot) == 0:
                     logger.warn('LSODAR claimed root found, but jroot is '\
                                 'empty. jroot is %s' % jroot)
                     raise odeintrException(_msgs[istate],outputs)
-
-                # Which root did we hit?
-                crossed = jroot.index(1)
 
                 t_root.append(treached)
                 y_root.append(copy.copy(y))
                 i_root.append(crossed)
 
-                if root_term[crossed] == 1:
+                break_integration=False
+                for elem in crossed:
+                    if root_term[elem]:
+                        break_integration=True
+                        break
+                if break_integration:
                     break
 
     # Process outputs

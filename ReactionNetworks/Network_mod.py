@@ -56,13 +56,14 @@ class Network:
     #  generates the python code for the function in fooFunc_functionBody.
     _dynamic_structure_funcs = ['get_ddv_dt', 'get_d2dv_ddvdt', 
                                 'get_d2dv_dovdt', 'res_function']
-    _dynamic_event_funcs = ['get_eventValues', 'get_eventDerivs', 
-                            'root_func', 'root_func_dt', 'root_func2']
+    _dynamic_event_funcs = ['root_func']
     _dynamic_funcs = _dynamic_structure_funcs + _dynamic_event_funcs
 
     
     # These are-predefined functions we want in our working namespace
-    _common_namespace = {'log': scipy.log,
+    def two_arg_log(x, base=scipy.e):
+        return scipy.log(x)/scipy.log(base)
+    _common_namespace = {'log': two_arg_log,
                          'log10': scipy.log10,
                          'exp': scipy.exp,
                          'cos': scipy.cos,
@@ -81,11 +82,7 @@ class Network:
                          'pi': scipy.pi,
                          }
     # These are functions we need to create but that should be used commonly
-    _standard_func_defs = [('gt', ['x', 'y'],  'x - y'),
-                           ('geq', ['x', 'y'],  'x - y'),
-                           ('lt', ['x', 'y'],  'y - x'),
-                           ('leq', ['x', 'y'],  'y - x'),
-                           ('pow', ['x', 'n'],  'x**n'),
+    _standard_func_defs = [('pow', ['x', 'n'],  'x**n'),
                            ('root', ['n', 'x'],  'x**(1/n)'),
                            ('sqrt', ['x'],  'x**(.5)'),
                            ('cot', ['x'],  '1/tan(x)'),
@@ -100,11 +97,17 @@ class Network:
                            ('arcsec', ['x'],  'acos(1/x)'),
                            ('sech', ['x'],  '1/cosh(x)'),
                            ('arcsech', ['x'],  'arccosh(1/x)'),
-                           # This atrocious two-argument form of log is
-                           #  used in the SBML test suite. Supporting it
-                           #  might be a pain.
-                           #('log', ['b','x'], 'log(x)/log(b)')
                            ]
+    _logical_comp_func_defs = [('gt', ['x', 'y'],  'x > y'),
+                               ('geq', ['x', 'y'],  'x >= y'),
+                               ('lt', ['x', 'y'],  'x < y'),
+                               ('leq', ['x', 'y'],  'x <= y'),
+                               ('eq', ['x', 'y'],  'y == x'),
+                               ('and_func', ['x', 'y'], 'x and y'),
+                               ('or_func', ['x', 'y'], 'x or y'),
+                               ('not_func', ['x'], 'not x'),
+                               ]
+                           
     # Add our common function definitions to a func_strs list.
     _common_func_strs = []
     for id, vars, math in _standard_func_defs:
@@ -482,6 +485,43 @@ class Network:
         return Dynamics.integrate_sensitivity(self, times, params, rtol,
                                               fill_traj=self.add_int_times)
 
+    def _sub_for_piecewise(self, expr, time):
+        funcs_used = ExprManip.extract_funcs(expr)
+        for func, args in funcs_used:
+            if func == 'piecewise':
+                ast = ExprManip.strip_parse(expr)
+                ast = self._sub_for_piecewise_ast(ast, time)
+                return ExprManip.ast2str(ast)
+        else:
+            return expr
+    
+    def _sub_for_piecewise_ast(self, ast, time):
+        if isinstance(ast, ExprManip.AST.CallFunc)\
+           and ExprManip.ast2str(ast.node) == 'piecewise':
+            # If our ast is a piecewise function
+            conditions = [cond for cond in ast.args[1::2]]
+            clauses = [clause for clause in ast.args[:-1:2]]
+            if len(ast.args)%2 == 1:
+                # odd # of arguments implies otherwise clause
+                otherwise = ast.args[-1]
+            else:
+                otherwise = None
+        
+            for cond_ast, expr_ast in zip(conditions, clauses):
+                subbed_cond = self._sub_for_piecewise_ast(cond_ast, time=time)
+                cond_str = ExprManip.ast2str(subbed_cond)
+                if self.evaluate_expr(cond_str, time):
+                    return self._sub_for_piecewise_ast(expr_ast, time=time)
+            else:
+                if otherwise is not None:
+                    return self._sub_for_piecewise_ast(otherwise, time=time)
+                else:
+                    raise ValueError('No True condition and no otherwise '
+                                     " clause in '%s'."
+                                     % ExprManip.ast2str(ast))
+        return ExprManip.AST.recurse_down_tree(ast, self._sub_for_piecewise_ast,
+                                           (time,))
+
     def evaluate_expr(self, expr, time=0):
         """
         Evaluate the given expression using the current values of the network
@@ -490,6 +530,7 @@ class Network:
         if isinstance(expr, str):
             # We create a local_namespace to evaluate the expression in that
             #  maps variable ids to their current values
+            expr = self._sub_for_piecewise(expr, time)
             vars_used = ExprManip.extract_vars(expr)
             var_vals = [(id, self.get_var_val(id)) for id in vars_used
                         if id != 'time']
@@ -938,8 +979,29 @@ class Network:
 
         return delay
 
-    def fireEventAndUpdateDdv_Dov(self, event, values, time, opt_vars=None):
+    def _smooth_trigger(self, trigger):
+        ast = ExprManip.strip_parse(trigger)
+        if len(ast.ops) != 1:
+            raise ValueError('Comparison has more than one operation in '
+                             'clause %s!' % trigger)
+        lhs = ExprManip.ast2str(ast.expr)
+        rhs = ExprManip.ast2str(ast.ops[0][1])
+        if ast.ops[0][0] in ['>', '>=']:
+            return '%s - %s' % (lhs, rhs)
+        elif ast.ops[0][0] in ['<', '<=']:
+            return '-%s + %s' % (lhs, rhs)
+        else:
+            raise ValueError('Comparison %s in triggering clause is not '
+                             '<, <=, >, or >=!')
+
+    def fireEventAndUpdateDdv_Dov(self, event, values, time, trigger,
+                                  opt_vars=None):
         # XXX: This a big mess, but it works. Should refactor.
+
+        # We convert our trigger to smooth function we can take the 
+        # derivative of so we can calculate sensitivity of firing time.
+        trigger = self._smooth_trigger(trigger)
+
         if opt_vars is None:
             opt_vars = self.optimizableVars.keys()
 
@@ -947,7 +1009,7 @@ class Network:
 
         #nDV, nOV = len(self.dynamicVars), len(self.optimizableVars)
         nDV, nOV = len(self.dynamicVars), len(opt_vars)
-        delay, trigger = event.delay, event.trigger
+        delay = event.delay
 
         # If the delay is a math expression, calculate its value
         if isinstance(delay, str):
@@ -962,6 +1024,7 @@ class Network:
         ddv_dt = self.get_ddv_dt(values[:nDV], time)
         new_values = copy.copy(values[:nDV])
         for lhsId, rhs in event.event_assignments.items():
+            rhs = self._sub_for_piecewise(rhs, time)
             lhsIndex = self.dynamicVars.indexByKey(lhsId)
 
             # Compute and store the new value of the lhs
@@ -972,7 +1035,7 @@ class Network:
         # Compute the derivatives of our firing times wrt all our variables
         # dTf_dov = -(sum_dv dTrigger_ddv ddv_dov - dTrigger_dov)/(sum_dv dTrigger_ddv ddv_dt)
         # XXX: Handle trigger has explicit time dependence.
-        if event.timeTriggered:
+        if ExprManip.extract_vars(trigger) == sets.Set(['time']):
             dTf_dov = dict(zip(opt_vars, [0] * nOV))
         else:
             if 'time' in ExprManip.extract_vars(trigger):
@@ -1006,6 +1069,7 @@ class Network:
             # Everything below should work if the rhs is a constant, as long
             #  as we convert it to a string first.
             rhs = str(rhs)
+            rhs = self._sub_for_piecewise(rhs, time)
 
             drhs_ddvValue = {}
             for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
@@ -1058,14 +1122,14 @@ class Network:
 
         return dynamicVarValues
 
-    def executeEventAndUpdateDdv_Dov(self, event, inValues, time):
+    def executeEventAndUpdateDdv_Dov(self, event, inValues, time, opt_vars):
         values = copy.copy(inValues)
         # Copy out the new values for the dynamic variables
         for id, value in event.new_values[round(time, 8)].items():
             if type(id) == types.TupleType:
                 nDV = len(self.dynamicVars)
                 dvIndex = self.dynamicVars.indexByKey(id[0])
-                ovIndex = self.optimizableVars.indexByKey(id[1])
+                ovIndex = opt_vars.index(id[1])
                 values[dvIndex + (ovIndex + 1)*nDV] = value
 
             else:
@@ -1075,61 +1139,36 @@ class Network:
 
         return values
 
-
-    def _make_get_eventValues(self):
-        self._eventValues = scipy.zeros(len(self.complexEvents), scipy.float_)
-        self._eventTerminals = scipy.zeros(len(self.complexEvents))
-        self._eventDirections = scipy.zeros(len(self.complexEvents))
-
-        functionBody = 'def get_eventValues(self, dynamicVars, time):\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-
-        for ii, event in enumerate(self.complexEvents.values()):
-            functionBody += 'self._eventValues[%i] = %s\n\t' % (ii,
-                                                                event.trigger)
-            functionBody += 'self._eventTerminals[%i] = %s\n\t' % \
-                    (ii, event.is_terminal)
-            functionBody += 'self._eventDirections[%i] = 1\n\t' % ii
-
-        functionBody += '\n\treturn self._eventValues, self._eventTerminals, self._eventDirections\n'
-
-        return functionBody
-
-    def _make_root_func2(self):
-        self._root_func2 = scipy.zeros(len(self.events), scipy.float_)
-
-        functionBody = 'def root_func2(self, dynamicVars, time):\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-
-        _event_func_defs = [('eq', ['x', 'y'],  'x == y'),
-                            ('gt', ['x', 'y'],  'x > y'),
-                            ('geq', ['x', 'y'],  'x >= y'),
-                            ('lt', ['x', 'y'],  'x < y'),
-                            ('leq', ['x', 'y'],  'x <= y'),
-                            ('and_func', ['x', 'y'], 'x and y'),
-                            ('or_func', ['x', 'y'], 'x or y'),
-                            ('not_func', ['x'], 'not x')]
-
-        for ii, event in enumerate(self.events.values()):
-            trigger = event.trigger
-            for func_name, func_vars, func_expr in _event_func_defs:
-                trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
-                                                 func_expr)
-
-            functionBody += 'self._root_func2[%i] = (%s) - 0.5\n\t' % (ii, trigger)
-
-        functionBody += '\n\treturn self._root_func2\n'
-
-        return functionBody
-
     def _make_root_func(self):
-        self._root_func = scipy.zeros(len(self.events), scipy.float_)
+        len_root_func = 0
 
         functionBody = 'def root_func(self, dynamicVars, time):\n\t'
         functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
 
+        self.event_clauses = []
         for ii, event in enumerate(self.events.values()):
-            functionBody += 'self._root_func[%i] = %s\n\t' % (ii, event.trigger)
+            trigger = event.trigger
+            for func_name, func_vars, func_expr in self._logical_comp_func_defs:
+                trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
+                                                 func_expr)
+
+            functionBody += 'self._root_func[%i] = (%s) - 0.5\n\t' % (len_root_func, trigger)
+            self.event_clauses.append(trigger)
+            len_root_func += 1
+
+        for ii, event in enumerate(self.events.values()):
+            trigger = event.trigger
+            for func_name, func_vars, func_expr in self._logical_comp_func_defs:
+                trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
+                                                 func_expr)
+            comparisons = ExprManip.extract_comps(trigger)
+            if len(comparisons) > 1:
+                for comp in comparisons:
+                    functionBody += 'self._root_func[%i] = (%s) - 0.5\n\t' % (len_root_func, comp)
+                    len_root_func += 1
+                    self.event_clauses.append(comp)
+
+        self._root_func = scipy.zeros(len_root_func, scipy.float_)
 
         functionBody += '\n\treturn self._root_func\n'
 
@@ -1137,66 +1176,8 @@ class Network:
 
     # ddaskr_root(...) is the function for events for the daskr integrator.
     def ddaskr_root(self, t, y, yprime):
-        # note that the order of inputs is reversed in root_func2
-        return self.root_func2(y, t) 
-
-    def _make_root_func_dt(self):
-        self._root_func_dt = scipy.zeros(len(self.events), scipy.float_)
-
-        functionBody = 'def root_func_dt(self, dynamicVars, ddv_dt, time):\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-
-        for ii, event in enumerate(self.events.values()):
-            trigger = event.trigger
-            rhs = []
-            for id in self.diff_eq_rhs.keys():
-                # We use the chain rule to get derivatives wrt time.
-                deriv = self.takeDerivative(trigger, id)
-                if deriv != '0':
-                    rhs.append('(%s) * ddv_dt[%i]' %
-                               (deriv, self.dynamicVars.indexByKey(id)))
-
-            # We need to include the partial derivative wrt time.
-            deriv = self.takeDerivative(trigger, 'time')
-            if deriv != '0':
-                rhs.append(deriv)
-
-            functionBody += 'self._root_func_dt[%i] = %s\n\t'\
-                    % (ii, ' + '.join(rhs))
-
-        functionBody += '\n\treturn self._root_func_dt\n'
-
-        return functionBody
-
-    def _make_get_eventDerivs(self):
-        self._eventDerivValues = scipy.zeros(len(self.complexEvents),
-                                             scipy.float_)
-        
-        functionBody = 'def get_eventDerivs(self, dynamicVars, ddv_dt, time):\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-
-        for ii, event in enumerate(self.complexEvents.values()):
-            trigger = event.trigger
-            rhs = ''
-            for id in self.diff_eq_rhs.keys():
-                # We use the chain rule to get derivatives wrt time.
-                deriv = self.takeDerivative(trigger, id)
-                if deriv != '0':
-                    rhs += ' + (%s) * ddv_dt[%i]' % \
-                            (deriv, self.dynamicVars.indexByKey(id))
-
-            # We need to include the partial derivative wrt time.
-            deriv = self.takeDerivative(trigger, 'time')
-            if deriv != '0':
-                rhs += ' + (%s)' % deriv
-
-            rhs = rhs[3:]
-            functionBody += 'self._eventDerivValues[%i] = %s\n\t'\
-                    % (ii, rhs)
-
-        functionBody += '\n\treturn self._eventDerivValues\n'
-
-        return functionBody
+        # note that the order of inputs is reversed in root_func
+        return self.root_func(y, t) 
 
     #
     # Internally useful things
