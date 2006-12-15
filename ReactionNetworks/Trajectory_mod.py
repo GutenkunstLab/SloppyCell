@@ -88,7 +88,7 @@ class Trajectory:
 
         # To avoid generating our function bodies every Trajectory creation, we
         #  keep a list of known structures in the class itself.
-        curr_structure = (net._get_structure(), self.key_column)
+        curr_structure = (net._get_structure(), self.key_column, is_sens)
         for ii, struct in enumerate(self._known_structures):
             if curr_structure == struct:
                 (self._assignment_functionBody,
