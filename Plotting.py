@@ -18,9 +18,12 @@ import Residuals
 
 rc('lines', linewidth=2)
 
-def ColorWheel(colors = ('b', 'g', 'r', 'c', 'm', 'k'), 
-               symbols = ('o', 's', '^', 'v', '<', ">", 'x', 'D', 'h', 'p'),
-               lines = ('-', '--', '-.', ':')):
+basic_colors = ('b', 'g', 'r', 'c', 'm', 'k')
+basic_symbols = ('o', 's', '^', 'v', '<', ">", 'x', 'D', 'h', 'p')
+basic_lines = ('-', '--', '-.', ':')
+
+def ColorWheel(colors = basic_colors, symbols = basic_symbols,
+               lines = basic_lines):
     """
     ColorWheel()
 
