@@ -250,100 +250,101 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-
     info_dict = dict([(key, []) for key in
                       (_rwork_vars.keys() + _iwork_vars.keys())])
     tcrit_ii = 0
-    while tindex < len(t):
-        twanted = t[tindex]
-        if (itask == 4 or itask == 5) and tcrit_ii < len(tcrit):
-            rwork[0] = tcrit[tcrit_ii]
-            twanted = min(tcrit[tcrit_ii], twanted)
+    if redirect_msgs:
+        redir.start()
+    try:
+        while tindex < len(t):
+            twanted = t[tindex]
+            if (itask == 4 or itask == 5) and tcrit_ii < len(tcrit):
+                rwork[0] = tcrit[tcrit_ii]
+                twanted = min(tcrit[tcrit_ii], twanted)
 
-        if redirect_msgs:
-            redir.start()
-        try:
             y, treached, istate, jroot = \
                     _lsodar.dlsodar(usefunc, copy.copy(y0), t0, twanted, 
                                     itol, rtol, atol, 
                                     itask, istate, rwork, iwork, 
                                     usejac, jt, 
                                     useg, ng)
-        finally:
-            messages = redir.stop()
 
-        if istate < 0:
-            # Problem!
-            if redirect_msgs:
-                logger.warn(messages)
-            logger.warn(_msgs[istate])
-            logger.warn("Run with full_output = 1 to get quantitative "
-                        "information.")
-            outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
-            if full_output:
-                outputs = outputs + (info_dict,)
-            raise odeintrException(_msgs[istate],outputs)
-        else:
-            if printmessg:
+            if istate < 0:
+                # Problem!
+                if redirect_msgs:
+                    logger.warn(messages)
                 logger.warn(_msgs[istate])
-
-            # If we need to record this point.
-            if treached == t[tindex] or itask == 5 or\
-               (istate == 3 and insert_events):
-                yout.append(y)
-                tout.append(treached)
-                if full_output:
-                    for key, index in _rwork_vars.items():
-                        info_dict[key].append(rwork[index])
-                    for key, index in _iwork_vars.items():
-                        info_dict[key].append(iwork[index])
-                    info_dict['message'] = _msgs[istate]
-
-                # Collect derivatives
-                if return_derivs:
-                    t_ask = treached * (1- limits.double_resolution)
-                    dky, iflag = _lsodar.dintdy(t_ask, 1, rwork[20+ng:],
-                                                neq)
-                    dout.append(dky)
-
-            # If we reached our goal, move on to the next point.
-            if treached == t[tindex]:
-                tindex += 1
-                    
-            # If we reached a critical point, move to the next
-            if (itask == 4 or itask == 5) and treached == tcrit[tcrit_ii]:
-                tcrit_ii += 1
-                # If we're out of critical points, drop back to normal 
-                #  integration mode
-                if tcrit_ii == len(tcrit):
-                    itask = 1
-
-            # We've found a root
-            if istate == 3:
+                logger.warn("Run with full_output = 1 to get quantitative "
+                            "information.")
                 outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
-                # Which root(s) did we hit?
-                crossed = scipy.compress(jroot == 1, range(len(jroot)))
                 if full_output:
                     outputs = outputs + (info_dict,)
-                if len(jroot) == 0:
-                    logger.warn('LSODAR claimed root found, but jroot is '\
-                                'empty. jroot is %s' % jroot)
-                    raise odeintrException(_msgs[istate],outputs)
+                raise odeintrException(_msgs[istate],outputs)
+            else:
+                if printmessg:
+                    logger.warn(_msgs[istate])
 
-                t_root.append(treached)
-                y_root.append(copy.copy(y))
-                i_root.append(crossed)
+                # If we need to record this point.
+                if treached == t[tindex] or itask == 5 or\
+                   (istate == 3 and insert_events):
+                    yout.append(y)
+                    tout.append(treached)
+                    if full_output:
+                        for key, index in _rwork_vars.items():
+                            info_dict[key].append(rwork[index])
+                        for key, index in _iwork_vars.items():
+                            info_dict[key].append(iwork[index])
+                        info_dict['message'] = _msgs[istate]
 
-                break_integration=False
-                for elem in crossed:
-                    if root_term[elem]:
-                        break_integration=True
+                    # Collect derivatives
+                    if return_derivs:
+                        t_ask = treached * (1- limits.double_resolution)
+                        dky, iflag = _lsodar.dintdy(t_ask, 1, rwork[20+ng:],
+                                                    neq)
+                        dout.append(dky)
+
+                # If we reached our goal, move on to the next point.
+                if treached == t[tindex]:
+                    tindex += 1
+                        
+                # If we reached a critical point, move to the next
+                if (itask == 4 or itask == 5) and treached == tcrit[tcrit_ii]:
+                    tcrit_ii += 1
+                    # If we're out of critical points, drop back to normal 
+                    #  integration mode
+                    if tcrit_ii == len(tcrit):
+                        itask = 1
+
+                # We've found a root
+                if istate == 3:
+                    outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
+                    # Which root(s) did we hit?
+                    crossed = scipy.compress(jroot == 1, range(len(jroot)))
+                    if full_output:
+                        outputs = outputs + (info_dict,)
+                    if len(jroot) == 0:
+                        logger.warn('LSODAR claimed root found, but jroot is '\
+                                    'empty. jroot is %s' % jroot)
+                        raise odeintrException(_msgs[istate],outputs)
+
+                    t_root.append(treached)
+                    y_root.append(copy.copy(y))
+                    i_root.append(crossed)
+
+                    break_integration=False
+                    for elem in crossed:
+                        if root_term[elem]:
+                            break_integration=True
+                            break
+                    if break_integration:
                         break
-                if break_integration:
-                    break
+        redir.stop()
 
-    # Process outputs
-    outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
-    if return_derivs:
-        outputs = outputs + (scipy.array(dout),)
+        # Process outputs
+        outputs = (scipy.array(yout), tout, t_root, y_root, i_root)
+        if return_derivs:
+            outputs = outputs + (scipy.array(dout),)
 
-    if full_output:
-        outputs = outputs + (info_dict,)
+        if full_output:
+            outputs = outputs + (info_dict,)
 
-    return outputs
+        return outputs
+    finally:
+        messages = redir.stop()

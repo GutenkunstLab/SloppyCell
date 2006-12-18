@@ -398,17 +398,17 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
     # step_count is used to keep track of how many times idid = -1 occurs in a row
     step_count = 0
 
-    while tcurrent < t[-1]:
+    if redir_output == 0:
+        redir.start()
 
-        # set the desired output time
-        twanted = t[tindex]
+    try:
 
-        # continue the integration
+        while tcurrent < t[-1]:
 
-        if redir_output == 0:
-            redir.start()
+            # set the desired output time
+            twanted = t[tindex]
 
-        try:
+            # continue the integration
             treached, y, yp, rtol, atol, idid, jroot = \
                     _daskr.ddaskr(res, tcurrent, y, yp, twanted,
                                   info, rtol, atol,
@@ -416,92 +416,95 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
                                   jac, psol, rt, nrt,
                                   res_extra_args = args, jac_extra_args = args,
                                   rt_extra_args = args)
-        finally:
-            messages = redir.stop()
 
-        # check for a negative value of idid so we know if there was a problem
-        if idid <= 0:
-            # set appropriate options
-            info[0]=1
-            # idid=-1 is handled below
-            if idid < -1:
-                # The task was interrupted
-                if messages is not None:
-                    logger.warn(messages)
-                logger.warn(_msgs[idid])
-            # if idid=-1, 500 steps have been taken sine the last time idid=-1.
-            # Whether we should continue depends on the value of max_steps.
-            if idid == -1:
-                # if we haven't hit the value of max_steps, then we should
-                # continue the integration.  Otherwise we should raise an exception.
-                if max_steps > step_count:
-                    step_count += 500
-                    print step_count
-                    continue
-                elif max_steps <= step_count:
-                    # report the error message for idid = -1
-                    logger.warn(messages)
+            # check for a negative value of idid so we know if there was a
+            # problem
+            if idid <= 0:
+                # set appropriate options
+                info[0]=1
+                # idid=-1 is handled below
+                if idid < -1:
+                    # The task was interrupted
+                    if messages is not None:
+                        logger.warn(messages)
                     logger.warn(_msgs[idid])
+                # if idid=-1, 500 steps have been taken sine the last time
+                # idid=-1.
+                # Whether we should continue depends on the value of max_steps.
+                if idid == -1:
+                    # if we haven't hit the value of max_steps, then we should
+                    # continue the integration.  Otherwise we should raise an
+                    # exception.
+                    if max_steps > step_count:
+                        step_count += 500
+                        print step_count
+                        continue
+                    elif max_steps <= step_count:
+                        # report the error message for idid = -1
+                        logger.warn(messages)
+                        logger.warn(_msgs[idid])
 
-               
-            # send what output was obtained
-            outputs = (scipy.array(yout_l), scipy.array(tout_l),
-                       t_root, y_root, i_root)
-            raise daeintException(_msgs[idid], outputs)
-        
-        # if there were no errors, continue to post output or take appropriate
-        # action if we triggered an event or tstop
-        else:
-
-            # any time a succesful idid occurs we should reset step_count
-            step_count = 0
+                   
+                # send what output was obtained
+                outputs = (scipy.array(yout_l), scipy.array(tout_l),
+                           t_root, y_root, i_root)
+                raise daeintException(_msgs[idid], outputs)
             
-            # updating of output should be done whether or not we are in
-            # intermediate output mode
+            # if there were no errors, continue to post output or take
+            # appropriate action if we triggered an event or tstop
+            else:
 
-            # update the output
-            tout_l.append(treached)
-            yout_l.append(y)
-            ypout_l.append(yp)
-
-            # update the current time
-            tcurrent = treached
-
-            # if we hit one of the specified times, update time index
-            if treached == t[tindex]:
-                # update the time index
-                tindex += 1
-
-            # if the time we reached is tstop, then stop the integration
-            if idid == 2:
-                break
-
-            # if an initial condition was calculated, update info[13]
-            # this allows the integration to proceed.  Also set
-            # init_consistent to 0 to avoid a redundant initial condition
-            # calculation
-            if idid == 4:
-                info[13] = 0
-                init_consistent = 0
-
-            # if the solution was successful because a root of R(T,Y,Y') was
-            # found at treached, then restart the integration.
-            elif idid == 5:
-                t_root = tcurrent
-                y_root = y
-                i_root = jroot
-                # include the following break if we want all events to be
-                # terminating
-                break
-
+                # any time a succesful idid occurs we should reset step_count
+                step_count = 0
                 
-    # format the output
-    tout_l = scipy.array(tout_l)
-    yout_l = scipy.array(yout_l)
-    ypout_l = scipy.array(ypout_l)
+                # updating of output should be done whether or not we are in
+                # intermediate output mode
 
-    # Process outputs
-    outputs = (yout_l, tout_l, ypout_l, t_root, y_root, i_root)
+                # update the output
+                tout_l.append(treached)
+                yout_l.append(y)
+                ypout_l.append(yp)
 
-    return outputs
+                # update the current time
+                tcurrent = treached
 
+                # if we hit one of the specified times, update time index
+                if treached == t[tindex]:
+                    # update the time index
+                    tindex += 1
+
+                # if the time we reached is tstop, then stop the integration
+                if idid == 2:
+                    break
+
+                # if an initial condition was calculated, update info[13]
+                # this allows the integration to proceed.  Also set
+                # init_consistent to 0 to avoid a redundant initial condition
+                # calculation
+                if idid == 4:
+                    info[13] = 0
+                    init_consistent = 0
+
+                # if the solution was successful because a root of R(T,Y,Y') was
+                # found at treached, then restart the integration.
+                elif idid == 5:
+                    t_root = tcurrent
+                    y_root = y
+                    i_root = jroot
+                    # include the following break if we want all events to be
+                    # terminating
+                    break
+
+                    
+        # format the output
+        tout_l = scipy.array(tout_l)
+        yout_l = scipy.array(yout_l)
+        ypout_l = scipy.array(ypout_l)
+
+        # Process outputs
+        outputs = (yout_l, tout_l, ypout_l, t_root, y_root, i_root)
+
+        return outputs
+
+    finally:
+        messages = redir.stop()
