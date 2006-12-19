@@ -10,7 +10,7 @@ fmin_lm_scale : scale invariant Levenberg Marquardt
 
 """
 import scipy
-from scipy import *
+from scipy import absolute, sqrt, asarray, zeros, mat, transpose, ones, dot, sum
 import scipy.linalg
 import copy
 import SloppyCell.Utility
