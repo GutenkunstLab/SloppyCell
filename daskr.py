@@ -322,7 +322,7 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
     # specify which components are algebraic and which are differential
     elif init_consistent == 1:
         info[10] = 1
-        # check the car_types parameter
+        # check the var_types parameter
         if var_types == None:
             raise ValueError, 'if init_consistent = 1, the var_types array \
             must be passed.'
@@ -424,6 +424,7 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
                 info[0]=1
                 # idid=-1 is handled below
                 if idid < -1:
+                    messages = redir.stop()
                     # The task was interrupted
                     if messages is not None:
                         logger.warn(messages)
@@ -431,17 +432,18 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
                 # if idid=-1, 500 steps have been taken sine the last time
                 # idid=-1.
                 # Whether we should continue depends on the value of max_steps.
-                if idid == -1:
+                elif idid == -1:
                     # if we haven't hit the value of max_steps, then we should
                     # continue the integration.  Otherwise we should raise an
                     # exception.
                     if max_steps > step_count:
                         step_count += 500
-                        print step_count
                         continue
                     elif max_steps <= step_count:
+                        messages = redir.stop()
                         # report the error message for idid = -1
-                        logger.warn(messages)
+                        if messages is not None:
+                            logger.warn(messages)
                         logger.warn(_msgs[idid])
 
                    
