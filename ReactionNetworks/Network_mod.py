@@ -1308,10 +1308,14 @@ class Network:
             else:
                 self.complexEvents.set(id, event)
 
-        # set the algebraicVars list to the same as dynamicVars, and then
-        # remove those variables that don't belong
-        # make sure to only remove variables that exist in the KeyedList
-        self.algebraicVars = self.dynamicVars.copy()
+        # Set the algebraicVars list to all those appearing in algebraic rules
+        # Remove those variables that don't belong
+        self.algebraicVars = sets.Set()
+        for rule in self.algebraicRules.values():
+            vars = ExprManip.extract_vars(rule)
+            self.algebraicVars.union_update(vars)
+        self.algebraicVars = KeyedList([(id, id) for id
+                                        in self.algebraicVars])
         # remove the reaction variables
         for rxn in self.reactions:
             for chem, value in rxn.stoichiometry.items():
