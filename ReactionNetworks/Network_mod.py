@@ -1223,8 +1223,9 @@ class Network:
     def _make_root_func(self):
         len_root_func = 0
 
-        functionBody = 'def root_func(self, dynamicVars, time):\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
+        body = []
+        body.append('def root_func(self, dynamicVars, time):')
+        self._add_assignments_to_function_body(body)
 
         self.event_clauses = []
         for ii, event in enumerate(self.events.values()):
@@ -1233,7 +1234,8 @@ class Network:
                 trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
                                                  func_expr)
 
-            functionBody += 'self._root_func[%i] = (%s) - 0.5\n\t' % (len_root_func, trigger)
+            body.append('self._root_func[%i] = (%s) - 0.5'
+                        % (len_root_func, trigger))
             self.event_clauses.append(trigger)
             len_root_func += 1
 
@@ -1245,15 +1247,17 @@ class Network:
             comparisons = ExprManip.extract_comps(trigger)
             if len(comparisons) > 1:
                 for comp in comparisons:
-                    functionBody += 'self._root_func[%i] = (%s) - 0.5\n\t' % (len_root_func, comp)
+                    body.append('self._root_func[%i] = (%s) - 0.5\n\t' 
+                                % (len_root_func, comp))
                     len_root_func += 1
                     self.event_clauses.append(comp)
 
         self._root_func = scipy.zeros(len_root_func, scipy.float_)
 
-        functionBody += '\n\treturn self._root_func\n'
+        body.append('')
+        body.append('return self._root_func')
 
-        return functionBody
+        return '\n\t'.join(body)
 
     # ddaskr_root(...) is the function for events for the daskr integrator.
     def ddaskr_root(self, t, y, yprime):
