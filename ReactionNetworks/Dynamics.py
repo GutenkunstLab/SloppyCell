@@ -309,6 +309,11 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
                     ye.append(y_root_this[-1])
                     ie.append(real_fired[0])
                     event_just_fired = True
+                else:
+                    yout = yout[:-1]
+                    tout = tout[:-1]
+                    if return_derivs:
+                        youtdt = youtdt[:-1]
 
         # If an event fired
         if event_just_fired:
