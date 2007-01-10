@@ -669,6 +669,7 @@ def integrate_sens_subset(net, times, rtol=1e-6,
     """
     Integrate the sensitivity equations for a list of optimizable variables.
     """
+    rtol, atol = generate_tolerances(net, rtol)
     # We integrate the net once just to know where all our events are
     traj = integrate(net, times, rtol=rtol, fill_traj=fill_traj, 
                      return_events=False, return_derivs=return_derivs,
@@ -712,13 +713,19 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     """
     Integrate the sensitivity equations for a single optimization variable.
     """
+    #
+    # This now uses the ddaskr related-functions.
+    #
     opt_var_index = net.optimizableVars.index_by_key(opt_var)
     N_dyn_vars = len(net.dynamicVars)
 
     # Calculate tolerances for our sensitivity integration
     rtol, atol = generate_tolerances(net, rtol)
+    # We set the same rtol for sensitivity variables as for the normal
+    # variables.
     rtol_for_sens = scipy.concatenate((rtol, rtol))
-    rtol_for_sens = rtol_for_sens[0]
+    # Absolute tolerances depend on the typical value of the optimizable
+    # variable
     atol_for_sens = atol/net.get_var_typical_val(opt_var)
     atol_for_sens = scipy.concatenate((atol, atol_for_sens))
 
@@ -739,6 +746,12 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
             DwrtOV = net.takeDerivative(var.initialValue, opt_var)
             IC[N_dyn_vars + dvInd] = net.evaluate_expr(DwrtOV, 
                                                        time=current_time)
+    # We'll let ddaskr figure out the initial condition on yprime
+    ypIC = 0*IC
+    # The var_types for the sensitivity variables are identical to those
+    # for the normal variables.
+    var_types = scipy.concatenate((net._dynamic_var_algebraic,
+                                   net._dynamic_var_algebraic))
 
     tout = []
     sens_out = scipy.zeros((0, N_dyn_vars), scipy.float_)
@@ -747,7 +760,8 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     pendingEvents = {}
     while current_time < times[-1]:
         if round(current_time, 12) in pendingEvents.keys():
-            IC = net.executeEventAndUpdateDdv_Dov(pendingEvents[round(current_time, 12)], IC, current_time, [opt_var])
+            IC = net.executeEventAndUpdateDdv_Dov(event, IC, current_time, 
+                                                  [opt_var])
             del pendingEvents[round(current_time, 12)]
         # Figure out how long we need to integrate until
         if pendingEvents:
@@ -765,16 +779,23 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         if integrate_until < times[-1]:
             int_times = scipy.concatenate((int_times, [integrate_until]))
 
+        # We only need ddaskr to calculate ypIC on the first time we run though.
+        if current_time == times[0]:
+            init_consistent = 1
+        else:
+            init_consistent = 0
+
         if net.integrateWithLogs:
             IC[:N_dyn_var] = scipy.log(IC[:N_dyn_var])
         try:
-            int_outputs = odeintr(_Ddv_and_DdvDov_dtTrunc,
-                                  IC, int_times,
-                                  args = (net, opt_var_index),
-                                  mxstep = 10000,
-                                  rtol = rtol_for_sens, atol = atol_for_sens,
-                                  return_derivs = return_derivs,
-                                  redirect_msgs = redirect_msgs)
+            int_outputs = daeint(_alg_sens, int_times,
+                                 IC, ypIC, 
+                                 rtol_for_sens, atol_for_sens,
+                                 args = (net, opt_var_index),
+                                 max_steps = 1e4,
+                                 init_consistent=init_consistent,
+                                 var_types = var_types,
+                                 redir_output = 1)
         except Utility.SloppyCellException, X:
             logger.warn('Sensitivity integration failed for network %s on '
                         'node %i during optimizable variable %s.'
@@ -786,7 +807,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         sens_out = scipy.concatenate((sens_out, 
                                       yout_this[:,N_dyn_vars:].copy()))
         if return_derivs:
-            youtdt_this = int_outputs[-1]
+            youtdt_this = int_outputs[2]
             sensdt_out = scipy.concatenate((sensdt_out,
                                             youtdt_this[:,N_dyn_vars:].copy()))
         tout.extend(int_times)
@@ -958,11 +979,10 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6):
         x0 = dv0
 
     try:
-        dvFixed, infodict, ier, mesg = scipy.optimize.fsolve(func, x0=x0,
-                                                             fprime=fprime,
-                                                             col_deriv=True,
-                                                             full_output=True,
-                                                             xtol=xtol)
+        dvFixed, infodict, ier, mesg =\
+                scipy.optimize.fsolve(func, x0=x0, fprime=fprime,
+                                      col_deriv=True, full_output=True,
+                                      xtol=xtol)
     except scipy.optimize.minpack.error, X:
         raise FixedPointException(('Failure in fsolve.', X))
 
@@ -974,49 +994,33 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6):
     else:
         return dvFixed
 
-def _D2dv_Dov_dtTrunc(dv, Ddv_Dov, time, net, ovIndex):
-    # The partial derivative of the dynamic vars wrt the ovIndex optimizable var
-    partials = net.get_d2dv_dovdt(dv, time, indices = [ovIndex])[:, ovIndex]
-    if scipy.any(scipy.isnan(partials)) or scipy.any(scipy.isinf(partials)):
-        print 'partials has NaNs:', partials
-        opt_var = net.optimizableVars.keys()[ovIndex]
-        print 'opt_var = %s.' % opt_var
-        print 'dv:', dv
-
-    # The partial derivative of the dynamic vars wrt the other dynamic vars
-    J = net.get_d2dv_ddvdt(dv, time)
-    if scipy.any(scipy.isnan(J)) or scipy.any(scipy.isinf(J)):
-        print 'J has NaNs:', J
-
-    # Now we do the chain rule to the the total derivative of the dynamic vars
-    #  wrt the specified optimizable var.
-    # Transpose of J is [[dAdA, dAdB],[dBdA, dBdB]] and Ddv_dov is [dAda, dBda]
-    #  This product is [dAdA*dAda + dAdB*dBdb, dBdA*dAda + dBdB*dBdb]
-    #  (in a notation where A is a dynamic var and a is an optimizable)
-    D2dv_Dov_dt = scipy.dot(scipy.transpose(J), Ddv_Dov) + partials
-
-    return D2dv_Dov_dt
-
-def _Ddv_and_DdvDov_dtTrunc(y, time, net, ovIndex):
-    if scipy.any(scipy.isnan(y)) or scipy.any(scipy.isinf(y)):
-        print 'y has NaNs:', y
+def _alg_sens(time, y, ydot, net, opt_ii):
+    # This is the integrand for the sensitivity integration
     nDV = len(net.dynamicVars)
 
-    # XXX: Might want to fill in a global array here. Perhaps a small speed
-    #      boost
-    dv = y[:nDV]
-    if getattr(net, 'integrateWithLogs', False):
-        dv = scipy.maximum(scipy.exp(dv), scipy.misc.limits.double_tiny)
-    Dc_Dt = net.get_ddv_dt(dv, time)
-    D2dv_Dov_dt = _D2dv_Dov_dtTrunc(dv, y[nDV:], time, net, ovIndex)
+    c = y[:nDV]
+    dc_dp = y[nDV:]
+    cdot = ydot[:nDV]
+    dcdot_dp = ydot[nDV:]
 
-    if not getattr(net, 'integrateWithLogs', False):
-        result = scipy.concatenate((Dc_Dt, D2dv_Dov_dt))
-    else:
-        result = scipy.concatenate((Dc_Dt/dv, D2dv_Dov_dt))
-    if scipy.any(scipy.isnan(result)) or scipy.any(scipy.isinf(result)):
-        print 'result has NaNs:', result
+    # These are the residuals for the normal integration
+    res = net.res_function(time, c, cdot, ires=0)
+
+    # The total derivative of res with respect to parameter opt_ii is
+    # Dres_Dp = \partial res/\partial dp + \partial res/\partial c * dc/dp +
+    #    \partial res/\partial cdot * dcdot/dp
+    dres_dp = net.dres_dp_function(time, c, cdot, 
+                                    indices=[opt_ii])[:, opt_ii]
+    dres_dc = net.dres_dc_function(time, c, cdot)
+    dres_dcdot = net.dres_dcdot_function(time, c, cdot)
+
+    Dres_Dp = dres_dp + scipy.dot(dres_dc, dc_dp) +\
+            scipy.dot(dres_dcdot, dcdot_dp)
+
+    # Glue them together for the return
+    result = scipy.concatenate((res, Dres_Dp))
     return result
+
 
 def _reduce_times(yout, tout, times):
     jj = 0
@@ -1029,10 +1033,3 @@ def _reduce_times(yout, tout, times):
     yout = yout[:len(times)]
 
     return yout
-
-try:
-    import psyco
-    psyco.bind(_D2dv_Dov_dtTrunc)
-    psyco.bind(_Ddv_and_DdvDov_dtTrunc)
-except ImportError:
-    pass
