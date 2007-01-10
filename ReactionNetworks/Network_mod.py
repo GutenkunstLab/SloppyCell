@@ -28,11 +28,11 @@ if SloppyCell.my_rank == 0:
     atexit.register(ExprManip.save_derivs, os.path.join(SloppyCell._TEMP_DIR, 
                                                         'diff.pickle'))
 
-import Integration
 import Reactions
 import SloppyCell.Collections as Collections
 
 from Components import *
+import Dynamics
 import Trajectory_mod
 
 import PerfectData
@@ -43,12 +43,6 @@ try:
     HAVE_PSYCO = True
 except ImportError:
     HAVE_PSYCO = False
-
-try:
-    import Dynamics
-    HAVE_DYNAMICS = True
-except ImportError:
-    HAVE_DYNAMICS = False
 
 class Network:
     # Here are all the functions we dynamically generate. To add a new one,
