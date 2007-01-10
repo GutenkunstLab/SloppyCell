@@ -826,6 +826,24 @@ class Network:
                     connectedReactions[id] = [rxn.stoichiometry,rateexpr,rateexprval]
         return connectedReactions
 
+    def _make_get_ddv_dt(self):
+        self.ddv_dt = scipy.zeros(len(self.dynamicVars), scipy.float_)
+
+        functionBody = 'def get_ddv_dt(self, dynamicVars, time):\n\t'
+        functionBody += 'ddv_dt = self.ddv_dt\n\t'
+        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
+        functionBody += '\n\t'
+
+        for ii, (id, var) in enumerate(self.dynamicVars.items()):
+            rhs = self.diff_eq_rhs.getByKey(id)
+            if rhs != '0':
+                functionBody += '# Total derivative of %s wrt time\n\t' % (id)
+                functionBody += 'ddv_dt[%i] = %s\n\t' % (ii, rhs)
+
+        functionBody += '\n\n\treturn ddv_dt\n'
+
+        return functionBody
+
     def _make_get_d2dv_ddvdt(self):
         self.d2dv_ddvdt = scipy.zeros((len(self.dynamicVars),
                                      len(self.dynamicVars)), scipy.float_)
@@ -1012,7 +1030,7 @@ class Network:
 
     def _add_assignments_to_function_body(self, body):
         """
-        Adds the assignment rules for this Netowrk to the list of lines that
+        Adds the assignment rules for this Network to the list of lines that
         are in body.
         """
         body.append('constants = self.constantVarValues')
