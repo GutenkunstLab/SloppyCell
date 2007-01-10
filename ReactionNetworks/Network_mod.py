@@ -285,7 +285,8 @@ class Network:
         self.namespace[id] = eval(func_str, self.namespace)
         for ii, wrt in enumerate(variables):
             diff_id = '%s_%i' % (id, ii)
-            func_str = 'lambda %s: %s' % (var_str, ExprManip.diff_expr(math, wrt))
+            func_str = 'lambda %s: %s' % (var_str, ExprManip.diff_expr(math, 
+                                                                       wrt))
             self._func_strs.append((diff_id, func_str))
             self.namespace[diff_id] = eval(func_str, self.namespace)
 
@@ -354,7 +355,8 @@ class Network:
         Check whether a given id is already in use by this Network.
         """
         if id == 'time':
-            logger.warn("Specifying 'time' as a variable is dangerous! Are you sure you know what you're doing?")
+            logger.warn("Specifying 'time' as a variable is dangerous! Are you "
+                        "sure you know what you're doing?")
         if id in self.variables.keys()\
            or id in self.reactions.keys()\
            or id in self.functionDefinitions.keys()\
@@ -423,7 +425,9 @@ class Network:
         t = list(t)
         t.sort()
 
-        self.ddv_dpTrajectory = self.integrateSensitivity(t,params, addTimes = True, rtol = 1.0e-7)
+        self.ddv_dpTrajectory = self.integrateSensitivity(t,params, 
+                                                          addTimes = True, 
+                                                          rtol = 1.0e-7)
         self.trajectory = self.ddv_dpTrajectory
 
     def GetName(self):
@@ -447,8 +451,6 @@ class Network:
             elif self.variables.has_key(id):
                 traj = self.trajectory.getVariableTrajectory(id)
                 result[id] = dict(zip(times, traj))
-
-        #result.update(self.pd_returns)
 
         return result
 
@@ -485,6 +487,10 @@ class Network:
                                               fill_traj=self.add_int_times)
 
     def _sub_for_piecewise(self, expr, time):
+        """
+        Runs through expr and replaces all piecewise expressions by the
+        clause that is currently active.
+        """
         funcs_used = ExprManip.extract_funcs(expr)
         for func, args in funcs_used:
             if func == 'piecewise':
@@ -507,11 +513,15 @@ class Network:
                 otherwise = None
         
             for cond_ast, expr_ast in zip(conditions, clauses):
+                # For each condition, check whether or not it is True.
+                # If so, return the corresponding clause.
                 subbed_cond = self._sub_for_piecewise_ast(cond_ast, time=time)
                 cond_str = ExprManip.ast2str(subbed_cond)
                 if self.evaluate_expr(cond_str, time):
                     return self._sub_for_piecewise_ast(expr_ast, time=time)
             else:
+                # If none of our conditions were True, return the otherwise
+                # clause if we have one.
                 if otherwise is not None:
                     return self._sub_for_piecewise_ast(otherwise, time=time)
                 else:
@@ -575,7 +585,12 @@ class Network:
         Set the initial condition of the variable with the given id.
         """
         if warn and id in self.assignedVars.keys():
-            print 'WARNING! Attempt to assign an initial condition to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the initial condition of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
+            logger.warn('WARNING! Attempt to assign an initial condition to '
+                        'the variable %s, which is determined by an assignment '
+                        'rule. This is a meaningless operation. Instead, '
+                        'change the initial condition of one or more of the '
+                        'components in the rule: %s' % 
+                        (id, self.assignmentRules.get(id)))
 
         var = self.get_variable(id)
         var.initialValue = value
@@ -624,7 +639,8 @@ class Network:
         """
         Returns the vector field evaluated at the initial conditions
         """
-        ics = [self.evaluate_expr(self.getInitialVariableValue(dvid)) for dvid in self.dynamicVars.keys()]
+        ics = [self.evaluate_expr(self.getInitialVariableValue(dvid))
+               for dvid in self.dynamicVars.keys()]
         # the evaluate_expr is in case an initial condition is a parameter
         initialv = self.get_ddv_dt(ics,0.0)
         return initialv
@@ -642,7 +658,11 @@ class Network:
         """
 
         if warn and self.assignedVars.has_key(id):
-            print 'WARNING! Attempt to assign a value to the variable %s, which is determined by an assignment rule. This is a meaningless operation. Instead, change the value of one or more of the components in the rule: %s' % (id, self.assignmentRules.get(id))
+            logger.warn('WARNING! Attempt to assign a value to the variable '
+                        '%s, which is determined by an assignment rule. This '
+                        'is a meaningless operation. Instead, change the value '
+                        'of one or more of the components in the rule: %s'
+                        % (id, self.assignmentRules.get(id)))
 
         var = self.get_variable(id)
         var.value = val
@@ -665,7 +685,8 @@ class Network:
         if var:
             return var
         else:
-            raise KeyError, 'Variable %s not found in network %s!' % (id, self.get_id())
+            raise KeyError('Variable %s not found in network %s!'
+                           % (id, self.get_id()))
 
     def update_optimizable_vars(self, params):
         """
@@ -684,7 +705,8 @@ class Network:
             for ii, id in enumerate(self.optimizableVars.keys()):
                 self.set_initial_var_value(id, params[ii])
         else:
-            raise ValueError, 'Passed in parameter set does not have the proper length!'
+            raise ValueError('Passed in parameter set does not have the proper '
+                             'length!')
 
     getInitialVariableValue = get_var_ic
 
@@ -777,10 +799,10 @@ class Network:
                 self.diff_eq_rhs.set(id, ExprManip.simplify_expr(rhs))
 
     def getRatesForDV(self,dvName,time) :
-        """ Determine the individual reaction rates for dynamic variable dvName at
-        a particular time.
-        Returns the numerical rate for each reaction that changes dvName, and
-        the stoichiometry of each reaction
+        """ 
+        Determine the individual reaction rates for dynamic variable dvName at
+        a particular time.  Returns the numerical rate for each reaction that
+        changes dvName, and the stoichiometry of each reaction
         """
         connectedReactions = {}
         # this is very messy way to do this but just for the moment...
@@ -990,7 +1012,10 @@ class Network:
             dTf_dov = dict(zip(opt_vars, [0] * nOV))
         else:
             if 'time' in ExprManip.extract_vars(trigger):
-                raise exceptions.NotImplementedError, "We don't support explicit time dependence in complex event triggers for sensitivity! (Yet) Tigger was: %s" % trigger
+                raise NotImplementedError("We don't support explicit time "
+                                          "dependence in complex event "
+                                          "triggers for sensitivity! (Yet) "
+                                          "Trigger was: %s." % trigger)
             dtrigger_ddvValue = {}
             for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
                 dtrigger_ddv = self.takeDerivative(trigger, dynId)
@@ -1038,7 +1063,8 @@ class Network:
             # Calculate the perturbations to the sensitivities
             for ovIndex, optId in enumerate(opt_vars):
                 for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
-                    event.new_values[executionTime].setdefault((lhsId, optId), 0)
+                    event.new_values[executionTime].setdefault((lhsId, optId), 
+                                                               0)
                     indexInOA = dvIndex + (ovIndex + 1)*nDV
                     #dv_ddv * ddv_dov
                     event.new_values[executionTime][(lhsId, optId)] += \
