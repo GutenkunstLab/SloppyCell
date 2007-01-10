@@ -48,8 +48,10 @@ class Network:
     # Here are all the functions we dynamically generate. To add a new one,
     #  called, for example, fooFunc, you need to define _make_fooFunc, which
     #  generates the python code for the function in fooFunc_functionBody.
-    _dynamic_structure_funcs = ['get_ddv_dt', 'get_d2dv_ddvdt', 
-                                'get_d2dv_dovdt', 'res_function']
+    _dynamic_structure_funcs = ['res_function', 'get_ddv_dt', 
+                                'get_d2dv_ddvdt', 'get_d2dv_dovdt', 
+                                'dres_dcdot_function', 'dres_dc_function',
+                                'dres_dp_function']
     _dynamic_event_funcs = ['root_func']
     _dynamic_funcs = _dynamic_structure_funcs + _dynamic_event_funcs
 
@@ -876,64 +878,166 @@ class Network:
 
         return functionBody
 
-
     def _make_res_function(self):
-
         self.residual = scipy.zeros(len(self.dynamicVars), scipy.float_)
-        functionBody = 'def res_function(self, time, dynamicVars, yprime, ires):\n\t'
-        functionBody += 'residual = self.residual\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-        functionBody += '\n\t'
+        body = []
+        body.append('def res_function(self, time, dynamicVars, yprime, ires):')
+        body.append('residual = self.residual')
+        self._add_assignments_to_function_body(body)
+        body.append('')
 
+        # Make a list of algebraic rules for accessing later
+        algebraicRuleList = self.algebraicRules.values()
 
-        # make a list of algebraic rules for accessing later
-        algebraicRuleList = []
-        for kk, (rhs,rhs) in enumerate(self.algebraicRules.items()):
-            algebraicRuleList.append(rhs)
-
-
-        # numAlgebraicRhs keeps track of how many variables are entered
-        # into the resFunction as algebraic variables
-        
-        numAlgebraicRhs = 0
-
-        # loop over everything in the dynamicVars list
+        # We keep a list of terms in our residual function for use building the 
+        #  various derivative functions.
+        self._residual_terms = []
+        # This list tells us whether a give dynamic variable is algebraic or not
+        self._dynamic_var_algebraic = []
+        # Loop over everything in the dynamicVars list
         for ii, (id, var) in enumerate(self.dynamicVars.items()):
-            rhs = self.diff_eq_rhs.getByKey(id)
-            # if a rhs is 0 there are two possibilities
-            # it's a dynamic variable with 0 rhs
-            # it corresponds to an algebraic rule
-            if rhs == '0':
-                # it could be a differential variable with a 0 rhs
-                # in this case we still need to subtract the corresponding yprime from
-                # the residual equation
-                if self.algebraicVars.get(id) == None:
-                    functionBody += '# Residual function for %s\n\t' % (id)
-                    functionBody += 'residual[%i] = - yprime[%i]' % (ii, ii)
-                    functionBody += '\n\t'
+            if self.algebraicVars.has_key(id):
+                # It's an algebraic equation. Pop an algebraic rule off the
+                # list.
+                rhs = algebraicRuleList.pop()
+                body.append('# Residual function corresponding to an '
+                            'algebraic  equation')
+                body.append('residual[%i] = %s' % (ii, rhs))
+                self._residual_terms.append((rhs, None))
+                self._dynamic_var_algebraic.append(-1)
+            else:
+                rhs = self.diff_eq_rhs.getByKey(id)
+                self._dynamic_var_algebraic.append(+1)
+                body.append('# Residual function for %s' % id)
+                if rhs != '0':
+                    body.append('residual[%i] = %s - yprime[%i]' % 
+                                (ii, rhs, ii))
+                    self._residual_terms.append((rhs, id))
                 else:
-                    # it's an algebraic equation
-                    # grab an algebraic rule from the list and increment the counter
-                    rhs = algebraicRuleList[numAlgebraicRhs]
-                    functionBody += '# Residual function corresponding to an algebraic \
-        equation \n\t'
-                    functionBody += 'residual[%i] = %s' % (ii, rhs)
-                    functionBody += '\n\t'
-                    numAlgebraicRhs += 1
-                continue
-            # if the rhs = 0 it's a differential equation
-            elif rhs != '0':
-                functionBody += '# Residual function for %s\n\t' % (id)
-                functionBody += 'residual[%i] = %s' % (ii, rhs)
-                # We only subtract the derivative variable for the differential variables
-                if self.algebraicVars.get(id) == None:
-                    functionBody += '- yprime[%i]' % (ii)
-                functionBody += '\n\t'
-        
-        functionBody += '\n\n\treturn residual\n'
+                    body.append('residual[%i] = - yprime[%i]' % (ii, ii))
+                    self._residual_terms.append((None, id))
 
-        return functionBody
+        body.append('')
+        body.append('return residual')
+        return '\n\t'.join(body)
 
+    def _make_dres_dcdot_function(self):
+        self.dres_dcdot = scipy.zeros((len(self.residual),
+                                       len(self.residual)), 
+                                      scipy.float_)
+        body = []
+        body.append('def dres_dcdot_function(self, time, dynamicVars, yprime, '
+                    'indices = None):')
+        body.append('dres_dcdot = self.dres_dcdot')
+        self._add_assignments_to_function_body(body)
+        body.append('')
+
+        for wrt_ii, wrt in enumerate(self.dynamicVars.keys()):
+            body.append('if (indices is None) or (%i in indices):' % wrt_ii)
+            for res_ii, (rhs, dt) in enumerate(self._residual_terms):
+                if dt == wrt:
+                    body.append('\t# Residual function for %s wrt %s_dot' %
+                                (id, wrt))
+                    body.append('\tdres_dcdot[%i, %i] = -1' % 
+                                (res_ii, wrt_ii))
+            body.append('\tpass')
+
+        body.append('return dres_dcdot')
+
+        return '\n\t'.join(body)
+
+    def _make_dres_dc_function(self):
+        self.dres_dc = scipy.zeros((len(self.residual), len(self.residual)), 
+                                   scipy.float_)
+        body = []
+        body.append('def dres_dc_function(self, time, dynamicVars, yprime, '
+                    'indices = None):')
+        body.append('dres_dc = self.dres_dc')
+        self._add_assignments_to_function_body(body)
+        body.append('')
+
+        for wrt_ii, wrt in enumerate(self.dynamicVars.keys()):
+            body.append('if (indices is None) or (%i in indices):' % wrt_ii)
+            for res_ii, (rhs, dt) in enumerate(self._residual_terms):
+                if rhs is None:
+                    continue
+                deriv = self.takeDerivative(rhs, wrt)
+                if deriv != '0':
+                    if dt is None:
+                        # It was an algebraic rule.
+                        body.append('\t# Algebraic equation %s wrt %s' %
+                                    (rhs, wrt))
+                    else:
+                        body.append('\t# Residual function for %s wrt %s' %
+                                    (id, wrt))
+                    body.append('\tdres_dc[%i, %i] = %s' % 
+                                (res_ii, wrt_ii, deriv))
+            body.append('\tpass')
+
+        body.append('return dres_dc')
+
+        return '\n\t'.join(body)
+
+    def _make_dres_dp_function(self):
+        self.dres_dp = scipy.zeros((len(self.residual),
+                                    len(self.optimizableVars)), 
+                                   scipy.float_)
+        body = []
+        body.append('def dres_dp_function(self, time, dynamicVars, yprime, '
+                    'indices = None):')
+        body.append('dres_dp = self.dres_dp')
+        self._add_assignments_to_function_body(body)
+        body.append('')
+
+        for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
+            body.append('if (indices is None) or (%i in indices):' % wrt_ii)
+            for res_ii, (rhs, dt) in enumerate(self._residual_terms):
+                if rhs is None:
+                    continue
+                deriv = self.takeDerivative(rhs, wrt)
+                if deriv != '0':
+                    if dt is None:
+                        # It was an algebraic rule.
+                        body.append('\t# Algebraic equation %s wrt %s' %
+                                    (rhs, wrt))
+                    else:
+                        body.append('\t# Residual function for %s wrt %s' %
+                                    (id, wrt))
+                    body.append('\tdres_dp[%i, %i] = %s' % 
+                                (res_ii, wrt_ii, deriv))
+            body.append('\tpass')
+
+        body.append('return dres_dp')
+        return '\n\t'.join(body)
+
+    def _add_assignments_to_function_body(self, body):
+        """
+        Adds the assignment rules for this Netowrk to the list of lines that
+        are in body.
+        """
+        body.append('constants = self.constantVarValues')
+
+        # We loop to assign our constantVarValues and our dynamicVars
+        #  to local variables for speed (avoid repeated accesses) and
+        #  for readability
+        for arg, var_names in zip(['constants', 'dynamicVars'],
+                                  [self.constantVars.keys(),
+                                   self.dynamicVars.keys()]):
+            # We protect ourselves with a 'try, except' clause
+            #  in case passed in values are not an array, but e.g. a list
+            #  or KeyedList.
+            body.append('try:')
+            for ii, id in enumerate(var_names):
+                body.append('\t%s = %s.item(%i)' % (id, arg, ii))
+            body.append('except AttributeError:')
+            for ii, id in enumerate(var_names):
+                body.append('\t%s = %s[%i]' % (id, arg, ii))
+            body.append('')
+
+        for variable, math in self.assignmentRules.items():
+            body.append('%s = %s' % (variable, math))
+
+        return body
 
     #
     # Methods involved in events
