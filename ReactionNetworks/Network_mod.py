@@ -112,6 +112,11 @@ class Network:
             deriv_id = '%s_%i' % (id, ii)
             func = 'lambda %s: %s' % (var_str, ExprManip.diff_expr(math, wrt))
             _common_func_strs.append((deriv_id, func))
+    # Also do the logical functions
+    for id, vars, math in _logical_comp_func_defs:
+        var_str = ','.join(vars)
+        func = 'lambda %s: %s' % (var_str, math)
+        _common_func_strs.append((id, func))
 
     def __init__(self, id, name=''):
         self.id, self.name = id, name
