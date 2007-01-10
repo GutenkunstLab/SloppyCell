@@ -803,54 +803,6 @@ class Network:
                     connectedReactions[id] = [rxn.stoichiometry,rateexpr,rateexprval]
         return connectedReactions
 
-    def PrintFakeData(self, times):
-        ##make vars
-        vars = {}
-        for var in self.dynamicVars.keys() :
-            vars[var] = times
-            self.Calculate(vars)
-            results = self.GetResult(vars)
-            output = open("fakedata"+self.id+".py", 'w')
-            output.write("import SloppyCell.Collections as Collections\n")
-            output.write("fakedata = Collections.Experiment('fakeExpt" + self.id + "')\n")
-            output.write("fakedata.longname = 'Data generated directly from network "+self.name+"'\n")
-            output.write("fakedata.SetFixedScaleFactors({\'"+results.keys()[0]+"\':1.0")
-        for chemName in results.keys()[1:] :
-            output.write(",\'"+chemName+"\':1.0 \n")
-
-        output.write("})\n")
-        output.write("fakedata.SetData({\'"+self.id+"\':{\n")
-        for chemName in results.keys():
-            output.write("\t\t\t'"+chemName+"':{\n")
-            for timepoint in results[chemName].keys():
-                stddev = results[chemName][timepoint]*.1
-                if stddev <= .01 :
-                    stddev = .01
-                output.write("\t\t\t\t"+str(timepoint)+": ("+str(results[chemName][timepoint])+", "+str(stddev)+"),\n")
-            output.write("\t\t\t},##end "+chemName+" data\n")
-        output.write("\t\t},##end calc data\n")
-        output.write("\t})##end fakedata.SetData\n")
-        output.write("fakeDataColl = Collections.ExperimentCollection([fakedata])\n")
-        output.close()
-
-    def _make_get_ddv_dt(self):
-        self.ddv_dt = scipy.zeros(len(self.dynamicVars), scipy.float_)
-
-        functionBody = 'def get_ddv_dt(self, dynamicVars, time):\n\t'
-        functionBody += 'ddv_dt = self.ddv_dt\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-        functionBody += '\n\t'
-
-        for ii, (id, var) in enumerate(self.dynamicVars.items()):
-            rhs = self.diff_eq_rhs.getByKey(id)
-            if rhs != '0':
-                functionBody += '# Total derivative of %s wrt time\n\t' % (id)
-                functionBody += 'ddv_dt[%i] = %s\n\t' % (ii, rhs)
-
-        functionBody += '\n\n\treturn ddv_dt\n'
-
-        return functionBody
-
     def _make_get_d2dv_ddvdt(self):
         self.d2dv_ddvdt = scipy.zeros((len(self.dynamicVars),
                                      len(self.dynamicVars)), scipy.float_)
@@ -1241,9 +1193,6 @@ class Network:
             for var in e.event_assignments.keys():
                 if self.algebraicVars.has_key(var):
                     self.algebraicVars.remove_by_key(var)
-
-
-
 
     def compile(self):
         """
