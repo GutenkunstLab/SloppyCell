@@ -303,6 +303,8 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
                 raise ValueError('Two events fired simultaneously! '
                                  'Result is ambiguous.')
             else:
+                logger.debug('Root crossing %i at time=%g in network %s.'
+                             % (real_fired[0], current_time, net.get_id()))
                 # Trigger was false before integration.
                 if trigger_status[real_fired[0]] < 0:
                     te.append(t_root_this[-1])
@@ -457,6 +459,12 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
 
     exception_raised = None
 
+    # This is the jacobian for use with ddaskr.
+    def _ddaskr_jac(t, y, yprime, pd, cj):
+        dc_term = net.dres_dc_function(t, y, yprime) 
+        dcdot_term = net.dres_dcdot_function(t, y, yprime)
+        return dc_term + cj * dcdot_term
+
     # If calculate_ic is true, then we need to calculate inititial conditions
     # for the DAE.  For daskr to do this it needs to know which variables are
     # algebraic.
@@ -495,6 +503,7 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
                               copy.copy(IC), copy.copy(youtdt),
                               rtol, atol,
                               intermediate_output = fill_traj,
+                              jac = _ddaskr_jac,
                               max_steps = 10000,
                               redir_output = redirect_msgs)
 
@@ -543,6 +552,7 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
                           copy.copy(IC), copy.copy(youtdt),
                           rtol, atol,
                           rt = root_func,
+                          jac = _ddaskr_jac,
                           intermediate_output = fill_traj,
                           redir_output = redirect_msgs,
                           init_consistent = calculate_ic,
@@ -1022,10 +1032,7 @@ def _reduce_times(yout, tout, times):
 
 try:
     import psyco
-    psyco.bind(scipy.interpolate.splrep)
-    psyco.bind(scipy.interpolate.splev)
     psyco.bind(_D2dv_Dov_dtTrunc)
     psyco.bind(_Ddv_and_DdvDov_dtTrunc)
-    psyco.bind(SloppyCell.lsodar.odeintr)
 except ImportError:
     pass
