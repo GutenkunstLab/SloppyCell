@@ -795,11 +795,11 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                                  max_steps = 1e4,
                                  init_consistent=init_consistent,
                                  var_types = var_types,
-                                 redir_output = 1)
+                                 redir_output = redirect_msgs)
         except Utility.SloppyCellException, X:
             logger.warn('Sensitivity integration failed for network %s on '
                         'node %i during optimizable variable %s.'
-                        % (net.id, my_rank, ovId))
+                        % (net.id, my_rank, opt_var))
             raise
 
         # Copy out the sensitivity values
