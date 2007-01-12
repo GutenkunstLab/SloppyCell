@@ -1119,6 +1119,7 @@ class Network:
         ddv_dt = self.get_ddv_dt(values[:nDV], time)
         new_values = copy.copy(values[:nDV])
         for lhsId, rhs in event.event_assignments.items():
+            rhs = str(rhs)
             rhs = self._sub_for_piecewise(rhs, time)
             lhsIndex = self.dynamicVars.indexByKey(lhsId)
 
