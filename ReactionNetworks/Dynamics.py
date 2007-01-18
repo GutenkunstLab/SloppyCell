@@ -779,21 +779,16 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         if integrate_until < times[-1]:
             int_times = scipy.concatenate((int_times, [integrate_until]))
 
-        # We only need ddaskr to calculate ypIC on the first time we run though.
-        if current_time == times[0]:
-            init_consistent = 1
-        else:
-            init_consistent = 0
-
+        # We let daskr figure out ypIC
         if net.integrateWithLogs:
-            IC[:N_dyn_var] = scipy.log(IC[:N_dyn_var])
+            IC[:N_dyn_vars] = scipy.log(IC[:N_dyn_vars])
         try:
             int_outputs = daeint(_alg_sens, int_times,
                                  IC, ypIC, 
                                  rtol_for_sens, atol_for_sens,
                                  args = (net, opt_var_index),
                                  max_steps = 1e4,
-                                 init_consistent=init_consistent,
+                                 init_consistent=1,
                                  var_types = var_types,
                                  redir_output = redirect_msgs)
         except Utility.SloppyCellException, X:
@@ -804,17 +799,19 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
 
         # Copy out the sensitivity values
         yout_this = int_outputs[0]
+        youtdt_this = int_outputs[2]
         sens_out = scipy.concatenate((sens_out, 
                                       yout_this[:,N_dyn_vars:].copy()))
         if return_derivs:
-            youtdt_this = int_outputs[2]
             sensdt_out = scipy.concatenate((sensdt_out,
                                             youtdt_this[:,N_dyn_vars:].copy()))
         tout.extend(int_times)
 
         current_time, IC = tout[-1], yout_this[-1].copy()
+        
+        # All that matters is the IC
         if net.integrateWithLogs:
-            IC[:N_dyn_var] = scipy.exp(IC[:N_dyn_var])
+            IC[:N_dyn_vars] = scipy.exp(IC[:N_dyn_vars])
 
         # If an event should be fired
         if te and te[0] == tout[-1]:
@@ -859,8 +856,6 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-6,
                           fill_traj=False, return_derivs=False,
                           redirect_msgs=True):
     logger.debug('Entering integrate_sens on node %i' % my_rank)
-    if not scipy.isscalar(rtol):
-        rtol = 1e-6
 
     times = scipy.array(times)
     net.compile()
@@ -998,9 +993,16 @@ def _alg_sens(time, y, ydot, net, opt_ii):
     # This is the integrand for the sensitivity integration
     nDV = len(net.dynamicVars)
 
-    c = y[:nDV]
+    if not net.integrateWithLogs:
+        c = y[:nDV]
+        cdot = ydot[:nDV]
+    else:
+        c = scipy.exp(y[:nDV])
+        # Force our c to be non-zero, since that's the whole point of the
+        # logarithmic integration.
+        c = scipy.maximum(c, scipy.misc.limits.double_tiny)
+        cdot = ydot[:nDV] * c
     dc_dp = y[nDV:]
-    cdot = ydot[:nDV]
     dcdot_dp = ydot[nDV:]
 
     # These are the residuals for the normal integration
@@ -1010,7 +1012,7 @@ def _alg_sens(time, y, ydot, net, opt_ii):
     # Dres_Dp = \partial res/\partial dp + \partial res/\partial c * dc/dp +
     #    \partial res/\partial cdot * dcdot/dp
     dres_dp = net.dres_dp_function(time, c, cdot, 
-                                    indices=[opt_ii])[:, opt_ii]
+                                   indices=[opt_ii])[:, opt_ii]
     dres_dc = net.dres_dc_function(time, c, cdot)
     dres_dcdot = net.dres_dcdot_function(time, c, cdot)
 
