@@ -14,12 +14,22 @@ import scipy.integrate
 
 import Dynamics
 
-def apply_func_to_traj(traj, func):
+from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
+if HAVE_PYPAR:
+    import pypar
+
+def apply_func_to_traj(traj, func, only_nonderivs=False):
     """
     Return a trajectory with func applied to each variable stored in the
     trajectory
     """
-    ret_traj = copy.deepcopy(traj)
+    if only_nonderivs:
+        keys = [key for key in self.key_column.keys()
+                if not isinstance(key, tuple)]
+    else:
+        keys = None
+
+    ret_traj = traj.copy_subset(keys)
     for var, col in traj.key_column.items():
         vals = func(traj, var)
         ret_traj.values[:,col] = vals
@@ -130,9 +140,9 @@ def discrete_data(net, params, pts, interval, vars=None, random=False,
             var_data[time] = (val, uncert)
     return data
 
-def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, fixed_sf=False,
-                       return_dict=False, 
-                       uncert_func=typ_val_uncert(0.1, 1e-14)):
+def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, 
+                       fixed_sf=False, return_dict=False, 
+                       uncert_func=typ_val_uncert(1.0, 1e-14)):
     """
     Calculate the "perfect data" hessian in log parameters given a sensitivity
     trajectory.
@@ -158,27 +168,61 @@ def hessian_log_params(sens_traj, data_ids=None, opt_ids=None, fixed_sf=False,
     if opt_ids is None:
         opt_ids = sens_traj.optimizableVarKeys
 
-    sf_derivs, hess_dict = {}, {}
+    data_sigmas = {}
     for data_id in data_ids:
-        data_sigma = uncert_func(sens_traj, data_id)
-        if scipy.isscalar(data_sigma):
-            data_sigma = scipy.zeros(len(sens_traj), scipy.float_) + data_sigma
+        ds = uncert_func(sens_traj, data_id)
+        if scipy.isscalar(ds):
+            ds = scipy.zeros(len(sens_traj), scipy.float_) + ds
+        data_sigmas[data_id] = ds
 
-        if fixed_sf:
-            sf_derivs[data_id] = dict([(id, 0) for id in opt_ids])
-        else:
-            sf_derivs[data_id] = get_sf_derivs(sens_traj, data_id, data_sigma, 
-                                               opt_ids)
+    vars_assigned = [data_ids[node::num_procs] for node in range(num_procs)]
+    for worker in range(1, num_procs):
+        logger.debug('Sending to worker %i.' % worker)
+        # reduce the amount we have to pickle
+        # The only things the worker needs in the sens_traj are those that
+        #  refer to data_ids it has to deal with.
+        vars_needed = sets.Set(sens_traj.optimizableVarKeys)
+        vars_needed.union_update(vars_assigned[worker])
+        for var in vars_assigned[worker]:
+            vars_needed.union_update([(var, ov) for ov in opt_ids])
+        worker_traj = sens_traj.copy_subset(vars_needed)
+        # And the only uncertainties it needs have to do with those data_ids
+        worker_ds = dict([(var, data_sigmas[var])
+                          for var in vars_assigned[worker]])
+        command = 'PerfectData.compute_sf_LMHessian_conts(sens_traj, data_ids,'\
+                'data_sigmas, opt_ids, fixed_sf)'
+        args = {'sens_traj': worker_traj, 'data_ids': vars_assigned[worker], 
+                'data_sigmas': worker_ds, 'opt_ids': opt_ids,
+                'fixed_sf': fixed_sf}
+        pypar.send((command, args), worker)
 
-        hess_dict[data_id] = \
-                computeLMHessianContribution(sens_traj, data_id, data_sigma, 
-                                             opt_ids, sf_derivs[data_id])
+    hess_dict = compute_sf_LMHessian_conts(sens_traj, vars_assigned[0],
+                                           data_sigmas, opt_ids, fixed_sf)
 
-    hess = scipy.sum(hess_dict.values())
+    for worker in range(1, num_procs):
+        logger.debug('Receiving from worker %i.' % worker)
+        hess_dict.update(pypar.receive(worker))
+
+    hess = scipy.sum(hess_dict.values(), axis=0)
     if return_dict:
         return hess, hess_dict
     else:
         return hess
+
+def compute_sf_LMHessian_conts(sens_traj, data_ids, data_sigmas, opt_ids,
+                               fixed_sf):
+    hess_dict = {}
+    for data_id in data_ids:
+        if fixed_sf:
+            sf_deriv = dict([(id, 0) for id in opt_ids])
+        else:
+            sf_deriv = get_sf_derivs(sens_traj, data_id, data_sigmas[data_id],
+                                     opt_ids)
+        hess_dict[data_id] = computeLMHessianContribution(sens_traj, data_id, 
+                                                          data_sigmas[data_id], 
+                                                          opt_ids, sf_deriv)
+
+    return hess_dict
 
 def get_intervals(traj):
     # We want to break up our integrals when events fire, so first we figure out
@@ -214,7 +258,10 @@ def get_sf_derivs(traj, dataId, data_sigma, optIds):
             scaleFactorDerivs[optId] += -numerator
 
     for optId in optIds:
-        scaleFactorDerivs[optId] /= intTheorySq
+        if intTheorySq != 0:
+            scaleFactorDerivs[optId] /= intTheorySq
+        else:
+            scaleFactorDerivs[optId] = 0
 
     return scaleFactorDerivs
 
