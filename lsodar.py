@@ -268,6 +268,7 @@ def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-
 
             if istate < 0:
                 # Problem!
+                messages = redir.stop()
                 if redirect_msgs:
                     logger.warn(messages)
                 logger.warn(_msgs[istate])
