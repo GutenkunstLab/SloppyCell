@@ -292,7 +292,7 @@ def net_ensemble_trajs(net, times, ensemble):
     mean_traj, std_traj = traj_ensemble_stats(traj_set)
     return best_traj, mean_traj, std_traj
 
-def traj_ensemble_quantiles(traj_set, quantiles=(0.05, 0.5, 0.95)):
+def traj_ensemble_quantiles(traj_set, quantiles=(0.025, 0.5, 0.975)):
     """
     Return a list of trajectories, each one corresponding the a given passed-in
     quantile.
