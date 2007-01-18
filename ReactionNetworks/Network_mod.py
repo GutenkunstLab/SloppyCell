@@ -954,8 +954,8 @@ class Network:
             body.append('if (indices is None) or (%i in indices):' % wrt_ii)
             for res_ii, (rhs, dt) in enumerate(self._residual_terms):
                 if dt == wrt:
-                    body.append('\t# Residual function for %s wrt %s_dot' %
-                                (id, wrt))
+                    body.append('\t# Derivative of residual term %i wrt %s_dot'
+                                % (res_ii, wrt))
                     body.append('\tdres_dcdot[%i, %i] = -1' % 
                                 (res_ii, wrt_ii))
             body.append('\tpass')
@@ -987,7 +987,7 @@ class Network:
                                     (rhs, wrt))
                     else:
                         body.append('\t# Residual function for %s wrt %s' %
-                                    (id, wrt))
+                                    (dt, wrt))
                     body.append('\tdres_dc[%i, %i] = %s' % 
                                 (res_ii, wrt_ii, deriv))
             body.append('\tpass')
@@ -1020,7 +1020,7 @@ class Network:
                                     (rhs, wrt))
                     else:
                         body.append('\t# Residual function for %s wrt %s' %
-                                    (id, wrt))
+                                    (dt, wrt))
                     body.append('\tdres_dp[%i, %i] = %s' % 
                                 (res_ii, wrt_ii, deriv))
             body.append('\tpass')
