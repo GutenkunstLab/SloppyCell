@@ -747,7 +747,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
             IC[N_dyn_vars + dvInd] = net.evaluate_expr(DwrtOV, 
                                                        time=current_time)
     # We'll let ddaskr figure out the initial condition on yprime
-    ypIC = 0*IC
+    ypIC = 0*IC + 1
     # The var_types for the sensitivity variables are identical to those
     # for the normal variables.
     var_types = scipy.concatenate((net._dynamic_var_algebraic,
