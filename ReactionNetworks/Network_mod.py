@@ -428,8 +428,7 @@ class Network:
         t.sort()
 
         self.ddv_dpTrajectory = self.integrateSensitivity(t,params, 
-                                                          addTimes = True, 
-                                                          rtol = 1.0e-7)
+                                                          addTimes=True)
         self.trajectory = self.ddv_dpTrajectory
 
     def GetName(self):
@@ -482,7 +481,7 @@ class Network:
 
     def integrateSensitivity(self, times, params = None,
                              returnEvents = False, addTimes = True,
-                             rtol=None):
+                             rtol=1e-6):
         if self.add_tail_times:
             times = scipy.concatenate((times, [1.05*times[-1]]))
         return Dynamics.integrate_sensitivity(self, times, params, rtol,
