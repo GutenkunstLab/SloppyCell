@@ -60,7 +60,7 @@ def plot_eigvals(vals, label=None, offset=0, indicate_neg=True, join=False,
     negVals = abs(scipy.compress(scipy.real(vals) < 0, vals))
     negRange = scipy.compress(scipy.real(vals) < 0, range(len(vals)))
 
-    if axis is None:
+    if ax is None:
         ax = gca()
 
     if sym is None:
