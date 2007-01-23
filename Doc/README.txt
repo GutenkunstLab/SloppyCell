@@ -8,6 +8,14 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
 .. topic:: News
 
+   January 23rd, 2007: **SloppyCell 0.6 released!**
+
+      Lots of work over the past few months. The parallel processing code has
+      been completely rewritten. Preliminary support for algebraic rules is also
+      in (many thanks to Jordan Atlas) for his help.
+
+      Grab it from our `download page <http://sourceforge.net/project/showfiles.php?group_id=140498>`_.
+
    September 22nd, 2006: **New windows installer**
 
       An installer for Python 2.4 on Windows is now available. See the 
@@ -26,36 +34,6 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
       versions of numpy and SciPy. Testing has been on (SciPy 0.5.1, 
       numpy 1.0b5, matplotlib 0.87.5) and on (SciPy 0.3.2, Numeric 23.1, 
       matplotlib 0.83.2).
-
-   February 7th, 2006: **SloppyCell 0.3 released!**
-
-      At long last we're making an official release. So much has changed since
-      version 0.1 that we might as well jump two units in release number.
-
-      Highlights include preliminary multi-processor support, a Windows binary
-      installer, better sensitivity integration, debugging support, and bug
-      fixes beyond count.
-
-      Grab it from our `download page <http://sourceforge.net/project/showfiles.php?group_id=140498>`_.
-
-   October 18th, 2005: **Welcome ICSB Participants!**
-
-      Perhaps we have some visitors who saw our posters at the 6th International
-      Conference on Systems Biology. If you're interested in our methods, please
-      download the CVS tarball below and check it out.
-
-      Unfortunately, we weren't able to get all we wanted finished in
-      time for the conference. More complete documentation is forthcoming, as
-      is an updated Windows build. In the meantime, you can look in
-      SloppyCell/Example for a script that uses almost all of our functionality.
-      
-      Please email the sloppycell-users `mailing list`_ for assistance, 
-      or contact `Ryan Gutenkunst`_ directly.
-
-   July 4th, 2005: **SloppyCell 0.1 Released**
-
-      This is the initial public release of SloppyCell. Please see the 
-      changelog_ for changes from recent development versions.
 
 
 .. topic:: Features:
@@ -83,7 +61,7 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
    There are no papers yet on SloppyCell itself. For now, please reference this website:
 
-      Ryan Gutenkunst, Fergal Casey, Josh Waterfall, Kevin Brown, Chris Myers, and Jim Sethna. SloppyCell. http://sloppycell.sourceforge.net/ (2005)
+      Ryan N. Gutenkunst, Fergal P. Casey, Joshua J. Waterfall, Jordan C. Atlas, Robert S. Kuczenski, Chris R. Myers, and James P. Sethna. SloppyCell. http://sloppycell.sourceforge.net/ (2007)
   
 
 $Date$
