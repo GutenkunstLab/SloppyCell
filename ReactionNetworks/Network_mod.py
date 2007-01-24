@@ -505,8 +505,8 @@ class Network:
         if isinstance(ast, ExprManip.AST.CallFunc)\
            and ExprManip.ast2str(ast.node) == 'piecewise':
             # If our ast is a piecewise function
-            conditions = [cond for cond in ast.args[1::2]]
-            clauses = [clause for clause in ast.args[:-1:2]]
+            clauses = [cond for cond in ast.args[1::2]]
+            conditions = [clause for clause in ast.args[:-1:2]]
             if len(ast.args)%2 == 1:
                 # odd # of arguments implies otherwise clause
                 otherwise = ast.args[-1]
