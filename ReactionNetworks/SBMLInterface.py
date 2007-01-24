@@ -12,6 +12,8 @@ import libsbml
 
 import Network_mod
 import SloppyCell.ExprManip as ExprManip
+import SloppyCell.KeyedList_mod
+KeyedList = SloppyCell.KeyedList_mod.KeyedList
 
 def toSBMLFile(net, fileName):
     sbmlStr = toSBMLString(net)
@@ -296,9 +298,9 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             delay = 0
 
         timeUnits = e.getTimeUnits()
-        eaDict = {}
+        eaDict = KeyedList()
         for ea in e.getListOfEventAssignments():
-            eaDict[ea.getVariable()] = libsbml.formulaToString(ea.getMath())
+            eaDict.set(ea.getVariable(), libsbml.formulaToString(ea.getMath()))
 
         rn.addEvent(id = id, trigger = trigger, eventAssignments = eaDict, 
                     delay = delay, name = name)
