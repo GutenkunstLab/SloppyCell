@@ -204,7 +204,7 @@ class test_daskr(unittest.TestCase):
                                                      y0_vdp, yp0_vdp,
                                                      rtol = reltol_vdp,
                                                      atol = abstol_vdp,
-                                                     intermediate_output=0)
+                                                     intermediate_output=False)
 
         self.assertAlmostEqual(y[1][0], 1.85821444, 5)
         self.assertAlmostEqual(y[3][0], 0.1484599E+01, 5)
@@ -223,7 +223,7 @@ class test_daskr(unittest.TestCase):
                                                      jac=vdp_Dfun,
                                                      rtol = reltol_vdp,
                                                      atol = abstol_vdp,
-                                                     intermediate_output=0)
+                                                     intermediate_output=False)
         
         self.assertAlmostEqual(y[1][0], 1.85821444, 4)
         self.assertAlmostEqual(y[6][1], 8.93022e-3, 4)
@@ -235,7 +235,7 @@ class test_daskr(unittest.TestCase):
                                                      rt=vdp_rt_func,
                                                      rtol = reltol_vdp,
                                                      atol = abstol_vdp,
-                                                     intermediate_output=0)
+                                                     intermediate_output=False)
   
         self.assertAlmostEqual(t_root, 0.8116351E+02, 5)
         self.assertAlmostEqual(y_root[0], -0.3295063E-12, 5)
@@ -428,7 +428,7 @@ if max_steps is not set """
                                                      rtol = reltol_trig,
                                                      atol = abstol_trig,
                                                      max_steps = 7500,
-                                                     redir_output = 1)
+                                                     redir_output = False)
 
         messages = redir.stop()
         self.assertNotEqual(len(messages), 0)
