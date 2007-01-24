@@ -468,19 +468,11 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
     # If calculate_ic is true, then we need to calculate inititial conditions
     # for the DAE.  For daskr to do this it needs to know which variables are
     # algebraic.
-    jj = 0
     variable_types = None
     if calculate_ic == True:
         variable_types = scipy.zeros(len(IC))
-        for id, var in net.dynamicVars.items():
-            print 'jj = ', jj, ', id = ', id, ', value = ', var.value
-            if net.algebraicVars.get(id) == None:
-                variable_types[jj] = +1
-            else:
-                variable_types[jj] = -1
-                print id, ' is algebraic'
-            # increment counter
-            jj += 1
+        for jj, vt in enumerate(net._dynamic_var_algebraic):
+            variable_types[jj] = vt
    
     
     while start < times[-1]:
