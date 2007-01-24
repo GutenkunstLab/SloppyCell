@@ -93,8 +93,9 @@ class daeintException(Utility.SloppyCellException):
 
 
 def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
-            tstop=None, intermediate_output=0, ineq_constr=0, init_consistent=0,
-            var_types=None, redir_output=0, max_steps=500):
+            tstop=None, intermediate_output=False, ineq_constr=0,
+            init_consistent=0, var_types=None, redir_output=True,
+            max_steps=500):
 
 
     """Integrate a system of ordinary differential algebraic equations with or
@@ -161,7 +162,7 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
               some points in your list of time points, t.  This is because it
               may pass tstop before hitting all the points in the list of times
               for an integration that is progressing quickly.
-      intermediate_output -- nonzero to have all output returned.
+      intermediate_output -- True to have all output returned.
       ineq_constr -- nonzero to have inequality constraint checking on.
               Specifically, set to 0 for no inqequality constraint checking, 1
               to check only in the initial condition, 2 to check only for
@@ -177,14 +178,14 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
       var_types -- this list tells whether each variable in the system is
               differential or algebraic. Vor a variable Yi, var_types[i] = +1 if
               Yi is differential, and var_types[i] = -1 if it is algebraic.
-      redir_output -- nonzero to have print statements from DASKR printed to the
-              standard output.  If redir_output is 0, the output will be
+      redir_output -- False to have print statements from DASKR printed to the
+              standard output.  If redir_output is True, the output will be
               redirected.
       max_steps -- set this if you want the integrator to be able to take more
               than 500 steps between time points when you're not in
-              "intermediate output" mode.  If intermediate_output = 1 then every
+              "intermediate output" mode.  If intermediate_output = True then every
               time step is considered an output point so there are never
-              multiple steps between time points.  If intermediate_output = 0
+              multiple steps between time points.  If intermediate_output = False
               (default) then the integrator will stop after taking 500 steps
               unless max_steps is set > 500.  The default value for max_steps is
               500.
@@ -261,11 +262,11 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
         raise ValueError, 'atol must be an array or a vector with same length \
         as number of equations.'
 
-    # Do you want the solution only at the specified time points (and not at the
-    # intermediate steps)?
-    if intermediate_output == 0:
+    # Do you want the solution at intermediate steps (and not just at the
+    # specified points)?
+    if intermediate_output == False:
         info[2] = 0
-    elif intermediate_output == 1:
+    elif intermediate_output == True:
         info[2] = 1
     else:
         raise ValueError, 'int_output must be 0 or 1.'
@@ -398,7 +399,7 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
     # step_count is used to keep track of how many times idid = -1 occurs in a row
     step_count = 0
 
-    if redir_output == 0:
+    if redir_output == True:
         redir.start()
 
     try:
