@@ -481,14 +481,48 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
                 print id, ' is algebraic'
             # increment counter
             jj += 1
-
+   
     
     while start < times[-1]:
 
-        # not doing delays right now
-        if round(start, 12) in pendingEvents.keys():
-            IC = net.executeEvent(pendingEvents[round(start, 12)], IC, start)
-            del pendingEvents[round(start, 12)]
+        # check to see if there are any pendingEvents with execution time
+        # equal to the start time
+        if round(start, 12) in pendingEvents.values():
+            # store a copy of the value of root_func in order to check for
+            # chains of events
+            # Note: the correct behavior of chained events with events that have
+            # delays is not clear
+            root_before = root_func(net, IC, start).copy()
+            # for each event listed in pendingEvents, check to see if the time
+            # is right for execution (we know at least one of them will be
+            # right since we entered the if block above).  
+            for id in pendingEvents.keys():
+                # For those events whose execution time == start, execute
+                # the event
+                if (round(start, 12) == pendingEvents[id]):
+                    IC = net.executeEvent(net.events.get(id), IC, start)
+                    del pendingEvents[id]
+            root_after = root_func(net, IC, start).copy()
+
+            # check for chained events
+            # NOTE: This does not support chained events with delays
+            check_all_events = True
+            # while there may be more events to fire, check all the events
+            # to see if the event has fired because of event chaining
+            while check_all_events == True:
+                check_all_events = False
+                for ii in range(num_events):
+                    if root_before[ii] == -0.5 and root_after[ii] == 0.5:
+                        # an event is firing, so record the time and state
+                        te.append(start)
+                        ye.append(IC)
+                        ie.append(ii)
+                        delay = net.fireEvent(net.events[ii], IC, start)
+                        root_before[ii] = 0.5
+                        IC = net.executeEvent(net.events[ii], IC, start)
+                        root_after = root_func(net, IC, start).copy()
+                        # an event fired, so we have to check all the events again
+                        check_all_events = True
 
 
         # If an event just fired, we integrate for root_grace_t without looking
@@ -535,7 +569,7 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
 
         # If we have pending events, only integrate until the next one.
         if pendingEvents:
-            nextEventTime = min(pendingEvents.keys())
+            nextEventTime = min(pendingEvents.values())
             curTimes = scipy.compress((times > start) & (times < nextEventTime),
                                       times)
             curTimes = scipy.concatenate(([start], curTimes, [nextEventTime]))
@@ -599,32 +633,30 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
         # actually fired.  DASKR automatically returns the direction of event
         # crossings, so we can read this information from the integration results
         # zip(...) allows us to iterate over multiple sequences in parallel.
-        for ii, dire_this in zip(range(num_events), temp[5]):
+        for ii, dire_cross in zip(range(num_events), temp[5]):
             """
             if getattr(net, 'integrateWithLogs', False): 
                 ye_this = scipy.exp(ye_this)
             """
             
-            # dire_this is the direction of the event crossing.  If it's
+            # dire_cross is the direction of the event crossing.  If it's
             # 1 that means Ri changed from negative to positive.  In that case
             # we need to record the event.
         
-            # We now have each clause of the complex events in the root_func,
-            #  so we need to make sure what we saw was a real event.
-            if dire_this > 0 and ii < len(net.events):
+            # We now have each clause of the complex events included in
+            # the root_func,  so we need to make sure what we saw was a
+            # real event.
+            if dire_cross > 0 and ii < len(net.events):
                 # an event has fired, so record the state and event number
                 te.append(temp[3])
                 ye.append(temp[4])
                 ie.append(ii)
                 event_just_fired = True
-        
-        # If an event fired
-        if event_just_fired:
-            event = net.events[ie[-1]]
-            logger.debug('Event %s fired at time=%g in network %s.'
-                         % (event.id, te[-1], net.id))          
-            delay = net.fireEvent(event, yout[-1], te[-1])
-            pendingEvents[round(te[-1] + delay, 12)] = event
+                event = net.events[ie[-1]]
+                logger.debug('Event %s fired at time=%g in network %s.'
+                             % (event.id, te[-1], net.id))          
+                delay = net.fireEvent(event, yout[-1], te[-1])
+                pendingEvents[event.id] = round(te[-1] + delay, 12)
 
 
     if len(yout) and len(tout):
