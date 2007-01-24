@@ -26,13 +26,9 @@ Instructions
 ~~~~~~~~~~~~
 .. topic:: On Windows
 
-   1. Install required dependencies. The binary of SloppyCell below requires
-      python2.4 and at least numpy 1.0rc1 and scipy 0.5.1.
+   1. Install required dependencies.
       
-      Enthought (as of 9/21/06) provides a python distribution including numpy,
-      scipy, and matplotlib, but on my machine the numpy appeared to be broken.
-
-   2. Download and run the `executable installer <SloppyCell-CVS.win32-py2.4.exe>`_ (built 9/21/06).
+   2. `Download <http://sourceforge.net/project/showfiles.php?group_id=140498>`_ and run the executable installer.
 
    3. To access libsbml from python, you'll need to `setup your PYTHONPATH and
       LD_LIBRARY_PATH <http://sysbio.molgen.mpg.de/sbmlmerge/sbmlmerge_manual/node36.html>`_.
@@ -46,12 +42,9 @@ Instructions
 .. topic:: On OS X and Linux
 
    1. Install required dependencies.  
-      (On OS X 10.3, we recommend installing 
-      `MacEnthon <http://download.enthought.com/MacEnthon/>`_ which will install
-      Scipy, matplotlib, and IPython. A pre-built version of g77 (Fortran77 
-      compiler) for OSX 10.3 is available at http://hpc.sf.net.)
-   2. Unpack the tarball. (``tar xzf SloppyCell-0.3.tar.gz``)
-   3. Descend into the SloppyCell-0.3 directory. (``cd SloppyCell-0.3``)
+      A pre-built version of g77 (Fortran77 compiler) for OSX is available at http://hpc.sf.net.
+   2. Unpack the tarball. (``tar xzf SloppyCell-0.6.tar.gz``)
+   3. Descend into the SloppyCell-0.6 directory. (``cd SloppyCell-0.6``)
    4. Run the installation script. (``python setup.py install``) 
    5. Run the included test routines. (``cd Testing; python test.py``)
 
