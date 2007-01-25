@@ -479,42 +479,47 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
 
         # check to see if there are any pendingEvents with execution time
         # equal to the start time
-        if round(start, 12) in pendingEvents.values():
-            # store a copy of the value of root_func in order to check for
-            # chains of events
+        # since some chained events may be added to the pending events list,
+        # keep looping until the key has been deleted
+        while pendingEvents.has_key(round(start, 12)):
             # Note: the correct behavior of chained events with events that have
             # delays is not clear
+            # Note: It is unclear when you're supposed to check for chained events
+            # after multiple events fire/excecute simultaneously.
+            # store a copy of the value of root_func in order to check for
+            # chains of events            
             root_before = root_func(net, IC, start).copy()
-            # for each event listed in pendingEvents, check to see if the time
-            # is right for execution (we know at least one of them will be
-            # right since we entered the if block above).  
-            for id in pendingEvents.keys():
-                # For those events whose execution time == start, execute
-                # the event
-                if (round(start, 12) == pendingEvents[id]):
-                    IC = net.executeEvent(net.events.get(id), IC, start)
-                    del pendingEvents[id]
+
+            # For those events whose execution time == start, execute
+            # the event
+            for ii in range(len(pendingEvents[round(start, 12)])):
+                event = pendingEvents[round(start, 12)].pop()
+                IC = net.executeEvent(event, IC, start)
+
+            # Update the root state after all listed events have excecuted.
             root_after = root_func(net, IC, start).copy()
 
             # check for chained events
-            # NOTE: This does not support chained events with delays
-            check_all_events = True
-            # while there may be more events to fire, check all the events
-            # to see if the event has fired because of event chaining
-            while check_all_events == True:
-                check_all_events = False
-                for ii in range(num_events):
-                    if root_before[ii] == -0.5 and root_after[ii] == 0.5:
-                        # an event is firing, so record the time and state
-                        te.append(start)
-                        ye.append(IC)
-                        ie.append(ii)
-                        delay = net.fireEvent(net.events[ii], IC, start)
-                        root_before[ii] = 0.5
-                        IC = net.executeEvent(net.events[ii], IC, start)
-                        root_after = root_func(net, IC, start).copy()
-                        # an event fired, so we have to check all the events again
-                        check_all_events = True
+            for ii in range(num_events):
+                if root_before[ii] == -0.5 and root_after[ii] == 0.5:
+                    # an event is firing, so record the time and state
+                    te.append(start)
+                    ye.append(IC)
+                    ie.append(ii)
+                    event_just_fired = True
+                    event = net.events[ii]
+                    logger.debug('Event %s fired at time=%g in network %s.'
+                             % (event.id, start, net.id))                              
+                    delay = net.fireEvent(net.events[ii], IC, start)
+                    if (pendingEvents.has_key(round(start + delay, 12)) == False):
+                        pendingEvents[round(start + delay, 12)] = []
+                    pendingEvents[round(start + delay, 12)].append(event)
+                    root_before[ii] = 0.5
+
+
+            if len(pendingEvents[round(start, 12)]) == 0:
+                del pendingEvents[round(start, 12)]
+                        
 
 
         # If an event just fired, we integrate for root_grace_t without looking
@@ -561,7 +566,7 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
 
         # If we have pending events, only integrate until the next one.
         if pendingEvents:
-            nextEventTime = min(pendingEvents.values())
+            nextEventTime = min(pendingEvents.keys())
             curTimes = scipy.compress((times > start) & (times < nextEventTime),
                                       times)
             curTimes = scipy.concatenate(([start], curTimes, [nextEventTime]))
@@ -621,6 +626,8 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
         if exception_raised:
             break
 
+
+
         # Check the directions of our root crossings to see whether events
         # actually fired.  DASKR automatically returns the direction of event
         # crossings, so we can read this information from the integration results
@@ -648,7 +655,10 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
                 logger.debug('Event %s fired at time=%g in network %s.'
                              % (event.id, te[-1], net.id))          
                 delay = net.fireEvent(event, yout[-1], te[-1])
-                pendingEvents[event.id] = round(te[-1] + delay, 12)
+                if (pendingEvents.has_key(round(te[-1] + delay, 12)) == False):
+                    pendingEvents[round(te[-1] + delay, 12)] = []
+                pendingEvents[round(te[-1] + delay, 12)].append(event)
+
 
 
     if len(yout) and len(tout):
