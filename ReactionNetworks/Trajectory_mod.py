@@ -170,6 +170,8 @@ class Trajectory:
         elif self.const_var_values.has_key(id):
             return scipy.ones(len(self.timepoints), scipy.float_) *\
                     self.const_var_values.get(id)
+        elif id == 'time':
+            return self.get_times()
         else:
             raise ValueError, 'Variable %s not found in trajectory.' % str(id)
 
@@ -214,7 +216,7 @@ class Trajectory:
         given index.
         """
         out = KeyedList([(key, self.get_var_val_index(key, index)) for
-                          key in self.keys()])
+                          key in ['time'] + self.keys()])
         return out
 
     def get_var_val_index(self, var_id, index):
@@ -226,6 +228,8 @@ class Trajectory:
             return self.values[index, col]
         elif self.const_var_values.has_key(var_id):
             return self.const_var_values.get(var_id)
+        elif var_id == 'time':
+            return self.timepoints[index]
 
     def get_dynvar_vals_index(self, index):
         """
