@@ -580,6 +580,31 @@ class Trajectory:
         else :
             return returned_times,dv_y
 
+    def to_file(self, file_name, out_vars=None, separator=', '):
+        """
+        Output the given variables to a file.
+
+        file_name   Name of the file to use for output (will be overwritten!)
+        out_vars    List of variable ids ot output. If None, default is
+                    'time', dynamic variables
+        separator   The separator to use between columns.
+        """
+        if out_vars is None:
+            out_vars = ['time'] + self.dynamicVarKeys
+    
+        first_line = separator.join(out_vars) + os.linesep
+        f = file(file_name, 'w')
+        f.write(first_line)
+    
+        out_array = []
+        for var in out_vars:
+            out_array.append(self.get_var_traj(var))
+    
+        out_array = scipy.transpose(out_array)
+        f = scipy.io.write_array(f, out_array, separator=separator, 
+                                 keep_open=True)
+        f.close()
+
 
     # Deprecated
     def last_dynamic_var_values(self):
