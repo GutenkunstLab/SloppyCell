@@ -247,8 +247,8 @@ class Network:
                        trigger = 'gt(time, 5.0)'
                       To fire when A becomes less than sin(B/C):
                        trigger = 'lt(A, sin(B/C))'
-        event_assignments - A dictionary of assignments to make when the
-            event executes.
+        event_assignments - A dictionary or KeyedList of assignments to make
+                      when the event executes.
             Example: To set A to 4.3 and D to B/C
                       event_assignments = {'A': 4.3,
                                            'D': 'B/C'}
