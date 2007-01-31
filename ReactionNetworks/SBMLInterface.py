@@ -15,6 +15,8 @@ import SloppyCell.ExprManip as ExprManip
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
 
+import SloppyCell.ExprManip as ExprManip
+
 def toSBMLFile(net, fileName):
     sbmlStr = toSBMLString(net)
     f = file(fileName, 'w')
@@ -239,17 +241,38 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
     
         # Assemble the stoichiometry. SBML has the annoying trait that 
         #  species can appear as both products and reactants and 'cancel out'
+        # For each species appearing in the reaction, we build up a string
+        # representing the stoichiometry. Then we'll simplify that string and
+        # see whether we ended up with a float value in the end.
         stoichiometry = {}
         for reactant in rxn.getListOfReactants():
-            stoichiometry.setdefault(reactant.getSpecies(), 0)
-            if reactant.getStoichiometryMath() == None:
-                stoichiometry[reactant.getSpecies()] -=\
-                        reactant.getStoichiometry()
+            species = reactant.getSpecies()
+            stoichiometry.setdefault(species, '0')
+            stoich = reactant.getStoichiometryMath()
+            if stoich is None:
+                stoich = str(reactant.getStoichiometry())
+            else:
+                stoich = libsbml.formulaToString(stoich)
+            stoichiometry[species] += '-(%s)' % stoich
     
         for product in rxn.getListOfProducts():
-            stoichiometry.setdefault(product.getSpecies(), 0)
-            if product.getStoichiometryMath() == None:
-                stoichiometry[product.getSpecies()] += product.getStoichiometry()
+            species = product.getSpecies()
+            stoichiometry.setdefault(species, '0')
+            stoich = product.getStoichiometryMath()
+            if stoich is None:
+                stoich = str(product.getStoichiometry())
+            else:
+                stoich = libsbml.formulaToString(stoich)
+            stoichiometry[species] += '+(%s)' % stoich
+
+        for species, stoich in stoichiometry.items():
+            stoich = ExprManip.simplify_expr(stoich)
+            try:
+                # Try converting the string to a float.
+                stoich = float(stoich)
+            except ValueError:
+                pass
+            stoichiometry[species] = stoich
 
         for modifier in rxn.getListOfModifiers():
             stoichiometry.setdefault(modifier.getSpecies(), 0)
