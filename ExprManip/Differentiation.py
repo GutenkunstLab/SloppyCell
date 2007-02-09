@@ -19,6 +19,8 @@ def load_derivs(filename):
         __deriv_saved = cPickle.load(file(filename, 'rb'))
     except IOError:
         pass
+    except EOFError:
+        pass
 
 def save_derivs(filename):
     f = file(filename, 'wb')
