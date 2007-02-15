@@ -32,12 +32,23 @@ def autocorrelation(series):
     # Return the normalized ac
     return ac/ac[0]
 
+def ensemble(m, params, hess=None, 
+             steps=scipy.inf, max_run_hours=scipy.inf,
+             temperature=1.0, step_scale=1.0,
+             sing_val_cutoff=0, seeds=None,
+             recalc_interval=scipy.inf, recalc_func=None,
+             save_hours=scipy.inf, save_to=None):
+    return ensemble_log_params(m, params, hess, steps, max_run_hours,
+                               temperature, step_scale, sing_val_cutoff, seeds,
+                               recalc_interval, recalc_func, save_hours, 
+                               save_to, log_params=False)
+
 def ensemble_log_params(m, params, hess=None, 
                         steps=scipy.inf, max_run_hours=scipy.inf,
                         temperature=1.0, step_scale=1.0,
                         sing_val_cutoff=0, seeds=None,
                         recalc_interval=scipy.inf, recalc_func=None,
-                        save_hours=scipy.inf, save_to=None):
+                        save_hours=scipy.inf, save_to=None, log_params=True):
     """
     Generate a Bayesian ensemble of parameter sets consistent with the data in
     the model.
@@ -130,9 +141,10 @@ def ensemble_log_params(m, params, hess=None,
         scaled_step = step_scale * scipy.sqrt(temperature) * deltaParams
 
         # I'm assuming log parameters here.
-        next_params = curr_params * scipy.exp(scaled_step)
-        # If we had non-log parameters, it would be:
-        # next_params = curr_params + scaled_step
+        if log_params:
+            next_params = curr_params * scipy.exp(scaled_step)
+        else:
+            next_params = curr_params + scaled_step
 
         try:
             next_cost = m.cost(next_params)
