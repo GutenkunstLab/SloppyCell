@@ -4,6 +4,7 @@ logger = logging.getLogger('lsodar')
 import copy
 import os
 import sets
+import sys
 
 import scipy
 try:
@@ -44,7 +45,7 @@ redir = Utility.Redirector()
 class odeintrException(Utility.SloppyCellException):
     pass
 
-def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-6, atol=1e-12, tcrit=None, h0=0.0, hmax=0.0, hmin=0.0, ixpr=0, mxstep=500, mxhnil=0, mxordn=12, mxords=5, printmessg=0, root_term = [], root_func=None, int_pts=False, insert_events=False, return_derivs = None, redirect_msgs=True):
+def odeintr(func, y0, t, args=(), Dfun=None, full_output=0, ml=0, mu=0, rtol=1e-6, atol=1e-12, tcrit=None, h0=0.0, hmax=0.0, hmin=0.0, ixpr=0, mxstep=sys.maxint, mxhnil=0, mxordn=12, mxords=5, printmessg=0, root_term = [], root_func=None, int_pts=False, insert_events=False, return_derivs = None, redirect_msgs=True):
 
     """Integrate a system of ordinary differential equations.
 

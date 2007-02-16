@@ -97,7 +97,6 @@ def integrate_tidbit(net, int_func, Dfun, root_func, IC, curTimes,
                 'return_derivs': return_derivs,
                 'redirect_msgs': redirect_msgs,
 
-                'mxstep': 10000,
                 'insert_events': True,
                 'full_output': True,
                 }
