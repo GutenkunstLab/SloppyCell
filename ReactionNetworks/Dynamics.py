@@ -60,12 +60,28 @@ def integrate_tidbit(net, int_func, Dfun, root_func, IC, curTimes,
             # Convert from logs of dyamic vars. We're integrating in logs
             #  partially to avoid zeros, so we put a lowerbound on our
             #  output dynamicVars
-            dv = scipy.maximum(scipy.exp(input[:N_dyn_var]), 
-                               scipy.misc.limits.double_tiny)
+            dv = scipy.exp(input[:N_dyn_var])
+            # Record which values were zero after exponentiation
+            zero_entries = scipy.compress(dv < scipy.misc.limits.double_tiny,
+                                          scipy.arange(len(dv)))
+            # Make those values non-zero, but as tiny as possible
+            dv = scipy.maximum(dv, scipy.misc.limits.double_tiny)
+
+            # Replace the log-values that were in our input.
             input = copy.copy(input)
             input[:N_dyn_var] = dv
+
+            # Calculation our function
             output = old_func(input, time)
+
+            # Rescale the output to put us back into log-chemicals
             output[:N_dyn_var] /= dv
+
+            # Keep the integrator from try to make values that are already zero
+            #  even smaller.
+            for ii in zero_entries:
+                if output[ii] < 0:
+                    output[ii] = 0
             return output
 
         Dfun = None
