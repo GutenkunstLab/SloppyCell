@@ -8,13 +8,15 @@ import AST
 _EMPTY_MUL = Mul((None, None))
 
 def dict2TeX(d, name_dict, lhs_form='%s', split_terms=False):
-    lines = []
     for lhs, rhs in d.items():
         if split_terms:
             ast = AST.strip_parse(rhs)
             pos, neg = [], []
             AST._collect_pos_neg(ast, pos, neg)
-            lhsTeX = lhs_form % expr2TeX(lhs, name_dict=name_dict)
+            try:
+                lhsTeX = lhs_form % expr2TeX(lhs, name_dict=name_dict)
+            except TypeError:
+                lhsTex = lhs_form
             rhsTeX = _ast2TeX(pos[0], name_dict=name_dict)
             lines.append(r'$ %s $ &=& $ %s $\\' % (lhsTeX, rhsTeX))
                          
