@@ -114,7 +114,7 @@ def toSBMLString(net):
         se.setTrigger(libsbml.parseFormula(formula))
         formula = str(e.delay).replace('**', '^')
         se.setDelay(libsbml.parseFormula(formula))
-        for varId, formula in e.eventAssignments.items():
+        for varId, formula in e.event_assignments.items():
             sea = libsbml.EventAssignment()
             sea.setVariable(varId)
             formula = str(formula).replace('**', '^')
