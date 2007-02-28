@@ -96,6 +96,11 @@ def _net_eqns_to_TeX(net):
                                              split_terms=True)
         outputs.extend([r'\section*{Differential Equations}', eqns_str])
 
+    if net.algebraicRules:
+        eqns_str = ExprManip.Py2TeX.dict2TeX(net.algebraicRules, name_dict, 
+                                             lhs_form='0', split_terms=True)
+        outputs.extend([r'\section*{Algebraic Equations}', eqns_str])
+
     return os.linesep.join(outputs)
                             
 
