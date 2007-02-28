@@ -90,6 +90,23 @@ rules are parsed correctly"""
         self.assertAlmostEqual(algebraic_traj.get_var_val('S2', 16.8), 0.210750878, 5)
 
 
+    def test_low_tolerances(self):
+        """ Test that algebraic rules still work correctly when low tolerances are
+        enforced"""
+
+        reltol = scipy.array([1e-10, 1e-10, 1e-10, 1e-10])
+
+        algebraic_traj = Dynamics.integrate_J(algebraic_net, tlist_algebraic_net,
+                                              reltol)
+
+        self.assertAlmostEqual(algebraic_traj.get_var_val('X0',4.8), 0.618783392, 8)
+        self.assertAlmostEqual(algebraic_traj.get_var_val('X1',21.6), 0.653837775, 8)
+        self.assertAlmostEqual(algebraic_traj.get_var_val('T', 29.6), 0.138253942, 8)
+        self.assertAlmostEqual(algebraic_traj.get_var_val('S1', 40.0), 0.018207409, 8)
+        self.assertAlmostEqual(algebraic_traj.get_var_val('S2', 16.8), 0.210750878, 8)
+
+
+
 
 ################################################################################
 
