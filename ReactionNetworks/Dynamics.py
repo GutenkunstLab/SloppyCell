@@ -151,15 +151,18 @@ def integrate_tidbit(net, int_func, Dfun, root_func, IC, curTimes,
     return exception_raised, y_this, t_this, ydt_this,\
             t_root_this, y_root_this, i_root_this
 
-def generate_tolerances(net, rtol):
+def generate_tolerances(net, rtol, atol=None):
+    if rtol == None:
+        rtol = 1e-6
     if scipy.isscalar(rtol):
         rtol = [rtol] * len(net.dynamicVars)
     rtol = scipy.minimum(rtol, global_rtol)
 
     # We set atol to be a minimum of 1e-6 to avoid variables with large typical
     #  values going negative.
-    typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
-    atol = scipy.minimum(rtol * scipy.asarray(typ_vals), 1e-6)
+    if (scipy.isscalar(atol) or atol==None):
+        typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
+        atol = scipy.minimum(rtol * scipy.asarray(typ_vals), 1e-6)
     return rtol, atol
 
 def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
@@ -394,7 +397,7 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
 
     return trajectory
 
-def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
+def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
               return_events=False, return_derivs=False,
               redirect_msgs=True, calculate_ic = False):
     """
@@ -404,8 +407,9 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
     times          A sequence of times to include in the integration output.
     params         Parameters for the integration. If params=None, the current
                    parameters of net are used.
-    rtol           Relative error tolerance for this integration.
-    rtol           Absolute error tolerance for this integration.
+    rtol           Relative error tolerance for this integration.  If rtol = None
+                   then relative toleran
+    atol           Absolute error tolerance for this integration.
     fill_traj      If True, the integrator will add the times it samples to
                    the returned trajectory. This is slower, but the resulting
                    trajectory will be more densely sampled where the dynamics
@@ -422,6 +426,10 @@ def integrate_J(net, times, rtol, atol, params=None, fill_traj=True,
                    conditions.
                    
     """
+
+    if (rtol == None or atol == None):
+        rtol, atol = generate_tolerances(net, rtol, atol)
+    
     times = scipy.asarray(times)
 
     # define a residual function that will work with the f2py interface
