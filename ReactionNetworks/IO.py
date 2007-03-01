@@ -62,7 +62,8 @@ def eqns_TeX_file(net, filename = None):
 
 def _net_eqns_to_TeX(net):
     """
-    Return a string that contains the longtable-bound TeX'd equations for the network
+    Return a string that contains the longtable-bound TeX'd equations for the
+    network. Also includes events and current optimizable parameter values.
     """
     # Build up our name_dict. We wrap variables in a mathrm
     name_dict = dict([(id, r'\mathrm{%s}' % net.get_component_name(id, True))
@@ -100,6 +101,33 @@ def _net_eqns_to_TeX(net):
         eqns_str = ExprManip.Py2TeX.dict2TeX(net.algebraicRules, name_dict, 
                                              lhs_form='0', split_terms=True)
         outputs.extend([r'\section*{Algebraic Equations}', eqns_str])
+
+    if net.events:
+        outputs.append(r'\section*{Events}')
+        outputs.append(r'\begin{description}')
+        for e in net.events:
+            outputs.append(r'\item[%s]' % (e.id))
+            trigger_str = ExprManip.Py2TeX.expr2TeX(e.trigger, name_dict)
+            outputs.append(r'Trigger: $%s$' % trigger_str)
+            outputs.append(r'\begin{itemize}')
+            for id, result in e.event_assignments.items():
+                id_str = ExprManip.Py2TeX.expr2TeX(id, name_dict)
+                rule_str = ExprManip.Py2TeX.expr2TeX(str(result), name_dict)
+                outputs.append(r'\item[] $%s = %s$' % (id_str, rule_str))
+            outputs.append(r'\end{itemize}')
+        outputs.append(r'\end{description}')
+
+    if net.optimizableVars:
+        outputs.append(r'\section*{Optimizable Parameters}')
+        params = net.GetParameters()
+        outputs.append(r'\begin{longtable}{|r|l|}')
+        outputs.append(r'\hline')
+        for id, value in params.items():
+            id_str = ExprManip.Py2TeX.expr2TeX(id, name_dict)
+            value_str = ExprManip.Py2TeX.expr2TeX(str(value), name_dict)
+            outputs.append(r'$%s$& $%s$\\' % (id_str, value_str))
+            outputs.append(r'\hline')
+        outputs.append(r'\end{longtable}')
 
     return os.linesep.join(outputs)
                             
