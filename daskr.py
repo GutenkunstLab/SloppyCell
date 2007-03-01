@@ -93,8 +93,8 @@ class daeintException(Utility.SloppyCellException):
 
 
 def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
-            tstop=None, intermediate_output=False, ineq_constr=0,
-            init_consistent=0, var_types=None, redir_output=True,
+            tstop=None, intermediate_output=False, ineq_constr=False,
+            init_consistent=False, var_types=None, redir_output=True,
             max_steps=500):
 
 
@@ -163,18 +163,15 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
               may pass tstop before hitting all the points in the list of times
               for an integration that is progressing quickly.
       intermediate_output -- True to have all output returned.
-      ineq_constr -- nonzero to have inequality constraint checking on.
-              Specifically, set to 0 for no inqequality constraint checking, 1
-              to check only in the initial condition, 2 to check only for
-              non-negativity in Y during the integration, and 3 to check both
-              the initial condition and during the integration.  Note:  only
-              implementing for 2 for now.
-      init_consistent -- nonzero to have the DDASKR automatically calculate
-              consistent initial conditions. If init_consistent = 1, then
-              given Y_d, the code will calculate Y_a and Y'_d (note: you
-              must also pass var_types to indicate which variables are algebraic
-              and which are differential.  If init_consistent = 2, then given
-              Y', the code will calculate Y.  
+      ineq_constr -- True to have inequality constraint checking on.
+              If True, the code will check for non-negativity in Y during the
+              integration (not during initial condition calculations).
+      init_consistent -- True to have the DDASKR automatically calculate
+              consistent initial conditions.  Given Y_d, the code will
+              calculate Y_a and Y'_d (note: you must also pass var_types
+              to indicate which variables are algebraic and which are
+              differential.  We do not use the functionality of daskr
+              that allows calculation of Y given Y'.
       var_types -- this list tells whether each variable in the system is
               differential or algebraic. Vor a variable Yi, var_types[i] = +1 if
               Yi is differential, and var_types[i] = -1 if it is algebraic.
@@ -300,28 +297,29 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
     # which are differential. The value of LID depends on info(9).
     # For now we only allow options 0 or 2 so that we don't have to worry
     # about telling the integrator how each variable is constrained.
+    # Note:  This wrapper doesn't don't support info[9] = 0 or 2
     LID = 0
-    if ineq_constr == 0:
+    if ineq_constr == False:
         info[9] = 0
         LID = 40
     #elif ineq_constr == 1:
     #    info[9] = 1
     #    LID = 40 + neq
-    elif ineq_constr == 2:
+    elif ineq_constr == True:
         info[9] = 2
         LID = 40
     #elif ineq_constr == 3:
     #    info[9] = 3
     #    LID = 40 + neq
     else:
-        raise ValueError, 'ineq_constr must be 0 or 2.'
+        raise ValueError, 'ineq_constr must be True or False.'
 
     # Are the initial t0, y0, yp0 consisent?
-    if init_consistent == 0:
+    if init_consistent == False:
         info[10] = 0
     # if they are inconsistent, given Y_d, calculate Y_a and Y'_d must also
     # specify which components are algebraic and which are differential
-    elif init_consistent == 1:
+    elif init_consistent == True:
         info[10] = 1
         # check the var_types parameter
         if var_types == None:
@@ -341,9 +339,6 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
                     raise ValueError, 'the var_types array may only contain\
                     entries of +1 or -1.'
                     
-    # given Y', calculate Y
-    elif init_consistent == 2:
-        info[10] = 2
 
     # info[11] and info[12] are not used
     
@@ -388,7 +383,7 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
     ypout_l= []
 
     # add the initial point to the output array if the initial condition is consistent
-    if init_consistent == 0:
+    if init_consistent == False:
         tout_l.append(t0)
         yout_l.append(y0)
         ypout_l.append(yp0)
@@ -482,11 +477,11 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
 
                 # if an initial condition was calculated, update info[13]
                 # this allows the integration to proceed.  Also set
-                # init_consistent to 0 to avoid a redundant initial condition
+                # init_consistent to False to avoid a redundant initial condition
                 # calculation
                 if idid == 4:
                     info[13] = 0
-                    init_consistent = 0
+                    init_consistent = False
 
                 # if the solution was successful because a root of R(T,Y,Y') was
                 # found at treached, then restart the integration.
