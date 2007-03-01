@@ -505,8 +505,8 @@ class Network:
         if isinstance(ast, ExprManip.AST.CallFunc)\
            and ExprManip.ast2str(ast.node) == 'piecewise':
             # If our ast is a piecewise function
-            clauses = [cond for cond in ast.args[1::2]]
-            conditions = [clause for clause in ast.args[:-1:2]]
+            conditions = [cond for cond in ast.args[1::2]]
+            clauses = [clause for clause in ast.args[:-1:2]]
             if len(ast.args)%2 == 1:
                 # odd # of arguments implies otherwise clause
                 otherwise = ast.args[-1]
@@ -1326,28 +1326,64 @@ class Network:
             else:
                 self.complexEvents.set(id, event)
 
-        # Set the algebraicVars list to all those appearing in algebraic rules
-        # Remove those variables that don't belong
-        self.algebraicVars = sets.Set()
-        for rule in self.algebraicRules.values():
-            vars = ExprManip.extract_vars(rule)
-            self.algebraicVars.union_update(vars)
-        self.algebraicVars = KeyedList([(id, id) for id
-                                        in self.algebraicVars])
+        # Collect all variables that are explicitly in algebraic rules
+        vars_in_alg_rules = sets.Set()
+        for rule in self.algebraicRules:
+            vars_in_alg_rules.union_update(ExprManip.extract_vars(rule))
+
+        # Now replace all the assigned variables with the variables they
+        # actually depend on. This takes a while loop because assigned
+        # vars may be functions of other assigned vars.
+        assigned_in_alg =  vars_in_alg_rules.intersection(sets.Set(
+                            self.assignedVars.keys()))
+        # while there are still assignment variables that we have not
+        # expanded in terms of their definitions
+        while assigned_in_alg:
+            # Replace that assigned_var with the variables it depends on
+            # in the running list of algebraic rules
+            for assigned_var in assigned_in_alg:
+                vars_in_alg_rules.union_update(ExprManip.extract_vars(
+                    self.assignmentRules.get(assigned_var)))
+                vars_in_alg_rules.remove(assigned_var)
+            # update the list of assignment variables that appear in the
+            # algebraic rule
+            assigned_in_alg =  vars_in_alg_rules.intersection(
+                sets.Set(self.assignedVars.keys()))
+
+        # At this point, vars_in_alg_rules should contain all the variables the
+        # algebraic rules depend on, including implicit dependencies through
+        # assignment rules. Now we filter out all the things we known aren't
+        # algebraic vars. First we filter out everything that we already
+        # know isn't a dynamic variable.
+        vars_in_alg_rules.intersection_update(self.dynamicVars.keys())
+
         # remove the reaction variables
         for rxn in self.reactions:
             for chem, value in rxn.stoichiometry.items():
-                if value != 0 and self.algebraicVars.has_key(chem):
-                    self.algebraicVars.remove_by_key(chem)
+                if value != 0 and (chem in vars_in_alg_rules):
+                    vars_in_alg_rules.remove(chem)
+
         # remove the rate variables
         for var in self.rateRules.keys():
-            if self.algebraicVars.has_key(var):
-                self.algebraicVars.remove_by_key(var)
+            if (var in vars_in_alg_rules):
+                vars_in_alg_rules.remove(var)
+
         # remove the event variables
         for e in self.events:
             for var in e.event_assignments.keys():
-                if self.algebraicVars.has_key(var):
-                    self.algebraicVars.remove_by_key(var)
+                if (var in vars_in_alg_rules):
+                    vars_in_alg_rules.remove(var)
+
+        # Check that we have at most same number of algebraic rules and
+        # algebraic vars. Set the algebraicVars list to the list we just
+        # compiled
+        self.algebraicVars = KeyedList([(id, id) for id
+                                        in vars_in_alg_rules])
+        if len(self.algebraicVars) > len(self.algebraicRules):
+            raise ValueError('System appears under-determined. Not enough  algebraic rules.') 
+
+
+
 
     def compile(self):
         """
