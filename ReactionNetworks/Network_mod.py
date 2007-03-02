@@ -1046,7 +1046,7 @@ class Network:
             body.append('try:')
             for ii, id in enumerate(var_names):
                 body.append('\t%s = %s.item(%i)' % (id, arg, ii))
-            body.append('except AttributeError:')
+            body.append('except (AttributeError, TypeError):')
             for ii, id in enumerate(var_names):
                 body.append('\t%s = %s[%i]' % (id, arg, ii))
             body.append('')
@@ -1487,7 +1487,7 @@ class Network:
                 functionBody += 'try:\n\t'
                 for ii, id in enumerate(var_names):
                     functionBody += '\t%s = %s.item(%i)\n\t' % (id, arg, ii)
-                functionBody += 'except AttributeError:\n\t'
+                functionBody += 'except (AttributeError, TypeError):\n\t'
                 for ii, id in enumerate(var_names):
                     functionBody += '\t%s = %s[%i]\n\t' % (id, arg, ii)
             elif numpy == 'new':
