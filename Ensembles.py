@@ -78,9 +78,9 @@ def ensemble_log_params(m, params, hess=None,
 
 
     Outputs:
-     ens, ens_costs, ratio
+     ens, ens_fes, ratio
      ens -- List of KeyedList parameter sets in the ensemble
-     ens_costs -- List of costs for each parameter set
+     ens_fes -- List of free energies for each parameter set
      ratio -- Fraction of attempted moves that were accepted
 
     The sampling is done by Markov Chain Monte Carlo, with a Metropolis-Hasting
@@ -102,8 +102,8 @@ def ensemble_log_params(m, params, hess=None,
         param_keys = params.keys()
 
     curr_params = copy.deepcopy(params)
-    curr_cost = m.cost(curr_params)
-    ens, ens_costs = [curr_params], [curr_cost]
+    curr_F = m.free_energy(curr_params, temperature)
+    ens, ens_Fs = [curr_params], [curr_F]
 
     # We work with arrays of params through the rest of the code
     curr_params = scipy.array(curr_params)
@@ -111,7 +111,7 @@ def ensemble_log_params(m, params, hess=None,
     if recalc_func is None:
         recalc_func = lambda p : m.GetJandJtJInLogParameters(scipy.log(p))[1]
 
-    accepted_moves, cost_exceptions, ratio = 0, 0, scipy.nan
+    accepted_moves, F_exceptions, ratio = 0, 0, scipy.nan
     start_time = last_save_time = time.time()
     samp_mat = None
     while len(ens) < steps+1:
@@ -147,50 +147,50 @@ def ensemble_log_params(m, params, hess=None,
             next_params = curr_params + scaled_step
 
         try:
-            next_cost = m.cost(next_params)
+            next_F = m.free_energy(next_params, temperature)
         except Utility.SloppyCellException, X:
-            logger.warn('SloppyCellException in cost evaluation at step %i, '
-                        'cost set to infinity.' % len(ens))
+            logger.warn('SloppyCellException in free energy evaluation at step '
+                        '%i, free energy set to infinity.' % len(ens))
             logger.warn('Parameters tried: %s.' % str(next_params))
-            cost_exceptions += 1
-            next_cost = scipy.inf
+            F_exceptions += 1
+            next_F = scipy.inf
 
-    	if _accept_move(next_cost - curr_cost, temperature):
+    	if _accept_move(next_F - curr_F, temperature):
             accepted_moves += 1.
             curr_params = next_params
-            curr_cost = next_cost
+            curr_F = next_F
 
         if isinstance(params, KeyedList):
             ens.append(KeyedList(zip(param_keys, curr_params)))
         else:
             ens.append(curr_params)
-        ens_costs.append(curr_cost)
+        ens_Fs.append(curr_F)
         ratio = accepted_moves/(len(ens) - 1)
 
         # Save to a file
         if save_to is not None\
            and time.time() >= last_save_time + save_hours * 3600:
-            _save_ens(ens, ens_costs, ratio, save_to, cost_exceptions)
+            _save_ens(ens, ens_Fs, ratio, save_to, F_exceptions)
             last_save_time = time.time()
 
     if save_to is not None:
-        _save_ens(ens, ens_costs, ratio, save_to, cost_exceptions)
+        _save_ens(ens, ens_Fs, ratio, save_to, F_exceptions)
 
-    return ens, ens_costs, ratio
+    return ens, ens_Fs, ratio
 
-def _save_ens(ens, ens_costs, ratio, save_to, cost_exceptions):
-    Utility.save((ens, ens_costs, ratio), save_to)
+def _save_ens(ens, ens_Fs, ratio, save_to, F_exceptions):
+    Utility.save((ens, ens_Fs, ratio), save_to)
     logger.debug('Ensemble of length %i saved to %s.' % (len(ens), save_to))
     logger.debug('Acceptance ratio so far is %f.' % ratio)
-    logger.debug('Cost threw an exception %i times.' % cost_exceptions)
+    logger.debug('Cost threw an exception %i times.' % F_exceptions)
 
 
-def _accept_move(delta_cost, temperature):
-    if delta_cost < 0.0:
+def _accept_move(delta_F, temperature):
+    if delta_F < 0.0:
         return True
     else:
         p = scipy.rand()
-        return (p < scipy.exp(-delta_cost/temperature))
+        return (p < scipy.exp(-delta_F/temperature))
 
 def _sampling_matrix(hessian, cutoff=0):
     ## basically need SVD of hessian - singular values and eigenvectors

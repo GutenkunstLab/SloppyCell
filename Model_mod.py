@@ -191,6 +191,13 @@ class Model:
         """
         return self.cost(scipy.exp(log_params))
 
+    def free_energy(self, params, T):
+        sf_entropy = 0
+        for expt, sf_aks in self.internalVars['scaleFactor_aks'].items():
+            for var, ak in sf_aks.items():
+                sf_entropy += scipy.log(scipy.sqrt(2*scipy.pi*T/ak))
+        return self.cost(params) - T * sf_entropy
+        
 
     def _notify(self, **args):
         """
@@ -329,7 +336,9 @@ class Model:
         return self.calcSensitivityVals
 
     def ComputeInternalVariables(self):
-        self.internalVars['scaleFactors'] = self.compute_scale_factors()
+        sf, sf_aks = self.compute_scale_factors()
+        self.internalVars['scaleFactors'] = sf
+        self.internalVars['scaleFactor_aks'] = sf_aks
 
     def compute_scale_factors(self):
         """
@@ -339,14 +348,17 @@ class Model:
         """
 
         scale_factors = {}
+        scale_factor_aks = {}
         for exptId, expt in self.GetExperimentCollection().items():
-            scale_factors[exptId] = self._compute_sf_for_expt(expt)
+            scale_factors[exptId], scale_factor_aks[exptId] =\
+                    self._compute_sf_for_expt(expt)
 
-        return scale_factors
+        return scale_factors, scale_factor_aks
 
     def _compute_sf_for_expt(self, expt):
         # Compute the scale factors for a given experiment
         scale_factors = {}
+        scale_factor_aks = {}
 
         exptData = expt.GetData()
         expt_integral_data = expt.GetIntegralDataSets()
@@ -385,6 +397,7 @@ class Model:
 
             # Finally, compute the scale factor for this group
             theoryDotData, theoryDotTheory = 0, 0
+            # For discrete data
             for calc in exptData:
                 # Pull out the vars we have measured for this calculation
                 for var in group.intersection(sets.Set(exptData[calc].keys())):
@@ -392,6 +405,8 @@ class Model:
                         theory = self.calcVals[calc][var][indVar]
                         theoryDotData += (theory * data) / error**2
                         theoryDotTheory += theory**2 / error**2
+
+            # Now for integral data
             for dataset in expt_integral_data:
                 calc = dataset['calcKey']
                 theory_traj = self.calcVals[calc]['full trajectory']
@@ -413,10 +428,11 @@ class Model:
             for var in group:
                 if theoryDotTheory != 0:
                     scale_factors[var] = theoryDotData/theoryDotTheory
+                    scale_factor_aks[var] = theoryDotTheory
                 else:
                     scale_factors[var] = 1
 
-        return scale_factors
+        return scale_factors, scale_factor_aks
 
     def _integral_theorytheory(self, var, theory_traj, uncert_traj, interval):
         def integrand(t):
