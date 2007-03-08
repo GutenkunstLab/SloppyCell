@@ -1035,7 +1035,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6):
                 scipy.optimize.fsolve(func, x0=x0, fprime=fprime,
                                       col_deriv=True, full_output=True,
                                       xtol=xtol)
-    except scipy.optimize.minpack.error, X:
+    except (scipy.optimize.minpack.error, ArithmeticError), X:
         raise FixedPointException(('Failure in fsolve.', X))
 
     if ier != 1:
