@@ -78,7 +78,7 @@ def typ_val_uncert(fraction = 0.1, cutoff=1e-14):
         sigma = traj.get_var_typical_val(data_id) * fraction
         if sigma < cutoff:
             logger.warn('sigma < cutoff value (%g) for variable %s! '
-                        'Taking sigma = 1.' % (_SIGMA_CUTOFF, data_id))
+                        'Taking sigma = 1.' % (cutoff, data_id))
             sigma = 1
         return sigma
     return sigmaFunc
