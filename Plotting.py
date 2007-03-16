@@ -85,6 +85,33 @@ def plot_eigvals(vals, label=None, offset=0, indicate_neg=True, join=False,
 
     return line
 
+def plot_eigval_spectrum(vals, widths=1.0, offset=0, ax=None, lc='k', lw=3):
+    """
+    Plot eigenvalues as a set of horizontal lines.
+
+    vals    Eigenvalues to plot
+    widths  Horizontal width of the lines
+    offset  Starting x position for the lines
+    ax      Axis instance to plot to. If ax is None, current plot axis is used
+    lc      Color of lines
+    lw      Line thicknesses
+    """
+
+    if ax is None:
+        ax = gca()
+
+    vals = scipy.compress(vals > 0, vals)
+
+    segs = [((offset, val), (offset+widths, val)) for val in vals]
+    linewidths = [lw] * len(segs)
+    colors = [lc] * len(segs)
+    coll = matplotlib.collections.LineCollection(segs, linewidths=linewidths,
+                                                 colors=colors)
+    ax.set_yscale('log')
+    ax.add_collection(coll)
+
+    return
+
 def plot_singvals(vals, label=None, offset=0, join=False):
     return plot_eigvals(vals, label, offset, indicate_neg=False, join=join)
 
