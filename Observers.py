@@ -31,6 +31,7 @@ class CostPrinter:
             if self.ii % self.skip == 0:
                 print 'call %i: cost: %g, best so far: %g' % (self.ii, cost, 
                                                               self.lowest_cost)
+                os.sys.stdout.flush()
                 if self.print_params:
                     print params
                 if self.print_best_params:
