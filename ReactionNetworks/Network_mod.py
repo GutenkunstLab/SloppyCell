@@ -651,7 +651,8 @@ class Network:
         Set variable initial conditions from a KeyedList or dictionary.
         """
         for id, value in kl.items():
-            self.set_var_ic(id, value, warn=False)
+            if id in self.variables.keys():
+                self.set_var_ic(id, value, warn=False)
 
     def set_var_val(self, id, val, time=0, warn=True, do_assignments=True):
         """
