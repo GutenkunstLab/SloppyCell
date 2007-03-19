@@ -7,7 +7,7 @@ Dependencies
 Required to run
 +++++++++++++++
 * Python_
-* Scipy_
+* SciPy_
 * matplotlib_
 
 Required to build
@@ -16,10 +16,10 @@ Required to build
 
 Recommended
 +++++++++++
-* IPython_: A dramatic improvement over the standard python shell.
 * LibSBML_: Required for SBML import and export. Be sure to build ``--with-python``.
-* Psyco_: A just-in-time compiler for python, Psyco will speed up integrations by about 50% on supported platforms.
+* IPython_: A dramatic improvement over the standard python shell.
 * Graphviz_: SloppyCell can generate ``.dot`` files specifying network diagrams,which can be visualized using Graphviz. 
+* Psyco_: A just-in-time compiler for python, Psyco will speed up integrations by about 50% on supported platforms.
 
 
 Instructions
@@ -27,8 +27,11 @@ Instructions
 .. topic:: On Windows
 
    1. Install required dependencies.
+      Enthought provides `a distribution <http://code.enthought.com/enthon/>`_ of Python that includes NumPy, SciPy, and Matplotlib. Unfortunately, it is a little out of date.
+
+      Alternatively, Python and all three packages each have nice installers of their own. We suggest using Python 2.4, as it is only version for which there are pre-built libsbml libraries.
       
-   2. `Download <http://sourceforge.net/project/showfiles.php?group_id=140498>`_ and run the executable installer.
+   2. `Download <http://sourceforge.net/project/showfiles.php?group_id=140498>`_ and run the executable installer. If using the Enthought distribution, you'll want the ``-enthon1.00`` version. Otherwise, you'll want the ``py2.4`` version.
 
    3. To access libsbml from python, you'll need to `setup your PYTHONPATH and
       LD_LIBRARY_PATH <http://sysbio.molgen.mpg.de/sbmlmerge/sbmlmerge_manual/node36.html>`_.
@@ -43,8 +46,8 @@ Instructions
 
    1. Install required dependencies.  
       A pre-built version of g77 (Fortran77 compiler) for OSX is available at http://hpc.sf.net.
-   2. Unpack the tarball. (``tar xzf SloppyCell-0.6.tar.gz``)
-   3. Descend into the SloppyCell-0.6 directory. (``cd SloppyCell-0.6``)
+   2. Unpack the tarball. (``tar xzf SloppyCell-???.tar.gz``)
+   3. Descend into the SloppyCell-??? directory. (``cd SloppyCell-???``)
    4. Run the installation script. (``python setup.py install``) 
    5. Run the included test routines. (``cd Testing; python test.py``)
 
