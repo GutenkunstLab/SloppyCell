@@ -383,7 +383,7 @@ if max_steps is not set """
                                                      y0_non_neg, yp0_non_neg,
                                                      rtol = reltol_non_neg,
                                                      atol = abstol_non_neg,
-                                                     ineq_constr=0)
+                                                     ineq_constr=False)
 
 
         self.assertAlmostEqual(y[1][0], 0.960000000, 5)
@@ -397,7 +397,7 @@ if max_steps is not set """
                                                      y0_non_neg, yp0_non_neg,
                                                      rtol = reltol_non_neg,
                                                      atol = abstol_non_neg,
-                                                     ineq_constr=2)
+                                                     ineq_constr=True)
 
         self.assertAlmostEqual(y[1][0], 0.960000000, 5)
         self.assertAlmostEqual(y[-4][0], 0.000000, 5)
