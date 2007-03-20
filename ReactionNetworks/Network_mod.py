@@ -1353,10 +1353,10 @@ class Network:
 
         # At this point, vars_in_alg_rules should contain all the variables the
         # algebraic rules depend on, including implicit dependencies through
-        # assignment rules. Now we filter out all the things we known aren't
+        # assignment rules. Now we filter out all the things we know aren't
         # algebraic vars. First we filter out everything that we already
         # know isn't a dynamic variable.
-        vars_in_alg_rules.intersection_update(self.dynamicVars.keys())
+        vars_in_alg_rules.intersection_update(sets.Set(self.dynamicVars.keys()))
 
         # remove the reaction variables
         for rxn in self.reactions:
@@ -1380,11 +1380,6 @@ class Network:
         # compiled
         self.algebraicVars = KeyedList([(id, id) for id
                                         in vars_in_alg_rules])
-        if len(self.algebraicVars) > len(self.algebraicRules):
-            raise ValueError('System appears under-determined. Not enough  algebraic rules.') 
-
-
-
 
     def compile(self):
         """
@@ -1418,6 +1413,10 @@ class Network:
         if curr_structure != getattr(self, '_last_structure', None):
             logger.debug('Network %s: compiling structure.' % self.id)
             self._makeCrossReferences()
+            # Check whether system appears well-determined.
+            if len(self.algebraicVars) > len(self.algebraicRules):
+                raise ValueError('System appears under-determined. '
+                                 'Not enough  algebraic rules.') 
             self._makeDiffEqRHS()
             for func in self._dynamic_structure_funcs:
                 exec 'self.%s_functionBody = self._make_%s()' % (func, func)
