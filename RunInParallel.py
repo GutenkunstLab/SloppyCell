@@ -3,10 +3,7 @@ logger = logging.getLogger('Parallel')
 
 import sys, traceback
 
-import pypar
-
 import SloppyCell
-SloppyCell.new_par = True
 import Collections
 
 from SloppyCell import num_procs, my_rank, my_host, HAVE_PYPAR
