@@ -151,6 +151,123 @@ def integrate_tidbit(net, int_func, Dfun, root_func, IC, curTimes,
     return exception_raised, y_this, t_this, ydt_this,\
             t_root_this, y_root_this, i_root_this
 
+def integrate_J_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes, 
+                     rtol, atol, fill_traj, return_derivs,
+                     redirect_msgs, init_consistent, var_types):
+
+
+    
+    if root_func is not None:
+        root_term = [False] * len(net._root_func)
+        for ii in range(len(net.events)):
+            root_term[ii] = True
+    else:
+        root_term = []
+
+    N_dyn_var = len(net.dynamicVars)
+    if net.integrateWithLogs:
+        IC = scipy.log(IC)
+
+        old_func = int_func
+        def int_func(input, time):
+            # Convert from logs of dyamic vars. We're integrating in logs
+            #  partially to avoid zeros, so we put a lowerbound on our
+            #  output dynamicVars
+            dv = scipy.exp(input[:N_dyn_var])
+            # Record which values were zero after exponentiation
+            zero_entries = scipy.compress(dv < scipy.misc.limits.double_tiny,
+                                          scipy.arange(len(dv)))
+            # Make those values non-zero, but as tiny as possible
+            dv = scipy.maximum(dv, scipy.misc.limits.double_tiny)
+
+            # Replace the log-values that were in our input.
+            input = copy.copy(input)
+            input[:N_dyn_var] = dv
+
+            # Calculation our function
+            output = old_func(input, time)
+
+            # Rescale the output to put us back into log-chemicals
+            output[:N_dyn_var] /= dv
+
+            # Keep the integrator from try to make values that are already zero
+            #  even smaller.
+            for ii in zero_entries:
+                if output[ii] < 0:
+                    output[ii] = 0
+            return output
+
+        Dfun = None
+
+        old_root_func = root_func
+        def root_func(logDV, time):
+            dv = scipy.exp(input)
+            return old_root_func(dv, time)
+
+        atol = rtol
+        rtol = 0
+    else:
+        # rtol must be a scalar for lsodar
+        rtol = rtol
+
+
+
+
+    int_args = {'res': res_func,
+                't': curTimes,
+                'y0': IC,
+                'yp0': yp0,
+
+                'jac': Dfun,
+                'rt': root_func,
+
+                'rtol': rtol,
+                'atol': atol,
+
+                'intermediate_output': fill_traj,
+                'redir_output': redirect_msgs,
+
+                'init_consistent' : init_consistent,
+                'var_types' : var_types,
+                }
+
+    exception_raised = False
+    try:
+        int_returns = daeint(**int_args)
+    except Utility.SloppyCellException, X:
+        # When an exception happens, we'll try to return all the
+        # trajectory we can, thus we don't reraise yet.
+        exception_raised = X
+        # We store the arguments to odeintr that failed as
+        #  Dynamics.failed_kwargs for debugging purproses.
+        global failed_kwargs
+        failed_kwargs = int_args
+        # Recover what we have of int_returns from the exception,
+        #  so we can process it.
+        int_returns = X.args[1]
+
+    #        outputs = (yout_l, tout_l, ypout_l, t_root, y_root, i_root)
+
+    # Pull things out of what daeint returned
+    y_this, t_this = int_returns[0], int_returns[1]
+    t_root_this, y_root_this, i_root_this = int_returns[3:6]
+    info_dict = int_returns[-1]
+    if return_derivs:
+        ydt_this = int_returns[2]
+    else:
+        ydt_this = []
+
+    # Deal with integrateWithLogs
+    if net.integrateWithLogs:
+        y_this = scipy.exp(y_this)
+        y_root_this = scipy.exp(y_root_this)
+        if return_derivs:
+            ydt_this = y_this * ydt_this
+
+    return exception_raised, y_this, t_this, ydt_this,\
+            t_root_this, y_root_this, i_root_this
+
+
 def generate_tolerances(net, rtol, atol=None):
     if rtol == None:
         rtol = 1e-6
@@ -441,27 +558,30 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
     if (rtol == None or atol == None):
         rtol, atol = generate_tolerances(net, rtol, atol)
-    
+
+    # if times isn't already an array, make it an array
     times = scipy.asarray(times)
 
     # define a residual function that will work with the f2py interface
     def res_func(time, y, yprime, ires):
         return net.res_function(time, y, yprime, ires) 
 
-    # get this initial state, time, and derivative.
+    # get the initial state, time, and derivative.
     IC = net.getDynamicVarValues()
     start = times[0]
+    # time derivative of trajectory
     youtdt = net.get_ddv_dt(IC,start)
 
     # start variables for output storage 
-    yout, tout = scipy.zeros((0, len(IC)), scipy.float_), []
+    yout = scipy.zeros((0, len(IC)), scipy.float_)
+    tout = []
 
     root_func = net.ddaskr_root
     num_events = len(net.events)
     
     # te, ye, and ie are the times, dynamic variable values, and indices
     #  of fired events
-    te, ye, ie = [], [], []
+    te, ye, ie, ce = [], [], [], []
     pendingEvents = {}
 
     # After firing an event, we integrate for root_grace_t without looking for
@@ -469,8 +589,6 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     # numerical imprecision
     root_grace_t = (times[-1] - times[0])/1e6
     event_just_fired = False
-
-    exception_raised = None
 
     # This is the jacobian for use with ddaskr.
     def _ddaskr_jac(t, y, yprime, pd, cj):
@@ -487,7 +605,8 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         for jj, vt in enumerate(net._dynamic_var_algebraic):
             variable_types[jj] = vt
    
-    
+    exception_raised = None
+
     while start < times[-1]:
 
         # check to see if there are any pendingEvents with execution time
@@ -495,12 +614,14 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         # since some chained events may be added to the pending events list,
         # keep looping until the key has been deleted
         while pendingEvents.has_key(round(start, 12)):
+
             # Note: the correct behavior of chained events with events that have
             # delays is not clear
-            # Note: It is unclear when you're supposed to check for chained events
-            # after multiple events fire/excecute simultaneously.
+            # Note: When multiple events execute simultaneously, we check for chained
+            # events after all the simultaneously excecutions occur.
+            
             # store a copy of the value of root_func in order to check for
-            # chains of events            
+            # chains of events       
             root_before = root_func(net, IC, start).copy()
 
             # For those events whose execution time == start, execute
@@ -529,46 +650,53 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                     pendingEvents[round(start + delay, 12)].append(event)
                     root_before[ii] = 0.5
 
-
+            # if there are no more events to excecute at this time, then
+            # delete the entry for this time in pendingEvents
             if len(pendingEvents[round(start, 12)]) == 0:
                 del pendingEvents[round(start, 12)]
 
+        # if there are still pending events, set the nextEventTime
         if pendingEvents:
             nextEventTime = min(pendingEvents.keys())
         else:
             nextEventTime = scipy.inf
 
-
         # If an event just fired, we integrate for root_grace_t without looking
         # for events, to prevent detecting the same event several times.
-        # This section only excecutes if root_grace is True.
+        # This section only excecutes if root_grace is True (default).
         if (event_just_fired and root_grace):
-            if getattr(net, 'integrateWithLogs', False):
-                IC = scipy.log(IC)
-            next_requested = scipy.compress(times > start, times)[0]
+            next_requested = scipy.compress(scipy.asarray(times) > start, times)[0]
             integrate_to = min(start + root_grace_t, next_requested,
                                nextEventTime)
-            try:
-                temp = daeint(res_func, [start, integrate_to],
-                              copy.copy(IC), copy.copy(youtdt),
-                              rtol, atol,
-                              intermediate_output = fill_traj,
-                              jac = _ddaskr_jac,
-                              max_steps = 10000,
-                              redir_output = redirect_msgs)
+            curTimes = [start, integrate_to]
 
-            except Utility.SloppyCellException, X:
-                ### need to return as much of the trajectory as we have so far
-                # since integration failed, return all the traj we got
-                exception_raised = X
-                print 'Exception in grace integration'
-                break
+            outputs = integrate_J_tidbit(net, res_func, _ddaskr_jac, 
+                                       root_func=None, 
+                                       IC=IC, yp0=youtdt, curTimes=curTimes, 
+                                       rtol=rtol, atol=atol, 
+                                       fill_traj=fill_traj, 
+                                       return_derivs=return_derivs, 
+                                       redirect_msgs=redirect_msgs,
+                                       init_consistent=False,
+                                       var_types=None)
+
+
+
+            # only grab the first 4 outputs since we aren't chcking for events
+            exception_raised, yout_this, tout_this, youtdt_this = outputs[:4]
+
+            # not sure what this is for
+            """
             if temp[5] < 0:
                 break
+            """
 
             # We don't append the last point, to prevent a needless 'event
             #  looking' duplication of times in the trajectory.
             # temp[5] is the derivative of the trajectory w.r.t. time
+            tout.extend(tout_this[:-1])
+            yout = scipy.concatenate((yout, yout_this[:-1]))
+            """
             if getattr(net, 'integrateWithLogs', False):
                 yout = scipy.concatenate( (yout, scipy.exp(temp[0][:-1])) )
                 if return_derivs :
@@ -579,9 +707,15 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                 if return_derivs :
                     youtdt = scipy.concatenate( (youtdt,temp[5][:-1]) )
                 start, IC = temp[1][-1], copy.copy(temp[0][-1])
-            tout.extend(temp[1][:-1])
+            """
+            #tout.extend(temp[1][:-1])
+            if return_derivs :
+                youtdt = scipy.concatenate( (youtdt,temp[5][:-1]) )
             event_just_fired = False
             logger.debug('Finished event grace time integration.')
+
+            if exception_raised:
+                break
 
         # If we have pending events, only integrate until the next one.
         if pendingEvents:
@@ -597,65 +731,36 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             IC = scipy.log(IC)
         """
 
-        try:
-            temp = daeint(res_func, curTimes,
-                          copy.copy(IC), copy.copy(youtdt),
-                          rtol, atol,
-                          rt = root_func,
-                          jac = _ddaskr_jac,
-                          intermediate_output = fill_traj,
-                          redir_output = redirect_msgs,
-                          init_consistent = calculate_ic,
-                          var_types = variable_types)            
+        outputs = integrate_J_tidbit(net, res_func, _ddaskr_jac, 
+                                   root_func=root_func, 
+                                   IC=IC, yp0=youtdt, curTimes=curTimes, 
+                                   rtol=rtol, atol=atol, 
+                                   fill_traj=fill_traj, 
+                                   return_derivs=return_derivs, 
+                                   redirect_msgs=redirect_msgs,
+                                   init_consistent = calculate_ic,                                         
+                                   var_types = variable_types)            
             
-        except Utility.SloppyCellException, X:
-            ### need to return as much of the trajectory as we have so far
-            # since integration failed, return all the traj we got
-            exception_raised = X
-            global failed_args
-            global failed_kwargs
-            temp = X.args[1]
-            failed_args = (res_func, IC, curTimes)
-            failed_kwargs = {'root_func': root_func,
-                             'root_term': [True]*len(net.events),
-                             #'Dfun': Dfun,
-                             'mxstep': 10000, 
-                             'rtol': rtol, 
-                             'atol': atol,
-                             'int_pts': fill_traj,
-                             'insert_events': True,
-                             'full_output': True, 
-                             'return_derivs': return_derivs}
+        exception_raised, yout_this, tout_this, youtdt_this,\
+              t_root_this, y_root_this, i_root_this = outputs
 
+        yout = scipy.concatenate((yout, yout_this))
+        if return_derivs :
+            youtdt = scipy.concatenate(youtdt, youtdt_this)
+        tout.extend(tout_this)
 
-
-        if getattr(net, 'integrateWithLogs', False):
-            yout = scipy.concatenate((yout, scipy.exp(temp[0])))
-            if return_derivs :
-                youtdt = scipy.concatenate( (youtdt, scipy.exp(temp[0])*temp[5] ) )
-        else:
-            yout = scipy.concatenate((yout, temp[0]))
-            if return_derivs :
-                youtdt = scipy.concatenate( (youtdt, temp[2] ) )
-            
-
-        tout.extend(temp[1])
-        start, IC = tout[-1], copy.copy(yout[-1])
-        
         if exception_raised:
             break
 
 
+        start, IC = tout[-1], copy.copy(yout[-1])
+        
 
         # Check the directions of our root crossings to see whether events
         # actually fired.  DASKR automatically returns the direction of event
         # crossings, so we can read this information from the integration results
         # zip(...) allows us to iterate over multiple sequences in parallel.
-        for ii, dire_cross in zip(range(num_events), temp[5]):
-            """
-            if getattr(net, 'integrateWithLogs', False): 
-                ye_this = scipy.exp(ye_this)
-            """
+        for ii, dire_cross in zip(range(num_events), i_root_this):
             
             # dire_cross is the direction of the event crossing.  If it's
             # 1 that means Ri changed from negative to positive.  In that case
@@ -666,8 +771,8 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             # real event.
             if dire_cross > 0 and ii < len(net.events):
                 # an event has fired, so record the state and event number
-                te.append(temp[3])
-                ye.append(temp[4])
+                te.append(t_root_this)
+                ye.append(y_root_this)
                 ie.append(ii)
                 event_just_fired = True
                 event = net.events[ie[-1]]
@@ -678,7 +783,7 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                     pendingEvents[round(te[-1] + delay, 12)] = []
                 pendingEvents[round(te[-1] + delay, 12)].append(event)
 
-
+    # End of while loop for integration.
 
     if len(yout) and len(tout):
         net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
