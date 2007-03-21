@@ -1431,6 +1431,12 @@ class Network:
                 _exec_dynamic_func(self, func, self.namespace)
             self._last_events = copy.deepcopy(self.events)
 
+        # after compile, check that there are not more algebraic variables than
+        # algebraic rules.
+        if len(self.algebraicVars) > len(self.algebraicRules):
+            raise ValueError('System appears under-determined. Not enough  algebraic rules.') 
+        
+
 
     def _get_structure(self):
         """
