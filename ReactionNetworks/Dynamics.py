@@ -399,7 +399,8 @@ def integrate(net, times, params=None, rtol=1e-6, fill_traj=True,
 
 def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
               return_events=False, return_derivs=False,
-              redirect_msgs=True, calculate_ic = False):
+              redirect_msgs=True, calculate_ic = False,
+              root_grace=True):
     """
     Integrate a Network, returning a Trajectory.
 
@@ -424,8 +425,19 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                    integrator will be returned to the display.
     calculate_ic   If True, the integrator will calculate consistent initial
                    conditions.
+    root_grace     If True, the integration won't fire events for a small period
+                   after an event fires to prevent events from repeatedly firing
+                   inapropriately.                   
                    
     """
+
+    if params is not None:
+        net.update_optimizable_vars(params)
+    # If you ask for time = 0, we'll assume you want dynamic variable values
+    # reset.
+    if times[0] == 0:
+        net.resetDynamicVariables()
+    net.compile()
 
     if (rtol == None or atol == None):
         rtol, atol = generate_tolerances(net, rtol, atol)
@@ -436,38 +448,16 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     def res_func(time, y, yprime, ires):
         return net.res_function(time, y, yprime, ires) 
 
-    # If you ask for time = 0, we'll assume you want dynamic variable values
-    #  reset.
-    if times[0] == 0:
-        net.resetDynamicVariables()
-    if params is not None:
-        net.update_optimizable_vars(params)
-    net.compile()
-
     # get this initial state, time, and derivative.
     IC = net.getDynamicVarValues()
     start = times[0]
     youtdt = net.get_ddv_dt(IC,start)
 
-    # start variables for output storage
+    # start variables for output storage 
     yout, tout = scipy.zeros((0, len(IC)), scipy.float_), []
-
-    # Will eventually need to fix this Dfun
-    # Dfun = lambda y, t: scipy.transpose(net.get_d2dv_ddvdt(y, t))
 
     root_func = net.ddaskr_root
     num_events = len(net.events)
-
-    
-    ### This is messy but if we have a variable whose typical value is 1.0e6 say
-    ### drops to almost zero during an integration, then we have to avoid
-    ### integration errors making it significantly negative
-    # out for now
-    """
-    if rtol is not None:
-        atol = [min(rtol*net.get_var_typical_val(id),1e-6) for id
-                in net.dynamicVars.keys()]
-    """
     
     # te, ye, and ie are the times, dynamic variable values, and indices
     #  of fired events
@@ -542,16 +532,22 @@ def integrate_J(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
             if len(pendingEvents[round(start, 12)]) == 0:
                 del pendingEvents[round(start, 12)]
-                        
+
+        if pendingEvents:
+            nextEventTime = min(pendingEvents.keys())
+        else:
+            nextEventTime = scipy.inf
 
 
         # If an event just fired, we integrate for root_grace_t without looking
-        #  for events, to prevent detecting the same event several times.
-        if event_just_fired:
+        # for events, to prevent detecting the same event several times.
+        # This section only excecutes if root_grace is True.
+        if (event_just_fired and root_grace):
             if getattr(net, 'integrateWithLogs', False):
                 IC = scipy.log(IC)
             next_requested = scipy.compress(times > start, times)[0]
-            integrate_to = min(start + root_grace_t, next_requested)
+            integrate_to = min(start + root_grace_t, next_requested,
+                               nextEventTime)
             try:
                 temp = daeint(res_func, [start, integrate_to],
                               copy.copy(IC), copy.copy(youtdt),
