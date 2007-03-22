@@ -445,6 +445,7 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
                    
                 # send what output was obtained
                 outputs = (scipy.array(yout_l), scipy.array(tout_l),
+                           scipy.array(ypout_l),
                            t_root, y_root, i_root)
                 raise daeintException(_msgs[idid], outputs)
             
