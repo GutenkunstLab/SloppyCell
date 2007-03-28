@@ -224,11 +224,17 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         x2 = x + asarray(move)
         currentcost = sum(asarray(apply(f,(x,)+args))**2)
         func_calls+=1
-        res2 = asarray(apply(f,(x2,)+args))
-        costlambdasmaller = sum(res2**2)
+        try:
+            res2 = asarray(apply(f,(x2,)+args))
+            costlambdasmaller = sum(res2**2)
+        except SloppyCell.Utility.SloppyCellException:
+            costlambdasmaller = scipy.inf
         func_calls+=1
-        res1 = asarray(apply(f,(x1,)+args))
-        costlambda = sum(res1**2)
+        try:
+            res1 = asarray(apply(f,(x1,)+args))
+            costlambda = sum(res1**2)
+        except SloppyCell.Utility.SloppyCellException:
+            costlambda = scipy.inf
         func_calls+=1
         if disp :
             print 'Iteration number', niters
@@ -508,10 +514,16 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
         oldcost = currentcost
         func_calls+=1
 
-        costlambdasmaller = apply(fcost,(x2,))
+        try:
+            costlambdasmaller = apply(fcost,(x2,))
+        except SloppyCell.Utility.SloppyCellException:
+            costlambdasmaller = scipy.inf
         func_calls+=1
 
-        costlambda = apply(fcost,(x1,))
+        try:
+            costlambda = apply(fcost,(x1,))
+        except SloppyCell.Utility.SloppyCellException:
+            costlambda = scipy.inf
         func_calls+=1
         if disp :
             print 'Iteration number', niters
@@ -780,11 +792,17 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         x2 = x + asarray(move2)
 
         func_calls+=1
-        res2 = asarray(apply(f,(x2,)))
-        costlambdasmaller = sum(res2**2)
+        try:
+            res2 = asarray(apply(f,(x2,)))
+            costlambdasmaller = sum(res2**2)
+        except SloppyCell.Utility.SloppyCellException:
+            costlambdasmaller = scipy.inf
         func_calls+=1
-        res1 = asarray(apply(f,(x1,)))
-        costlambda = sum(res1**2)
+        try:
+            res1 = asarray(apply(f,(x1,)))
+            costlambda = sum(res1**2)
+        except SloppyCell.Utility.SloppyCellException:
+            costlambda = scipy.inf
         func_calls+=1
         if disp :    
             print "Cost is ", currentcost
