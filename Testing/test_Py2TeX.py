@@ -4,11 +4,6 @@ import unittest
 import SloppyCell.ExprManip as ExprManip
 
 lines = []
-lines.append(r'\documentclass{article}')
-lines.append(r'\usepackage{amsmath}')
-lines.append(r'\usepackage{fullpage}')
-lines.append(r'\usepackage{longtable}')
-lines.append(r'\begin{document}')
 
 class test_Py2TeX(unittest.TestCase):
     def test_expr2Tex(self):
@@ -44,9 +39,15 @@ class test_Py2TeX(unittest.TestCase):
             TeXed = ExprManip.expr2TeX(expr, name_dict)
 
 suite = unittest.makeSuite(test_Py2TeX)
-unittest.TextTestRunner(verbosity=2).run(suite)
 
-lines.append(r'\end{document}')
-f = file('test_Py2TeX.tex', 'w')
-f.write(os.linesep.join(lines))
-f.close()
+if __name__ == '__main__':
+    lines.append(r'\documentclass{article}')
+    lines.append(r'\usepackage{amsmath}')
+    lines.append(r'\usepackage{fullpage}')
+    lines.append(r'\usepackage{longtable}')
+    lines.append(r'\begin{document}')
+    unittest.TextTestRunner(verbosity=2).run(suite)
+    lines.append(r'\end{document}')
+    f = file('test_Py2TeX.tex', 'w')
+    f.write(os.linesep.join(lines))
+    f.close()
