@@ -1,6 +1,8 @@
 import glob
 import unittest
 
+import SloppyCell.Utility
+
 def run_all_tests():
     all_tests = unittest.TestSuite()
 
@@ -14,6 +16,7 @@ def run_all_tests():
         if hasattr(mod, 'suite'):
             all_tests.addTest(mod.suite)
 
+    SloppyCell.Utility.disable_warnings()
     unittest.TextTestRunner(verbosity=2).run(all_tests)
 
     for mod in all_test_mods:
