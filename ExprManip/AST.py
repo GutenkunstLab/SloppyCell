@@ -30,7 +30,7 @@ def strip_parse(expr):
     """
     # The .strip() ignores leading and trailing whitespace, which would 
     #  otherwise give syntax errors.
-    ast = compiler.parse(expr.strip())
+    ast = compiler.parse(str(expr).strip())
     return ast.node.nodes[0].expr
 
 # This defines the order of operations for the various node types, to determine
