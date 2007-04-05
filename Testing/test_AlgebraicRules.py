@@ -44,7 +44,7 @@ algebraic_net_assignment = IO.from_SBML_file(file_path,
 class test_AlgebraicRules(unittest.TestCase):
     def test_basic(self):
         """ Basic test of Algebraic Rules """
-        algebraic_traj = Dynamics.integrate_J(algebraic_net, tlist_algebraic_net)
+        algebraic_traj = Dynamics.integrate(algebraic_net, tlist_algebraic_net)
 
         self.assertAlmostEqual(algebraic_traj.get_var_val('X0',4.8), 0.618783392, 5)
         self.assertAlmostEqual(algebraic_traj.get_var_val('X1',21.6), 0.653837775, 5)
@@ -57,7 +57,7 @@ class test_AlgebraicRules(unittest.TestCase):
 rules are parsed correctly"""
 
         # integrate using the same time points as the base case
-        algebraic_traj = Dynamics.integrate_J(algebraic_net_assignment, tlist_algebraic_net)
+        algebraic_traj = Dynamics.integrate(algebraic_net_assignment, tlist_algebraic_net)
 
         # make sure that the correct variables were identified as algebraic
 
@@ -96,7 +96,7 @@ rules are parsed correctly"""
 
         reltol = scipy.array([1e-10, 1e-10, 1e-10, 1e-10])
 
-        algebraic_traj = Dynamics.integrate_J(algebraic_net, tlist_algebraic_net,
+        algebraic_traj = Dynamics.integrate(algebraic_net, tlist_algebraic_net,
                                               reltol)
 
         self.assertAlmostEqual(algebraic_traj.get_var_val('X0',4.8), 0.618783392, 8)
