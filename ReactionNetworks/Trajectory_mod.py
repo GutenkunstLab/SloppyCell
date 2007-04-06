@@ -8,6 +8,7 @@ import copy
 import types
 
 import scipy
+import scipy.io
 import scipy.interpolate
 
 import SloppyCell.KeyedList_mod
