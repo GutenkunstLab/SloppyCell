@@ -77,7 +77,7 @@ class Trajectory:
         self.typical_var_values = KeyedList([(id, var.typicalValue)
                                              for (id, var)
                                              in net.variables.items()])
-        self.event_info = ([],[],[])
+        self.event_info = ([],[],[],[])
         self.tcks = {} # need this to store the interpolation information
         self.dytcks = {} # to store interpolated vector field info
 
@@ -458,7 +458,7 @@ class Trajectory:
         The spline can then be evaluated using 
         Trajectory.evaluate_interpolated_traj or
         Trajectory.evaluate_interpolated_trajs """
-        te,ye,ie = self.event_info
+        te,ye,ie,ce = self.event_info
         teIndices = []
 
         if len(te) == 0 : # no events
