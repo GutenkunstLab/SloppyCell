@@ -7,18 +7,13 @@ import copy
 import sets
 
 import scipy
-import scipy.interpolate
 import scipy.optimize
 
 import logging
 logger = logging.getLogger('ReactionNetworks.Dynamics')
 
-import SloppyCell.lsodar as lsodar
-odeintr = lsodar.odeintr
 import SloppyCell.daskr as daskr
 daeint = daskr.daeint
-import SloppyCell.KeyedList_mod
-KeyedList = SloppyCell.KeyedList_mod.KeyedList
 import Trajectory_mod
 
 import SloppyCell.Utility as Utility
@@ -54,52 +49,31 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
 
     N_dyn_var = len(net.dynamicVars)
     if net.integrateWithLogs:
+        yp0 = yp0/IC
         IC = scipy.log(IC)
 
-        old_func = int_func
-        def int_func(input, time):
+        old_func = res_func
+        def res_func(time, logy, logyprime, ires):
             # Convert from logs of dyamic vars. We're integrating in logs
-            #  partially to avoid zeros, so we put a lowerbound on our
+            #  partially to avoid zeros, so we put a lower bound on our
             #  output dynamicVars
-            dv = scipy.exp(input[:N_dyn_var])
-            # Record which values were zero after exponentiation
-            zero_entries = scipy.compress(dv < scipy.misc.limits.double_tiny,
-                                          scipy.arange(len(dv)))
-            # Make those values non-zero, but as tiny as possible
-            dv = scipy.maximum(dv, scipy.misc.limits.double_tiny)
+            y = scipy.exp(logy)
+            y = scipy.maximum(y, scipy.misc.limits.double_tiny)
+            yprime = logyprime * y
 
-            # Replace the log-values that were in our input.
-            input = copy.copy(input)
-            input[:N_dyn_var] = dv
-
-            # Calculation our function
-            output = old_func(input, time)
-
-            # Rescale the output to put us back into log-chemicals
-            output[:N_dyn_var] /= dv
-
-            # Keep the integrator from try to make values that are already zero
-            #  even smaller.
-            for ii in zero_entries:
-                if output[ii] < 0:
-                    output[ii] = 0
-            return output
+            return old_func(time, y, yprime, ires)
 
         Dfun = None
 
         old_root_func = root_func
-        def root_func(logDV, time):
-            dv = scipy.exp(input)
-            return old_root_func(dv, time)
+        def root_func(time, logy, logyprime):
+            y = scipy.exp(logy)
+            y = scipy.maximum(y, scipy.misc.limits.double_tiny)
+            yprime = logyprime * y
+            return old_root_func(time, y, yprime)
 
         atol = rtol
-        rtol = 0
-    else:
-        # rtol must be a scalar for lsodar
-        rtol = rtol
-
-
-
+        rtol = [0]*len(rtol)
 
     int_args = {'res': res_func,
                 't': curTimes,
@@ -126,7 +100,7 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
         # When an exception happens, we'll try to return all the
         # trajectory we can, thus we don't reraise yet.
         exception_raised = X
-        # We store the arguments to odeintr that failed as
+        # We store the arguments to daeint that failed as
         #  Dynamics.failed_kwargs for debugging purproses.
         global failed_kwargs
         failed_kwargs = int_args
@@ -136,28 +110,22 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
 
     # Pull things out of what daeint returned
     y_this, t_this = int_returns[0], int_returns[1]
-
-    try:
-        t_root_this, y_root_this, i_root_this = int_returns[3:6]
-    except ValueError, X:
-
-        raise X
-    info_dict = int_returns[-1]
     if return_derivs:
         ydt_this = int_returns[2]
     else:
         ydt_this = []
 
+    t_root_this, y_root_this, i_root_this = int_returns[3:6]
+
+    info_dict = int_returns[-1]
+
     # Deal with integrateWithLogs
     if net.integrateWithLogs:
         y_this = scipy.exp(y_this)
         y_root_this = scipy.exp(y_root_this)
-        if return_derivs:
-            ydt_this = y_this * ydt_this
 
     return exception_raised, y_this, t_this, ydt_this,\
             t_root_this, y_root_this, i_root_this
-
 
 def generate_tolerances(net, rtol, atol=None):
     if rtol == None:
@@ -222,10 +190,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     # if times isn't already an array, make it an array
     times = scipy.asarray(times)
 
-    # define a residual function that will work with the f2py interface
-    def res_func(time, y, yprime, ires):
-        return net.res_function(time, y, yprime, ires) 
-
     # get the initial state, time, and derivative.
     IC = net.getDynamicVarValues()
     start = times[0]
@@ -237,6 +201,9 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     yout = scipy.zeros((0, len(IC)), scipy.float_)
     tout = []
 
+    # For some reason, the F2Py wrapper for ddaskr seems to fail if this
+    #  isn't wrapped up in a lambda...
+    res_func = lambda t, y, yprime, ires: net.res_function(t, y, yprime, ires)
     root_func = net.ddaskr_root
     num_events = len(net.events)
     
@@ -278,8 +245,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
             # Note: the correct behavior of chained events with events that have
             # delays is not clear
-            # Note: When multiple events execute simultaneously, we check for chained
-            # events after all the simultaneously excecutions occur.
+            # Note: When multiple events execute simultaneously, we check for
+            # chained events after all the simultaneously excecutions occur.
             
             # store a copy of the value of root_func in order to check for
             # chains of events       
@@ -308,7 +275,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                     logger.debug('Event %s fired at time=%g in network %s.'
                              % (event.id, start, net.id))                              
                     delay = net.fireEvent(net.events[ii], IC, start)
-                    if (pendingEvents.has_key(round(start + delay, 12)) == False):
+                    if not pendingEvents.has_key(round(start + delay, 12)):
                         pendingEvents[round(start + delay, 12)] = []
                     pendingEvents[round(start + delay, 12)].append(event)
                     root_before[ii] = 0.5
@@ -348,30 +315,11 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             # only grab the first 4 outputs since we aren't chcking for events
             exception_raised, yout_this, tout_this, youtdt_this = outputs[:4]
 
-            # not sure what this is for
-            """
-            if temp[5] < 0:
-                break
-            """
 
             # We don't append the last point, to prevent a needless 'event
             #  looking' duplication of times in the trajectory.
-            # temp[5] is the derivative of the trajectory w.r.t. time
             tout.extend(tout_this[:-1])
             yout = scipy.concatenate((yout, yout_this[:-1]))
-            """
-            if getattr(net, 'integrateWithLogs', False):
-                yout = scipy.concatenate( (yout, scipy.exp(temp[0][:-1])) )
-                if return_derivs :
-                    youtdt = scipy.concatenate( (youtdt,scipy.exp(temp[0][:-1])*temp[5][:-1]) )
-                start, IC = temp[1][-1], copy.copy(scipy.exp(temp[0][-1]))
-            else:
-                yout = scipy.concatenate((yout, temp[0][:-1]))
-                if return_derivs :
-                    youtdt = scipy.concatenate( (youtdt,temp[5][:-1]) )
-                start, IC = temp[1][-1], copy.copy(temp[0][-1])
-            """
-            #tout.extend(temp[1][:-1])
             if return_derivs :
                 youtdt = scipy.concatenate((youtdt,outputs[3][:-1]))
             event_just_fired = False
@@ -389,10 +337,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         else:
             curTimes = scipy.compress(times > start, times)
             curTimes = scipy.concatenate(([start], curTimes))
-        """
-        if getattr(net, 'integrateWithLogs', False):
-            IC = scipy.log(IC)
-        """
 
         outputs = integrate_tidbit(net, res_func, _ddaskr_jac, 
                                    root_func=root_func, 
@@ -417,7 +361,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         if exception_raised:
             break
 
-
         start, IC = tout[-1], copy.copy(yout[-1])
         ypIC = net.get_ddv_dt(IC,start)
 
@@ -427,7 +370,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
         # Check the directions of our root crossings to see whether events
         # actually fired.  DASKR automatically returns the direction of event
-        # crossings, so we can read this information from the integration results
+        # crossings, so we can read this information from the integration
+        # results
         # zip(...) allows us to iterate over multiple sequences in parallel.
         for ii, dire_cross in zip(range(num_events), i_root_this):
             
@@ -481,17 +425,17 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             youtdt = _reduce_times(youtdt, tout, times)
         tout = times
     elif reduce_space :
+        # make sure we don't miss data times by adding them in.
+        # The set usage ensures that we don't end up with duplicates
         filtered_times = [tout[i] for i in range(0,len(tout),reduce_space)]
-        filtered_times = scipy.sort( list( sets.Set(scipy.concatenate( (filtered_times,times) ) ) ) )
-        # make sure we don't miss data times
+        filtered_times = sets.Set(filtered_times)
+        filtered_times.union_update(times)
+        filtered_times = scipy.sort(list(filtered_times))
+
         yout = _reduce_times(yout, tout, filtered_times)
         if return_derivs :
             youtdt = _reduce_times(youtdt, tout, filtered_times)
         tout = filtered_times
-
-    if hasattr(net, 'kludge'):
-        return tout, yout
-
     
     trajectory = Trajectory_mod.Trajectory(net,holds_dt=return_derivs)
     if return_derivs :
@@ -508,54 +452,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         raise exception_raised
 
     return trajectory
-
-def integrate_sens_subset(net, times, rtol=1e-6,
-                          fill_traj=False, opt_vars=None,
-                          return_derivs=False, redirect_msgs=True):
-    """
-    Integrate the sensitivity equations for a list of optimizable variables.
-    """
-    rtol, atol = generate_tolerances(net, rtol)
-    # We integrate the net once just to know where all our events are
-    traj = integrate(net, times, rtol=rtol, fill_traj=fill_traj, 
-                     return_events=False, return_derivs=return_derivs,
-                     redirect_msgs=redirect_msgs)
-
-    N_dyn_vars = len(net.dynamicVars)
-    # Create the array that will hold all our sensitivities
-    out_size = (len(traj.get_times()), N_dyn_vars + N_dyn_vars*len(opt_vars))
-    all_yout = scipy.zeros(out_size, scipy.float_)
-
-    # Copy the values from the trajectory into this array
-    for ii, dyn_var in enumerate(net.dynamicVars.keys()):
-        all_yout[:, ii] = traj.get_var_traj(dyn_var)
-
-    # Similarly for the derivative outputs
-    if return_derivs:
-        all_youtdt = scipy.zeros(out_size, scipy.float_)
-        for ii, dyn_var in enumerate(net.dynamicVars.keys()):
-            all_youtdt[:, ii] = traj.get_var_traj((dyn_var, 'time'))
-
-    # Now we integrate one optizable variable at a time
-    for ii, opt_var in enumerate(opt_vars):
-        single_out = integrate_sens_single(net, traj, rtol, opt_var,
-                                           return_derivs, redirect_msgs)
-        # Copy the result into our main arrays.
-        start_col = (ii+1) * N_dyn_vars
-        end_col = (ii+2) * N_dyn_vars
-        if not return_derivs:
-            all_yout[:, start_col:end_col] = single_out
-        else:
-            all_yout[:, start_col:end_col] = single_out[0]
-            all_youtdt[:, start_col:end_col] = single_out[1]
-
-    if not return_derivs:
-        return traj.get_times(), all_yout
-    else:
-        return traj.get_times(), all_yout, all_youtdt
-
-
-
 
 def integrate_sens_subset(net, times, rtol=1e-6,
                           fill_traj=False, opt_vars=None,
