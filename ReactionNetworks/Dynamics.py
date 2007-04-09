@@ -315,6 +315,10 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             # only grab the first 4 outputs since we aren't chcking for events
             exception_raised, yout_this, tout_this, youtdt_this = outputs[:4]
 
+            # Update our initial conditions to reflect the integration we
+            #  just did.
+            start, IC = tout_this[-1], copy.copy(yout_this[-1])
+            ypIC = net.get_ddv_dt(IC,start)
 
             # We don't append the last point, to prevent a needless 'event
             #  looking' duplication of times in the trajectory.
