@@ -725,7 +725,8 @@ def integrate_sensitivity(net, times, params=None, rtol=1e-6,
 
     return ddv_dpTrajectory
 
-def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6):
+def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
+                        stability=False):
     """
     Return the dynamic variables values at the closest fixed point of the net.
 
@@ -733,40 +734,57 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6):
          of the net is used.
     with_logs   If True, the calculation is done in terms of logs of variables,
                 so that they cannot be negative.
+    xtol Tolerance to aim for.
+    time Time to plug into equations.
+    stability   If True, return the stability for the fixed point. -1 indicates
+                stable node, +1 indicates unstable node, 0 indicates saddle
     """
     net.compile()
 
     if dv0 is None:
         dv0 = scipy.array(net.getDynamicVarValues())
+    else:
+        dv0 = scipy.asarray(dv0)
+
+    zeros = scipy.zeros(len(dv0))
+    if with_logs:
         # We take the absolute value of dv0 to avoid problems from small 
         #  numerical noise negative values.
-        if scipy.any(dv0 < 0):
-            logger.warning('Negative values in initial guess for fixed point. '
-                           'Taking absolute values. The most negative value '
-                           'was %g.' % min(dv0))
-            dv0 = scipy.absolute(dv0)
+        if scipy.any(dv0 <= 0):
+            logger.warning('Non-positive values in initial guess for fixed '
+                           'point and with_logs = True. Rounding them up to '
+                           'double_tiny. The most negative value was %g.' 
+                           % min(dv0))
+            dv0 = scipy.maximum(dv0, scipy.misc.limits.double_tiny)
 
-    if with_logs:
-        func = lambda logDV: net.get_ddv_dt(scipy.exp(logDV), 0)
-        def fprime(logDV):
-            fp = net.get_d2dv_ddvdt(scipy.exp(logDV), 0)
+        def func(logy):
+            y = scipy.exp(logy)
+            y = scipy.maximum(y, scipy.misc.limits.double_tiny)
+            return net.res_function(time, y, yprime=zeros, ires=0)
+
+        def fprime(logy):
+            y = scipy.exp(logy)
+            y = scipy.maximum(y, scipy.misc.limits.double_tiny)
+            fp = net.dres_dc_function(time, y, yprime=zeros)
             # Our derivatives run down the columns, so we need to 
             #  take the tranpose twice to multiply down them.
-            return scipy.transpose(scipy.transpose(fp) * scipy.exp(logDV))
+            return scipy.transpose(scipy.transpose(fp) * y)
         x0 = scipy.log(dv0)
         # To transform sigma_x to sigma_log_x, we divide by x. We can set
         #  our sigma_log_x use to be the mean of what our xtol would yield
         #  for each chemical.
         xtol = scipy.mean(xtol/dv0)
     else:
-        func = lambda dv: net.get_ddv_dt(dv, 0)
-        fprime = lambda dv: net.get_d2dv_ddvdt(dv, 0)
+        def func(y):
+            return net.res_function(time, y, yprime=zeros, ires=0)
+        def fprime(y):
+            return net.dres_dc_function(time, y, yprime=zeros)
         x0 = dv0
 
     try:
         dvFixed, infodict, ier, mesg =\
                 scipy.optimize.fsolve(func, x0=x0, fprime=fprime,
-                                      col_deriv=True, full_output=True,
+                                      col_deriv=False, full_output=True,
                                       xtol=xtol)
     except (scipy.optimize.minpack.error, ArithmeticError), X:
         raise FixedPointException(('Failure in fsolve.', X))
@@ -775,9 +793,21 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6):
         raise FixedPointException(mesg, infodict)
 
     if with_logs:
-        return scipy.exp(dvFixed)
-    else:
+        dvFixed = scipy.exp(dvFixed)
+
+    if not stability:
         return dvFixed
+    else:
+        jac = net.dres_dc_function(time, dvFixed, zeros)
+        u = scipy.linalg.eigvals(jac)
+        u = scipy.real_if_close(u)
+        if scipy.all(u < 0):
+            stable = -1
+        elif scipy.all(u > 0):
+            stable = 1
+        else:
+            stable = 0
+        return (dvFixed, stable)
 
 def _alg_sens(time, y, ydot, net, opt_ii):
     # This is the integrand for the sensitivity integration
