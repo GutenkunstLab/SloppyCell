@@ -444,6 +444,15 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
 
                    
                 # send what output was obtained
+                # If the integrator tried and failed to calculate the initial 
+                #  condition, then yout_l will be of length 0, and have the
+                #  wrong shape.
+                # We replace it and ypout_l with arrays containing 0 rows, but
+                #  the proper number of columns, for consistency with
+                #  what we would get if it had succeeded.
+                if len(yout_l) == 0:
+                    yout_l = scipy.zeros((0, len(y0)), scipy.float_)
+                    ypout_l = scipy.zeros((0, len(y0)), scipy.float_)
                 outputs = (scipy.array(yout_l), scipy.array(tout_l),
                            scipy.array(ypout_l),
                            t_root, y_root, i_root)
