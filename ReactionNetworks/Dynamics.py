@@ -122,6 +122,7 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
     # Deal with integrateWithLogs
     if net.integrateWithLogs:
         y_this = scipy.exp(y_this)
+        ydt_this = ydt_this * y_this
         y_root_this = scipy.exp(y_root_this)
 
     return exception_raised, y_this, t_this, ydt_this,\
@@ -195,7 +196,9 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     start = times[0]
     # time derivative of trajectory
     youtdt = scipy.zeros((0, len(IC)), scipy.float_)
-    ypIC = net.get_ddv_dt(IC,start)
+    # Initial condition for yprime. We set it to 1's since we'll use ddaskr to
+    #  figure it out.
+    ypIC = 0*IC + 1
     
     # start variables for output storage 
     yout = scipy.zeros((0, len(IC)), scipy.float_)
@@ -227,16 +230,10 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     # If calculate_ic is true, then we need to calculate inititial conditions
     # for the DAE.  For daskr to do this it needs to know which variables are
     # algebraic.
-    variable_types = None
-    if calculate_ic == True:
-        variable_types = scipy.zeros(len(IC))
-        for jj, vt in enumerate(net._dynamic_var_algebraic):
-            variable_types[jj] = vt
+    # This information is stored in net._dynamic_var_algebraic
    
     exception_raised = None
-
     while start < times[-1]:
-
         # check to see if there are any pendingEvents with execution time
         # equal to the start time
         # since some chained events may be added to the pending events list,
@@ -250,17 +247,19 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             
             # store a copy of the value of root_func in order to check for
             # chains of events       
-            root_before = root_func(net, IC, start).copy()
+            root_before = root_func(start, IC, ypIC).copy()
 
             # For those events whose execution time == start, execute
             # the event
             for ii in range(len(pendingEvents[round(start, 12)])):
                 event = pendingEvents[round(start, 12)].pop()
                 IC = net.executeEvent(event, IC, start)
-                ypIC = net.get_ddv_dt(IC,start)
+                # It would be nice to update ypIC here, since further events
+                #  might depend on it. That's not easy to do in the res_function
+                #  formulation, though.
 
             # Update the root state after all listed events have excecuted.
-            root_after = root_func(net, IC, start).copy()
+            root_after = root_func(start, IC, ypIC).copy()
 
             # check for chained events
             dire_cross = scipy.array(root_after) - scipy.array(root_before)
@@ -305,10 +304,10 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                                        IC=IC, yp0=ypIC, curTimes=curTimes, 
                                        rtol=rtol, atol=atol, 
                                        fill_traj=fill_traj, 
-                                       return_derivs=return_derivs, 
+                                       return_derivs=True, 
                                        redirect_msgs=redirect_msgs,
-                                       init_consistent=False,
-                                       var_types=None)
+                                       init_consistent=True,
+                                       var_types=net._dynamic_var_algebraic)
 
 
 
@@ -318,13 +317,13 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             # Update our initial conditions to reflect the integration we
             #  just did.
             start, IC = tout_this[-1], copy.copy(yout_this[-1])
-            ypIC = net.get_ddv_dt(IC,start)
+            ypIC = copy.copy(youtdt_this[-1])
 
             # We don't append the last point, to prevent a needless 'event
             #  looking' duplication of times in the trajectory.
             tout.extend(tout_this[:-1])
             yout = scipy.concatenate((yout, yout_this[:-1]))
-            if return_derivs :
+            if return_derivs:
                 youtdt = scipy.concatenate((youtdt,outputs[3][:-1]))
             event_just_fired = False
             logger.debug('Finished event grace time integration.')
@@ -347,14 +346,13 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                                    IC=IC, yp0=ypIC, curTimes=curTimes, 
                                    rtol=rtol, atol=atol, 
                                    fill_traj=fill_traj, 
-                                   return_derivs=return_derivs, 
+                                   return_derivs=True, 
                                    redirect_msgs=redirect_msgs,
-                                   init_consistent = calculate_ic,                                         
-                                   var_types = variable_types)            
+                                   init_consistent = True,
+                                   var_types = net._dynamic_var_algebraic)
 
         exception_raised, yout_this, tout_this, youtdt_this,\
               t_root_this, y_root_this, i_root_this = outputs
-
 
         yout = scipy.concatenate((yout, yout_this))
         if return_derivs :
@@ -366,11 +364,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             break
 
         start, IC = tout[-1], copy.copy(yout[-1])
-        ypIC = net.get_ddv_dt(IC,start)
-
-        if return_derivs:
-            ypIC = copy.copy(youtdt[-1])
-        
+        ypIC = copy.copy(youtdt_this[-1])
 
         # Check the directions of our root crossings to see whether events
         # actually fired.  DASKR automatically returns the direction of event
@@ -402,8 +396,11 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
                 # handle event subclauses
                 # Which clauses of the event fired?
-                sub_clauses = scipy.compress(i_root_this >= len(net.events),
-                                             i_root_this)                 
+
+                # These are the i_root's corresponding to the subclauses
+                sub_clause_i_root = i_root_this[len(net.events):]
+                sub_clauses = scipy.nonzero(sub_clause_i_root)[0]\
+                        + len(net.events)
                 
                 event = net.events[ie[-1]]
                 if len(sub_clauses) == 0:
@@ -582,7 +579,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                                  rtol_for_sens, atol_for_sens,
                                  args = (net, opt_var_index),
                                  max_steps = 1e4,
-                                 init_consistent=1,
+                                 init_consistent=True,
                                  var_types = var_types,
                                  redir_output = redirect_msgs)
         except Utility.SloppyCellException, X:
@@ -601,11 +598,14 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                                             youtdt_this[:,N_dyn_vars:].copy()))
         tout.extend(int_times)
 
+        # For the sensitivity integration, we aren't using all the information
+        #  from the integration of the normal equations. All we care about
+        #  are the final states, for starting the next round.
         current_time, IC = tout[-1], yout_this[-1].copy()
-        
-        # All that matters is the IC
+        ypIC = youtdt_this[-1]
         if net.integrateWithLogs:
             IC[:N_dyn_vars] = scipy.exp(IC[:N_dyn_vars])
+            ypIC[:N_dyn_vars] *= IC
 
         # If an event should be fired
         if te and te[0] == tout[-1]:
