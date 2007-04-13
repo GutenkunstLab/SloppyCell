@@ -77,7 +77,7 @@ class Trajectory:
         self.typical_var_values = KeyedList([(id, var.typicalValue)
                                              for (id, var)
                                              in net.variables.items()])
-        self.event_info = ([],[],[],[])
+        self.event_info = None
         self.tcks = {} # need this to store the interpolation information
         self.dytcks = {} # to store interpolated vector field info
 
@@ -458,7 +458,7 @@ class Trajectory:
         The spline can then be evaluated using 
         Trajectory.evaluate_interpolated_traj or
         Trajectory.evaluate_interpolated_trajs """
-        te,ye,ie,ce = self.event_info
+        te,ye,ie = self.event_info[:3]
         teIndices = []
 
         if len(te) == 0 : # no events
@@ -467,7 +467,7 @@ class Trajectory:
             # At an event there are two time points in the trajectory that
             # are the same (=tevent) but we want the second one
             for tevent in te :
-                teIndices.append(scipy.nonzero(self.timepoints==tevent)[1])
+                teIndices.append(scipy.nonzero(self.timepoints==tevent)[0][1])
 
             # don't expect there to be an event at 0, if there is this will be
             # messed up
