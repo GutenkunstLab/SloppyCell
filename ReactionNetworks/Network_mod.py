@@ -48,9 +48,8 @@ class Network:
     # Here are all the functions we dynamically generate. To add a new one,
     #  called, for example, fooFunc, you need to define _make_fooFunc, which
     #  generates the python code for the function in fooFunc_functionBody.
-    _dynamic_structure_funcs = ['res_function', 'get_ddv_dt', 
+    _dynamic_structure_funcs = ['res_function',
                                 'alg_deriv_func',
-                                'get_d2dv_ddvdt', 'get_d2dv_dovdt', 
                                 'dres_dcdot_function', 'dres_dc_function',
                                 'dres_dp_function']
     _dynamic_event_funcs = ['root_func']
@@ -645,7 +644,9 @@ class Network:
         ics = [self.evaluate_expr(self.getInitialVariableValue(dvid))
                for dvid in self.dynamicVars.keys()]
         # the evaluate_expr is in case an initial condition is a parameter
-        initialv = self.get_ddv_dt(ics,0.0)
+        initialv = Dynamics.find_ics(ics, 0*ics + 1, 0, self.res_function,
+                                     self.alg_deriv_func,
+                                     self._dynamic_var_algebraic, 1e-6)
         return initialv
 
     def set_var_ics(self, kl):
@@ -801,102 +802,6 @@ class Network:
                 # We use .get to return a default of ['0']
                 rhs = '+'.join(diff_eq_terms.get(id, ['0']))
                 self.diff_eq_rhs.set(id, ExprManip.simplify_expr(rhs))
-
-    def getRatesForDV(self,dvName,time) :
-        """ 
-        Determine the individual reaction rates for dynamic variable dvName at
-        a particular time.  Returns the numerical rate for each reaction that
-        changes dvName, and the stoichiometry of each reaction
-        """
-        connectedReactions = {}
-        # this is very messy way to do this but just for the moment...
-        for paramname in self.parameters.keys() :
-            exec(paramname+'='+self.parameters.getByKey(paramname).value.__repr__())
-        for dynamicVarName in self.trajectory.key_column.keys() :
-            tr = self.trajectory.getVariableTrajectory(dynamicVarName)
-            timepoints = self.trajectory.timepoints
-            minval = min(abs(timepoints-time)) # closest value to time in timepoints
-            minindex = scipy.nonzero(minval==abs(timepoints-time)) # this is actually an array
-            chemval = tr[minindex[0]]
-            exec(dynamicVarName+'='+chemval.__repr__())
-
-        for id,rxn in self.reactions.items() :
-            if dvName in rxn.stoichiometry.keys() :
-                if rxn.stoichiometry[dvName] != 0 : # doesn't matter if no change in dvName
-                    rateexpr ='('+rxn.stoichiometry[dvName].__repr__()+')*('+rxn.kineticLaw+')'
-                    rateexprval = eval(rateexpr)
-                    connectedReactions[id] = [rxn.stoichiometry,rateexpr,rateexprval]
-        return connectedReactions
-
-    def _make_get_ddv_dt(self):
-        self.ddv_dt = scipy.zeros(len(self.dynamicVars), scipy.float_)
-
-        functionBody = 'def get_ddv_dt(self, dynamicVars, time):\n\t'
-        functionBody += 'ddv_dt = self.ddv_dt\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-        functionBody += '\n\t'
-
-        for ii, (id, var) in enumerate(self.dynamicVars.items()):
-            rhs = self.diff_eq_rhs.getByKey(id)
-            if rhs != '0':
-                functionBody += '# Total derivative of %s wrt time\n\t' % (id)
-                functionBody += 'ddv_dt[%i] = %s\n\t' % (ii, rhs)
-
-        functionBody += '\n\n\treturn ddv_dt\n'
-
-        return functionBody
-
-    def _make_get_d2dv_ddvdt(self):
-        self.d2dv_ddvdt = scipy.zeros((len(self.dynamicVars),
-                                     len(self.dynamicVars)), scipy.float_)
-
-        functionBody = 'def get_d2dv_ddvdt(self, dynamicVars, time):\n\t'
-        functionBody += 'd2dv_ddvdt = self.d2dv_ddvdt\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-        functionBody += '\n\t'
-
-        for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
-            rhs = self.diff_eq_rhs.getByKey(rhsId)
-            # Take all derivatives of the rhs with respect to other
-            #  dynamic variables
-            for wrtIndex, wrtId in enumerate(self.dynamicVars.keys()):
-                deriv = self.takeDerivative(rhs, wrtId)
-                if deriv != '0':
-                    functionBody += '# Partial derivative of Ddv_Dt for %s wrt %s\n\t' % (rhsId, wrtId)
-                    functionBody += 'd2dv_ddvdt[%i, %i] = %s\n\t' % \
-                            (wrtIndex, rhsIndex, deriv)
-
-        functionBody += '\n\treturn d2dv_ddvdt\n'
-
-        return functionBody
-
-    def _make_get_d2dv_dovdt(self):
-        self.d2dv_dovdt = scipy.zeros((len(self.dynamicVars),
-                                       len(self.optimizableVars)), scipy.float_)
-
-        functionBody = 'def get_d2dv_dovdt(self, dynamicVars, time, indices = None):\n\t'
-        functionBody += 'd2dv_dovdt = self.d2dv_dovdt\n\t'
-        functionBody = self.addAssignmentRulesToFunctionBody(functionBody)
-        functionBody += '\n\t'
-
-        for wrtIndex, wrtId in enumerate(self.optimizableVars.keys()):
-            functionBody += 'if indices is None or %i in indices:\n\t\t' % wrtIndex
-            derivWritten = False
-            for rhsIndex, rhsId in enumerate(self.dynamicVars.keys()):
-                rhs = self.diff_eq_rhs.getByKey(rhsId)
-                deriv = self.takeDerivative(rhs, wrtId)
-                if deriv != '0':
-                    functionBody += '# Partial derivative of Ddv_Dt for %s wrt %s\n\t\t' % (rhsId, wrtId)
-                    functionBody += 'd2dv_dovdt[%i, %i] = %s\n\t\t' % \
-                            (rhsIndex, wrtIndex, deriv)
-                    derivWritten = True
-            if derivWritten == False:
-                functionBody += 'pass\n\t\t'
-            functionBody += '\n\t'
-
-        functionBody += '\n\treturn d2dv_dovdt\n'
-
-        return functionBody
 
     def _make_alg_deriv_func(self):
         # This function is used when we want to calculate consistent derivatives
@@ -1540,54 +1445,6 @@ class Network:
                 var_struct[id] = (var.is_constant, var.is_optimizable)
 
         return structure
-
-    def addAssignmentRulesToFunctionBody(self, functionBody):
-        functionBody += 'constantVarValues = self.constantVarValues\n\n\t'
-
-        # In new SciPy (0.5.1), array access a[0] returns an array-scalar object
-        #  which has slow arithmetic, so we'll need to cast to floats.
-        # More recent versions have added an a.item(0) method which will return
-        #  a normal scalar, so if we can use that, we do.
-        a = scipy.array([1.0, 2.0])
-        try:
-            a.item(1)
-            numpy = 'improved'
-            # Old SciPy should raise an AttributeError here.
-            # New SciPy w/o the useful item method should raise a TypeError.
-        except TypeError:
-            numpy = 'new'
-        except AttributeError:
-            numpy = 'old'
-
-        # We loop to assign our constantVarValues and our dynamicVars
-        #  to local variables for speed (avoid repeated accesses) and
-        #  for readability
-        for arg, var_names in zip(['constantVarValues', 'dynamicVars'],
-                                       [self.constantVars.keys(),
-                                        self.dynamicVars.keys()]):
-            if numpy == 'improved':
-                # In new numpy we protect ourselves with a 'try, except' clause
-                #  in case passed in values are not an array, but e.g. a list
-                #  or KeyedList.
-                functionBody += 'try:\n\t'
-                for ii, id in enumerate(var_names):
-                    functionBody += '\t%s = %s.item(%i)\n\t' % (id, arg, ii)
-                functionBody += 'except (AttributeError, TypeError):\n\t'
-                for ii, id in enumerate(var_names):
-                    functionBody += '\t%s = %s[%i]\n\t' % (id, arg, ii)
-            elif numpy == 'new':
-                for ii, id in enumerate(var_names):
-                    functionBody += '%s = float(%s[%i])\n\t' % (id, arg, ii)
-            elif numpy == 'old':
-                for ii, id in enumerate(var_names):
-                    functionBody += '%s = %s[%i]\n\t' % (id, arg, ii)
-
-            functionBody += '\n\t'
-
-        for variable, math in self.assignmentRules.items():
-            functionBody += '%s = %s\n\t' % (variable, math)
-
-        return functionBody
 
     def takeDerivative(self, input, wrt):
         """
