@@ -49,6 +49,7 @@ class Network:
     #  called, for example, fooFunc, you need to define _make_fooFunc, which
     #  generates the python code for the function in fooFunc_functionBody.
     _dynamic_structure_funcs = ['res_function', 'get_ddv_dt', 
+                                'alg_deriv_func',
                                 'get_d2dv_ddvdt', 'get_d2dv_dovdt', 
                                 'dres_dcdot_function', 'dres_dc_function',
                                 'dres_dp_function']
@@ -76,6 +77,7 @@ class Network:
                          'arctanh': scipy.arctanh,
                          'exponentiale': scipy.e,
                          'pi': scipy.pi,
+                         'scipy': scipy
                          }
     # These are functions we need to create but that should be used commonly
     _standard_func_defs = [('pow', ['x', 'n'],  'x**n'),
@@ -416,7 +418,7 @@ class Network:
         # This takes care of the normal data points
         t = list(t)
         t.sort()
-        self.trajectory = self.integrate(t, params, addTimes = ret_full_traj)
+        self.trajectory = self.integrate(t, params=params, addTimes = ret_full_traj)
         
     def CalculateSensitivity(self, vars, params):
         t = sets.Set([0])
@@ -427,7 +429,7 @@ class Network:
         t = list(t)
         t.sort()
 
-        self.ddv_dpTrajectory = self.integrateSensitivity(t,params, 
+        self.ddv_dpTrajectory = self.integrateSensitivity(t,params=params, 
                                                           addTimes=True)
         self.trajectory = self.ddv_dpTrajectory
 
@@ -896,6 +898,39 @@ class Network:
 
         return functionBody
 
+    def _make_alg_deriv_func(self):
+        # This function is used when we want to calculate consistent derivatives
+        #  for algebraic variables. It returns the derivative wrt time of
+        #  all the algebraic rules. Since the rules are <0=rule>, these should
+        #  all be zero when we have consistent values for the variable derivs.
+        body = []
+        body.append('def alg_deriv_func(self, alg_yp, dynamicVars, yp, time):')
+        body.append('alg_derivs = scipy.empty(%i, scipy.float_)'
+                    % len(self.algebraicRules))
+        self._add_assignments_to_function_body(body)
+        body.append('')
+
+        for rule_ii, rule in enumerate(self.algebraicRules.values()):
+            # Each rhs is a sum of drule/dA * dA/dt + drule/dB * dB/dt + ...
+            rhs_terms = []
+            rhs_terms.append(self.takeDerivative(rule, 'time'))
+            for dyn_id in self.dynamicVars.keys():
+                deriv = self.takeDerivative(rule, dyn_id)
+                if deriv != '0':
+                    if self.algebraicVars.has_key(dyn_id):
+                        index = self.algebraicVars.index_by_key(dyn_id)
+                        rhs_terms.append('(%s)*alg_yp.item(%i)' % (deriv,index))
+                    else:
+                        index = self.dynamicVars.index_by_key(dyn_id)
+                        rhs_terms.append('(%s)*yp.item(%i)' % (deriv, index))
+            rhs = ' + '.join(rhs_terms)
+            body.append('alg_derivs[%i] = %s' % (rule_ii, rhs))
+
+        body.append('')
+        body.append('return alg_derivs')
+        return '\n    '.join(body)
+
+
     def _make_res_function(self):
         self.residual = scipy.zeros(len(self.dynamicVars), scipy.float_)
         body = []
@@ -1063,16 +1098,26 @@ class Network:
 
     def fireEvent(self, event, dynamicVarValues, time):
         self.updateVariablesFromDynamicVars(dynamicVarValues, time)
-
         delay = self.evaluate_expr(event.delay, time)
 
-        executionTime = round(time + delay, 8)
-        event.new_values[executionTime] = {}
+        return delay
+
+    def executeEvent(self, event, time_fired, y_fired, y_current, time_current):
+        # The values assigned depend on the state of the network at the time
+        #  the event was >fired<. We go back to that time here...
+        self.updateVariablesFromDynamicVars(y_fired, time_fired)
+        new_values = {}
         # Calculate the values that will get assigned to the variables
         for id, rhs in event.event_assignments.items():
-            event.new_values[executionTime][id] = self.evaluate_expr(rhs, time)
+            new_values[id] = self.evaluate_expr(rhs, time_fired)
 
-        return delay
+        # Make all the relevant assignments
+        for id, value in new_values.items():
+            y_current[self.dynamicVars.indexByKey(id)] = value
+        # Update our network with the new values, just for consistency.
+        self.updateVariablesFromDynamicVars(y_current, time_current)
+
+        return y_current
 
     def _smooth_trigger(self, trigger):
         ast = ExprManip.strip_parse(trigger)
@@ -1089,156 +1134,188 @@ class Network:
             raise ValueError('Comparison %s in triggering clause is not '
                              '<, <=, >, or >=!')
 
-    def fireEventAndUpdateDdv_Dov(self, event, values, time, trigger,
-                                  opt_vars=None):
-        # XXX: This a big mess, but it works. Should refactor.
+    def executeEventAndUpdateSens(self, holder, ysens_pre_exec, opt_var):
+        # We extract all our relevant quantities from the event_info holder
+        event = holder.event
+        time_fired = holder.time_fired
+        ysens_fired = holder.ysens_fired
+        yp_fired = holder.yp_fired
+        clause_index = holder.clause_index
+        time_exec = holder.time_exec
+        yp_pre_exec = holder.yp_pre_exec
+        y_post_exec = holder.y_post_exec
+        yp_post_exec = holder.yp_post_exec
 
-        # We convert our trigger to smooth function we can take the 
-        # derivative of so we can calculate sensitivity of firing time.
-        trigger = self._smooth_trigger(trigger)
+        # This is subtle... If this event is the result of a chain, then the
+        #  firing time for the event is determined not by its trigger, but
+        #  by the execution time of the event that caused it to fire.
+        # We walk up the list of chained events, so that finally we set the
+        #  d(time of firing) for this event to d(time of execution) for the
+        #  start of that chain of events.
+        dtf_dp = None
+        link = holder
+        while link.chained_off_of is not None:
+            dtf_dp = link.chained_off_of.dte_dp
+            link = link.chained_off_of
+        
+        ysens_post_exec = copy.copy(ysens_pre_exec)
+        # Fill in the new values for the normal y variables
+        N_dv = len(self.dynamicVars)
+        ysens_post_exec[:N_dv] = y_post_exec
 
-        if opt_vars is None:
-            opt_vars = self.optimizableVars.keys()
+        # We set our network to the state at which the event fired, so we
+        #  can use evaluate_expr for the calculations of d(firing time)
+        self.updateVariablesFromDynamicVars(ysens_fired, time_fired)
+        # We need to do this, if we don't have a chained event.
+        if dtf_dp is None:
+            # We convert our trigger to smooth function we can take the 
+            # derivative of so we can calculate sensitivity of firing time.
+            # The trigger is passed to us because it might be a clause of a
+            # more complicated trigger.
+            trigger = self.event_clauses[clause_index]
+            trigger = self._smooth_trigger(trigger)
 
-        self.updateVariablesFromDynamicVars(values, time)
+            # Compute the sensitivity of our firing time
+            #
+            # numerator = sum_dv dtrigger_ddv ddv_dp + dtrigger_dp
+            # denominator = sum_dv dtrigger_ddv ddv_dt + dtrigger_dt
+            # dtf_dp = -(numerator)/(denominator)
+            numerator = 0
+            denominator = 0
+            # First term in numerator: sum_dv dtrigger_ddv ddv_dp 
+            # First term in denominator: sum_dv dtrigger_ddv ddv_dt 
+            for ii, id in enumerate(self.dynamicVars.keys()):
+                dtrigger_ddv = self.takeDerivative(trigger, id)
+                dtrigger_ddv = self.evaluate_expr(dtrigger_ddv, time_fired)
+                # This is the index of ddv_dp in the y array
+                index_in_y = ii + N_dv
+                ddv_dp = ysens_fired[index_in_y]
+                ddv_dt = yp_fired[ii]
+                numerator += dtrigger_ddv * ddv_dp
+                denominator += dtrigger_ddv * ddv_dt
 
-        #nDV, nOV = len(self.dynamicVars), len(self.optimizableVars)
-        nDV, nOV = len(self.dynamicVars), len(opt_vars)
-        delay = event.delay
+            # Second term in numerator: dtrigger_dp
+            dtrigger_dp = self.takeDerivative(trigger, opt_var)
+            dtrigger_dp = self.evaluate_expr(dtrigger_dp, time_fired)
+            numerator += dtrigger_dp
 
-        # If the delay is a math expression, calculate its value
-        if isinstance(delay, str):
-            if len(ExprManip.extract_vars(delay)) > 0:
-                raise exceptions.NotImplementedError, "We don't support math form delays in sensitivity! (Yet)"
+            # Second term in denominator: dtrigger_dt
+            dtrigger_dt = self.takeDerivative(trigger, 'time')
+            dtrigger_dt = self.evaluate_expr(dtrigger_dt, time_fired)
+            denominator += dtrigger_dt
+
+            dtf_dp = -numerator/denominator
+
+        # Now compute the sensitivity of the delay
+        #
+        # ddelay/dp = ddelay/dp + ddelay_dy*dy/dp + ddelay_dy*dy/dt*dtf/dp
+        #             + ddelay/dt*dtf/dp
+        delay = str(event.delay)
+
+        # First term
+        ddelay_dp = self.takeDerivative(delay, opt_var)
+        ddelay_dp = self.evaluate_expr(ddelay_dp, time_fired)
+
+        # Second and third terms: ddelay_dy*dy/dp + ddelay_dy*dy/dt*dtf/dp
+        for ii, id in enumerate(self.dynamicVars.keys()):
+            ddelay_dy = self.takeDerivative(delay, id)
+            ddelay_dy = self.evaluate_expr(ddelay_dy, time_fired)
+            # This is the index of ddv_dp in the y array
+            index_in_y = ii + N_dv
+            dy_dp = ysens_fired[index_in_y]
+            dy_dt = yp_fired[ii]
+            ddelay_dp += ddelay_dy * dy_dp
+            ddelay_dp += ddelay_dy * dy_dt * dtf_dp
+
+        # Fourth term: ddelay/dt*dtf/dp
+        ddelay_dt = self.takeDerivative(delay, 'time')
+        ddelay_dt = self.evaluate_expr(ddelay_dt, time_fired)
+        ddelay_dp += ddelay_dt * dtf_dp
+
+        # This is the delay in the time of execution
+        dte_dp = dtf_dp + ddelay_dp
+
+        # We store d(time of execution) for use by other events that may be
+        #  chained to this one.
+        holder.dte_dp = dte_dp
+        
+        # Now compute the sensitivity of each of our new values
+        for y_ii, y_id in enumerate(self.dynamicVars.keys()):
+            # Let's say we shift parameters by dp and correspondingly the firing
+            #  time of the events shifts by dtf. Then the total change in
+            #  y divided by dp  is
+            #  dy/dp is dy/dt(pre_exec)*dte/dp + dbump/dp 
+            #           - dy/dt(post_exec)*dte/dp
+            # Here bump = assigned value - prior value, and
+            #  dy/dt(pre_exec) is dy/dt right before the event >executes<.
+            #  dy/dt(post_exec) is dy/dt right after the event >executes<.
+            # Also dbump/dp = da/dp + da/dy * dy/dp + da/dy * dy/dt * dtf/dp
+            #                   + da/dt * dtf/dp - dy/dp
+            
+            # First we calculate dbump_dp
+            # Note that in the logic I've used above, a is y even if there's
+            #  no event assignment as long as I evaluate everything at the time
+            #  of execution.
+            if y_id in event.event_assignments:
+                time_bumped = time_fired
+                ysens_bumped = ysens_fired
+                yp_bumped = yp_fired
             else:
-                delay = self.evaluate_expr(delay, time)
+                time_bumped = time_exec
+                ysens_bumped = ysens_pre_exec
+                yp_bumped = yp_pre_exec
+            # We update our Network so evaluate_expr works.
+            self.updateVariablesFromDynamicVars(ysens_bumped, time_bumped)
 
-        executionTime = round(time + delay, 8)
-        event.new_values[executionTime] = {}
+            # If there's no explicit event assignment, we'll have e.g. 'x' = 'x'
+            a = event.event_assignments.get(y_id, y_id)
+            a = str(a)
+            # We only need to deal with whatever clause in the piecewise is
+            #  applicable.
+            a = self._sub_for_piecewise(a, time_bumped)
 
-        ddv_dt = self.get_ddv_dt(values[:nDV], time)
-        new_values = copy.copy(values[:nDV])
-        for lhsId, rhs in event.event_assignments.items():
-            rhs = str(rhs)
-            rhs = self._sub_for_piecewise(rhs, time)
-            lhsIndex = self.dynamicVars.indexByKey(lhsId)
+            dbump_dp = 0
 
-            # Compute and store the new value of the lhs
-            newVal = self.evaluate_expr(rhs, time)
-            event.new_values[executionTime][lhsId] = newVal
-            new_values[lhsIndex] = newVal
+            # First term: da/dp 
+            da_dp = self.takeDerivative(a, opt_var)
+            da_dp = self.evaluate_expr(da_dp, time_bumped)
+            dbump_dp += da_dp
 
-        # Compute the derivatives of our firing times wrt all our variables
-        # dTf_dov = -(sum_dv dTrigger_ddv ddv_dov - dTrigger_dov)/(sum_dv dTrigger_ddv ddv_dt)
-        # XXX: Handle trigger has explicit time dependence.
-        if ExprManip.extract_vars(trigger) == sets.Set(['time']):
-            dTf_dov = dict(zip(opt_vars, [0] * nOV))
-        else:
-            if 'time' in ExprManip.extract_vars(trigger):
-                raise NotImplementedError("We don't support explicit time "
-                                          "dependence in complex event "
-                                          "triggers for sensitivity! (Yet) "
-                                          "Trigger was: %s." % trigger)
-            dtrigger_ddvValue = {}
-            for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
-                dtrigger_ddv = self.takeDerivative(trigger, dynId)
-                dtrigger_ddvValue[dynId] = self.evaluate_expr(dtrigger_ddv,
-                                                              time)
+            # Second term: da/dy * dy/dp 
+            # Third term: da/dy * dy/dt * dtf/dp 
+            # = da/dy * (dy/dp + dy/dt * dtf/dp)
+            for other_ii, other_id in enumerate(self.dynamicVars.keys()):
+                da_dother = self.takeDerivative(a, other_id)
+                da_dother = self.evaluate_expr(da_dother, time_bumped)
 
-            dtrigger_dovValue = {}
-            for optId in opt_vars:
-                dtrigger_dov = self.takeDerivative(trigger, optId)
-                dtrigger_dovValue[optId] = self.evaluate_expr(dtrigger_dov,
-                                                              time)
+                # This is the index of dother_dp in the y array
+                index_in_y = other_ii + N_dv
+                dother_dp = ysens_bumped[index_in_y]
 
-            dTf_dov = {}
-            for ovIndex, optId in enumerate(opt_vars):
-                numerator, denominator = 0, 0
-                for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
-                    indexInOA = dvIndex + (ovIndex + 1)*nDV
-                    denominator += dtrigger_ddvValue[dynId] *\
-                            self.get_ddv_dt(values[:nDV], time)[dvIndex]
-                    numerator += dtrigger_ddvValue[dynId] * values[indexInOA]
+                dother_dt = yp_bumped[other_ii]
 
-                numerator += dtrigger_dovValue[optId]
-                dTf_dov[optId] = -numerator/denominator
+                dbump_dp += da_dother * (dother_dp + dother_dt * dtf_dp)
 
-        for lhsIndex, lhsId in enumerate(self.dynamicVars.keys()):
-            rhs = event.event_assignments.get(lhsId, lhsId)
-            # Everything below should work if the rhs is a constant, as long
-            #  as we convert it to a string first.
-            rhs = str(rhs)
-            rhs = self._sub_for_piecewise(rhs, time)
+            # Fourth term: da/dt * dtf/dp
+            da_dt = self.takeDerivative(a, 'time')
+            da_dt = self.evaluate_expr(da_dt, time_bumped)
+            dbump_dp += da_dt * dtf_dp
 
-            drhs_ddvValue = {}
-            for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
-                drhs_ddv = self.takeDerivative(rhs, dynId)
-                drhs_ddvValue[dynId] = self.evaluate_expr(drhs_ddv, time)
+            # Fifth term:  -dy/dp = dy/dt * dtf/dp
+            dbump_dp -= yp_bumped[y_ii] * dtf_dp
 
-            drhs_dovValue = {}
-            for optId in opt_vars:
-                drhs_dov = self.takeDerivative(rhs, optId)
-                drhs_dovValue[optId] = self.evaluate_expr(drhs_dov, time)
+            dy_dp = dbump_dp
+            # Now the dy/dt(pre_exec) * dte/dp term
+            dy_dp += yp_pre_exec[y_ii] * dte_dp
+            # Finally, -dy/dt(post_exec) * dte/dp
+            # We calculated dy/dt(new) up above in this function
+            dy_dp -= yp_post_exec[y_ii] * dte_dp
 
-            drhs_dtime = self.takeDerivative(rhs, 'time')
-            drhs_dtimeValue = self.evaluate_expr(drhs_dtime, time)
+            index_in_y = y_ii + N_dv
+            ysens_post_exec[index_in_y] = dy_dp
 
-            # Calculate the perturbations to the sensitivities
-            for ovIndex, optId in enumerate(opt_vars):
-                for dvIndex, dynId in enumerate(self.dynamicVars.keys()):
-                    event.new_values[executionTime].setdefault((lhsId, optId), 
-                                                               0)
-                    indexInOA = dvIndex + (ovIndex + 1)*nDV
-                    #dv_ddv * ddv_dov
-                    event.new_values[executionTime][(lhsId, optId)] += \
-                            drhs_ddvValue[dynId] * values[indexInOA]
-                    #dv_ddv * ddv_dt * dTf_dov
-                    event.new_values[executionTime][(lhsId, optId)] += \
-                            self.get_ddv_dt(values[:nDV], time)[dvIndex]\
-                            * drhs_ddvValue[dynId] * dTf_dov[optId]
-
-                event.new_values[executionTime].setdefault((lhsId, optId), 0)
-
-                #dv_dov
-                event.new_values[executionTime][(lhsId, optId)] += drhs_dovValue[optId]
-
-                #dv_dtime
-                event.new_values[executionTime][(lhsId, optId)] += \
-                        drhs_dtimeValue * dTf_dov[optId]
-
-                # dv_dt * dTf_dov
-                # note that dc_dt * dTf_dov cancels out
-                event.new_values[executionTime][(lhsId, optId)] += \
-                        -self.get_ddv_dt(new_values, time)[lhsIndex] * dTf_dov[optId]
-
-        return delay
-
-    def executeEvent(self, event, dynamicVarValues, time):
-        for id, value in event.new_values[round(time, 8)].items():
-            if type(id) == types.StringType:
-                dynamicVarValues[self.dynamicVars.indexByKey(id)] = value
-        # Clear out the new_values entry
-        del event.new_values[round(time, 8)]
-
-        return dynamicVarValues
-
-    def executeEventAndUpdateDdv_Dov(self, event, inValues, time, opt_vars):
-        values = copy.copy(inValues)
-        # Copy out the new values for the dynamic variables
-        for id, value in event.new_values[round(time, 8)].items():
-            if type(id) == types.TupleType:
-                nDV = len(self.dynamicVars)
-                dvIndex = self.dynamicVars.indexByKey(id[0])
-                ovIndex = opt_vars.index(id[1])
-                values[dvIndex + (ovIndex + 1)*nDV] = value
-
-            else:
-                values[self.dynamicVars.indexByKey(id)] = value
-        # Clear out the new_values entry
-        del event.new_values[round(time, 8)]
-
-        return values
-
+        return ysens_post_exec
+        
     def _make_root_func(self):
         len_root_func = 0
 
@@ -1259,6 +1336,7 @@ class Network:
             len_root_func += 1
 
         for ii, event in enumerate(self.events.values()):
+            event.sub_clause_indices = []
             trigger = event.trigger
             for func_name, func_vars, func_expr in self._logical_comp_func_defs:
                 trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
@@ -1268,8 +1346,9 @@ class Network:
                 for comp in comparisons:
                     body.append('self._root_func[%i] = (%s) - 0.5\n\t' 
                                 % (len_root_func, comp))
-                    len_root_func += 1
                     self.event_clauses.append(comp)
+                    event.sub_clause_indices.append(len_root_func)
+                    len_root_func += 1
 
         self._root_func = scipy.zeros(len_root_func, scipy.float_)
 

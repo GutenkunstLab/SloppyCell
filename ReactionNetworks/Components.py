@@ -112,3 +112,8 @@ class Event:
                 self.triggeringTime = eval(firstArg)
             else:
                 raise 'Problem in time triggered events'
+
+# This is a placeholder object that will be used to store information about
+#  events during integrations.
+class event_info(object):
+    pass

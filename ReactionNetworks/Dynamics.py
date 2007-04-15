@@ -17,6 +17,7 @@ daeint = daskr.daeint
 import Trajectory_mod
 
 import SloppyCell.Utility as Utility
+from SloppyCell.ReactionNetworks.Components import event_info
 from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
 if HAVE_PYPAR:
     import pypar
@@ -85,6 +86,7 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
 
                 'rtol': rtol,
                 'atol': atol,
+                'max_steps': 1e6,
 
                 'intermediate_output': fill_traj,
                 'redir_output': redirect_msgs,
@@ -181,6 +183,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         net.update_optimizable_vars(params)
     # If you ask for time = 0, we'll assume you want dynamic variable values
     # reset.
+    times = scipy.asarray(times)
     if times[0] == 0:
         net.resetDynamicVariables()
     net.compile()
@@ -192,27 +195,31 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     times = scipy.asarray(times)
 
     # get the initial state, time, and derivative.
-    IC = net.getDynamicVarValues()
     start = times[0]
     # time derivative of trajectory
-    youtdt = scipy.zeros((0, len(IC)), scipy.float_)
-    # Initial condition for yprime. We set it to 1's since we'll use ddaskr to
-    #  figure it out.
-    ypIC = 0*IC + 1
+    IC = net.getDynamicVarValues()
+    # This calculates the yprime ICs and also ensures that values for our
+    #  algebraic variables are all consistent.
+    IC, ypIC = find_ics(IC, 0*IC + 1, start, net.res_function,
+                        net.alg_deriv_func,
+                        net._dynamic_var_algebraic, atol)
     
     # start variables for output storage 
     yout = scipy.zeros((0, len(IC)), scipy.float_)
+    youtdt = scipy.zeros((0, len(IC)), scipy.float_)
     tout = []
 
     # For some reason, the F2Py wrapper for ddaskr seems to fail if this
     #  isn't wrapped up in a lambda...
     res_func = lambda t, y, yprime, ires: net.res_function(t, y, yprime, ires)
     root_func = net.ddaskr_root
-    num_events = len(net.events)
-    
+
+    # events_occured will hold event_info objects that describe the events
+    #  in detail.
     # te, ye, and ie are the times, dynamic variable values, and indices
-    #  of fired events
-    te, ye, ie, ce = [], [], [], []
+    #  of fired events. Here mostly for historical reasons.
+    events_occurred = []
+    te, ye, ie = [], [], []
     pendingEvents = {}
 
     # After firing an event, we integrate for root_grace_t without looking for
@@ -220,6 +227,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     # numerical imprecision
     root_grace_t = (times[-1] - times[0])/1e6
     event_just_fired = False
+    event_just_executed = False
 
     # This is the jacobian for use with ddaskr.
     def _ddaskr_jac(t, y, yprime, pd, cj):
@@ -227,11 +235,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         dcdot_term = net.dres_dcdot_function(t, y, yprime)
         return dc_term + cj * dcdot_term
 
-    # If calculate_ic is true, then we need to calculate inititial conditions
-    # for the DAE.  For daskr to do this it needs to know which variables are
-    # algebraic.
-    # This information is stored in net._dynamic_var_algebraic
-   
     exception_raised = None
     while start < times[-1]:
         # check to see if there are any pendingEvents with execution time
@@ -239,6 +242,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         # since some chained events may be added to the pending events list,
         # keep looping until the key has been deleted
         while pendingEvents.has_key(round(start, 12)):
+            execution_time = round(start,12)
+            event_list = pendingEvents[execution_time]
 
             # Note: the correct behavior of chained events with events that have
             # delays is not clear
@@ -247,54 +252,71 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             
             # store a copy of the value of root_func in order to check for
             # chains of events       
-            root_before = root_func(start, IC, ypIC).copy()
+            root_before = scipy.array(root_func(start, IC, ypIC))
 
             # For those events whose execution time == start, execute
             # the event
-            for ii in range(len(pendingEvents[round(start, 12)])):
-                event = pendingEvents[round(start, 12)].pop()
-                IC = net.executeEvent(event, IC, start)
-                # It would be nice to update ypIC here, since further events
-                #  might depend on it. That's not easy to do in the res_function
-                #  formulation, though.
+            # We also record the event that started this chain of events firing.
+            # This is necessary for sensitivity integration.
+            chain_starter = event_list[-1]
+            while len(event_list) > 0:
+                holder = event_list.pop()
+                holder.time_exec = start
+                holder.y_pre_exec = copy.copy(IC)
+                holder.yp_pre_exec = copy.copy(ypIC)
+                IC = net.executeEvent(event=holder.event, 
+                                      time_fired=start,
+                                      y_fired=holder.y_fired, 
+                                      time_current=start,
+                                      y_current=IC)
+                # Now we update the initial conditions to reflect any changes
+                #  made in event execution. This might include adjustments
+                #  to algebraic variables and to yprime.
+                IC, ypIC = find_ics(IC, ypIC, start, res_func, 
+                                    net.alg_deriv_func,
+                                    net._dynamic_var_algebraic, atol)
+                holder.y_post_exec = copy.copy(IC)
+                holder.yp_post_exec = copy.copy(ypIC)
 
             # Update the root state after all listed events have excecuted.
-            root_after = root_func(start, IC, ypIC).copy()
+            root_after = scipy.array(root_func(start, IC, ypIC))
 
-            # check for chained events
-            dire_cross = scipy.array(root_after) - scipy.array(root_before)
-            for ii in range(num_events):
-                if dire_cross[ii] > 0 and ii < len(net.events):
-                    # an event is firing, so record the time and state
-                    te.append(start)
-                    ye.append(IC)
-                    ie.append(ii)
-                    event_just_fired = True
-                    event = net.events[ii]
-                    logger.debug('Event %s fired at time=%g in network %s.'
-                             % (event.id, start, net.id))                              
-                    delay = net.fireEvent(net.events[ii], IC, start)
-                    if not pendingEvents.has_key(round(start + delay, 12)):
-                        pendingEvents[round(start + delay, 12)] = []
-                    pendingEvents[round(start + delay, 12)].append(event)
-                    root_before[ii] = 0.5
+            # Check for chained events
+            crossing_dirs = root_after - root_before
+            event_just_fired = fired_events(net, start, IC, ypIC, 
+                                            crossing_dirs,
+                                            events_occurred, pendingEvents,
+                                            chained_off_of = chain_starter)
+            event_just_executed = True
 
-            # if there are no more events to excecute at this time, then
-            # delete the entry for this time in pendingEvents
-            if len(pendingEvents[round(start, 12)]) == 0:
-                del pendingEvents[round(start, 12)]
+            # If there are no more events to excecute at this time, then
+            #  delete the entry for this time in pendingEvents.
+            # Otherwise we go back to the top of this loop, to excute the
+            #  next event, check for firing events, etc.
+            if len(pendingEvents[execution_time]) == 0:
+                del pendingEvents[execution_time]
 
-        # if there are still pending events, set the nextEventTime
+        # We remove 'double timepoints' that we would other-wise have when
+        #  an event fired, but didn't execute do to a delay.
+        if not event_just_executed and len(tout) > 0:
+            tout = tout[:-1]
+            yout = yout[:-1]
+            youtdt = youtdt[:-1]
+        event_just_executed = False
+
+        # If there are still pending events, set the nextEventTime
+        nextEventTime = scipy.inf
         if pendingEvents:
             nextEventTime = min(pendingEvents.keys())
-        else:
-            nextEventTime = scipy.inf
 
         # If an event just fired, we integrate for root_grace_t without looking
         # for events, to prevent detecting the same event several times.
         # This section only excecutes if root_grace is True (default).
         if (event_just_fired and root_grace):
-            next_requested = scipy.compress(scipy.asarray(times) > start, times)[0]
+            # This is the next time we're asked to provide
+            next_requested = scipy.compress(times > start, times)[0]
+            # We integrate to the smallest of: the grace time, the
+            #  next_requested_time, and the next event_time
             integrate_to = min(start + root_grace_t, next_requested,
                                nextEventTime)
             curTimes = [start, integrate_to]
@@ -306,10 +328,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                                        fill_traj=fill_traj, 
                                        return_derivs=True, 
                                        redirect_msgs=redirect_msgs,
-                                       init_consistent=True,
+                                       init_consistent=False,
                                        var_types=net._dynamic_var_algebraic)
-
-
 
             # only grab the first 4 outputs since we aren't chcking for events
             exception_raised, yout_this, tout_this, youtdt_this = outputs[:4]
@@ -323,17 +343,16 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             #  looking' duplication of times in the trajectory.
             tout.extend(tout_this[:-1])
             yout = scipy.concatenate((yout, yout_this[:-1]))
-            if return_derivs:
-                youtdt = scipy.concatenate((youtdt,outputs[3][:-1]))
-            event_just_fired = False
+            youtdt = scipy.concatenate((youtdt,youtdt_this[:-1]))
+
             logger.debug('Finished event grace time integration.')
+            event_just_fired = False
 
             if exception_raised:
                 break
 
         # If we have pending events, only integrate until the next one.
-        if pendingEvents:
-            nextEventTime = min(pendingEvents.keys())
+        if nextEventTime < times[-1]:
             curTimes = scipy.compress((times > start) & (times < nextEventTime),
                                       times)
             curTimes = scipy.concatenate(([start], curTimes, [nextEventTime]))
@@ -348,75 +367,28 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                                    fill_traj=fill_traj, 
                                    return_derivs=True, 
                                    redirect_msgs=redirect_msgs,
-                                   init_consistent = True,
+                                   init_consistent = False,
                                    var_types = net._dynamic_var_algebraic)
 
         exception_raised, yout_this, tout_this, youtdt_this,\
               t_root_this, y_root_this, i_root_this = outputs
 
         yout = scipy.concatenate((yout, yout_this))
-        if return_derivs :
-            youtdt = scipy.concatenate((youtdt, youtdt_this))
-            
+        youtdt = scipy.concatenate((youtdt, youtdt_this))
         tout.extend(tout_this)
 
         if exception_raised:
             break
 
-        start, IC = tout[-1], copy.copy(yout[-1])
+        start = tout[-1]
+        IC = copy.copy(yout[-1])
         ypIC = copy.copy(youtdt_this[-1])
 
-        # Check the directions of our root crossings to see whether events
-        # actually fired.  DASKR automatically returns the direction of event
-        # crossings, so we can read this information from the integration
-        # results
-        # zip(...) allows us to iterate over multiple sequences in parallel.
-        for ii, dire_cross in zip(range(num_events), i_root_this):
-            
-            # dire_cross is the direction of the event crossing.  If it's
-            # 1 that means Ri changed from negative to positive.  In that case
-            # we need to record the event.
-        
-            # We now have each clause of the complex events included in
-            # the root_func,  so we need to make sure what we saw was a
-            # real event.
-            if dire_cross > 0 and ii < len(net.events):
-                # an event has fired, so record the state and event number
-                te.append(t_root_this)
-                ye.append(y_root_this)
-                ie.append(ii)
-                event_just_fired = True
-                event = net.events[ie[-1]]
-                logger.debug('Event %s fired at time=%g in network %s.'
-                             % (event.id, te[-1], net.id))          
-                delay = net.fireEvent(event, yout[-1], te[-1])
-                if (pendingEvents.has_key(round(te[-1] + delay, 12)) == False):
-                    pendingEvents[round(te[-1] + delay, 12)] = []
-                pendingEvents[round(te[-1] + delay, 12)].append(event)
-
-                # handle event subclauses
-                # Which clauses of the event fired?
-
-                # These are the i_root's corresponding to the subclauses
-                sub_clause_i_root = i_root_this[len(net.events):]
-                sub_clauses = scipy.nonzero(sub_clause_i_root)[0]\
-                        + len(net.events)
-                
-                event = net.events[ie[-1]]
-                if len(sub_clauses) == 0:
-                    clause_index = ie[-1]
-                elif len(sub_clauses) == 1:
-                    clause_index = sub_clauses[0]
-                else:
-                    raise ValueError('More than one clause in event trigger %s '
-                                     'changed simultaneously! Sensitivity '
-                                     'integration will fail.' % event.trigger)
-                ce.append(clause_index)
-            
-
+        # Check for events firing.
+        event_just_fired = fired_events(net, start, IC, ypIC, i_root_this, 
+                                        events_occurred, pendingEvents)
 
     # End of while loop for integration.
-
     if len(yout) and len(tout):
         net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
 
@@ -443,7 +415,14 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         yout = scipy.concatenate((yout,youtdt),axis=1) # join columnwise
 
     trajectory.appendFromODEINT(tout, yout, holds_dt=return_derivs)
-    trajectory.add_event_info((te,ye,ie,ce))
+    # Fill in the historical te, ye, ie lists
+    te, ye, ie = [],[],[]
+    for holder in events_occurred:
+        te.append(holder.time_exec)
+        ye.append(holder.y_pre_exec)
+        ie.append(holder.event_index)
+    trajectory.add_event_info((te,ye,ie))
+    trajectory.events_occurred = events_occurred
     net.trajectory = trajectory
 
     # raise exception if exited integration loop prematurely
@@ -453,6 +432,77 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         raise exception_raised
 
     return trajectory
+
+def fired_events(net, time, y, yp, crossing_dirs, 
+                 events_occurred, pendingEvents,
+                 chained_off_of=None):
+    num_events = len(net.events)
+    event_just_fired = False
+    # Check the directions of our root crossings to see whether events
+    # actually fired.  DASKR automatically returns the direction of event
+    # crossings, so we can read this information from the integration
+    # results.
+    # Note that we might have more than one event firing at the same time.
+    for event_index, dire_cross in zip(range(num_events), crossing_dirs):
+        # dire_cross is the direction of the event crossing.  If it's
+        # 1 that means Ri changed from negative to positive.  In that case
+        # we need to record the event. Note that num_events runs over the
+        # real events, not the sub-clauses which are also in root_func.
+        if dire_cross > 0:
+            event_just_fired = True
+            event = net.events[event_index]
+            logger.debug('Event %s fired at time=%g in network %s.'
+                         % (event.id, time, net.id))          
+
+            # Which clauses of the event fired?
+            # These are the crossing_dirs's corresponding to the subclauses
+            sub_clause_dirs = crossing_dirs[num_events:]
+            # We need to add back in num_events for counting purposes
+            sub_clauses_fired = scipy.nonzero(sub_clause_dirs > 0)[0]\
+                    + num_events
+            # Now we check which, if any, of these sub_clauses actually
+            #  belong to this event. This is only necessary because events
+            #  may fire at the same time.
+            sub_clauses = []
+            for fired_index in sub_clauses_fired:
+                if fired_index in event.sub_clause_indices:
+                    sub_clauses.append(fired_index)
+                
+            # If no sub-clauses fired, then it was just a simple event.
+            if len(sub_clauses) == 0:
+                clause_index = event_index
+            # But if one of the subclauses fired, we want to record that.
+            elif len(sub_clauses) == 1:
+                clause_index = sub_clauses.pop()
+            else:
+                # We might have a problem.
+                raise ValueError('More than one clause in event trigger %s '
+                                 'changed simultaneously! Sensitivity '
+                                 'integration will fail.' % event.trigger)
+            delay = net.fireEvent(event, y, time)
+            execution_time = round(time + delay, 12)
+
+            # We use this object to record which events have fired
+            holder = event_info()
+            holder.event = event
+            holder.event_index = event_index
+            holder.event_id = event.id
+            holder.clause_index = clause_index
+            holder.time_fired = time
+            holder.y_fired = copy.copy(y)
+            holder.yp_fired = copy.copy(yp)
+            holder.delay = delay
+            holder.chained_off_of = chained_off_of
+            events_occurred.append(holder)
+
+            # Add this event to the list of events that are supposed to
+            # execute.
+            if not pendingEvents.has_key(execution_time):
+                pendingEvents[execution_time] = []
+            pendingEvents[execution_time].append(holder)
+
+    return event_just_fired
+
 
 def integrate_sens_subset(net, times, rtol=1e-6,
                           fill_traj=False, opt_vars=None,
@@ -523,7 +573,8 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     # The passed-in normal trajectory tells us what times we need to return,
     #  and what events will happen.
     times = traj.get_times()
-    te, ye, ie, ce = traj.event_info
+    times = scipy.asarray(times)
+    events_occurred = copy.copy(traj.events_occurred)
 
     current_time = times[0]
 
@@ -548,27 +599,41 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     sens_out = scipy.zeros((0, N_dyn_vars), scipy.float_)
     sensdt_out = scipy.zeros((0, N_dyn_vars), scipy.float_)
 
-    pendingEvents = {}
+    fired_events = {}
+    executed_events = {}
+    for holder in events_occurred:
+        firing_time = round(holder.time_fired, 12)
+        fired_events.setdefault(firing_time, [])
+        fired_events[firing_time].append(holder)
+
+        execution_time = round(holder.time_exec, 12)
+        executed_events.setdefault(execution_time, [])
+        executed_events[execution_time].append(holder)
+
     while current_time < times[-1]:
-        if round(current_time, 12) in pendingEvents.keys():
-            IC = net.executeEventAndUpdateDdv_Dov(event, IC, current_time, 
-                                                  [opt_var])
-            del pendingEvents[round(current_time, 12)]
-        # Figure out how long we need to integrate until
-        if pendingEvents:
-            integrate_until = min(pendingEvents.keys())
-        else:
-            integrate_until = scipy.inf
-        if te:
-            integrate_until = min(integrate_until, min(te))
+        if executed_events.has_key(round(current_time, 12)):
+            execution_time = round(current_time,12)
+            event_list = executed_events[execution_time]
+            for holder in event_list:
+                IC = net.executeEventAndUpdateSens(holder, IC, opt_var)
+            del executed_events[execution_time]
+
+        integrate_until = times[-1]
+        if fired_events:
+            integrate_until = min(integrate_until, min(fired_events.keys()))
+        if executed_events:
+            integrate_until = min(integrate_until, min(executed_events.keys()))
 
         # The the list of times in this part of the integration
-        int_times = scipy.compress((scipy.asarray(times) > current_time)
-                                  & (scipy.asarray(times) < integrate_until),
-                                  times)
-        int_times = scipy.concatenate(([current_time], int_times))
         if integrate_until < times[-1]:
-            int_times = scipy.concatenate((int_times, [integrate_until]))
+            int_times = scipy.compress((times > current_time)
+                                      & (times < integrate_until),
+                                      times)
+            int_times = scipy.concatenate(([current_time], int_times, 
+                                          [integrate_until]))
+        else:
+            int_times = scipy.compress(times > current_time, times)
+            int_times = scipy.concatenate(([current_time], int_times))
 
         # We let daskr figure out ypIC
         if net.integrateWithLogs:
@@ -593,33 +658,23 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         youtdt_this = int_outputs[2]
         sens_out = scipy.concatenate((sens_out, 
                                       yout_this[:,N_dyn_vars:].copy()))
-        if return_derivs:
-            sensdt_out = scipy.concatenate((sensdt_out,
-                                            youtdt_this[:,N_dyn_vars:].copy()))
+        sensdt_out = scipy.concatenate((sensdt_out,
+                                        youtdt_this[:,N_dyn_vars:].copy()))
         tout.extend(int_times)
 
-        # For the sensitivity integration, we aren't using all the information
-        #  from the integration of the normal equations. All we care about
-        #  are the final states, for starting the next round.
         current_time, IC = tout[-1], yout_this[-1].copy()
         ypIC = youtdt_this[-1]
         if net.integrateWithLogs:
             IC[:N_dyn_vars] = scipy.exp(IC[:N_dyn_vars])
             ypIC[:N_dyn_vars] *= IC
 
-        # If an event should be fired
-        if te and te[0] == tout[-1]:
-            event = net.events[ie[0]]
-            logger.debug('Event %s fired at time=%g in network %s for sens.'
-                         % (event.id, te[0], net.get_id()))
-            delay = net.fireEventAndUpdateDdv_Dov(event, IC, te[0], 
-                                                  net.event_clauses[ce[0]],
-                                                  [opt_var])
-            pendingEvents[round(te[0] + delay, 12)] = event
-            # Remove this event from the lists of events
-            te = te[1:]
-            ie = ie[1:]
-            ce = ce[1:]
+        while fired_events.has_key(round(current_time, 12)):
+            firing_time = round(current_time,12)
+            event_list = fired_events[firing_time]
+            holder = event_list.pop()
+            holder.ysens_fired = copy.copy(IC)
+            if len(event_list) == 0:
+                del fired_events[firing_time]
 
     sens_out = _reduce_times(sens_out, tout, times)
     if not return_derivs:
@@ -847,6 +902,60 @@ def _alg_sens(time, y, ydot, net, opt_ii):
     result = scipy.concatenate((res, Dres_Dp))
     return result
 
+def restricted_res_func(solving_for, y, time, res_func, var_types):
+    # solving_for is an array that contains the current guess for all the things
+    #  we want to solve for. First, it contains guesses for the values of all
+    #  the algebraic vars. Then it contains guesses for yprime for all the
+    #  non-algebraic vars. This gives us exactly the same number of unknowns as
+    #  the number of equations we have in res_func.
+    N_alg = scipy.sum(var_types == -1)
+
+    alg_vals = solving_for[:N_alg]
+    non_alg_yp = solving_for[N_alg:]
+
+    # This places the alg_vals in their appropriate position in y
+    y[var_types == -1] = alg_vals
+
+    # This places the non-alg_vals in their appropriate position in yp
+    yp = scipy.zeros(len(solving_for), scipy.float_)
+    yp[var_types == 1] = non_alg_yp
+
+    # We need to copy here because res_func returns a reference to an
+    #  already-existing array.
+    return copy.copy(res_func(time, y, yp, ires=0))
+
+def find_ics(y, yp, time, res_func, alg_deriv_func, var_types, atol):
+    # We use this to find consistent sets of initial conditions for our
+    #  integrations. (We don't let ddaskr do it, because it doesn't calculate
+    #  values for d(alg_var)/dt, and we need them for sensitivity integration.)
+    var_types = scipy.asarray(var_types)
+    y = scipy.array(y)
+    yp = scipy.array(yp)
+
+    # First we calculat a consistent set of alg_var_vals and d(non_alg_var)/dt
+    alg_vals_guess = y[var_types == -1]
+    non_alg_yp_guess = yp[var_types == 1]
+    solving_for = scipy.concatenate([alg_vals_guess, non_alg_yp_guess])
+
+    sln = scipy.optimize.fsolve(restricted_res_func, x0 = solving_for,
+                                xtol = min(atol),
+                                args = (y, time, res_func, var_types))
+
+    N_alg = scipy.sum(var_types == -1)
+    alg_vals = sln[:N_alg]
+    non_alg_yp = sln[N_alg:]
+
+    y[var_types == -1] = alg_vals
+    yp[var_types == 1] = non_alg_yp
+
+    if N_alg:
+        # Now we need to figure out yprime for the algebraic vars
+        alg_yp = yp[var_types == -1]
+        sln = scipy.optimize.fsolve(alg_deriv_func, x0 = alg_yp,
+                                    args = (y, yp, time))
+        yp[var_types == -1] = sln
+
+    return y, yp
 
 def _reduce_times(yout, tout, times):
     jj = 0
