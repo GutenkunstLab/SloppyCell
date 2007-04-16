@@ -198,9 +198,11 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     start = times[0]
     # time derivative of trajectory
     IC = net.getDynamicVarValues()
+    typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
+    ypIC = scipy.array(typ_vals)
     # This calculates the yprime ICs and also ensures that values for our
     #  algebraic variables are all consistent.
-    IC, ypIC = find_ics(IC, 0*IC + 1, start, net.res_function,
+    IC, ypIC = find_ics(IC, ypIC, start, net.res_function,
                         net.alg_deriv_func,
                         net._dynamic_var_algebraic, atol)
     
@@ -805,7 +807,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
     else:
         dv0 = scipy.asarray(dv0)
 
-    zeros = scipy.zeros(len(dv0))
+    zeros = scipy.zeros(len(dv0), scipy.float_)
     if with_logs:
         # We take the absolute value of dv0 to avoid problems from small 
         #  numerical noise negative values.
