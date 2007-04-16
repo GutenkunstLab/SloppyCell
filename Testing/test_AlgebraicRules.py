@@ -6,11 +6,7 @@ import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks import *
 import SloppyCell.daskr
 
-try:
-    from SloppyCell.daskr import daeint
-    _HAVE_DASKR = True
-except ImportError:
-    _HAVE_DASKR = False
+from SloppyCell.daskr import daeint
 
 ################################################################################
 
@@ -142,14 +138,7 @@ class test_AlgebraicRules(unittest.TestCase):
 
 ################################################################################
         
-no_daskrr_msg = 'daskr not working!'
-if _HAVE_DASKR:
-    suite = unittest.makeSuite(test_AlgebraicRules)
-else:
-    message = no_daskrr_msg
+suite = unittest.makeSuite(test_AlgebraicRules)
 
 if __name__ == '__main__':
-    if _HAVE_DASKR:
-        unittest.main()
-    else:
-        print no_daskrr_msg
+    unittest.main()

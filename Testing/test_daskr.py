@@ -3,13 +3,7 @@ import unittest
 import scipy
 import SloppyCell.Utility as Utility
 import SloppyCell.daskr
-
-try:
-    from SloppyCell.daskr import daeint
-    _HAVE_DASKR = True
-except ImportError:
-    _HAVE_DASKR = False
-
+from SloppyCell.daskr import daeint
 
 redir = Utility.Redirector()
 
@@ -437,14 +431,7 @@ if max_steps is not set """
 ################################################################################
 
         
-no_daskrr_msg = 'daskr not working!'
-if _HAVE_DASKR:
-    suite = unittest.makeSuite(test_daskr)
-else:
-    message = no_daskrr_msg
+suite = unittest.makeSuite(test_daskr)
 
 if __name__ == '__main__':
-    if _HAVE_DASKR:
-        unittest.main()
-    else:
-        print no_daskrr_msg
+    unittest.main()
