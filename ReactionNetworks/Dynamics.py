@@ -943,14 +943,16 @@ def find_ics(y, yp, time, res_func, alg_deriv_func, var_types, atol):
                                 xtol = min(atol),
                                 args = (y, time, res_func, var_types))
 
+    sln = scipy.atleast_1d(sln)
+
     N_alg = scipy.sum(var_types == -1)
     alg_vals = sln[:N_alg]
     non_alg_yp = sln[N_alg:]
 
     y[var_types == -1] = alg_vals
-    yp[var_types == 1] = non_alg_yp
 
     if N_alg:
+        yp[var_types == 1] = non_alg_yp
         # Now we need to figure out yprime for the algebraic vars
         alg_yp = yp[var_types == -1]
         sln = scipy.optimize.fsolve(alg_deriv_func, x0 = alg_yp,
