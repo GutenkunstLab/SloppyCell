@@ -981,16 +981,19 @@ class Network:
         for arg, var_names in zip(['constants', 'dynamicVars'],
                                   [self.constantVars.keys(),
                                    self.dynamicVars.keys()]):
-            # We protect ourselves with a 'try, except' clause
-            #  in case passed in values are not an array, but e.g. a list
-            #  or KeyedList.
-            body.append('try:')
-            for ii, id in enumerate(var_names):
-                body.append('\t%s = %s.item(%i)' % (id, arg, ii))
-            body.append('except (AttributeError, TypeError):')
-            for ii, id in enumerate(var_names):
-                body.append('\t%s = %s[%i]' % (id, arg, ii))
-            body.append('')
+            # only add this section if there are variables listed
+            # in var_names
+            if len(var_names) > 0:
+                # We protect ourselves with a 'try, except' clause
+                #  in case passed in values are not an array, but e.g. a list
+                #  or KeyedList.
+                body.append('try:')
+                for ii, id in enumerate(var_names):
+                    body.append('\t%s = %s.item(%i)' % (id, arg, ii))
+                body.append('except (AttributeError, TypeError):')
+                for ii, id in enumerate(var_names):
+                    body.append('\t%s = %s[%i]' % (id, arg, ii))
+                body.append('')
 
         for variable, math in self.assignmentRules.items():
             body.append('%s = %s' % (variable, math))
