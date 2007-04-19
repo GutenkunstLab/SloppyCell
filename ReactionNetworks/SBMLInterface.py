@@ -283,7 +283,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
     for ii, r in enumerate(m.getListOfRules()):
         if r.getTypeCode() == libsbml.SBML_ALGEBRAIC_RULE:
             print >> sys.stderr, '*'*20
-            print >> sys.stderr, 'Alegbraic rule specied in SBML file.'
+            print >> sys.stderr, 'Alegbraic rule specified in SBML file.'
             print >> sys.stderr, 'Rule is: %s' % libsbml.formulaToString(r.getMath())
             print >> sys.stderr, '*'*20
             math = libsbml.formulaToString(r.getMath())
