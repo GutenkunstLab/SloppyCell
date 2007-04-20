@@ -19,12 +19,8 @@ if hasattr(os, 'link'):
     del os.link
 
 # Both these packages include some BLAS functions in them. Strangely, at least
-#  on CCMR, it seems (ver slightly), faster to use the included ones rather
+#  on CCMR, it seems (very slightly), faster to use the included ones rather
 #  than linking against LAPACK.
-lsodar = core.Extension(name = 'SloppyCell._lsodar',
-                        sources = ['lsodar.pyf', 'odepack/opkdmain.f', 
-                                   'odepack/opkda1.f', 'odepack/opkda2.f'])
-
 daskr = core.Extension(name = 'SloppyCell._daskr',
                        sources = ['daskr.pyf', 'ddaskr/ddaskr.f', 
                                   'ddaskr/daux.f', 'ddaskr/dlinpk.f'])
@@ -42,5 +38,5 @@ core.setup(name='SloppyCell',
                      ],
            package_dir={'SloppyCell': ''},
 
-           ext_modules = [lsodar, daskr]
+           ext_modules = [daskr]
            )
