@@ -204,7 +204,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     #  algebraic variables are all consistent.
     IC, ypIC = find_ics(IC, ypIC, start, net.res_function,
                         net.alg_deriv_func,
-                        net._dynamic_var_algebraic, atol)
+                        net._dynamic_var_algebraic, rtol)
     
     # start variables for output storage 
     yout = scipy.zeros((0, len(IC)), scipy.float_)
@@ -276,7 +276,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                 #  to algebraic variables and to yprime.
                 IC, ypIC = find_ics(IC, ypIC, start, res_func, 
                                     net.alg_deriv_func,
-                                    net._dynamic_var_algebraic, atol)
+                                    net._dynamic_var_algebraic, rtol)
                 holder.y_post_exec = copy.copy(IC)
                 holder.yp_post_exec = copy.copy(ypIC)
 
@@ -926,7 +926,7 @@ def restricted_res_func(solving_for, y, time, res_func, var_types):
     #  already-existing array.
     return copy.copy(res_func(time, y, yp, ires=0))
 
-def find_ics(y, yp, time, res_func, alg_deriv_func, var_types, atol):
+def find_ics(y, yp, time, res_func, alg_deriv_func, var_types, rtol):
     # We use this to find consistent sets of initial conditions for our
     #  integrations. (We don't let ddaskr do it, because it doesn't calculate
     #  values for d(alg_var)/dt, and we need them for sensitivity integration.)
@@ -940,7 +940,7 @@ def find_ics(y, yp, time, res_func, alg_deriv_func, var_types, atol):
     solving_for = scipy.concatenate([alg_vals_guess, non_alg_yp_guess])
 
     sln = scipy.optimize.fsolve(restricted_res_func, x0 = solving_for,
-                                xtol = min(atol),
+                                xtol = max(rtol),
                                 args = (y, time, res_func, var_types))
 
     sln = scipy.atleast_1d(sln)
