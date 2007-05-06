@@ -60,12 +60,14 @@ _KNOWN_FUNCS = {('acos', 1): ('1/sqrt(1-arg0**2)',),
                 ('log10', 1): ('1/(log(10)*arg0)',),
                 ('sin', 1): ('cos(arg0)',),
                 ('sinh', 1): ('cosh(arg0)',),
+                ('arcsinh', 1): ('1/sqrt(1+arg0**2)',),
+                ('arccosh', 1): ('1/sqrt(arg0**2 - 1.)',),
+                ('arctanh', 1): ('1/(1.-arg0**2)',),
                 ('sqrt', 1): ('1/(2*sqrt(arg0))',),
                 ('tan', 1): ('1/cos(arg0)**2',),
                 ('tanh', 1): ('1/cosh(arg0)**2',),
                 ('pow', 2): ('arg1 * arg0**(arg1-1)', 
                              'log(arg0) * arg0**arg1')
-                             #'log((arg0 == 0)+(arg0 != 0)*arg0) * arg0**arg1')
                 }
 for key, terms in _KNOWN_FUNCS.items():
     _KNOWN_FUNCS[key] = [strip_parse(term) for term in terms]
@@ -168,8 +170,7 @@ def _product_deriv(terms, wrt):
     for ii, term in enumerate(terms):
         term_d = _diff_ast(term, wrt)
         other_terms = terms[:ii] + terms[ii+1:]
-        deriv_terms.append(AST._make_product(other_terms + 
-                                                          [term_d]))
+        deriv_terms.append(AST._make_product(other_terms + [term_d]))
     sum = deriv_terms[0]
     for term in deriv_terms[1:]:
         sum = Add((term, sum))
