@@ -233,7 +233,7 @@ def _make_product(terms):
     else:
         return Const(1)
 
-def recurse_down_tree(ast, func, args):
+def recurse_down_tree(ast, func, args=()):
     if isinstance(ast, list):
         for ii, elem in enumerate(ast):
             ast[ii] = func(elem, *args)

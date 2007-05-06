@@ -107,7 +107,7 @@ def sub_for_func(expr, func_name, func_vars, func_expr):
 
 def _sub_for_func_ast(ast, func_name, func_vars, func_expr_ast):
     """
-    Return and ast with the function func_name substituted out.
+    Return an ast with the function func_name substituted out.
     """
     if isinstance(ast, CallFunc) and ast2str(ast.node) == func_name\
        and len(ast.args) == len(func_vars):
@@ -124,4 +124,24 @@ def _sub_for_func_ast(ast, func_name, func_vars, func_expr_ast):
         return working_ast
     ast = AST.recurse_down_tree(ast, _sub_for_func_ast, 
                                 (func_name, func_vars, func_expr_ast,))
+    return ast
+
+def make_c_compatible(expr):
+    """
+    Convert a python math string into one compatible with C.
+
+    Substitute all python-style x**n exponents with pow(x, n).
+    Replace all integer constants with float values to avoid integer
+     casting problems (e.g. '1' -> '1.0').
+    """
+    ast = strip_parse(expr)
+    ast = _make_c_compatible_ast(ast)
+    return ast2str(ast)
+
+def _make_c_compatible_ast(ast):
+    if isinstance(ast, Power):
+        ast = CallFunc(Name('pow'), [ast.left, ast.right], None, None)
+    if isinstance(ast, Const) and isinstance(ast.value, int):
+        ast.value = float(ast.value)
+    ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
     return ast
