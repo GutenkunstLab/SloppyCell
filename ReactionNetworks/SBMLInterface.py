@@ -156,9 +156,9 @@ def to_SBML_l2v1(from_name, to_name):
     if not success:
         logger.critical('Error writing to %s' % to_name)
 
-def fromSBMLFile(fileName, id = None):
+def fromSBMLFile(fileName, id = None, duplicate_rxn_params=False):
     f = file(fileName, 'r')
-    net = fromSBMLString(f.read(), id)
+    net = fromSBMLString(f.read(), id, duplicate_rxn_params)
     f.close()
     return net
 
@@ -169,7 +169,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
 
     modelId = m.getId()
     if (id == None) and (modelId == ''):
-        raise ValueError, 'Network id not specified in SBML or passed in.'
+        raise ValueError('Network id not specified in SBML or passed in.')
     elif id is not None:
         modelId = id
         
@@ -282,10 +282,6 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
 
     for ii, r in enumerate(m.getListOfRules()):
         if r.getTypeCode() == libsbml.SBML_ALGEBRAIC_RULE:
-            print >> sys.stderr, '*'*20
-            print >> sys.stderr, 'Alegbraic rule specified in SBML file.'
-            print >> sys.stderr, 'Rule is: %s' % libsbml.formulaToString(r.getMath())
-            print >> sys.stderr, '*'*20
             math = libsbml.formulaToString(r.getMath())
             rn.add_algebraic_rule(math)
         else:
