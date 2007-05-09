@@ -270,7 +270,8 @@ def few_ensemble_trajs(net, times, elements):
     traj_set = []
     for params in elements:
         try:
-            traj = Dynamics.integrate(net, times, params, fill_traj=False)
+            traj = Dynamics.integrate(net, times, params=params, 
+                                      fill_traj=False)
             if not scipy.any(scipy.isnan(traj.values)):
                 traj_set.append(traj)
         except Utility.SloppyCellException:
