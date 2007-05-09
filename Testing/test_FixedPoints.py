@@ -5,10 +5,10 @@ import scipy
 from SloppyCell.ReactionNetworks import *
 
 lorenz = Network('lorenz')
-lorenz.add_compartment('default')
-lorenz.add_species('x', 'default', 0.5)
-lorenz.add_species('y', 'default', 0.5)
-lorenz.add_species('z', 'default', 0.5)
+lorenz.add_compartment('basic')
+lorenz.add_species('x', 'basic', 0.5)
+lorenz.add_species('y', 'basic', 0.5)
+lorenz.add_species('z', 'basic', 0.5)
 lorenz.add_parameter('sigma', 1.0)
 lorenz.add_parameter('r', 2.0)
 lorenz.add_parameter('b', 2.0)
@@ -64,7 +64,7 @@ class test_fixedpoints(unittest.TestCase):
 
         # (0,0,0) is a stable node here
         net.set_var_ic('r', 0.5)
-        fp, stable = Dynamics.dyn_var_fixed_point(net, dv0=[0.2,0.2,0.2], 
+        fp, stable = Dynamics.dyn_var_fixed_point(net, dv0=[1.0,1.0,1.0], 
                                                   stability=True)
         self.assertEqual(stable, -1, 'Failed to classify stable fixed point')
 
