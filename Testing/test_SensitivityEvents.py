@@ -1,8 +1,6 @@
 import unittest
 import os
 
-import scipy
-
 from SloppyCell.ReactionNetworks import *
 
 file_path = os.path.join('SBML_files',
@@ -41,7 +39,9 @@ class test_SensitivityEvents(unittest.TestCase):
 
             sens_val = sens_traj.get_var_val_index((dyn_var, opt_var), -1)
             self.assertAlmostEqual(diff_sens[-1], sens_val, 4, 
-                                   'failed for %s, %g vs %s' % (dyn_var, diff_sens[01], sens_val))
+                                   'failed for (%s, %s), %g vs %g'
+                                   % (dyn_var, opt_var, diff_sens[-1],
+                                      sens_val))
 
     def test_basic(self):
         net = base_net.copy('test')
