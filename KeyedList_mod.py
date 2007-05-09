@@ -68,9 +68,9 @@ class KeyedList(list):
     # Methods for manipulating by key.
     #
     def set(self, key, value):
-        if self.keyToIndex.has_key(key):
+        try:
             self[self.keyToIndex[key]] = value
-        else:
+        except KeyError:
             list.append(self, value)
             self.storedKeys.append(key)
             self.keyToIndex[key] = len(self)-1
@@ -82,9 +82,9 @@ class KeyedList(list):
         del self[self.keyToIndex[key]]
 
     def get(self, key, default = None):
-        if self.keyToIndex.has_key(key):
+        try:
             return self[self.keyToIndex[key]]
-        else:
+        except KeyError:
             return default
 
     setByKey = set
@@ -93,7 +93,7 @@ class KeyedList(list):
     removeByKey = remove_by_key
 
     def keys(self):
-        return self.storedKeys
+        return copy.copy(self.storedKeys)
 
     def update(self, other):
         if isinstance(other, dict) or isinstance(other, KeyedList):
