@@ -22,6 +22,8 @@ from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
 if HAVE_PYPAR:
     import pypar
 
+ROUND_EVENT_TIMES_TO = 15
+
 # XXX: Need to incorporate root_grace_t into integrate_sensitivity
 global_rtol = 1e-6
 
@@ -40,41 +42,23 @@ class FixedPointException(Utility.SloppyCellException):
 def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes, 
                      rtol, atol, fill_traj, return_derivs,
                      redirect_msgs, init_consistent, var_types):
-
-    if root_func is not None:
-        root_term = [False] * len(net._root_func)
-        for ii in range(len(net.events)):
-            root_term[ii] = True
-    else:
-        root_term = []
-
     N_dyn_var = len(net.dynamicVars)
+
     if net.integrateWithLogs:
         yp0 = yp0/IC
         IC = scipy.log(IC)
 
-        old_func = res_func
-        def res_func(time, logy, logyprime, ires):
-            # Convert from logs of dyamic vars. We're integrating in logs
-            #  partially to avoid zeros, so we put a lower bound on our
-            #  output dynamicVars
-            y = scipy.exp(logy)
-            y = scipy.maximum(y, scipy.misc.limits.double_tiny)
-            yprime = logyprime * y
-
-            return old_func(time, y, yprime, ires)
-
+        res_func = net.res_function_logdv
         Dfun = None
-
-        old_root_func = root_func
-        def root_func(time, logy, logyprime):
-            y = scipy.exp(logy)
-            y = scipy.maximum(y, scipy.misc.limits.double_tiny)
-            yprime = logyprime * y
-            return old_root_func(time, y, yprime)
+        root_func = net.root_func_logdv
 
         atol = rtol
         rtol = [0]*len(rtol)
+
+    if root_func is None:
+        nrt = 0
+    else:
+        nrt = net.len_root_func
 
     int_args = {'res': res_func,
                 't': curTimes,
@@ -82,7 +66,10 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
                 'yp0': yp0,
 
                 'jac': Dfun,
+                'nrt': nrt,
                 'rt': root_func,
+
+                'rpar': net.constantVarValues,
 
                 'rtol': rtol,
                 'atol': atol,
@@ -140,7 +127,8 @@ def generate_tolerances(net, rtol, atol=None):
     # We set atol to be a minimum of 1e-6 to avoid variables with large typical
     #  values going negative.
     if (scipy.isscalar(atol) or atol==None):
-        typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
+        typ_vals = [net.get_var_typical_val(id)
+                    for id in net.dynamicVars.keys()]
         atol = scipy.minimum(rtol * scipy.asarray(typ_vals), 1e-6)
     return rtol, atol
 
@@ -181,6 +169,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
     if params is not None:
         net.update_optimizable_vars(params)
+    constants = net.constantVarValues
     # If you ask for time = 0, we'll assume you want dynamic variable values
     # reset.
     times = scipy.asarray(times)
@@ -196,15 +185,15 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
     # get the initial state, time, and derivative.
     start = times[0]
-    # time derivative of trajectory
     IC = net.getDynamicVarValues()
+    # We start with ypIC equal to typ_vals so that we get the correct scale.
     typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
     ypIC = scipy.array(typ_vals)
     # This calculates the yprime ICs and also ensures that values for our
     #  algebraic variables are all consistent.
-    IC, ypIC = find_ics(IC, ypIC, start, net.res_function,
-                        net.alg_deriv_func,
-                        net._dynamic_var_algebraic, rtol)
+    IC, ypIC = find_ics(IC, ypIC, start,
+                        net._dynamic_var_algebraic, rtol, atol,
+                        net.constantVarValues, net)
     
     # start variables for output storage 
     yout = scipy.zeros((0, len(IC)), scipy.float_)
@@ -213,8 +202,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
     # For some reason, the F2Py wrapper for ddaskr seems to fail if this
     #  isn't wrapped up in a lambda...
-    res_func = lambda t, y, yprime, ires: net.res_function(t, y, yprime, ires)
-    root_func = net.ddaskr_root
+    res_func = net.res_function
+    root_func = net.root_func
 
     # events_occured will hold event_info objects that describe the events
     #  in detail.
@@ -232,10 +221,12 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     event_just_executed = False
 
     # This is the jacobian for use with ddaskr.
-    def _ddaskr_jac(t, y, yprime, pd, cj):
-        dc_term = net.dres_dc_function(t, y, yprime) 
-        dcdot_term = net.dres_dcdot_function(t, y, yprime)
-        return dc_term + cj * dcdot_term
+    #def _ddaskr_jac(t, y, yprime, pd, cj, 
+    #                constants=None, residual=None):
+    #    dc_term = net.dres_dc_function(t, y, yprime) 
+    #    dcdot_term = net.dres_dcdot_function(t, y, yprime)
+    #    return dc_term + cj * dcdot_term
+    _ddaskr_jac = net.ddaskr_jac
 
     exception_raised = None
     while start < times[-1]:
@@ -243,8 +234,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         # equal to the start time
         # since some chained events may be added to the pending events list,
         # keep looping until the key has been deleted
-        while pendingEvents.has_key(round(start, 12)):
-            execution_time = round(start,12)
+        while pendingEvents.has_key(round(start, ROUND_EVENT_TIMES_TO)):
+            execution_time = round(start, ROUND_EVENT_TIMES_TO)
             event_list = pendingEvents[execution_time]
 
             # Note: the correct behavior of chained events with events that have
@@ -254,7 +245,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             
             # store a copy of the value of root_func in order to check for
             # chains of events       
-            root_before = scipy.array(root_func(start, IC, ypIC))
+            root_before = root_func(start, IC, ypIC, constants)
 
             # For those events whose execution time == start, execute
             # the event
@@ -274,14 +265,14 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                 # Now we update the initial conditions to reflect any changes
                 #  made in event execution. This might include adjustments
                 #  to algebraic variables and to yprime.
-                IC, ypIC = find_ics(IC, ypIC, start, res_func, 
-                                    net.alg_deriv_func,
-                                    net._dynamic_var_algebraic, rtol)
+                IC, ypIC = find_ics(IC, ypIC, start,
+                                    net._dynamic_var_algebraic, rtol, atol,
+                                    net.constantVarValues, net)
                 holder.y_post_exec = copy.copy(IC)
                 holder.yp_post_exec = copy.copy(ypIC)
 
             # Update the root state after all listed events have excecuted.
-            root_after = scipy.array(root_func(start, IC, ypIC))
+            root_after = root_func(start, IC, ypIC, constants)
 
             # Check for chained events
             crossing_dirs = root_after - root_before
@@ -315,6 +306,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         # for events, to prevent detecting the same event several times.
         # This section only excecutes if root_grace is True (default).
         if (event_just_fired and root_grace):
+            logger.debug('Starting event grace time integration.')
             # This is the next time we're asked to provide
             next_requested = scipy.compress(times > start, times)[0]
             # We integrate to the smallest of: the grace time, the
@@ -412,7 +404,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             youtdt = _reduce_times(youtdt, tout, filtered_times)
         tout = filtered_times
     
-    trajectory = Trajectory_mod.Trajectory(net,holds_dt=return_derivs)
+    trajectory = Trajectory_mod.Trajectory(net, holds_dt=return_derivs,
+                                           const_vals=net.constantVarValues)
     if return_derivs :
         yout = scipy.concatenate((yout,youtdt),axis=1) # join columnwise
 
@@ -482,7 +475,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
                                  'changed simultaneously! Sensitivity '
                                  'integration will fail.' % event.trigger)
             delay = net.fireEvent(event, y, time)
-            execution_time = round(time + delay, 12)
+            execution_time = round(time + delay, ROUND_EVENT_TIMES_TO)
 
             # We use this object to record which events have fired
             holder = event_info()
@@ -556,6 +549,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     """
     Integrate the sensitivity equations for a single optimization variable.
     """
+    logger.debug('Integrating sensitivity for %s.' % opt_var)
     #
     # This now uses the ddaskr related-functions.
     #
@@ -564,6 +558,9 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
 
     # Calculate tolerances for our sensitivity integration
     rtol, atol = generate_tolerances(net, rtol)
+    if net.integrateWithLogs:
+        atol = rtol
+        rtol = [0] * len(net.dynamicVars)
     # We set the same rtol for sensitivity variables as for the normal
     # variables.
     rtol_for_sens = scipy.concatenate((rtol, rtol))
@@ -604,17 +601,18 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     fired_events = {}
     executed_events = {}
     for holder in events_occurred:
-        firing_time = round(holder.time_fired, 12)
+        firing_time = round(holder.time_fired, ROUND_EVENT_TIMES_TO)
         fired_events.setdefault(firing_time, [])
         fired_events[firing_time].append(holder)
 
-        execution_time = round(holder.time_exec, 12)
+        execution_time = round(holder.time_exec, ROUND_EVENT_TIMES_TO)
         executed_events.setdefault(execution_time, [])
         executed_events[execution_time].append(holder)
 
     while current_time < times[-1]:
-        if executed_events.has_key(round(current_time, 12)):
-            execution_time = round(current_time,12)
+        logger.debug('sens_int current_time: %f' % current_time)
+        if executed_events.has_key(round(current_time, ROUND_EVENT_TIMES_TO)):
+            execution_time = round(current_time,ROUND_EVENT_TIMES_TO)
             event_list = executed_events[execution_time]
             for holder in event_list:
                 IC = net.executeEventAndUpdateSens(holder, IC, opt_var)
@@ -637,14 +635,26 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
             int_times = scipy.compress(times > current_time, times)
             int_times = scipy.concatenate(([current_time], int_times))
 
+        # The index of the variable to calculate sensitivity wrt is passed in
+        # the last element of rpar. It is obtained by an (int) cast, so we add
+        # a small amount to make sure the cast doesn't round down stupidly.
+        rpar = scipy.concatenate((net.constantVarValues, [opt_var_index+0.1]))
+
         # We let daskr figure out ypIC
+        if len(int_times) >= 2:
+            logger.debug('int_times[-2:]: %s' % (int_times[-2:]-int_times[-2]))
+
+        sens_rhs = net.sens_rhs
         if net.integrateWithLogs:
+            ypIC[:N_dyn_vars] *= IC[:N_dyn_vars]
             IC[:N_dyn_vars] = scipy.log(IC[:N_dyn_vars])
+            sens_rhs = net.sens_rhs_logdv
+
         try:
-            int_outputs = daeint(_alg_sens, int_times,
+            int_outputs = daeint(sens_rhs, int_times,
                                  IC, ypIC, 
                                  rtol_for_sens, atol_for_sens,
-                                 args = (net, opt_var_index),
+                                 rpar = rpar,
                                  max_steps = 1e4,
                                  init_consistent=True,
                                  var_types = var_types,
@@ -668,10 +678,10 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         ypIC = youtdt_this[-1]
         if net.integrateWithLogs:
             IC[:N_dyn_vars] = scipy.exp(IC[:N_dyn_vars])
-            ypIC[:N_dyn_vars] *= IC
+            ypIC[:N_dyn_vars] *= IC[:N_dyn_vars]
 
-        while fired_events.has_key(round(current_time, 12)):
-            firing_time = round(current_time,12)
+        while fired_events.has_key(round(current_time, ROUND_EVENT_TIMES_TO)):
+            firing_time = round(current_time,ROUND_EVENT_TIMES_TO)
             event_list = fired_events[firing_time]
             holder = event_list.pop()
             holder.ysens_fired = copy.copy(IC)
@@ -807,6 +817,8 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
     else:
         dv0 = scipy.asarray(dv0)
 
+    consts = net.constantVarValues
+
     zeros = scipy.zeros(len(dv0), scipy.float_)
     if with_logs:
         # We take the absolute value of dv0 to avoid problems from small 
@@ -818,18 +830,11 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
                            % min(dv0))
             dv0 = scipy.maximum(dv0, scipy.misc.limits.double_tiny)
 
+        # XXX: Would like to replace these with C'd versions.
+        # Also should figure out yprime for optimization.
         def func(logy):
-            y = scipy.exp(logy)
-            y = scipy.maximum(y, scipy.misc.limits.double_tiny)
-            return net.res_function(time, y, yprime=zeros, ires=0)
+            return net.res_function_logdv(time, logy, zeros, consts)
 
-        def fprime(logy):
-            y = scipy.exp(logy)
-            y = scipy.maximum(y, scipy.misc.limits.double_tiny)
-            fp = net.dres_dc_function(time, y, yprime=zeros)
-            # Our derivatives run down the columns, so we need to 
-            #  take the tranpose twice to multiply down them.
-            return scipy.transpose(scipy.transpose(fp) * y)
         x0 = scipy.log(dv0)
         # To transform sigma_x to sigma_log_x, we divide by x. We can set
         #  our sigma_log_x use to be the mean of what our xtol would yield
@@ -837,16 +842,13 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
         xtol = scipy.mean(xtol/dv0)
     else:
         def func(y):
-            return net.res_function(time, y, yprime=zeros, ires=0)
-        def fprime(y):
-            return net.dres_dc_function(time, y, yprime=zeros)
+            return net.res_function(time, y, zeros, consts)
         x0 = dv0
 
     try:
         dvFixed, infodict, ier, mesg =\
-                scipy.optimize.fsolve(func, x0=x0, fprime=fprime,
-                                      col_deriv=False, full_output=True,
-                                      xtol=xtol)
+                scipy.optimize.fsolve(func, x0=x0, full_output=True,
+                                      xtol=xtol, maxfev=10000)
     except (scipy.optimize.minpack.error, ArithmeticError), X:
         raise FixedPointException(('Failure in fsolve.', X))
 
@@ -859,7 +861,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
     if not stability:
         return dvFixed
     else:
-        jac = net.dres_dc_function(time, dvFixed, zeros)
+        jac = net.dres_dc_function(time, dvFixed, zeros, consts)
         u = scipy.linalg.eigvals(jac)
         u = scipy.real_if_close(u)
         if scipy.all(u < 0):
@@ -870,93 +872,60 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
             stable = 0
         return (dvFixed, stable)
 
-def _alg_sens(time, y, ydot, net, opt_ii):
-    # This is the integrand for the sensitivity integration
-    nDV = len(net.dynamicVars)
-
-    if not net.integrateWithLogs:
-        c = y[:nDV]
-        cdot = ydot[:nDV]
-    else:
-        c = scipy.exp(y[:nDV])
-        # Force our c to be non-zero, since that's the whole point of the
-        # logarithmic integration.
-        c = scipy.maximum(c, scipy.misc.limits.double_tiny)
-        cdot = ydot[:nDV] * c
-    dc_dp = y[nDV:]
-    dcdot_dp = ydot[nDV:]
-
-    # These are the residuals for the normal integration
-    res = net.res_function(time, c, cdot, ires=0)
-
-    # The total derivative of res with respect to parameter opt_ii is
-    # Dres_Dp = \partial res/\partial dp + \partial res/\partial c * dc/dp +
-    #    \partial res/\partial cdot * dcdot/dp
-    dres_dp = net.dres_dp_function(time, c, cdot, 
-                                   indices=[opt_ii])[:, opt_ii]
-    dres_dc = net.dres_dc_function(time, c, cdot)
-    dres_dcdot = net.dres_dcdot_function(time, c, cdot)
-
-    Dres_Dp = dres_dp + scipy.dot(dres_dc, dc_dp) +\
-            scipy.dot(dres_dcdot, dcdot_dp)
-
-    # Glue them together for the return
-    result = scipy.concatenate((res, Dres_Dp))
-    return result
-
-def restricted_res_func(solving_for, y, time, res_func, var_types):
-    # solving_for is an array that contains the current guess for all the things
-    #  we want to solve for. First, it contains guesses for the values of all
-    #  the algebraic vars. Then it contains guesses for yprime for all the
-    #  non-algebraic vars. This gives us exactly the same number of unknowns as
-    #  the number of equations we have in res_func.
-    N_alg = scipy.sum(var_types == -1)
-
-    alg_vals = solving_for[:N_alg]
-    non_alg_yp = solving_for[N_alg:]
-
-    # This places the alg_vals in their appropriate position in y
-    y[var_types == -1] = alg_vals
-
-    # This places the non-alg_vals in their appropriate position in yp
-    yp = scipy.zeros(len(solving_for), scipy.float_)
-    yp[var_types == 1] = non_alg_yp
-
-    # We need to copy here because res_func returns a reference to an
-    #  already-existing array.
-    return copy.copy(res_func(time, y, yp, ires=0))
-
-def find_ics(y, yp, time, res_func, alg_deriv_func, var_types, rtol):
+def find_ics(y, yp, time, var_types, rtol, atol, constants, net):
     # We use this to find consistent sets of initial conditions for our
     #  integrations. (We don't let ddaskr do it, because it doesn't calculate
     #  values for d(alg_var)/dt, and we need them for sensitivity integration.)
     var_types = scipy.asarray(var_types)
-    y = scipy.array(y)
-    yp = scipy.array(yp)
+    y = scipy.array(y, scipy.float_)
+    yp = scipy.array(yp, scipy.float_)
 
-    # First we calculat a consistent set of alg_var_vals and d(non_alg_var)/dt
+    # First we calculate a consistent set of alg_var_vals and d(non_alg_var)/dt
     alg_vals_guess = y[var_types == -1]
     non_alg_yp_guess = yp[var_types == 1]
     solving_for = scipy.concatenate([alg_vals_guess, non_alg_yp_guess])
+    rearranged_atol = scipy.concatenate([atol[var_types == -1], 
+                                         atol[var_types == 1]])
 
-    sln = scipy.optimize.fsolve(restricted_res_func, x0 = solving_for,
-                                xtol = max(rtol),
-                                args = (y, time, res_func, var_types))
+    redir = Utility.Redirector()
+    redir.start()
+    try:
+        sln = scipy.optimize.fsolve(net.restricted_res_func, x0 = solving_for,
+                                    xtol = min(rtol), 
+                                    args = (y, time, constants))
+    finally:
+        redir.stop()
 
     sln = scipy.atleast_1d(sln)
+    if scipy.any(net.restricted_res_func(sln, y, time, constants)
+                 > rearranged_atol):
+        logger.warn("find_ics: Didn't meet tolerances in finding non-algebraic "
+                    "var derivatives and algebraic var values.")
 
     N_alg = scipy.sum(var_types == -1)
     alg_vals = sln[:N_alg]
     non_alg_yp = sln[N_alg:]
 
     y[var_types == -1] = alg_vals
+    yp[var_types == 1] = non_alg_yp
 
     if N_alg:
-        yp[var_types == 1] = non_alg_yp
         # Now we need to figure out yprime for the algebraic vars
         alg_yp = yp[var_types == -1]
-        sln = scipy.optimize.fsolve(alg_deriv_func, x0 = alg_yp,
-                                    args = (y, yp, time))
+        rearranged_atol = atol[var_types == -1]
+        redir = Utility.Redirector()
+        redir.start()
+        try:
+            sln = scipy.optimize.fsolve(net.alg_deriv_func, x0 = alg_yp,
+                                        xtol = min(atol),
+                                        args = (y, yp, time, constants))
+        finally:
+            redir.stop()
+        sln = scipy.atleast_1d(sln)
+        if scipy.any(net.alg_deriv_func(sln, y, yp, time, constants)
+                     > rearranged_atol):
+            logger.warn("find_ics: Didn't meet tolerances in finding algebraic "
+                        "var derivatives.")
         yp[var_types == -1] = sln
 
     return y, yp

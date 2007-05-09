@@ -37,6 +37,7 @@ core.setup(name='SloppyCell',
                      'SloppyCell.Vandermonde'
                      ],
            package_dir={'SloppyCell': ''},
+           data_files=[('SloppyCell', ['f2py_signatures.pyf'])],
 
            ext_modules = [daskr]
            )

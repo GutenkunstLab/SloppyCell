@@ -1,76 +1,70 @@
-!    -*- f90 -*-
-! Note: the context of this file is case sensitive.
-
 python module daskr__user__routines 
     interface daskr_user_interface 
-        subroutine res(t,y,yprime,cj,r,ires,rpar,ipar)
+        subroutine res(t,y,yprime,cj,residual,ires,rpar,ipar)
             double precision intent(in) :: t
-            double precision intent(in), dimension(ipar) :: y
-            double precision intent(in), dimension(ipar) :: yprime
+            double precision intent(in), dimension(ipar[0]) :: y
+            double precision intent(in), dimension(ipar[0]) :: yprime
             double precision intent(hide) :: cj
-            double precision intent(out), dimension(ipar) :: r
-            integer intent(in,out) :: ires
-            double precision intent(hide) :: rpar
-            ! This has been set equal to neq in the daskr call
-            integer intent(hide) :: ipar
+            double precision intent(out), dimension(ipar[0]) :: residual
+            integer intent(hide) :: ires
+            double precision intent(in), dimension(ipar[1]) :: rpar
+            ! This has been set equal to (neq, len(rpar)) in the daskr call
+            integer dimension(2), intent(hide) :: ipar
         end subroutine res
         subroutine jac(t,y,yprime,pd,cj,rpar,ipar)
             double precision intent(in) :: t
-            double precision intent(in), dimension(ipar) :: y
-            double precision intent(in), dimension(ipar) :: yprime
-            double precision intent(in,out), dimension(ipar,ipar) :: pd
+            double precision intent(in), dimension(ipar[0]) :: y
+            double precision intent(in), dimension(ipar[0]) :: yprime
+            double precision intent(out), dimension(ipar[0],ipar[0]) :: pd
             double precision intent(in) :: cj
-            double precision intent(hide) :: rpar
-            ! This has been set equal to neq in the daskr call
-            integer intent(hide) :: ipar
-        end subroutine jacd
+            double precision intent(in), dimension(ipar[1]) :: rpar
+            ! This has been set equal to (neq, len(rpar)) in the daskr call
+            integer dimension(2), intent(hide) :: ipar
+        end subroutine jac
         subroutine psol() ! support not implemented
         end subroutine psol
         subroutine rt(neq,t,y,yp,nrt,r0,rpar,ipar)
             integer intent(hide) :: neq
             double precision intent(in) :: t
-            double precision intent(in), dimension(neq) :: y
-            double precision intent(in), dimension(neq) :: yp
+            double precision intent(in), dimension(ipar[0]) :: y
+            double precision intent(in), dimension(ipar[0]) :: yp
             integer intent(hide) :: nrt
             double precision intent(out), dimension(nrt) :: r0
-            double precision intent(hide) :: rpar
-            integer intent(hide) :: ipar
+            double precision intent(in), dimension(ipar[1]) :: rpar
+            ! This has been set equal to (neq, len(rpar)) in the daskr call
+            integer dimension(2), intent(hide) :: ipar
         end subroutine rt
     end interface daskr_user_interface
 end python module daskr__user__routines
 
-python module _daskr ! in 
-    interface  ! in :_daskr
+python module _daskr
+interface
+    subroutine ddaskr(res,neq,t,y,yprime,tout,info,rtol,atol,idid,rwork,lrw,iwork,liw,rpar,ipar,jac,psol,rt,nrt,jroot) ! in :_daskr:daskr.f
+        double precision intent(in,out) :: t
+        double precision intent(in) :: tout
+        double precision intent(in,out,copy), dimension(neq) :: y
+        double precision intent(in,out,copy), dimension(neq) :: yprime
+        integer intent(in), dimension(20) :: info
+        double precision intent(in,copy), dimension(neq) :: rtol
+        double precision intent(in,copy), dimension(neq) :: atol
+        integer intent(out) :: idid
+        integer intent(hide), depend(y) :: neq = len(y)
+        double precision dimension(lrw) :: rwork
+        integer intent(hide), depend(rwork) :: lrw=len(rwork)
+        integer dimension(liw) :: iwork
+        integer intent(hide), depend(iwork) :: liw=len(iwork)
+        ! We need rpar for passing _cpointer
+        double precision intent(in), dimension(ipar[1]) :: rpar
+        ! We'll use ipar to store neq and len(rpar)
+        ! This will have to be made correct in daeint
+        integer intent(in), dimension(2) :: ipar
+        integer intent(in) :: nrt
+        integer intent(out), dimension(MAX(1, nrt)) :: jroot
         use daskr__user__routines
-        subroutine ddaskr(res,neq,t,y,yprime,tout,info,rtol,atol,idid,rwork,lrw,iwork,liw,rpar,ipar,jac,psol,rt,nrt,jroot) ! in :_daskr:daskr.f
-            use daskr__user__routines
-            external res
-            integer intent(hide), depend(y) :: neq = len(y)
-            double precision intent(in,out,copy) :: t
-            double precision intent(in,out,copy), dimension(neq) :: y
-            double precision intent(in,out,copy), dimension(neq) :: yprime
-            double precision intent(in) :: tout
-            integer intent(in), dimension(20) :: info
-            double precision intent(in,out,copy), dimension(neq) :: rtol
-            double precision intent(in,out,copy), dimension(neq) :: atol
-            integer intent(out) :: idid
-            double precision dimension(lrw) :: rwork
-            integer intent(hide), depend(rwork) :: lrw=len(rwork)
-            integer dimension(liw) :: iwork
-            integer intent(hide), depend(iwork) :: liw=len(iwork)
-            ! We don't need rpar, f2py gives use other means of passing args
-            double precision intent(hide) :: rpar
-            !integer dimension(*) :: ipar
-            ! We'll use ipar to store neq
-            integer intent(hide), depend(neq) :: ipar = neq
-            external jac
-            external psol
-            external rt
-            integer intent(in) :: nrt
-            integer intent(out), dimension(MAX(1, nrt)) :: jroot
-        end subroutine daskr
-    end interface 
+        external res
+        external jac
+        external psol
+        external rt
+    end subroutine daskr
+end interface 
 end python module _daskr
-
-! This file was auto-generated with f2py (version:2_3157).
-! See http://cens.ioc.ee/projects/f2py2e/

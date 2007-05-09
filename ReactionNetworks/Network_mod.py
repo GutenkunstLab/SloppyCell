@@ -5,96 +5,96 @@
 from __future__ import division
 
 import copy
-import exceptions
 import sets
 import types
+import time
 import os
+import sys
 
 import logging
 logger = logging.getLogger('ReactionNetworks.Network_mod')
 
 import scipy
+import math
 
 import SloppyCell
+import SloppyCell.Utility as Utility
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
 
 import SloppyCell.ExprManip as ExprManip
 # We load a dictionary of previously-taken derivatives for efficiency
 ExprManip.load_derivs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
-# This will save the diffs dictionary upon exit from the python interpreter
+# This will save the diffs dictionary upon exit from the python interpreter,
+#  but only on the master node.
 if SloppyCell.my_rank == 0:
     import atexit
     atexit.register(ExprManip.save_derivs, os.path.join(SloppyCell._TEMP_DIR, 
                                                         'diff.pickle'))
 
 import Reactions
-import SloppyCell.Collections as Collections
-
 from Components import *
 import Dynamics
-import Trajectory_mod
-
-import PerfectData
-
-# Optional since it's x86-only.
-try:
-    import psyco
-    HAVE_PSYCO = True
-except ImportError:
-    HAVE_PSYCO = False
 
 class Network:
-    # Here are all the functions we dynamically generate. To add a new one,
-    #  called, for example, fooFunc, you need to define _make_fooFunc, which
-    #  generates the python code for the function in fooFunc_functionBody.
-    _dynamic_structure_funcs = ['res_function',
-                                'alg_deriv_func',
-                                'dres_dcdot_function', 'dres_dc_function',
-                                'dres_dp_function']
-    _dynamic_event_funcs = ['root_func']
-    _dynamic_funcs = _dynamic_structure_funcs + _dynamic_event_funcs
-
+    # These are the methods that should be called to generate all the dynamic
+    # functions. Each method should store the resulting function body in
+    # self._dynamic_funcs_python or self._dynamic_funcs_c. C functions should
+    # also have prototypes stored in self._prototypes_c.
+    _dynamic_structure_methods = ['_make_res_function',
+                                  '_make_alg_deriv_func',
+                                  '_make_restricted_res_func', 
+                                  '_make_dres_dc_function',
+                                  '_make_dres_dcdot_function',
+                                  '_make_ddaskr_jac',
+                                  '_make_dres_dsinglep',
+                                  '_make_sens_rhs',
+                                  '_make_log_funcs'
+                                  ]
+    _dynamic_event_methods = ['_make_root_func']
     
     # These are-predefined functions we want in our working namespace
-    def two_arg_log(x, base=scipy.e):
-        return scipy.log(x)/scipy.log(base)
+    def two_arg_log(x, base=math.e):
+        return math.log(x)/math.log(base)
     _common_namespace = {'log': two_arg_log,
-                         'log10': scipy.log10,
-                         'exp': scipy.exp,
-                         'cos': scipy.cos,
-                         'sin': scipy.sin,
-                         'tan': scipy.tan,
-                         'acos': scipy.arccos,
-                         'asin': scipy.arcsin,
-                         'atan': scipy.arctan,
-                         'cosh': scipy.cosh,
-                         'sinh': scipy.sinh,
-                         'tanh': scipy.tanh,
-                         'arccosh': scipy.arccosh,
-                         'arcsinh': scipy.arcsinh,
-                         'arctanh': scipy.arctanh,
-                         'exponentiale': scipy.e,
-                         'pi': scipy.pi,
-                         'scipy': scipy
+                         'log10': math.log10,
+                         'exp': math.exp,
+                         'cos': math.cos,
+                         'sin': math.sin,
+                         'tan': math.tan,
+                         'acos': math.acos,
+                         'asin': math.asin,
+                         'atan': math.atan,
+                         'cosh': math.cosh,
+                         'sinh': math.sinh,
+                         'tanh': math.tanh,
+                         # These don't have C support, so I've dropped them for
+                         # now.
+                         #'arccosh': scipy.arccosh,
+                         #'arcsinh': scipy.arcsinh,
+                         #'arctanh': scipy.arctanh,
+                         'pow': math.pow,
+                         'sqrt': math.sqrt,
+                         'exponentiale': math.e,
+                         'pi': math.pi,
+                         'scipy': scipy,
                          }
     # These are functions we need to create but that should be used commonly
-    _standard_func_defs = [('pow', ['x', 'n'],  'x**n'),
-                           ('root', ['n', 'x'],  'x**(1/n)'),
-                           ('sqrt', ['x'],  'x**(.5)'),
-                           ('cot', ['x'],  '1/tan(x)'),
+    _standard_func_defs = [('root', ['n', 'x'],  'x**(1./n)'),
+                           ('cot', ['x'],  '1./tan(x)'),
                            ('arccot', ['x'],  'atan(1/x)'),
-                           ('coth', ['x'],  '1/tanh(x)'),
-                           ('arccoth', ['x'],  'arctanh(1/x)'),
-                           ('csc', ['x'],  '1/sin(x)'),
-                           ('arccsc', ['x'],  'asin(1/x)'),
-                           ('csch', ['x'],  '1/sinh(x)'),
-                           ('arccsch', ['x'],  'arcsinh(1/x)'),
-                           ('sec', ['x'],  '1/cos(x)'),
-                           ('arcsec', ['x'],  'acos(1/x)'),
-                           ('sech', ['x'],  '1/cosh(x)'),
-                           ('arcsech', ['x'],  'arccosh(1/x)'),
+                           ('coth', ['x'],  '1./tanh(x)'),
+                           #('arccoth', ['x'],  'arctanh(1./x)'),
+                           ('csc', ['x'],  '1./sin(x)'),
+                           ('arccsc', ['x'],  'asin(1./x)'),
+                           ('csch', ['x'],  '1./sinh(x)'),
+                           #('arccsch', ['x'],  'arcsinh(1./x)'),
+                           ('sec', ['x'],  '1./cos(x)'),
+                           ('arcsec', ['x'],  'acos(1./x)'),
+                           ('sech', ['x'],  '1./cosh(x)'),
+                           #('arcsech', ['x'],  'arccosh(1./x)'),
                            ]
+    # These define all the functions needed to deal with triggers.
     _logical_comp_func_defs = [('gt', ['x', 'y'],  'x > y'),
                                ('geq', ['x', 'y'],  'x >= y'),
                                ('lt', ['x', 'y'],  'x < y'),
@@ -111,11 +111,39 @@ class Network:
         var_str = ','.join(vars)
         func = 'lambda %s: %s' % (var_str, math)
         _common_func_strs.append((id, func))
+        # These are all the partial derivatives
         for ii, wrt in enumerate(vars):
             deriv_id = '%s_%i' % (id, ii)
-            func = 'lambda %s: %s' % (var_str, ExprManip.diff_expr(math, wrt))
+            diff_math = ExprManip.diff_expr(math, wrt)
+            func = 'lambda %s: %s' % (var_str, diff_math)
             _common_func_strs.append((deriv_id, func))
-    # Also do the logical functions
+
+    # Now add the C versions.
+    _common_func_strs_c = []
+    _common_prototypes_c = {}
+    for id, vars, math in _standard_func_defs:
+        vars_c = ['double %s' % var for var in vars]
+        var_str_c = ','.join(vars_c)
+        c_body = []
+        c_body.append('double %s(%s){' % (id, var_str_c))
+        c_body.append('return %s;' % ExprManip.make_c_compatible(math))
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+        _common_prototypes_c[id] = 'double %s(%s);' % (id, var_str_c)
+        _common_func_strs_c.append((id, c_body))
+        for ii, wrt in enumerate(vars):
+            deriv_id = '%s_%i' % (id, ii)
+            diff_math = ExprManip.diff_expr(math, wrt)
+            c_body = []
+            c_body.append('double %s(%s){' % (deriv_id, var_str_c))
+            c_body.append('return %s;' % ExprManip.make_c_compatible(diff_math))
+            c_body.append('}')
+            c_body = os.linesep.join(c_body)
+            _common_prototypes_c[deriv_id] = 'double %s(%s);' % (deriv_id, 
+                                                                 var_str_c)
+            _common_func_strs_c.append((deriv_id, c_body))
+
+    # Also do the logical functions. These don't have derivatives.
     for id, vars, math in _logical_comp_func_defs:
         var_str = ','.join(vars)
         func = 'lambda %s: %s' % (var_str, math)
@@ -147,29 +175,29 @@ class Network:
         self.parameters = KeyedList()
         self.species = KeyedList()
 
-        # These are also cross references. complexEvents for events whose
-        #  firing depends on variable values, and timeTriggeredEvents for
-        #  events that fire at a give time.
-        self.complexEvents = KeyedList()
-        self.timeTriggeredEvents = KeyedList()
-
         # All expressions are evaluated, and functions exec'd in self.namespace.
-        #  (A dictionary mapping names to objects they represent)
+        # (A dictionary mapping names to objects they represent)
         self.namespace = copy.copy(self._common_namespace)
 
-        # These are the strings we eval to create the functions our Network
-        #  defines. We'll evaluate them all to start with, to get the common
-        #  ones in there.
+        # These are the strings we eval to create the extra functions our
+        # Network defines. We'll evaluate them all to start with, to get the
+        # common ones in there.
         self._func_strs = copy.copy(self._common_func_strs)
         for func_id, func_str in self._func_strs:
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
-        # Should we get sensitivities via finite differences? (Faster, but less
-        #  accurate.)
-        self.fdSensitivities = False
-
-        # Integrate with log concentrations (to avoid negative concentrations)
+        # Option to integrate with log concentrations (to avoid negative
+        # concentrations)
         self.integrateWithLogs = False
+
+        self.len_root_func = 0
+
+        # These dictionaries are for storing the function bodies of our dynamic
+        # functions.
+        self._dynamic_funcs_python = {}
+        self._prototypes_c = self._common_prototypes_c.copy()
+        self._dynamic_funcs_c = {}
+        self._func_defs_c = {}
         
     add_int_times, add_tail_times = True, True
     def full_speed(cls):
@@ -281,17 +309,33 @@ class Network:
         self.functionDefinitions.set(func.id, func)
 
         # Add the function and its partial derivatives to func_strs
-        # Also do the evaluation
+        # Also do the evaluation.
         var_str = ','.join(variables)
         func_str = 'lambda %s: %s' % (var_str, math)
         self._func_strs.append((id, func_str))
         self.namespace[id] = eval(func_str, self.namespace)
+
+        # Add the function and its partial derivatives to the C code.
+        c_vars = ['double %s' % var for var in variables]
+        c_var_str = ','.join(c_vars)
+        self._prototypes_c[id] = 'double %s(%s);' % (id, c_var_str)
+        c_math = ExprManip.make_c_compatible(math)
+        c_body = 'double %s(%s){return %s;}' % (id, c_var_str, c_math)
+        self._func_defs_c[id] = c_body
+
         for ii, wrt in enumerate(variables):
+            # Python derivatives
             diff_id = '%s_%i' % (id, ii)
-            func_str = 'lambda %s: %s' % (var_str, ExprManip.diff_expr(math, 
-                                                                       wrt))
+            diff_math = ExprManip.diff_expr(math, wrt)
+            func_str = 'lambda %s: %s' % (var_str, diff_math)
             self._func_strs.append((diff_id, func_str))
             self.namespace[diff_id] = eval(func_str, self.namespace)
+
+            # C derivatives
+            self._prototypes_c[diff_id] = 'double %s(%s);' % (diff_id,c_var_str)
+            c_math = ExprManip.make_c_compatible(diff_math)
+            c_body = 'double %s(%s){return %s;}' % (diff_id, c_var_str, c_math)
+            self._func_defs_c[diff_id] = c_body
 
     def addReaction(self, id, *args, **kwargs):
         # Reactions can be added by (1) passing in a string representing
@@ -299,7 +343,7 @@ class Network:
         #  kinetic law.
         # XXX: I'm a little unhappy with this because option (2) breaks the
         #      pattern that the first argument is the id
-        if type(id) == types.StringType:
+        if isinstance(id, str):
             rxn = apply(Reactions.Reaction, (id,) + args, kwargs)
         else:
             rxn = apply(id, args, kwargs)
@@ -360,6 +404,9 @@ class Network:
         if id == 'time':
             logger.warn("Specifying 'time' as a variable is dangerous! Are you "
                         "sure you know what you're doing?")
+        elif id == 'default':
+            logger.warn("'default' is a reserved keyword in C. This will cause"
+                        "problems using the C-based integrator.")
         if id in self.variables.keys()\
            or id in self.reactions.keys()\
            or id in self.functionDefinitions.keys()\
@@ -417,7 +464,8 @@ class Network:
         # This takes care of the normal data points
         t = list(t)
         t.sort()
-        self.trajectory = self.integrate(t, params=params, addTimes = ret_full_traj)
+        self.trajectory = self.integrate(t, params=params, 
+                                         addTimes=ret_full_traj)
         
     def CalculateSensitivity(self, vars, params):
         t = sets.Set([0])
@@ -433,7 +481,7 @@ class Network:
         self.trajectory = self.ddv_dpTrajectory
 
     def GetName(self):
-        return self.id
+        return self.get_id()
 
     def GetParameters(self):
         return KeyedList([(var.id, var.value) for var in
@@ -457,19 +505,18 @@ class Network:
         return result
 
     def GetSensitivityResult(self, vars):
-       opts = self.optimizableVars
-       result = {}
-       times = self.ddv_dpTrajectory.timepoints
-       for id in vars.keys():
-           result[id] = {}
-           for tIndex,t in enumerate(times) :
-               result[id][t] = {}
-               for optparams in opts.keys() :
-                       result[id][t][optparams] = \
-                       self.ddv_dpTrajectory.getVariableTrajectory((id,optparams))[tIndex]
        # note: returns all the timepoints we have, not just
        # the requested ones (which should be a subset of all
        # the timepoints)
+       result = {}
+       times = self.ddv_dpTrajectory.get_times()
+       for id in vars.keys():
+           result[id] = {}
+           for tIndex, t in enumerate(times):
+               result[id][t] = {}
+               for optparam in self.optimizableVars.keys():
+                   result[id][t][optparam] = \
+                       self.ddv_dpTrajectory.get_var_traj((id,optparam))[tIndex]
        return result
 
     def integrate(self, times, params = None,
@@ -493,14 +540,15 @@ class Network:
         Runs through expr and replaces all piecewise expressions by the
         clause that is currently active.
         """
+        if not expr.count('piecewise('):
+            return expr
         funcs_used = ExprManip.extract_funcs(expr)
         for func, args in funcs_used:
             if func == 'piecewise':
                 ast = ExprManip.strip_parse(expr)
                 ast = self._sub_for_piecewise_ast(ast, time)
                 return ExprManip.ast2str(ast)
-        else:
-            return expr
+        return expr
     
     def _sub_for_piecewise_ast(self, ast, time):
         if isinstance(ast, ExprManip.AST.CallFunc)\
@@ -533,35 +581,31 @@ class Network:
         return ExprManip.AST.recurse_down_tree(ast, self._sub_for_piecewise_ast,
                                            (time,))
 
-    def evaluate_expr(self, expr, time=0):
+    def evaluate_expr(self, expr, time=0, var_vals=None):
         """
         Evaluate the given expression using the current values of the network
         variables.
         """
-        if isinstance(expr, str):
+        try:
+            return float(expr)
+        except ValueError:
             # We create a local_namespace to evaluate the expression in that
             #  maps variable ids to their current values
             expr = self._sub_for_piecewise(expr, time)
-            vars_used = ExprManip.extract_vars(expr)
-            var_vals = [(id, self.get_var_val(id)) for id in vars_used
-                        if id != 'time']
-            local_namespace = dict(var_vals)
-            local_namespace['time'] = time
+            if var_vals is None:
+                vars_used = ExprManip.extract_vars(expr)
+                var_vals = [(id, self.get_var_val(id)) for id in vars_used
+                            if id != 'time']
+                var_vals = dict(var_vals)
+                var_vals['time'] = time
+            local_namespace = var_vals
             local_namespace.update(self.namespace)
             # We strip whitespace, just for convenience
             return eval(expr.strip(), local_namespace, {})
-        else:
-            return expr
 
     #
     # Methods to get and set object properties
     #
-    def _get_var_attr(self, id, attr):
-        if self.variables.has_key(id):
-            return getattr(self.get_variable(id), attr)
-        else:
-            raise ValueError, 'Id %s not found in network.' % id
-
     def set_var_typical_val(self, id, value):
         """
         Set the typical value for a variable.
@@ -573,7 +617,7 @@ class Network:
         """
         Return the typical value for a variable.
         """
-        return self._get_var_attr(id, 'typicalValue')
+        return self.get_variable(id).typicalValue
 
     def get_var_typical_vals(self):
         """
@@ -582,7 +626,7 @@ class Network:
         return KeyedList([(id, self.get_var_typical_val(id)) for id in
                           self.variables.keys()])
 
-    def set_var_ic(self, id, value, warn=True):
+    def set_var_ic(self, id, value, warn=True, update_constants=True):
         """
         Set the initial condition of the variable with the given id.
         """
@@ -598,15 +642,16 @@ class Network:
         var.initialValue = value
         if var.is_constant:
             var.value = value
-        self.constantVarValues = [self.evaluate_expr(var.value) for var in
-                                  self.constantVars.values()]
-        self.constantVarValues = scipy.array(self.constantVarValues)
+            if update_constants:
+                self.constantVarValues = [self.evaluate_expr(var.value) for var
+                                          in self.constantVars.values()]
+                self.constantVarValues = scipy.array(self.constantVarValues)
 
     def get_var_ic(self, id):
         """
         Return the initial condition for a variable
         """
-        return self._get_var_attr(id, 'initialValue')
+        return self.get_variable(id).initialValue
 
     def get_var_ics(self):
         """
@@ -627,7 +672,7 @@ class Network:
         """
         Return the current value of a variable
         """
-        val = self._get_var_attr(id, 'value')
+        val = self.get_variable(id).value
         return self.evaluate_expr(val)
 
     def get_var_vals(self):
@@ -644,9 +689,9 @@ class Network:
         ics = [self.evaluate_expr(self.getInitialVariableValue(dvid))
                for dvid in self.dynamicVars.keys()]
         # the evaluate_expr is in case an initial condition is a parameter
-        initialv = Dynamics.find_ics(ics, 0*ics + 1, 0, self.res_function,
-                                     self.alg_deriv_func,
-                                     self._dynamic_var_algebraic, 1e-6)
+        initialv = Dynamics.find_ics(ics, 0*ics + 1, 0, [1e-6]*len(ics),
+                                     [1e-6]*len(ics),
+                                     self._dynamic_var_algebraic, 1e-6, self)
         return initialv
 
     def set_var_ics(self, kl):
@@ -705,13 +750,17 @@ class Network:
             inBoth = sets.Set(self.optimizableVars.keys())
             inBoth = inBoth.intersection(sets.Set(params.keys()))
             for id in inBoth:
-                self.set_initial_var_value(id, params.get(id))
+                self.set_var_ic(id, params.get(id), update_constants=False)
         elif len(params) == len(self.optimizableVars):
             for ii, id in enumerate(self.optimizableVars.keys()):
-                self.set_initial_var_value(id, params[ii])
+                self.set_var_ic(id, params[ii], update_constants=False)
         else:
             raise ValueError('Passed in parameter set does not have the proper '
                              'length!')
+
+        self.constantVarValues = [self.evaluate_expr(var.value) for var in
+                                  self.constantVars.values()]
+        self.constantVarValues = scipy.array(self.constantVarValues)
 
     getInitialVariableValue = get_var_ic
 
@@ -727,7 +776,7 @@ class Network:
         #  other values. Thus we skip those ones on the first pass through.
         pending = []
         for id, var in self.dynamicVars.items():
-            if type(var.initialValue) == types.StringType:
+            if isinstance(var.initialValue, str):
                 pending.append((id, var))
             else:
                 var.value = var.initialValue
@@ -755,8 +804,13 @@ class Network:
         self.updateAssignedVars(time)
 
     def updateAssignedVars(self, time):
+        var_vals = [(id, self.get_var_val(id)) for id in self.variables.keys()]
+        var_vals = dict(var_vals)
+        var_vals['time'] = time
         for id, rhs in self.assignmentRules.items():
-            self.assignedVars.getByKey(id).value = self.evaluate_expr(rhs, time)
+            assigned_val = self.evaluate_expr(rhs, time, var_vals=var_vals)
+            self.assignedVars.getByKey(id).value = assigned_val
+            var_vals[id] = assigned_val
 
     def set_var_optimizable(self, id, is_optimizable):
         self.get_variable(id).is_optimizable = is_optimizable
@@ -803,47 +857,38 @@ class Network:
                 rhs = '+'.join(diff_eq_terms.get(id, ['0']))
                 self.diff_eq_rhs.set(id, ExprManip.simplify_expr(rhs))
 
-    def _make_alg_deriv_func(self):
-        # This function is used when we want to calculate consistent derivatives
-        #  for algebraic variables. It returns the derivative wrt time of
-        #  all the algebraic rules. Since the rules are <0=rule>, these should
-        #  all be zero when we have consistent values for the variable derivs.
-        body = []
-        body.append('def alg_deriv_func(self, alg_yp, dynamicVars, yp, time):')
-        body.append('alg_derivs = scipy.empty(%i, scipy.float_)'
-                    % len(self.algebraicRules))
-        self._add_assignments_to_function_body(body)
-        body.append('')
-
-        for rule_ii, rule in enumerate(self.algebraicRules.values()):
-            # Each rhs is a sum of drule/dA * dA/dt + drule/dB * dB/dt + ...
-            rhs_terms = []
-            rhs_terms.append(self.takeDerivative(rule, 'time'))
-            for dyn_id in self.dynamicVars.keys():
-                deriv = self.takeDerivative(rule, dyn_id)
-                if deriv != '0':
-                    if self.algebraicVars.has_key(dyn_id):
-                        index = self.algebraicVars.index_by_key(dyn_id)
-                        rhs_terms.append('(%s)*alg_yp.item(%i)' % (deriv,index))
-                    else:
-                        index = self.dynamicVars.index_by_key(dyn_id)
-                        rhs_terms.append('(%s)*yp.item(%i)' % (deriv, index))
-            rhs = ' + '.join(rhs_terms)
-            body.append('alg_derivs[%i] = %s' % (rule_ii, rhs))
-
-        body.append('')
-        body.append('return alg_derivs')
-        return '\n    '.join(body)
-
-
     def _make_res_function(self):
-        self.residual = scipy.zeros(len(self.dynamicVars), scipy.float_)
-        body = []
-        body.append('def res_function(self, time, dynamicVars, yprime, ires):')
-        body.append('residual = self.residual')
-        self._add_assignments_to_function_body(body)
-        body.append('')
+        py_body = []
+        py_body.append('def res_function(time, dynamicVars, yprime, '
+                       'constants):')
+        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
+        py_body.append('yprime = scipy.asarray(yprime)')
+        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('')
+        py_body.append('residual = scipy.empty(%i, scipy.float_)'
+                       % len(self.dynamicVars))
+        py_body.append('')
+        self._add_assignments_to_function_body(py_body)
+        py_body.append('')
 
+        c_body = []
+        # The C version needs to take a number of arguments that the f2py
+        # wrapper will hide. 
+        # To be callable from Fortran it also needs 1) its name followed by an
+        # underscore, and 2) to take all arguments as pointers.
+        c_body.append('void res_function_(double *time_ptr, '
+                      'double *dynamicVars, double *yprime, double *cj_ptr, '
+                      'double *residual, int *ires_ptr, double *constants, '
+                      'int *ipar){')
+        self._prototypes_c['res_function'] = 'void res_function_('\
+                'double *time_ptr, double *dynamicVars, double *yprime, '\
+                'double *cj_ptr, double *residual, int *ires_ptr, '\
+                'double *constants, int *ipar);'
+        c_body.append('double time = *time_ptr;')
+        c_body.append('')
+        self._add_assignments_to_function_body(c_body, in_c=True)
+        c_body.append('')
+                      
         # Make a list of algebraic rules for accessing later
         algebraicRuleList = self.algebraicRules.values()
 
@@ -851,159 +896,682 @@ class Network:
         #  various derivative functions.
         self._residual_terms = []
         # This list tells us whether a give dynamic variable is algebraic or not
+        # It will be used in the integration.
         self._dynamic_var_algebraic = []
+
         # Loop over everything in the dynamicVars list
         for ii, (id, var) in enumerate(self.dynamicVars.items()):
             if self.algebraicVars.has_key(id):
                 # It's an algebraic equation. Pop an algebraic rule off the
                 # list.
                 rhs = algebraicRuleList.pop()
-                body.append('# Residual function corresponding to an '
-                            'algebraic  equation')
-                body.append('residual[%i] = %s' % (ii, rhs))
+                py_body.append('# Residual function corresponding to an '
+                               'algebraic  equation')
+                py_body.append('residual[%i] = %s' % (ii, rhs))
+                c_rhs = ExprManip.make_c_compatible(rhs)
+                c_body.append('residual[%i] = %s;' % (ii, c_rhs))
                 self._residual_terms.append((rhs, None))
                 self._dynamic_var_algebraic.append(-1)
             else:
                 rhs = self.diff_eq_rhs.getByKey(id)
+                c_rhs = ExprManip.make_c_compatible(rhs)
                 self._dynamic_var_algebraic.append(+1)
-                body.append('# Residual function for %s' % id)
+                py_body.append('# Residual function for %s' % id)
                 if rhs != '0':
-                    body.append('residual[%i] = %s - yprime[%i]' % 
+                    py_body.append('residual[%i] = %s - yprime.item(%i)' % 
                                 (ii, rhs, ii))
+                    c_body.append('residual[%i] = %s - yprime[%i];' % 
+                                  (ii, c_rhs, ii))
                     self._residual_terms.append((rhs, id))
                 else:
-                    body.append('residual[%i] = - yprime[%i]' % (ii, ii))
+                    py_body.append('residual[%i] = -yprime.item(%i)' % (ii, ii))
+                    c_body.append('residual[%i] = -yprime[%i];' % (ii, ii))
                     self._residual_terms.append((None, id))
 
-        body.append('')
-        body.append('return residual')
-        return '\n\t'.join(body)
+        py_body.append('')
+        py_body.append('return residual')
+        py_body = '\n    '.join(py_body)
 
-    def _make_dres_dcdot_function(self):
-        self.dres_dcdot = scipy.zeros((len(self.residual),
-                                       len(self.residual)), 
-                                      scipy.float_)
-        body = []
-        body.append('def dres_dcdot_function(self, time, dynamicVars, yprime, '
-                    'indices = None):')
-        body.append('dres_dcdot = self.dres_dcdot')
-        self._add_assignments_to_function_body(body)
-        body.append('')
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
 
-        for wrt_ii, wrt in enumerate(self.dynamicVars.keys()):
-            body.append('if (indices is None) or (%i in indices):' % wrt_ii)
-            for res_ii, (rhs, dt) in enumerate(self._residual_terms):
-                if dt == wrt:
-                    body.append('\t# Derivative of residual term %i wrt %s_dot'
-                                % (res_ii, wrt))
-                    body.append('\tdres_dcdot[%i, %i] = -1' % 
-                                (res_ii, wrt_ii))
-            body.append('\tpass')
+        self._dynamic_funcs_python['res_function'] = py_body
+        self._dynamic_funcs_c['res_function'] = c_body
+                    
+        return py_body
+        
+    def _make_root_func(self):
+        len_root_func = 0
 
-        body.append('return dres_dcdot')
+        py_body = []
+        py_body.append('def root_func(time, dynamicVars, yprime, constants):')
+        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
+        py_body.append('yprime = scipy.asarray(yprime)')
+        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('')
+        # We don't know the length of root_devs yet, so for now we'll
+        #  just insert a placeholder line.
+        py_body.append('root_devs = scipy.empty(NEED_TO_FIX, scipy.float_)')
+        py_body.append('')
+        self._add_assignments_to_function_body(py_body)
+        py_body.append('')
 
-        return '\n\t'.join(body)
+        c_body = []
+        c_body.append('void root_func_(int *neq_ptr, double *time_ptr, '
+                      'double *dynamicVars, double *yprime, int *nrt_ptr, '
+                      'double *root_devs, double *constants, int *ipar){')
+        c_body.append('double time = *time_ptr;')
+        c_body.append('')
+        self._add_assignments_to_function_body(c_body, in_c=True)
+        self._prototypes_c['root_func'] = 'void root_func_(int *neq, '\
+                'double *time_in, double *dynamicVars, double *yprime, '\
+                'int *nrt, double *root_devs, double *constants, int *ipar);'
+        c_body.append('')
+
+        self.event_clauses = []
+        for ii, event in enumerate(self.events.values()):
+            trigger = event.trigger
+            for func_name, func_vars, func_expr in self._logical_comp_func_defs:
+                trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
+                                                 func_expr)
+
+            py_body.append('root_devs[%i] = (%s) - 0.5' % (len_root_func, 
+                                                           trigger))
+            c_trigger = ExprManip.make_c_compatible(trigger)
+            c_body.append('root_devs[%i] = (%s) - 0.5;' % (len_root_func, 
+                                                           c_trigger))
+            self.event_clauses.append(trigger)
+            len_root_func += 1
+
+        for ii, event in enumerate(self.events.values()):
+            event.sub_clause_indices = []
+            trigger = event.trigger
+            for func_name, func_vars, func_expr in self._logical_comp_func_defs:
+                trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
+                                                 func_expr)
+            comparisons = ExprManip.extract_comps(trigger)
+            if len(comparisons) > 1:
+                for comp in comparisons:
+                    py_body.append('root_devs[%i] = (%s) - 0.5\n\t' 
+                                   % (len_root_func, comp))
+                    c_comp = ExprManip.make_c_compatible(comp)
+                    c_body.append('root_devs[%i] = (%s) - 0.5;\n\t' 
+                                   % (len_root_func, c_comp))
+                    self.event_clauses.append(comp)
+                    event.sub_clause_indices.append(len_root_func)
+                    len_root_func += 1
+
+        self.len_root_func = len_root_func
+        # Now that we know how many roots we're looking for, go back and
+        #  insert the proper size for root_devs
+        py_body[5] = ('root_devs = scipy.empty(%i, scipy.float_)'
+                      % len_root_func)
+        py_body.append('')
+        py_body.append('return root_devs')
+        py_body = '\n\t'.join(py_body)
+
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+
+        self._dynamic_funcs_python['root_func'] = py_body
+        self._dynamic_funcs_c['root_func'] = c_body
+
+        return py_body
+
+    def _make_alg_deriv_func(self):
+        # This function is used when we want to calculate consistent derivatives
+        #  for algebraic variables. It returns the derivative wrt time of
+        #  all the algebraic rules. Since the rules are <0=rule>, these should
+        #  all be zero when we have consistent values for the variable derivs.
+        py_body = []
+        py_body.append('def alg_deriv_func(alg_yp, dynamicVars, yp, time, '
+                       'constants):')
+        py_body.append('alg_yp = scipy.asarray(alg_yp)')
+        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
+        py_body.append('yp = scipy.asarray(yp)')
+        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('')
+        py_body.append('alg_derivs = scipy.empty(%i, scipy.float_)'
+                       % len(self.algebraicRules))
+        py_body.append('')
+        self._add_assignments_to_function_body(py_body)
+        py_body.append('')
+
+        c_body = []
+        c_body.append('void alg_deriv_func_(double *alg_yp, '
+                      'double *dynamicVars, double *yp, double *time_ptr, '
+                      'double *constants, double *alg_derivs){')
+        c_body.append('double time = *time_ptr;')
+        c_body.append('')
+        self._add_assignments_to_function_body(c_body, in_c=True)
+        self._prototypes_c['alg_deriv_func'] = 'void alg_deriv_func_('\
+                'double *alg_yp, double *dynamicVars, double *yp, '\
+                'double *time_ptr, double *constants, double *alg_derivs);'
+        c_body.append('')
+
+        for rule_ii, rule in enumerate(self.algebraicRules.values()):
+            # Each rhs is a sum of drule/dA * dA/dt + drule/dB * dB/dt + ...
+            rhs_terms = []
+            rhs_terms_c = []
+            rule_vars = ExprManip.extract_vars(rule)
+            deriv_wrt_time = self.takeDerivative(rule, 'time', rule_vars)
+            rhs_terms.append(deriv_wrt_time)
+            rhs_terms_c.append(deriv_wrt_time)
+            for dyn_id in self.dynamicVars.keys():
+                deriv = self.takeDerivative(rule, dyn_id, rule_vars)
+                if deriv != '0':
+                    if self.algebraicVars.has_key(dyn_id):
+                        index = self.algebraicVars.index_by_key(dyn_id)
+                        rhs_terms.append('(%s)*alg_yp.item(%i)' % (deriv,index))
+                        rhs_terms_c.append('(%s)*alg_yp[%i]' % (deriv,index))
+                    else:
+                        index = self.dynamicVars.index_by_key(dyn_id)
+                        rhs_terms.append('(%s)*yp.item(%i)' % (deriv, index))
+                        rhs_terms_c.append('(%s)*yp[%i]' % (deriv, index))
+            rhs = ' + '.join(rhs_terms)
+            rhs_c = ' + '.join(rhs_terms_c)
+            rhs_c = ExprManip.make_c_compatible(rhs_c)
+            py_body.append('alg_derivs[%i] = %s' % (rule_ii, rhs))
+            c_body.append('alg_derivs[%i] = %s;' % (rule_ii, rhs_c))
+
+        py_body.append('')
+        py_body.append('return alg_derivs')
+        py_body = '\n\t'.join(py_body)
+
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+
+        self._dynamic_funcs_python['alg_deriv_func'] = py_body
+        self._dynamic_funcs_c['alg_deriv_func'] = c_body
+
+        return py_body
+
+    def _make_restricted_res_func(self):
+        py_body = []
+        py_body.append('def restricted_res_func(solving_for, dynamicVars, '
+                       'time, constants):')
+        py_body.append('solving_for = scipy.asarray(solving_for)')
+        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
+        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('')
+        py_body.append('yp = scipy.zeros(%i, scipy.float_)'
+                       % len(self.dynamicVars))
+
+        c_body = []
+        c_body.append('void restricted_res_func_(double *solving_for, '
+                      'double *dynamicVars, double *time_ptr, '
+                      'double *constants, double *yp, double*residual){')
+        self._prototypes_c['restricted_res_func'] ='void restricted_res_func_('\
+                'double *solving_for, double *dynamicVars, double *time_ptr, '\
+                'double *constants, double *yp, double*residual);'
+        c_body.append('')
+
+        N_alg = len(self.algebraicVars)
+        N_dyn = len(self.dynamicVars)
+
+        for ii, key in enumerate(self.algebraicVars.keys()):
+            var_index = self.dynamicVars.index_by_key(key)
+            py_body.append('dynamicVars[%i] = solving_for[%i]'
+                           % (var_index, ii))
+            c_body.append('dynamicVars[%i] = solving_for[%i];'
+                          % (var_index, ii))
+
+        non_alg_var_keys = self.dynamicVars.keys()
+        for key in self.algebraicVars.keys():
+            non_alg_var_keys.remove(key)
+
+        for ii, key in zip(range(N_alg, N_dyn), non_alg_var_keys):
+            var_index = self.dynamicVars.index_by_key(key)
+            py_body.append('yp[%i] = solving_for[%i]' % (var_index, ii))
+            c_body.append('yp[%i] = solving_for[%i];' % (var_index, ii))
+
+        py_body.append('')
+        py_body.append('return res_function(time, dynamicVars, yp, constants)')
+        c_body.append('')
+        c_body.append('res_function_(time_ptr, dynamicVars, yp, 0, residual, '
+                      '0, constants, 0);')
+
+        py_body = '\n\t'.join(py_body)
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+
+        self._dynamic_funcs_python['restricted_res_func'] = py_body
+        self._dynamic_funcs_c['restricted_res_func'] = c_body
 
     def _make_dres_dc_function(self):
-        self.dres_dc = scipy.zeros((len(self.residual), len(self.residual)), 
-                                   scipy.float_)
-        body = []
-        body.append('def dres_dc_function(self, time, dynamicVars, yprime, '
-                    'indices = None):')
-        body.append('dres_dc = self.dres_dc')
-        self._add_assignments_to_function_body(body)
-        body.append('')
+        py_body = []
+        py_body.append('def dres_dc_function(time, dynamicVars, yprime, '
+                       'constants):')
+        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
+        py_body.append('yprime = scipy.asarray(yprime)')
+        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('')
+        py_body.append('pd = scipy.zeros((%i, %i), scipy.float_)'
+                       %(len(self.dynamicVars), len(self.dynamicVars)))
+        py_body.append('')
+        self._add_assignments_to_function_body(py_body)
+        py_body.append('')
 
-        for wrt_ii, wrt in enumerate(self.dynamicVars.keys()):
-            body.append('if (indices is None) or (%i in indices):' % wrt_ii)
-            for res_ii, (rhs, dt) in enumerate(self._residual_terms):
-                if rhs is None:
-                    continue
-                deriv = self.takeDerivative(rhs, wrt)
-                if deriv != '0':
-                    if dt is None:
-                        # It was an algebraic rule.
-                        body.append('\t# Algebraic equation %s wrt %s' %
-                                    (rhs, wrt))
-                    else:
-                        body.append('\t# Residual function for %s wrt %s' %
-                                    (dt, wrt))
-                    body.append('\tdres_dc[%i, %i] = %s' % 
-                                (res_ii, wrt_ii, deriv))
-            body.append('\tpass')
+        c_body = []
+        c_body.append('void dres_dc_function_(double *time_ptr, '
+                      'double *dynamicVars, double *yprime, double *constants, '
+                      'double *pd){')
+        self._prototypes_c['dres_dc_function'] ='void dres_dcdot_function_('\
+                'double *time_ptr, double *dynamicVars, double *yprime, '\
+                'double *constants, double *pd);'
+        c_body.append('double time = *time_ptr;')
+        c_body.append('')
+        self._add_assignments_to_function_body(c_body, in_c=True)
+        c_body.append('')
 
-        body.append('return dres_dc')
+        N_dyn = len(self.dynamicVars)
 
-        return '\n\t'.join(body)
+        for res_ii, (rhs, dt) in enumerate(self._residual_terms):
+            if rhs is None:
+                rhs = '0'
+            rhs_vars_used = ExprManip.extract_vars(rhs)
+            for wrt_ii, wrt in enumerate(self.dynamicVars.keys()):
+                pd_terms = []
+                deriv = self.takeDerivative(rhs, wrt, rhs_vars_used)
+                if (deriv != '0' and deriv != '0.0'):
+                    py_body.append('# Residual %i wrt %s' % (res_ii, wrt))
+                    py_body.append('pd[%i, %i] = %s' % (res_ii, wrt_ii, deriv))
+                    deriv_c = ExprManip.make_c_compatible(deriv)
+                    c_body.append('pd[%i] = %s;'
+                                  % (res_ii+wrt_ii*N_dyn, deriv_c))
 
-    def _make_dres_dp_function(self):
-        self.dres_dp = scipy.zeros((len(self.residual),
-                                    len(self.optimizableVars)), 
-                                   scipy.float_)
-        body = []
-        body.append('def dres_dp_function(self, time, dynamicVars, yprime, '
-                    'indices = None):')
-        body.append('dres_dp = self.dres_dp')
-        self._add_assignments_to_function_body(body)
-        body.append('')
+        py_body.append('')
+        py_body.append('return pd')
+        py_body = '\n    '.join(py_body)
+
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+
+        self._dynamic_funcs_python['dres_dc_function'] = py_body
+        self._dynamic_funcs_c['dres_dc_function'] = c_body
+
+    def _make_dres_dcdot_function(self):
+        py_body = []
+        py_body.append('def dres_dcdot_function(time, dynamicVars, yprime, '
+                       'constants):')
+        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
+        py_body.append('yprime = scipy.asarray(yprime)')
+        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('')
+        py_body.append('pd = scipy.zeros((%i, %i), scipy.float_)'
+                       %(len(self.dynamicVars), len(self.dynamicVars)))
+        py_body.append('')
+        self._add_assignments_to_function_body(py_body)
+        py_body.append('')
+
+        c_body = []
+        c_body.append('void dres_dcdot_function_(double *time_ptr, '
+                      'double *dynamicVars, double *yprime, double *constants, '
+                      'double *pd){')
+        self._prototypes_c['dres_dcdot_function'] ='void dres_dcdot_function_('\
+                'double *time_ptr, double *dynamicVars, double *yprime, '\
+                'double *constants, double *pd);'
+        c_body.append('double time = *time_ptr;')
+        c_body.append('')
+        self._add_assignments_to_function_body(c_body, in_c=True)
+        c_body.append('')
+
+        N_dyn = len(self.dynamicVars)
+        for res_ii, (rhs, dt) in enumerate(self._residual_terms):
+            for wrt_ii, wrt in enumerate(self.dynamicVars.keys()):
+                if dt == wrt:
+                    py_body.append('# Derivative of residual term %i wrt '
+                                   '%s_dot' % (res_ii, wrt))
+                    py_body.append('pd[%i, %i] = -1' 
+                                   % (res_ii, wrt_ii))
+                    c_body.append('pd[%i] = -1;' % (res_ii+wrt_ii*N_dyn))
+
+        py_body.append('')
+        py_body.append('return pd')
+        py_body = '\n    '.join(py_body)
+
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+
+        self._dynamic_funcs_python['dres_dcdot_function'] = py_body
+        self._dynamic_funcs_c['dres_dcdot_function'] = c_body
+
+    def _make_ddaskr_jac(self):
+        py_body = []
+        py_body.append('def ddaskr_jac(time, dynamicVars, yprime, cj, '
+                       'constants):')
+        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
+        py_body.append('yprime = scipy.asarray(yprime)')
+        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('')
+        py_body.append('dres_dc = dres_dc_function(time, dynamicVars, yprime, '
+                       'constants)')
+        py_body.append('dres_dcdot = dres_dcdot_function(time, dynamicVars, '
+                       'yprime, constants)')
+        py_body.append('return dres_dc + cj * dres_dcdot')
+        py_body = '\n    '.join(py_body)
+
+        N_dyn = len(self.dynamicVars)
+        c_body = []
+        c_body.append('void ddaskr_jac_(double *time_ptr, double *dynamicVars, '
+                      'double *yprime, double *pd, double *cj_ptr, '
+                      'double *constants, int *intpar){')
+        self._prototypes_c['ddaskr_jac'] = 'void ddaskr_jac_('\
+                'double *time_ptr, double *dynamicVars, double *yprime, '\
+                'double *pd, double *cj_ptr, double *constants, int *intpar);'
+        c_body.append('double cj = *cj_ptr;')
+        c_body.append('')
+        c_body.append('dres_dc_function_(time_ptr, dynamicVars, yprime, '
+                      'constants, pd);')
+        c_body.append('')
+        # Like magic, this will initialize *all* elements to zero
+        c_body.append('double dres_dcdot[%i*%i] = {0};' % (N_dyn, N_dyn))
+        c_body.append('dres_dcdot_function_(time_ptr, dynamicVars, yprime, '
+                      'constants, dres_dcdot);')
+        c_body.append('')
+        c_body.append('int ii;')
+        c_body.append('for(ii=0; ii < %i; ii++){' % N_dyn**2)
+        c_body.append('  pd[ii] += cj*dres_dcdot[ii];}')
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+
+        self._dynamic_funcs_python['ddaskr_jac'] = py_body
+        self._dynamic_funcs_c['ddaskr_jac'] = c_body
+
+    def _make_dres_dsinglep(self):
+        py_body = []
+        py_body.append('def dres_dsinglep(time, dynamicVars, '
+                       'yprime, constants, p_index):')
+        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
+        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('')
+        py_body.append('pd = scipy.zeros(%i, scipy.float_)'
+                       % len(self.dynamicVars))
+        py_body.append('')
+        self._add_assignments_to_function_body(py_body)
+        py_body.append('')
+
+        c_body = []
+        c_body.append('void dres_dsinglep_(double *time_ptr, '
+                      'double *dynamicVars, double *yprime, double *constants, '
+                      'int *p_index_ptr, double *pd){')
+        self._prototypes_c['dres_dsinglep'] = 'void dres_dsinglep_('\
+                'double *time_ptr, double *dynamicVars, double *yprime, '\
+                'double *constants, int *p_index_ptr, double *pd);'
+        c_body.append('double time = *time_ptr;')
+        c_body.append('int p_index = *p_index_ptr;')
+        c_body.append('')
+        self._add_assignments_to_function_body(c_body, in_c=True)
+        c_body.append('')
+        c_body.append('switch(p_index){')
+
+        N_dyn = len(self.dynamicVars)
+        N_opt = len(self.optimizableVars)
+
+        # Now the sensitivities. 
+        # We'll cache lists of the variables in each rhs, since extract_vars is
+        # slow.
+        rhs_vars = {}
+        for (rhs, dt) in self._residual_terms:
+            if rhs is None:
+                rhs = '0'
+            rhs_vars[rhs] = ExprManip.extract_vars(rhs)
 
         for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
-            body.append('if (indices is None) or (%i in indices):' % wrt_ii)
+            if wrt_ii == 0:
+                py_body.append('if p_index == 0:')
+            else:
+                py_body.append('elif p_index == %i:' % wrt_ii)
+            c_body.append('\tcase %i:' % wrt_ii)
             for res_ii, (rhs, dt) in enumerate(self._residual_terms):
                 if rhs is None:
-                    continue
-                deriv = self.takeDerivative(rhs, wrt)
-                if deriv != '0':
-                    if dt is None:
-                        # It was an algebraic rule.
-                        body.append('\t# Algebraic equation %s wrt %s' %
-                                    (rhs, wrt))
-                    else:
-                        body.append('\t# Residual function for %s wrt %s' %
-                                    (dt, wrt))
-                    body.append('\tdres_dp[%i, %i] = %s' % 
-                                (res_ii, wrt_ii, deriv))
-            body.append('\tpass')
+                    rhs = '0'
+                rhs_vars_used = rhs_vars[rhs]
+                deriv = self.takeDerivative(rhs, wrt, rhs_vars_used)
+                if (deriv != '0' and deriv != '0.0'):
+                    py_body.append('\tpd[%i] = %s' % (res_ii, deriv))
+                    c_deriv = ExprManip.make_c_compatible(deriv)
+                    c_body.append('\tpd[%i] = %s;' % (res_ii, c_deriv))
+            py_body.append('\tpass')
+            c_body.append('\tbreak;')
+        c_body.append('}')
+                          
+        py_body.append('')
+        py_body.append('return pd')
+        py_body = '\n    '.join(py_body)
 
-        body.append('return dres_dp')
-        return '\n\t'.join(body)
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
 
-    def _add_assignments_to_function_body(self, body):
+        self._dynamic_funcs_python['dres_dsinglep'] = py_body
+        self._dynamic_funcs_c['dres_dsinglep'] = c_body
+
+    def _make_sens_rhs(self):
+        py_body = []
+        py_body.append('def sens_rhs(time, sens_y, sens_yp, constants):')
+        py_body.append('sens_y = scipy.asarray(sens_y)')
+        py_body.append('sens_yp = scipy.asarray(sens_yp)')
+        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('')
+        py_body.append('sens_res = scipy.zeros(%i, scipy.float_)'
+                       % (2*len(self.dynamicVars)))
+        py_body.append('')
+
+        c_body = []
+        c_body.append('void sens_rhs_(double *time_ptr, double *sens_y, '
+                      'double *sens_yp, double *cj_ptr, double *sens_res, '
+                      'int *ires_ptr, double *constants, int *ipar){')
+        self._prototypes_c['sens_rhs']  = 'void sens_rhs_('\
+                'double *time_ptr, double *sens_y, double *sens_yp, '\
+                'double *cj_ptr, double *sens_res, int *ires_ptr, '\
+                'double *constants, int *ipar);'
+        c_body.append('')
+
+        N_dyn = len(self.dynamicVars)
+        N_const = len(self.constantVars)
+        py_body.append('sens_res[:%(N_dyn)i] = res_function(time, '
+                       'sens_y, sens_yp, constants)'
+                       % {'N_dyn': N_dyn})
+        py_body.append('')
+        py_body.append('p_index = int(constants[%i])' % N_const)
+        py_body.append('dc_dp = sens_y[%i:]' % N_dyn)
+        py_body.append('dcdot_dp = sens_yp[%i:]' % N_dyn)
+        py_body.append('dres_dp = dres_dsinglep(time, '
+                       'sens_y, sens_yp, constants, p_index)' 
+                       % {'N_dyn': N_dyn, 'N_const': N_const})
+        py_body.append('dres_dc = dres_dc_function(time, '
+                       'sens_y, sens_yp, constants)' 
+                       % {'N_dyn': N_dyn, 'N_const': N_const})
+        py_body.append('dres_dcdot = dres_dcdot_function(time, '
+                       'sens_y, sens_yp, constants)' 
+                       % {'N_dyn': N_dyn, 'N_const': N_const})
+        py_body.append('sens_res[%i:] = dres_dp '
+                       '+ scipy.dot(dres_dc, dc_dp) '
+                       '+ scipy.dot(dres_dcdot, dcdot_dp)' % N_dyn)
+
+        # This fills in the first half of our sens_res
+        c_body.append('res_function_(time_ptr, sens_y, sens_yp, cj_ptr, '
+                      'sens_res, ires_ptr, constants, ipar);')
+        c_body.append('')
+        c_body.append('int p_index = (int)constants[%i];' % N_const)
+        c_body.append('double *dc_dp = &sens_y[%i];' % N_dyn)
+        c_body.append('double *dcdot_dp = &sens_yp[%i];' % N_dyn)
+        # We'll directly fill dres_dp into the appropriate place in sens_res
+        c_body.append('double *dres_dp = &sens_res[%i];' % N_dyn)
+        c_body.append('int ii;')
+        # sens_res isn't necessarily all zeros when passed in using the
+        # cpointer.
+        c_body.append('for(ii = 0; ii < %s; ii++){' % N_dyn)
+        c_body.append('dres_dp[ii] = 0;}')
+        c_body.append('dres_dsinglep_(time_ptr, sens_y, sens_yp, constants, '
+                      '&p_index, dres_dp);')
+        # Fill in dres_dc
+        c_body.append('double dres_dc[%i] = {0};' % N_dyn**2)
+        c_body.append('dres_dc_function_(time_ptr, sens_y, sens_yp, constants, '
+                      'dres_dc);')
+        c_body.append('int row, col;')
+        c_body.append('for(row = 0; row < %i; row++){' % N_dyn)
+        c_body.append('for(col = 0; col < %i; col++){' % N_dyn)
+        c_body.append('sens_res[row+%i] += dres_dc[row + col*%i]*dc_dp[col];}}'
+                      % (N_dyn, N_dyn))
+
+        c_body.append('double dres_dcdot[%i] = {0};' % N_dyn**2)
+        c_body.append('dres_dcdot_function_(time_ptr, sens_y, sens_yp, '
+                      'constants, dres_dcdot);')
+        c_body.append('for(row = 0; row < %i; row++){' % N_dyn)
+        c_body.append('for(col = 0; col < %i; col++){' % N_dyn)
+        c_body.append('sens_res[row+%i] += dres_dcdot[row + col*%i]'
+                      '*dcdot_dp[col];}}' % (N_dyn, N_dyn))
+
+        py_body.append('')
+        py_body.append('return sens_res')
+        py_body = '\n    '.join(py_body)
+
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+
+        self._dynamic_funcs_python['sens_rhs'] = py_body
+        self._dynamic_funcs_c['sens_rhs'] = c_body
+
+    def _make_log_funcs(self):
+        N_dyn = len(self.dynamicVars)
+
+        py_body = []
+        py_body.append('def res_function_logdv(time, log_dv, log_yp, '
+                       'constants):')
+        py_body.append('log_dv = scipy.asarray(log_dv)')
+        py_body.append('log_yp = scipy.asarray(log_yp)')
+        py_body.append('dynamicVars = scipy.exp(log_dv)')
+        py_body.append('dynamicVars = scipy.maximum(dynamicVars, '
+                       'scipy.misc.limits.double_tiny)')
+        py_body.append('yprime = log_yp * dynamicVars')
+        py_body.append('return res_function(time, dynamicVars, yprime, '
+                       'constants)')
+        py_body = '\n    '.join(py_body)
+        self._dynamic_funcs_python['res_function_logdv'] = py_body
+
+        c_body = []
+        c_args = 'double *time_ptr, double *log_dv, double *log_yp, '\
+                'double *cj_ptr, double *residual, int *ires_ptr, '\
+                'double *constants, int *ipar'
+        c_body.append('void res_function_logdv_(%s){' % c_args)
+        self._prototypes_c['res_function_logdv'] = \
+                'void res_function_logdv_(%s);' % c_args
+        c_body.append('double dynamicVars[%i];' % N_dyn)
+        c_body.append('double yprime[%i];' % N_dyn)
+        c_body.append('int ii;')
+        c_body.append('for(ii = 0; ii < %i; ii++){' % N_dyn)
+        c_body.append('dynamicVars[ii] = max(exp(log_dv[ii]), DBL_MIN);')
+        c_body.append('yprime[ii] = log_yp[ii] * dynamicVars[ii];}')
+        c_body.append('res_function_(time_ptr, dynamicVars, yprime, cj_ptr, '
+                      'residual, ires_ptr, constants, ipar);')
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+        self._dynamic_funcs_c['res_function_logdv'] = c_body
+
+        py_body = []
+        py_body.append('def root_func_logdv(time, log_dv, log_yp, constants):')
+        py_body.append('log_dv = scipy.asarray(log_dv)')
+        py_body.append('log_yp = scipy.asarray(log_yp)')
+        py_body.append('dynamicVars = scipy.exp(log_dv)')
+        py_body.append('dynamicVars = scipy.maximum(dynamicVars, '
+                       'scipy.misc.limits.double_tiny)')
+        py_body.append('yprime = log_yp * dynamicVars')
+        py_body.append('return root_func(time, dynamicVars, yprime, '
+                       'constants)')
+        py_body = '\n    '.join(py_body)
+        self._dynamic_funcs_python['root_func_logdv'] = py_body
+
+        c_body = []
+        c_args = 'int *neq_ptr, double *time_ptr, double *log_dv, '\
+                'double *log_yp, int *nrt_ptr, double *root_devs, '\
+                'double *constants, int *ipar'
+        c_body.append('void root_func_logdv_(%s){' % c_args)
+        self._prototypes_c['root_func_logdv'] =\
+                'void root_func_logdv_(%s);' % c_args
+        c_body.append('double dynamicVars[%i];' % N_dyn)
+        c_body.append('double yprime[%i];' % N_dyn)
+        c_body.append('int ii;')
+        c_body.append('for(ii = 0; ii < %i; ii++){' % N_dyn)
+        c_body.append('dynamicVars[ii] = max(exp(log_dv[ii]), DBL_MIN);')
+        c_body.append('yprime[ii] = log_yp[ii] * dynamicVars[ii];}')
+        c_body.append('root_func_(neq_ptr, time_ptr, dynamicVars, yprime, '
+                      'nrt_ptr, root_devs, constants, ipar);')
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+        self._dynamic_funcs_c['root_func_logdv'] = c_body
+
+
+        py_body = []
+        py_body.append('def sens_rhs_logdv(time, sens_y, sens_yp, constants):')
+        # We need to copy sens_y and sens_yp here, since we aren't allowed to
+        # change their values.
+        py_body.append('sens_y = scipy.array(sens_y)')
+        py_body.append('sens_yp = scipy.array(sens_yp)')
+        py_body.append('sens_y[:%i] = scipy.exp(sens_y[:%i])' % (N_dyn, N_dyn))
+        py_body.append('sens_y[:%i] = scipy.maximum(sens_y[:%i], '
+                       'scipy.misc.limits.double_tiny)' % (N_dyn, N_dyn))
+        py_body.append('sens_yp[:%i] = sens_yp[:%i] * sens_y[:%i]'
+                       % (N_dyn, N_dyn, N_dyn))
+        py_body.append('return sens_rhs(time, sens_y, sens_yp, constants)')
+        py_body = '\n    '.join(py_body)
+        self._dynamic_funcs_python['sens_rhs_logdv'] = py_body
+
+        c_body = []
+        c_args = 'double *time_ptr, double *sens_y_log, double *sens_yp_log, '\
+                'double *cj_ptr, double *sens_res, int *ires_ptr, '\
+                'double *constants, int *ipar'
+        c_body.append('void sens_rhs_logdv_(%s){' % c_args)
+        self._prototypes_c['sens_rhs_logdv_']  = \
+                'void sens_rhs_logdv_(%s);' % c_args
+        c_body.append('double sens_y[%i];' % (N_dyn*2))
+        c_body.append('double sens_yp[%i];' % (N_dyn*2))
+        c_body.append('int ii;')
+        c_body.append('for(ii = 0; ii < %i; ii++){' % N_dyn)
+        c_body.append('sens_y[ii] = max(exp(sens_y_log[ii]), DBL_MIN);')
+        c_body.append('sens_yp[ii] = sens_yp_log[ii] * sens_y[ii];}')
+        c_body.append('for(ii = %i; ii < %i; ii++){' % (N_dyn, 2*N_dyn))
+        c_body.append('sens_y[ii] = sens_y_log[ii];')
+        c_body.append('sens_yp[ii] = sens_yp_log[ii];}')
+        c_body.append('sens_rhs_(time_ptr, sens_y, sens_yp, cj_ptr, sens_res, '
+                      'ires_ptr, constants, ipar);')
+        c_body.append('}')
+        c_body = os.linesep.join(c_body)
+        self._dynamic_funcs_c['sens_rhs_logdv'] = c_body
+
+
+    def _add_assignments_to_function_body(self, body, in_c = False):
         """
         Adds the assignment rules for this Network to the list of lines that
         are in body.
         """
-        body.append('constants = self.constantVarValues')
-
+        # We make sure these guys are arrays, so that we can be confident
+        #  in using .item().
         # We loop to assign our constantVarValues and our dynamicVars
         #  to local variables for speed (avoid repeated accesses) and
         #  for readability
         for arg, var_names in zip(['constants', 'dynamicVars'],
                                   [self.constantVars.keys(),
                                    self.dynamicVars.keys()]):
-            # only add this section if there are variables listed
-            # in var_names
-            if len(var_names) > 0:
-                # We protect ourselves with a 'try, except' clause
-                #  in case passed in values are not an array, but e.g. a list
-                #  or KeyedList.
-                body.append('try:')
-                for ii, id in enumerate(var_names):
-                    body.append('\t%s = %s.item(%i)' % (id, arg, ii))
-                body.append('except (AttributeError, TypeError):')
-                for ii, id in enumerate(var_names):
-                    body.append('\t%s = %s[%i]' % (id, arg, ii))
-                body.append('')
+            for ii, id in enumerate(var_names):
+                if not in_c:
+                    body.append('%s = %s.item(%i)' % (id, arg, ii))
+                else:
+                    body.append('double %s = %s[%i];' % (id, arg, ii))
+            body.append('')
 
         for variable, math in self.assignmentRules.items():
-            body.append('%s = %s' % (variable, math))
+            if not in_c:
+                body.append('%s = %s' % (variable, math))
+            else:
+                c_math = ExprManip.make_c_compatible(math)
+                body.append('double %s = %s;' % (variable, c_math))
 
         return body
 
     #
     # Methods involved in events
     #
-
     def fireEvent(self, event, dynamicVarValues, time):
         self.updateVariablesFromDynamicVars(dynamicVarValues, time)
         delay = self.evaluate_expr(event.delay, time)
@@ -1015,9 +1583,12 @@ class Network:
         #  the event was >fired<. We go back to that time here...
         self.updateVariablesFromDynamicVars(y_fired, time_fired)
         new_values = {}
+        var_vals = [(id, self.get_var_val(id)) for id in self.variables.keys()]
+        var_vals = dict(var_vals)
+        var_vals['time'] = time
         # Calculate the values that will get assigned to the variables
         for id, rhs in event.event_assignments.items():
-            new_values[id] = self.evaluate_expr(rhs, time_fired)
+            new_values[id] = self.evaluate_expr(rhs, time_fired, var_vals)
 
         # Make all the relevant assignments
         for id, value in new_values.items():
@@ -1042,7 +1613,26 @@ class Network:
             raise ValueError('Comparison %s in triggering clause is not '
                              '<, <=, >, or >=!')
 
+    # We cache derivatives wrt dynamicVariables, because they'll be redundantly
+    # taken many, many times otherwise, and it can be a major hold-up.
+    # Unforunately, the structures we want to index by aren't hashable, so this
+    # can't be a dictionary. Luckily that shouldn't slow things down much,
+    # because we shouldn't have to sort through many structures in our
+    # applications.
+    _sens_event_derivs_cache = []
     def executeEventAndUpdateSens(self, holder, ysens_pre_exec, opt_var):
+        curr_struct = self._get_structure()
+        curr_events = copy.deepcopy(self.events)
+        # Search through the _sens_event_derivs_cache for the derivs
+        # corresponding to this structure.
+        for struct, events, derivs_cache in self._sens_event_derivs_cache:
+            if curr_struct == struct and curr_events == events:
+                break
+        else:
+            derivs_cache = {}
+            self._sens_event_derivs_cache.append((curr_struct, curr_events,
+                                                 derivs_cache))
+
         # We extract all our relevant quantities from the event_info holder
         event = holder.event
         time_fired = holder.time_fired
@@ -1074,7 +1664,11 @@ class Network:
         # We set our network to the state at which the event fired, so we
         #  can use evaluate_expr for the calculations of d(firing time)
         self.updateVariablesFromDynamicVars(ysens_fired, time_fired)
-        # We need to do this, if we don't have a chained event.
+        var_vals_fired = [(id, self.get_var_val(id)) for id 
+                          in self.variables.keys()]
+        var_vals_fired = dict(var_vals_fired)
+        var_vals_fired['time'] = time
+        # We need to do this if we don't have a chained event.
         if dtf_dp is None:
             # We convert our trigger to smooth function we can take the 
             # derivative of so we can calculate sensitivity of firing time.
@@ -1082,6 +1676,7 @@ class Network:
             # more complicated trigger.
             trigger = self.event_clauses[clause_index]
             trigger = self._smooth_trigger(trigger)
+            trigger_vars_used = ExprManip.extract_vars(trigger)
 
             # Compute the sensitivity of our firing time
             #
@@ -1093,8 +1688,14 @@ class Network:
             # First term in numerator: sum_dv dtrigger_ddv ddv_dp 
             # First term in denominator: sum_dv dtrigger_ddv ddv_dt 
             for ii, id in enumerate(self.dynamicVars.keys()):
-                dtrigger_ddv = self.takeDerivative(trigger, id)
-                dtrigger_ddv = self.evaluate_expr(dtrigger_ddv, time_fired)
+                try:
+                    dtrigger_ddv = derivs_cache[(trigger, id)]
+                except KeyError:
+                    dtrigger_ddv = self.takeDerivative(trigger, id, 
+                                                       trigger_vars_used)
+                    derivs_cache[(trigger, id)] = dtrigger_ddv
+                dtrigger_ddv = self.evaluate_expr(dtrigger_ddv, time_fired,
+                                                  var_vals_fired)
                 # This is the index of ddv_dp in the y array
                 index_in_y = ii + N_dv
                 ddv_dp = ysens_fired[index_in_y]
@@ -1103,13 +1704,17 @@ class Network:
                 denominator += dtrigger_ddv * ddv_dt
 
             # Second term in numerator: dtrigger_dp
-            dtrigger_dp = self.takeDerivative(trigger, opt_var)
-            dtrigger_dp = self.evaluate_expr(dtrigger_dp, time_fired)
+            dtrigger_dp = self.takeDerivative(trigger, opt_var, 
+                                              trigger_vars_used)
+            dtrigger_dp = self.evaluate_expr(dtrigger_dp, time_fired, 
+                                             var_vals_fired)
             numerator += dtrigger_dp
 
             # Second term in denominator: dtrigger_dt
-            dtrigger_dt = self.takeDerivative(trigger, 'time')
-            dtrigger_dt = self.evaluate_expr(dtrigger_dt, time_fired)
+            dtrigger_dt = self.takeDerivative(trigger, 'time', 
+                                              trigger_vars_used)
+            dtrigger_dt = self.evaluate_expr(dtrigger_dt, time_fired,
+                                             var_vals_fired)
             denominator += dtrigger_dt
 
             dtf_dp = -numerator/denominator
@@ -1118,27 +1723,38 @@ class Network:
         #
         # ddelay/dp = ddelay/dp + ddelay_dy*dy/dp + ddelay_dy*dy/dt*dtf/dp
         #             + ddelay/dt*dtf/dp
-        delay = str(event.delay)
+        delay = event.delay
+        try:
+            float(delay)
+            ddelay_dp = 0
+        except ValueError:
+            # First term
+            delay_vars_used = ExprManip.extract_vars(delay)
+            ddelay_dp = self.takeDerivative(delay, opt_var, delay_vars_used)
+            ddelay_dp = self.evaluate_expr(ddelay_dp, time_fired,
+                                           var_vals_fired)
 
-        # First term
-        ddelay_dp = self.takeDerivative(delay, opt_var)
-        ddelay_dp = self.evaluate_expr(ddelay_dp, time_fired)
+            # Second and third terms: ddelay_dy*dy/dp + ddelay_dy*dy/dt*dtf/dp
+            for ii, id in enumerate(self.dynamicVars.keys()):
+                try:
+                    ddelay_dy = derivs_cache[(delay, id)]
+                except KeyError:
+                    ddelay_dy = self.takeDerivative(delay, id, delay_vars_used)
+                    derivs_cache[(delay, id)] = ddelay_dy
+                ddelay_dy = self.evaluate_expr(ddelay_dy, time_fired,
+                                               var_vals_fired)
+                # This is the index of ddv_dp in the y array
+                index_in_y = ii + N_dv
+                dy_dp = ysens_fired[index_in_y]
+                dy_dt = yp_fired[ii]
+                ddelay_dp += ddelay_dy * dy_dp
+                ddelay_dp += ddelay_dy * dy_dt * dtf_dp
 
-        # Second and third terms: ddelay_dy*dy/dp + ddelay_dy*dy/dt*dtf/dp
-        for ii, id in enumerate(self.dynamicVars.keys()):
-            ddelay_dy = self.takeDerivative(delay, id)
-            ddelay_dy = self.evaluate_expr(ddelay_dy, time_fired)
-            # This is the index of ddv_dp in the y array
-            index_in_y = ii + N_dv
-            dy_dp = ysens_fired[index_in_y]
-            dy_dt = yp_fired[ii]
-            ddelay_dp += ddelay_dy * dy_dp
-            ddelay_dp += ddelay_dy * dy_dt * dtf_dp
-
-        # Fourth term: ddelay/dt*dtf/dp
-        ddelay_dt = self.takeDerivative(delay, 'time')
-        ddelay_dt = self.evaluate_expr(ddelay_dt, time_fired)
-        ddelay_dp += ddelay_dt * dtf_dp
+            # Fourth term: ddelay/dt*dtf/dp
+            ddelay_dt = self.takeDerivative(delay, 'time', delay_vars_used)
+            ddelay_dt = self.evaluate_expr(ddelay_dt, time_fired, 
+                                           var_vals_fired)
+            ddelay_dp += ddelay_dt * dtf_dp
 
         # This is the delay in the time of execution
         dte_dp = dtf_dp + ddelay_dp
@@ -1146,6 +1762,14 @@ class Network:
         # We store d(time of execution) for use by other events that may be
         #  chained to this one.
         holder.dte_dp = dte_dp
+
+        # We update our Network so we can get all the variable values
+        #  that were just prior to the event executing.
+        self.updateVariablesFromDynamicVars(ysens_pre_exec, time_exec)
+        var_vals_pre_exec = [(id, self.get_var_val(id)) for id 
+                          in self.variables.keys()]
+        var_vals_pre_exec = dict(var_vals_pre_exec)
+        var_vals_pre_exec['time'] = time
         
         # Now compute the sensitivity of each of our new values
         for y_ii, y_id in enumerate(self.dynamicVars.keys()):
@@ -1168,12 +1792,12 @@ class Network:
                 time_bumped = time_fired
                 ysens_bumped = ysens_fired
                 yp_bumped = yp_fired
+                var_vals_bumped = var_vals_fired
             else:
                 time_bumped = time_exec
                 ysens_bumped = ysens_pre_exec
                 yp_bumped = yp_pre_exec
-            # We update our Network so evaluate_expr works.
-            self.updateVariablesFromDynamicVars(ysens_bumped, time_bumped)
+                var_vals_bumped = var_vals_pre_exec
 
             # If there's no explicit event assignment, we'll have e.g. 'x' = 'x'
             a = event.event_assignments.get(y_id, y_id)
@@ -1181,20 +1805,26 @@ class Network:
             # We only need to deal with whatever clause in the piecewise is
             #  applicable.
             a = self._sub_for_piecewise(a, time_bumped)
+            a_vars_used = ExprManip.extract_vars(a)
 
             dbump_dp = 0
 
             # First term: da/dp 
-            da_dp = self.takeDerivative(a, opt_var)
-            da_dp = self.evaluate_expr(da_dp, time_bumped)
+            da_dp = self.takeDerivative(a, opt_var, a_vars_used)
+            da_dp = self.evaluate_expr(da_dp, time_bumped, var_vals_bumped)
             dbump_dp += da_dp
 
             # Second term: da/dy * dy/dp 
             # Third term: da/dy * dy/dt * dtf/dp 
             # = da/dy * (dy/dp + dy/dt * dtf/dp)
             for other_ii, other_id in enumerate(self.dynamicVars.keys()):
-                da_dother = self.takeDerivative(a, other_id)
-                da_dother = self.evaluate_expr(da_dother, time_bumped)
+                try:
+                    da_dother = derivs_cache[(a, other_id)]
+                except KeyError:
+                    da_dother = self.takeDerivative(a, other_id, a_vars_used)
+                    derivs_cache[(a, other_id)] = da_dother
+                da_dother = self.evaluate_expr(da_dother, time_bumped, 
+                                               var_vals_bumped)
 
                 # This is the index of dother_dp in the y array
                 index_in_y = other_ii + N_dv
@@ -1205,8 +1835,8 @@ class Network:
                 dbump_dp += da_dother * (dother_dp + dother_dt * dtf_dp)
 
             # Fourth term: da/dt * dtf/dp
-            da_dt = self.takeDerivative(a, 'time')
-            da_dt = self.evaluate_expr(da_dt, time_bumped)
+            da_dt = self.takeDerivative(a, 'time', a_vars_used)
+            da_dt = self.evaluate_expr(da_dt, time_bumped, var_vals_bumped)
             dbump_dp += da_dt * dtf_dp
 
             # Fifth term:  -dy/dp = dy/dt * dtf/dp
@@ -1223,57 +1853,10 @@ class Network:
             ysens_post_exec[index_in_y] = dy_dp
 
         return ysens_post_exec
-        
-    def _make_root_func(self):
-        len_root_func = 0
-
-        body = []
-        body.append('def root_func(self, dynamicVars, time):')
-        self._add_assignments_to_function_body(body)
-
-        self.event_clauses = []
-        for ii, event in enumerate(self.events.values()):
-            trigger = event.trigger
-            for func_name, func_vars, func_expr in self._logical_comp_func_defs:
-                trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
-                                                 func_expr)
-
-            body.append('self._root_func[%i] = (%s) - 0.5'
-                        % (len_root_func, trigger))
-            self.event_clauses.append(trigger)
-            len_root_func += 1
-
-        for ii, event in enumerate(self.events.values()):
-            event.sub_clause_indices = []
-            trigger = event.trigger
-            for func_name, func_vars, func_expr in self._logical_comp_func_defs:
-                trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
-                                                 func_expr)
-            comparisons = ExprManip.extract_comps(trigger)
-            if len(comparisons) > 1:
-                for comp in comparisons:
-                    body.append('self._root_func[%i] = (%s) - 0.5\n\t' 
-                                % (len_root_func, comp))
-                    self.event_clauses.append(comp)
-                    event.sub_clause_indices.append(len_root_func)
-                    len_root_func += 1
-
-        self._root_func = scipy.zeros(len_root_func, scipy.float_)
-
-        body.append('')
-        body.append('return self._root_func')
-
-        return '\n\t'.join(body)
-
-    # ddaskr_root(...) is the function for events for the daskr integrator.
-    def ddaskr_root(self, t, y, yprime):
-        # note that the order of inputs is reversed in root_func
-        return self.root_func(y, t) 
 
     #
     # Internally useful things
     #
-
     def _makeCrossReferences(self):
         """
         Create the cross-reference lists for the Network.
@@ -1305,14 +1888,6 @@ class Network:
         self.constantVarValues = [self.evaluate_expr(var.value) for var in 
                                   self.constantVars.values()]
         self.constantVarValues = scipy.array(self.constantVarValues)
-
-        self.complexEvents = KeyedList()
-        self.timeTriggeredEvents = KeyedList()
-        for id, event in self.events.items():
-            if event.timeTriggered:
-                self.timeTriggeredEvents.set(id, event)
-            else:
-                self.complexEvents.set(id, event)
 
         # Collect all variables that are explicitly in algebraic rules
         vars_in_alg_rules = sets.Set()
@@ -1368,7 +1943,10 @@ class Network:
         self.algebraicVars = KeyedList([(id, id) for id
                                         in vars_in_alg_rules])
 
-    def compile(self):
+    _last_structure = None
+    disable_c = False
+    _last_compiled_c = None
+    def compile(self, disable_c=False):
         """
         Create the dynamically-generated functions for this Network.
 
@@ -1382,9 +1960,10 @@ class Network:
         #  exist beforehand. Also note that __setstate__ will exec all our
         #  dynamic functions upon copying.
         curr_structure = self._get_structure()
-        last_structure = getattr(self, '_last_structure', None)
+        last_structure = self._last_structure
         structure_changed = (curr_structure != last_structure)
 
+        reexec = False
         if self.functionDefinitions != getattr(self, '_last_funcDefs', None)\
            or structure_changed:
             logger.debug('Network %s: compiling function defs.' % self.id)
@@ -1396,6 +1975,7 @@ class Network:
             for func_id, func_str in self._func_strs:
                 self.namespace[func_id] = eval(func_str, self.namespace, {})
             self._last_funcDefs = copy.deepcopy(self.functionDefinitions)
+            reexec = True
 
         if curr_structure != getattr(self, '_last_structure', None):
             logger.debug('Network %s: compiling structure.' % self.id)
@@ -1405,25 +1985,31 @@ class Network:
                 raise ValueError('System appears under-determined. '
                                  'Not enough  algebraic rules.') 
             self._makeDiffEqRHS()
-            for func in self._dynamic_structure_funcs:
-                exec 'self.%s_functionBody = self._make_%s()' % (func, func)
-                _exec_dynamic_func(self, func, self.namespace)
+            for method in self._dynamic_structure_methods: 
+                getattr(self, method)()
             self._last_structure = copy.deepcopy(curr_structure)
+            reexec = True
 
         if self.events != getattr(self, '_last_events', None)\
            or structure_changed:
             logger.debug('Network %s: compiling events.' % self.id)
-            for func in self._dynamic_event_funcs:
-                exec 'self.%s_functionBody = self._make_%s()' % (func, func)
-                _exec_dynamic_func(self, func, self.namespace)
+            for method in self._dynamic_event_methods: 
+                getattr(self, method)()
             self._last_events = copy.deepcopy(self.events)
+            reexec = True
 
         # after compile, check that there are not more algebraic variables than
         # algebraic rules.
         if len(self.algebraicVars) > len(self.algebraicRules):
-            raise ValueError('System appears under-determined. Not enough  algebraic rules.') 
-        
+            raise ValueError('System appears under-determined. Not enough '
+                             'algebraic rules.') 
 
+        if self._last_compiled_c != (self.disable_c or disable_c):
+            self._last_compiled_c = (self.disable_c or disable_c)
+            rexec = True
+
+        if reexec:
+            self.exec_dynamic_functions(disable_c=self._last_compiled_c)
 
     def _get_structure(self):
         """
@@ -1449,7 +2035,154 @@ class Network:
 
         return structure
 
-    def takeDerivative(self, input, wrt):
+    # We cache our exec'd python functions and compiled C modules to minimize
+    #  redundant compiles.
+    _py_func_dict_cache = []
+    _c_module_cache = []
+    # This is an option to disable compilation of C modules.
+    def exec_dynamic_functions(self, disable_c=False, del_c_files=True):
+        curr_py_bodies = '\n'.join(self._dynamic_funcs_python.values())
+
+        # Search our cache of python functions.
+        for py_bodies, py_func_dict in self._py_func_dict_cache:
+            if py_bodies == curr_py_bodies:
+                break
+        else:
+            # We don't have a cached version, so we need to generate it.
+            py_func_dict = {}
+            self._py_func_dict_cache.append((curr_py_bodies, py_func_dict))
+            for func_name, body in self._dynamic_funcs_python.items():
+                exec body in self.namespace, locals()
+                py_func_dict[func_name] = locals()[func_name]
+
+        # Add all the functions to our Network.
+        for func_name, func in py_func_dict.items():
+            setattr(self, func_name, func)
+            self.namespace[func_name] = func
+
+        if disable_c:
+            return
+
+        curr_c_code = self.get_c_code()
+        # Search the cache.
+        for c_code, c_module in self._c_module_cache:
+            if c_code == curr_c_code:
+                break
+        else:
+            # Regenerate if needed.
+            # Write C to file.
+            module_name = self.output_c(curr_c_code)
+            try:
+                # Run f2py on the C. This may raise an exception if the command
+                # fails.
+                self.run_f2py(module_name, hide_f2py_output=True)
+                c_module = __import__(module_name)
+                if del_c_files:
+                    os.unlink('%s.pyf' % module_name)
+                    os.unlink('%s.c' % module_name)
+                    os.unlink('%s.so' % module_name)
+            except:
+                # Compiling C failed.
+                logger.warn('Compiling of C functions for network %s failed!'
+                            % self.get_id())
+                # We stored None for the c_module, so we don't repeatedly
+                # try compiling the same bad C code.
+                c_module = None
+                raise
+            self._c_module_cache.append((curr_c_code, c_module))
+
+        # Now we add all the appropriate functions to our Network.
+        if c_module is not None:
+            self.import_c_funcs_from_module(c_module)
+
+    def get_c_code(self):
+        # Combine all our C functions into one block of code
+        c_code = []
+        c_code.append('#include <math.h>')
+        c_code.append('#include <stdio.h>')
+        c_code.append('#include <float.h>')
+        c_code.append('#define exponentiale M_E')
+        c_code.append('#define pi M_PI')
+        c_code.append('double max(double a, double b){')
+        c_code.append('return a > b ? a : b;}')
+        
+        # Function prototypes
+        for function, proto in self._prototypes_c.items():
+            c_code.append(proto)
+            c_code.append('')
+        # Functions necessary for SBML math support
+        for function, body in self._common_func_strs_c:
+            c_code.append(body)
+            c_code.append('')
+        # Function definitions
+        for function, body in self._func_defs_c.items():
+            c_code.append(body)
+            c_code.append('')
+        # The dynamic functions for this network
+        for function, body in self._dynamic_funcs_c.items():
+            c_code.append(body)
+            c_code.append('')
+
+        c_code = '\n'.join(c_code)
+        return c_code
+
+    def output_c(self, c_code, mod_name=None):
+        if mod_name is None:
+            semi_unique = str(time.time()).replace('.', '_')
+            mod_name = '%s%s' % (self.get_id(), semi_unique[::-1])
+            mod_name = mod_name.replace('-', '_')
+
+        # Write the C code to a file.
+        c_fd = open('%s.c' % mod_name, 'w')
+        c_fd.write(c_code)
+        c_fd.close()
+
+        # Read in the signatures that we'll fill in
+        pyf_base_filename = os.path.join(SloppyCell.__path__[0], 
+                                         'ReactionNetworks',
+                                         'f2py_signatures.pyf')
+        pyf_base_fd = file(pyf_base_filename, 'r')
+        pyf_base = pyf_base_fd.read()
+        pyf_base_fd.close()
+
+        # Fill in the signatures.
+        pyf_code = pyf_base % {'mod_name': mod_name,
+                               'N_dyn': len(self.dynamicVars),
+                               'N_const': len(self.constantVars),
+                               'N_alg': len(self.algebraicVars),
+                               'N_rt': self.len_root_func}
+
+        # Write out the signature file.
+        pyf_fd = open('%s.pyf' % mod_name, 'w')
+        pyf_fd.write(pyf_code)
+        pyf_fd.close()
+
+        return mod_name
+
+    def run_f2py(self, mod_name, hide_f2py_output=True):
+        from numpy.distutils.exec_command import exec_command
+        # Run f2py. The 'try... finally...' structure ensures that we stop
+        #  redirecting output if there's an exection in running f2py
+        try:
+            if hide_f2py_output:
+                redir = Utility.Redirector()
+                redir.start()
+            status, msg = exec_command('%(exec)s -c '
+                                       '"import numpy.f2py;numpy.f2py.main()" '
+                                       '-c %(mod_name)s.pyf %(mod_name)s.c'
+                                       % {'exec': sys.executable, 
+                                          'mod_name': mod_name})
+            if status != 0:
+                raise RuntimeError('Failed to compile module %s.' % mod_name)
+        finally:
+            if hide_f2py_output:
+                redir.stop()
+
+    def import_c_funcs_from_module(self, module):
+        for function in self._dynamic_funcs_c.keys():
+            setattr(self, function, getattr(module, function))
+
+    def takeDerivative(self, input, wrt, vars_used=None, simplify=True):
         """
         Take the derivative of a math expression wrt a given variable id.
 
@@ -1457,32 +2190,36 @@ class Network:
         """
         output = ExprManip.diff_expr(input, wrt)
 
+        if vars_used is None:
+            vars_used = ExprManip.extract_vars(input)
+
         # What other assigned variables does input depend on?
-        assigned_used = ExprManip.extract_vars(input)
-        assigned_used.difference_update(sets.Set([wrt]))
+        assigned_used = vars_used.difference(sets.Set([wrt]))
         assigned_used.intersection_update(sets.Set(self.assignedVars.keys()))
         # Do the chain rule for those variables
         for id in assigned_used:
             rule = self.assignmentRules.getByKey(id)
-            d2 = self.takeDerivative(rule, wrt)
+            d2 = self.takeDerivative(rule, wrt, simplify=False)
             if d2 != '0':
                 d = ExprManip.diff_expr(input, id)
                 output += ' + (%s) *(%s)' % (d, d2)
 
         # What other constant variables does input depend on?
-        constant_used = ExprManip.extract_vars(input)
-        constant_used.difference_update(sets.Set([wrt]))
+        constant_used = vars_used.difference(sets.Set([wrt]))
         constant_used.intersection_update(sets.Set(self.constantVars.keys()))
         # Do the chain rule for those variables
         for id in constant_used:
             ic = self.get_var_ic(id)
             if isinstance(ic, str):
-                d2 = self.takeDerivative(ic, wrt)
+                d2 = self.takeDerivative(ic, wrt, simplify=False)
                 if d2 != '0':
                     d = ExprManip.diff_expr(input, id)
                     output += ' + (%s) *(%s)' % (d, d2)
 
-        return ExprManip.simplify_expr(output)
+        if simplify and output != '0':
+            return ExprManip.simplify_expr(output)
+        else:
+            return output
 
     def copy(self, new_id=None, new_name=None):
         """
@@ -1501,10 +2238,14 @@ class Network:
         #  here, so we only need to do a shallow copy and remove functions 
         odict = copy.copy(self.__dict__)
 
-        for func in self._dynamic_structure_funcs + self._dynamic_event_funcs:
+        # We can't copy the functions themselves. So we strip them out.
+        for func in self._dynamic_funcs_python.keys():
+            odict[func] = None
+        for func in self._dynamic_funcs_c.keys():
             odict[func] = None
         odict['namespace'] = None
-        # Let's not pickle these...
+        # Let's not pickle these since they can be large and it would slow
+        #  down parallel execution.
         odict['trajectory'] = None
         odict['ddv_dpTrajectory'] = None
 
@@ -1519,13 +2260,8 @@ class Network:
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
         self._makeCrossReferences()
-
-        # exec all our functions
-        for func in self._dynamic_funcs:
-            try:
-                _exec_dynamic_func(self, func, self.namespace)
-            except AttributeError:
-                pass
+        self.compile()
+        self.exec_dynamic_functions()
 
 
     def get_component_name(self, id, TeX_form=False):
@@ -1560,6 +2296,7 @@ class Network:
         return name
 
     def get_eqn_structure(self):
+        # This was used to interface with PyDSTool.
         out = {}
         out['odes'] = dict(self.diff_eq_rhs.items())
         out['functions'] = {}
@@ -1576,14 +2313,12 @@ class Network:
 
 
     # Deprecated functions below.
-
     def addCompartment(self, id, size=1.0, name='', 
                        typicalValue=False,isConstant=True, isOptimizable=False):
         self.add_compartment(id = id, initial_size = size, name = name,
                              typical_value = typicalValue, 
                              is_constant = isConstant, 
                              is_optimizable = isOptimizable)
-        #raise exceptions.DeprecationWarning('Method addCompartment is deprecated, use add_compartment instead.')
 
     addVariable = _add_variable
     
@@ -1625,11 +2360,16 @@ class Network:
     addFunctionDefinition = add_func_def
     addAssignmentRule = add_assignment_rule
 
+
+
 def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
     """
     Create the executable function corresponding to func's functionBody.
     """
-    function_body = getattr(obj, '%s_functionBody' % func)
+    try:
+        function_body = obj._dynamic_funcs_python[func]
+    except (KeyError, AttributeError):
+        function_body = getattr(obj, '%s_functionBody' % func)
     # This exec gives the function access to everything defined in in_namespace
     #  and inserts the result into the locals namespace
     exec function_body in in_namespace, locals()
@@ -1640,7 +2380,8 @@ def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
     #  with the proper name.
     setattr(obj, func, 
             types.MethodType(locals()[func], obj, obj.__class__))
+    if func in ['res_function', 'root_func', 'alg_deriv_func', 'ddaskr_jac']:
+        setattr(obj, func, locals()[func])
 
-    if HAVE_PSYCO and bind:
-        psyco.bind(getattr(obj, func))
-
+    #if HAVE_PSYCO and bind:
+    #    psyco.bind(getattr(obj, func))

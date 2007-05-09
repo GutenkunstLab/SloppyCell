@@ -92,12 +92,10 @@ class daeintException(Utility.SloppyCellException):
     pass
 
 
-def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
+def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None, 
             tstop=None, intermediate_output=False, ineq_constr=False,
             init_consistent=False, var_types=None, redir_output=True,
-            max_steps=500):
-
-
+            max_steps=500, rpar=None):
     """Integrate a system of ordinary differential algebraic equations with or
     without events.
 
@@ -205,21 +203,20 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
       
     """
 
+    if rpar is None:
+        # rpar needs to have at least length 1 or daskr will screw up arguments.
+        rpar = scipy.empty(1)
+
     y = y0
     yp = yp0
     ires = 0
-    nrt = 0
-
-    # automatic determination of nrt by calling rt (if it is passed)
-    if rt == None:
-        nrt = 0
-    else:
-        nrt = len(rt(t[0], y, yp))
 
     # We calculate the number of equations in the residual function from the
     # length of the dependent variable array.
     # The number of event functions are passed to daeint as nrt.
     neq = len(y0)
+    # ipar is used to hold neq and the length of rpar.
+    ipar = [neq, len(rpar)]
 
     # The size of the work arrays normally depends on the options we select.
     # Since info(11)=0 always and info(8)=0 always in this wrapper, we
@@ -253,11 +250,11 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
 
     # Now we take care of the tolerance settings
     if scipy.isscalar(rtol) or len(rtol) != neq:
-        raise ValueError, 'rtol must be an array or a vector with same length \
-        as number of equations.'
-    if scipy.isscalar(atol) and len(atol) != neq:
-        raise ValueError, 'atol must be an array or a vector with same length \
-        as number of equations.'
+        raise ValueError('rtol must be an array or a vector with same length '
+                         'as number of equations.')
+    if scipy.isscalar(atol) or len(atol) != neq:
+        raise ValueError('atol must be an array or a vector with same length '
+                         'as number of equations.')
 
     # Do you want the solution at intermediate steps (and not just at the
     # specified points)?
@@ -266,7 +263,7 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
     elif intermediate_output == True:
         info[2] = 1
     else:
-        raise ValueError, 'int_output must be 0 or 1.'
+        raise ValueError('int_output must be True or False.')
 
     # Can the integration be carried out without any restrictions on the
     # independent variable t?  
@@ -276,8 +273,8 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
         # check to make sure that tstop is greater than or equal to the final
         # time point requested
         if tstop < t[-1]:
-            raise ValueError, 'tstop must be greater than or equal to the \
-            final time point requested.'
+            raise ValueError('tstop must be greater than or equal to the '
+                             'final time point requested.')
         info[3] = 1
         rwork[0] = tstop
 
@@ -323,10 +320,10 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
         info[10] = 1
         # check the var_types parameter
         if var_types == None:
-            raise ValueError, 'if init_consistent = 1, the var_types array \
-            must be passed.'
+            raise ValueError('if init_consistent = 1, the var_types array '
+                             'must be passed.')
         elif len(var_types) != len(y0):
-            raise ValueError, 'var_types must be of length len(y0)'
+            raise ValueError('var_types must be of length len(y0)')
         else:
             # +1 is for differential variables
             # -1 is for algebraic variables
@@ -336,8 +333,8 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
                 elif var_types[ii] == -1:
                     iwork[LID+ii] = -1
                 else:
-                    raise ValueError, 'the var_types array may only contain\
-                    entries of +1 or -1.'
+                    raise ValueError('the var_types array may only contain '
+                                     'entries of +1 or -1.')
                     
 
     # info[11] and info[12] are not used
@@ -382,7 +379,8 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
     yout_l = []
     ypout_l= []
 
-    # add the initial point to the output array if the initial condition is consistent
+    # add the initial point to the output array if the initial condition is
+    # consistent
     if init_consistent == False:
         tout_l.append(t0)
         yout_l.append(y0)
@@ -391,27 +389,33 @@ def daeint(res, t, y0, yp0, rtol, atol, rt = None, jac = None, args=(),
     # set the current time to the initial time
     tcurrent = t0
 
-    # step_count is used to keep track of how many times idid = -1 occurs in a row
+    # step_count is used to keep track of how many times idid = -1 occurs in a
+    # row
     step_count = 0
 
     if redir_output == True:
         redir.start()
 
-    try:
+    if hasattr(res, '_cpointer'):
+        res = res._cpointer
+    if hasattr(jac, '_cpointer'):
+        jac = jac._cpointer
+    if hasattr(rt, '_cpointer'):
+        rt = rt._cpointer
 
+    try:
         while tcurrent < t[-1]:
 
             # set the desired output time
             twanted = t[tindex]
 
             # continue the integration
-            treached, y, yp, rtol, atol, idid, jroot = \
+            treached, y, yp, idid, jroot = \
                     _daskr.ddaskr(res, tcurrent, y, yp, twanted,
                                   info, rtol, atol,
                                   rwork, iwork,
-                                  jac, psol, rt, nrt,
-                                  res_extra_args = args, jac_extra_args = args,
-                                  rt_extra_args = args)
+                                  rpar, ipar,
+                                  jac, psol, rt, nrt)
 
             # check for a negative value of idid so we know if there was a
             # problem

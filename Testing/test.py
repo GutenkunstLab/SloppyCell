@@ -2,6 +2,7 @@ import glob
 import unittest
 
 import SloppyCell.Utility
+import SloppyCell.ReactionNetworks.Network_mod 
 
 def run_all_tests():
     all_tests = unittest.TestSuite()
@@ -17,6 +18,15 @@ def run_all_tests():
             all_tests.addTest(mod.suite)
 
     SloppyCell.Utility.disable_warnings()
+    print '*' * 80
+    print 'Running tests with C compilation enabled.'
+    print '*' * 80
+    SloppyCell.ReactionNetworks.Network_mod.disable_c = True
+    unittest.TextTestRunner(verbosity=2).run(all_tests)
+    print '*' * 80
+    print 'Running tests with C compilation disabled.'
+    print '*' * 80
+    SloppyCell.ReactionNetworks.Network_mod.disable_c = False
     unittest.TextTestRunner(verbosity=2).run(all_tests)
 
     for mod in all_test_mods:

@@ -2,3 +2,4 @@ recursive-include Doc *
 recursive-include Example *
 recursive-include Testing/SBML_files *
 include *.pyf
+include ReactionNetworks/*.pyf

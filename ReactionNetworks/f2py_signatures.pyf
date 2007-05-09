@@ -1,0 +1,114 @@
+python module %(mod_name)s
+interface
+    subroutine res_function(time, dynamicVars, yprime, cj, residual, ires, constants, ipar) 
+        double precision intent(in) :: time
+        double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
+        double precision intent(in), dimension(%(N_dyn)i) :: yprime
+        double precision intent(hide) :: cj
+        double precision intent(out), dimension(%(N_dyn)i) :: residual
+        integer intent(hide) :: ires
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        integer intent(hide), dimension(2) :: ipar
+    end subroutine res_function
+    subroutine ddaskr_jac(t,y,yprime,pd,cj,constants,ipar)
+         double precision intent(in) :: t
+         double precision intent(in), dimension(%(N_dyn)i) :: y
+         double precision intent(in), dimension(%(N_dyn)i) :: yprime
+         double precision intent(out), dimension(%(N_dyn)i, %(N_dyn)i) :: pd
+         double precision intent(in) :: cj
+         double precision intent(in), dimension(%(N_const)i) :: constants
+         ! This has been set equal to (neq, len(rpar)) in the daskr call
+         integer dimension(2), intent(hide) :: ipar
+    end subroutine ddaskr_jac
+    subroutine root_func(neq,t,y,yp,nrt,root_devs,constants,ipar)
+        integer intent(hide) :: neq
+        double precision intent(in) :: t
+        double precision intent(in), dimension(%(N_dyn)i) :: y
+        double precision intent(in), dimension(%(N_dyn)i) :: yp
+        integer intent(hide) :: nrt
+        double precision intent(out), dimension(%(N_rt)i) :: root_devs
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        ! This has been set equal to (neq, len(rpar)) in the daskr call
+        integer dimension(2), intent(hide) :: ipar
+    end subroutine root_func
+    subroutine alg_deriv_func(alg_yp, dynamicVars, yp, time, constants, alg_derivs)
+        double precision intent(in), dimension(%(N_alg)i) :: alg_yp
+        double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
+        double precision intent(in), dimension(%(N_dyn)i) :: yp
+        double precision intent(in) :: time
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        double precision intent(out), dimension(%(N_alg)i) :: alg_derivs
+    end subroutine alg_deriv_func
+    subroutine restricted_res_func(solving_for, dynamicVars, time, constants, yp, residual) 
+        double precision intent(in), dimension(%(N_dyn)i) :: solving_for
+        double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
+        double precision intent(in) :: time
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        double precision intent(hide), dimension(%(N_dyn)i) :: yp
+        double precision intent(out), dimension(%(N_dyn)i) :: residual
+    end subroutine restricted_res_func
+    subroutine dres_dc_function(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
+        double precision intent(in), dimension(%(N_dyn)i) :: yprime
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        double precision intent(out), dimension(%(N_dyn)i, %(N_dyn)i) :: pd
+    end subroutine dres_dc_function
+    subroutine dres_dcdot_function(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
+        double precision intent(in), dimension(%(N_dyn)i) :: yprime
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        double precision intent(out), dimension(%(N_dyn)i, %(N_dyn)i) :: pd
+    end subroutine dres_dcdot_function
+    subroutine dres_dsinglep(time, dynamicVars, yprime, constants, p_index, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
+        double precision intent(in), dimension(%(N_dyn)i) :: yprime
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        integer intent(in) :: p_index
+        double precision intent(out), dimension(%(N_dyn)i) :: pd
+    end subroutine dres_dsinglep
+    subroutine sens_rhs(time, sens_y, sens_yp, cj, sens_res, ires, constants, ipar) 
+        double precision intent(in) :: time
+        double precision intent(in), dimension(2*%(N_dyn)i) :: sens_y
+        double precision intent(in), dimension(2*%(N_dyn)i) :: sens_yp
+        double precision intent(hide) :: cj
+        double precision intent(out), dimension(2*%(N_dyn)i) :: sens_res
+        integer intent(hide) :: ires
+        double precision intent(in), dimension(%(N_const)i+1) :: constants
+        integer intent(hide), dimension(2) :: ipar
+    end subroutine sens_rhs
+    subroutine res_function_logdv(time, log_dv, log_yp, cj, residual, ires, constants, ipar) 
+        double precision intent(in) :: time
+        double precision intent(in), dimension(%(N_dyn)i) :: log_dv
+        double precision intent(in), dimension(%(N_dyn)i) :: log_yp
+        double precision intent(hide) :: cj
+        double precision intent(out), dimension(%(N_dyn)i) :: residual
+        integer intent(hide) :: ires
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        integer intent(hide), dimension(2) :: ipar
+    end subroutine res_function_logdv
+    subroutine root_func_logdv(neq,t,log_dv,logyp,nrt,root_devs,constants,ipar)
+        integer intent(hide) :: neq
+        double precision intent(in) :: t
+        double precision intent(in), dimension(%(N_dyn)i) :: log_dv
+        double precision intent(in), dimension(%(N_dyn)i) :: log_yp
+        integer intent(hide) :: nrt
+        double precision intent(out), dimension(%(N_rt)i) :: root_devs
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        ! This has been set equal to (neq, len(rpar)) in the daskr call
+        integer dimension(2), intent(hide) :: ipar
+    end subroutine root_func_logdv
+    subroutine sens_rhs_logdv(time, sens_y, sens_yp, cj, sens_res, ires, constants, ipar) 
+        double precision intent(in) :: time
+        double precision intent(in), dimension(2*%(N_dyn)i) :: sens_y_log
+        double precision intent(in), dimension(2*%(N_dyn)i) :: sens_yp_log
+        double precision intent(hide) :: cj
+        double precision intent(out), dimension(2*%(N_dyn)i) :: sens_res
+        integer intent(hide) :: ires
+        double precision intent(in), dimension(%(N_const)i+1) :: constants
+        integer intent(hide), dimension(2) :: ipar
+    end subroutine sens_rhs_logdv
+end interface
+end module %(mod_name)s

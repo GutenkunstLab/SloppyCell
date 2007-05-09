@@ -17,21 +17,21 @@ def vdp_func(y, t):
     ydot[1] = 100*(1-y[0]**2)*y[1] - y[0]
     return ydot
     
-def vdp_res_func(t, y, yprime, ires):
+def vdp_res_func(t, y, yprime, rpar):
     return vdp_func(y, t) - yprime 
 
 
-def vdp_Dfun(t, y, yprime, pd, cj):
-    #pd = scipy.zeros((2,2), scipy.float_)
+def vdp_Dfun(t, y, yprime, cj, rpar):
+    pd = scipy.zeros((2,2), scipy.float_)
     pd[0,0] = -cj
     pd[0,1] = 1
     pd[1,0] = -2*100*y[0]*y[1]-1
     pd[1,1] = 100*(1-y[0]**2)-cj
     return pd
 
-def vdp_rt_func(t, y, yp):
+def vdp_rt_func(t, y, yp, rpar):
     trigger = y[0]
-    return [trigger]
+    return scipy.asarray([trigger])
 
 # initial settings for vdp system
 y0_vdp = scipy.array([2.0, 0])
@@ -52,7 +52,7 @@ def algExampleBasic_func(y,t):
     ydot[0] = 1*y[1]
     return ydot
 
-def algExampleBasic_res_func(t, y, yprime, ires):
+def algExampleBasic_res_func(t, y, yprime, rpar):
     res = scipy.zeros(3, scipy.float_)
     ypcalc = algExampleBasic_func(y,t)
     res[0] = ypcalc[0] - yprime[0]
@@ -226,6 +226,7 @@ class test_daskr(unittest.TestCase):
         """ Test root finding with termination """
         y, t, ypout, t_root, y_root, i_root = daeint(vdp_res_func, tlist_vdp,
                                                      y0_vdp, yp0_vdp,
+                                                     nrt=1, 
                                                      rt=vdp_rt_func,
                                                      rtol = reltol_vdp,
                                                      atol = abstol_vdp,
@@ -427,6 +428,32 @@ if max_steps is not set """
         messages = redir.stop()
         self.assertNotEqual(len(messages), 0)
 
+    #def test_args(self):
+    #    """ Test that passing args works. """
+    #    def res_func(t, y, yprime, rpar, extra1, extra2):
+    #        self.assertEqual(extra1, 'extra1')
+    #        self.assertEqual(extra2, 'extra2')
+    #        return vdp_res_func(t, y, yprime, rpar)
+
+    #    def root_func(t, y, yp, rpar, extra1, extra2):
+    #        self.assertEqual(extra1, 'extra1')
+    #        self.assertEqual(extra2, 'extra2')
+    #        return vdp_rt_func(t, y, yp, rpar)
+
+    #    y, t, ypout, t_root, y_root, i_root = daeint(res_func, tlist_vdp,
+    #                                                 y0_vdp, yp0_vdp,
+    #                                                 rt=1,
+    #                                                 rt=root_func,
+    #                                                 rtol = reltol_vdp,
+    #                                                 atol = abstol_vdp,
+    #                                                 intermediate_output=False,
+    #                                                 args = ('extra1','extra2'),
+    #                                                 redir_output=False)
+  
+    #    self.assertAlmostEqual(t_root, 0.8116351E+02, 5)
+    #    self.assertAlmostEqual(y_root[0], -0.3295063E-12, 5)
+    #    self.assertAlmostEqual(y_root[1], -0.6714100E+02, 3)
+    #    self.assertEqual(i_root[0], -1)
 
 ################################################################################
 
