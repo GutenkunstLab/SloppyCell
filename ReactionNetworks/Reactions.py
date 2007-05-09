@@ -13,16 +13,17 @@ class Reaction:
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and \
-                (self.__dict__ == other.__dict__)
+                self.kineticLaw == other.kineticLaw and \
+                self.stoichiometry == other.stoichiometry
 
     def __ne__(self, other):
         return not (self == other)
 
     def doKwargsSubstitution(self, kwargs):
-        self.oldStoichiometry = self.stoichiometry
+        oldStoichiometry = self.stoichiometry
         self.stoichiometry = {}
-        for base in self.oldStoichiometry:
-            self.stoichiometry[kwargs[base]] = self.oldStoichiometry[base]
+        for base in oldStoichiometry:
+            self.stoichiometry[kwargs[base]] = oldStoichiometry[base]
 
         self.kineticLaw = ExprManip.sub_for_vars(self.kineticLaw, kwargs)
 
