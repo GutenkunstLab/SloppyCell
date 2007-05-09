@@ -624,7 +624,6 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         event_just_executed = False
 
         integrate_until = times[-1]
-        logger.debug('fe_k: %s' % fired_events.keys())
         if fired_events:
             integrate_until = min(integrate_until, min(fired_events.keys()))
         if executed_events:
@@ -646,7 +645,6 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         # a small amount to make sure the cast doesn't round down stupidly.
         rpar = scipy.concatenate((net.constantVarValues, [opt_var_index+0.1]))
 
-
         sens_rhs = net.sens_rhs
         if net.integrateWithLogs:
             ypIC[:N_dyn_vars] *= IC[:N_dyn_vars]
@@ -654,10 +652,6 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
             sens_rhs = net.sens_rhs_logdv
 
         # We let daskr figure out ypIC
-        logger.debug(len(int_times))
-        if len(int_times) == 2:
-            logger.debug(int_times)
-            logger.debug(int_times[-1] - int_times[-2])
         try:
             int_outputs = daeint(sens_rhs, int_times,
                                  IC, ypIC, 
