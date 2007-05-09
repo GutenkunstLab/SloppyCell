@@ -41,7 +41,7 @@ class Trajectory:
                          }
 
     def __init__(self, net, key_column=None, is_sens=False, holds_dt=False,
-                 empty=False):
+                 empty=False, const_vals=None):
         if empty:
             return
 
@@ -72,8 +72,13 @@ class Trajectory:
 
         # We do an 'evaluate_expr' here to take care of constant variables that 
         #  are initialized by other variables
-        self.const_var_values = KeyedList([(id, net.evaluate_expr(id)) for 
-                                           id in net.constantVars.keys()])
+        if const_vals is None:
+            self.const_var_values = KeyedList([(id, net.evaluate_expr(id)) for 
+                                               id in net.constantVars.keys()])
+        else:
+            self.const_var_values = KeyedList(zip(net.constantVars.keys(), 
+                                                  const_vals))
+
         self.typical_var_values = KeyedList([(id, var.typicalValue)
                                              for (id, var)
                                              in net.variables.items()])
@@ -89,7 +94,7 @@ class Trajectory:
 
         # To avoid generating our function bodies every Trajectory creation, we
         #  keep a list of known structures in the class itself.
-        curr_structure = (net._get_structure(), self.key_column, is_sens)
+        curr_structure = (net._last_structure, self.key_column, is_sens)
         for ii, struct in enumerate(self._known_structures):
             if curr_structure == struct:
                 (self._assignment_functionBody,
