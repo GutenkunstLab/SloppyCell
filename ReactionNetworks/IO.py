@@ -11,6 +11,7 @@ import SloppyCell
 from SloppyCell.KeyedList_mod import KeyedList
 import SloppyCell.ExprManip as ExprManip
 import Network_mod
+import Trajectory_mod
 
 def net_DOT_file(net, filename = None):
     lines = []
@@ -145,18 +146,38 @@ def dynamic_function_from_file(obj, filename):
 
     basename = os.path.basename(filename)
     func = os.path.splitext(basename)[0]
-    setattr(obj, '%s_functionBody' % func, function_body)
-    # We try to get the attribute 'namespace' for the object.
-    Network_mod._exec_dynamic_func(obj, func, getattr(obj, 'namespace', {}))
+    file_type = os.path.splitext(basename)[1][1:]
+
+    if isinstance(obj, Trajectory_mod.Trajectory):
+        setattr(obj, '%s_functionBody' % func, function_body)
+        # We try to get the attribute 'namespace' for the object.
+        Network_mod._exec_dynamic_func(obj, func, getattr(obj, 'namespace', {}))
+    elif isinstance(obj, Network_mod.Network):
+        print file_type
+        if file_type == 'py':
+            obj._dynamic_funcs_python[func] = function_body
+            obj.exec_dynamic_functions(disable_c = True)
+        elif file_type == 'c':
+            obj.exec_dynamic_functions(curr_c_code = function_body)
 
 def output_dynamic_functions(obj, directory = SloppyCell._TEMP_DIR):
     """
     Output .py files for this objects's dynamic functions into the given
     directory.
     """
-    for func in obj._dynamic_funcs:
-        body = getattr(obj, '%s_functionBody' % func, None)
-        if body is not None:
+    if isinstance(obj, Trajectory_mod.Trajectory):
+        for func in obj._dynamic_funcs:
+            body = getattr(obj, '%s_functionBody' % func, None)
+            if body is not None:
+                f = file(os.path.join(directory, '%s.py' % func), 'w')
+                f.write(getattr(obj, '%s_functionBody' % func))
+                f.close()
+    elif isinstance(obj, Network_mod.Network):
+        for func, body in obj._dynamic_funcs_python.items():
             f = file(os.path.join(directory, '%s.py' % func), 'w')
-            f.write(getattr(obj, '%s_functionBody' % func))
+            f.write(body)
             f.close()
+        c_code = obj.get_c_code()
+        f = file(os.path.join(directory, '%s.c' % obj.get_id()), 'w')
+        f.write(c_code)
+        f.close()

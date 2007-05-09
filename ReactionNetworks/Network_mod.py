@@ -2040,7 +2040,8 @@ class Network:
     _py_func_dict_cache = []
     _c_module_cache = []
     # This is an option to disable compilation of C modules.
-    def exec_dynamic_functions(self, disable_c=False, del_c_files=True):
+    def exec_dynamic_functions(self, disable_c=False, del_c_files=True, 
+                               curr_c_code=None):
         curr_py_bodies = '\n'.join(self._dynamic_funcs_python.values())
 
         # Search our cache of python functions.
@@ -2063,7 +2064,8 @@ class Network:
         if disable_c:
             return
 
-        curr_c_code = self.get_c_code()
+        if curr_c_code is None:
+            curr_c_code = self.get_c_code()
         # Search the cache.
         for c_code, c_module in self._c_module_cache:
             if c_code == curr_c_code:
@@ -2173,6 +2175,7 @@ class Network:
                                        % {'exec': sys.executable, 
                                           'mod_name': mod_name})
             if status != 0:
+                print msg
                 raise RuntimeError('Failed to compile module %s.' % mod_name)
         finally:
             if hide_f2py_output:
@@ -2365,6 +2368,9 @@ class Network:
 def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
     """
     Create the executable function corresponding to func's functionBody.
+
+    This only exists now for Trajectory_mod. It's not used by the Network
+    object.
     """
     try:
         function_body = obj._dynamic_funcs_python[func]
@@ -2380,8 +2386,3 @@ def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
     #  with the proper name.
     setattr(obj, func, 
             types.MethodType(locals()[func], obj, obj.__class__))
-    if func in ['res_function', 'root_func', 'alg_deriv_func', 'ddaskr_jac']:
-        setattr(obj, func, locals()[func])
-
-    #if HAVE_PSYCO and bind:
-    #    psyco.bind(getattr(obj, func))
