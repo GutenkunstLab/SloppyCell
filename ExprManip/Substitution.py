@@ -133,6 +133,8 @@ def make_c_compatible(expr):
     Substitute all python-style x**n exponents with pow(x, n).
     Replace all integer constants with float values to avoid integer
      casting problems (e.g. '1' -> '1.0').
+    Replace 'and', 'or', and 'not' with C's '&&', '||', and '!'. This may be
+     fragile if the parsing library changes in newer python versions.
     """
     ast = strip_parse(expr)
     ast = _make_c_compatible_ast(ast)
@@ -141,7 +143,27 @@ def make_c_compatible(expr):
 def _make_c_compatible_ast(ast):
     if isinstance(ast, Power):
         ast = CallFunc(Name('pow'), [ast.left, ast.right], None, None)
-    if isinstance(ast, Const) and isinstance(ast.value, int):
+        ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
+    elif isinstance(ast, Const) and isinstance(ast.value, int):
         ast.value = float(ast.value)
-    ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
+    elif isinstance(ast, Subscript):
+        # These asts correspond to array[blah] and we shouldn't convert these
+        # to floats, so we don't recurse down the tree in this case.
+        pass
+    # We need to subsitute the C logical operators. Unfortunately, they aren't
+    # valid python syntax, so we have to cheat a little, using Compare and Name
+    # nodes abusively. This abuse may not be future-proof... sigh...
+    elif isinstance(ast, And):
+        nodes = AST.recurse_down_tree(ast.nodes, _make_c_compatible_ast)
+        ops = [('&&', node) for node in nodes[1:]]
+        ast = AST.Compare(nodes[0], ops)
+    elif isinstance(ast, Or):
+        nodes = AST.recurse_down_tree(ast.nodes, _make_c_compatible_ast)
+        ops = [('||', node) for node in nodes[1:]]
+        ast = AST.Compare(nodes[0], ops)
+    elif isinstance(ast, Not):
+        expr = AST.recurse_down_tree(ast.expr, _make_c_compatible_ast)
+        ast = AST.Name('!(%s)' % ast2str(expr))
+    else:
+        ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
     return ast
