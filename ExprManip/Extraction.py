@@ -3,6 +3,8 @@ import sets
 
 import AST
 
+extract_vars_cache = {}
+
 def extract_comps(expr):
     """
     Extract all comparisons from the expression.
@@ -30,10 +32,15 @@ def extract_vars(expr):
     """
     Return a Set of the variables used in an expression.
     """
-    vars_found = []
-    _extract_vars_ast(AST.strip_parse(expr), vars_found)
-    vars_found = [AST.ast2str(ast) for ast in vars_found]
-    return sets.Set(vars_found)
+    try:
+        return extract_vars_cache[expr]
+    except KeyError:
+        vars_found = []
+        _extract_vars_ast(AST.strip_parse(expr), vars_found)
+        vars_found = [AST.ast2str(ast) for ast in vars_found]
+        result = sets.Set(vars_found)
+        extract_vars_cache[expr] = result
+        return result
 
 def _extract_vars_ast(ast, vars_found):
     """
