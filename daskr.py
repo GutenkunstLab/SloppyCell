@@ -277,6 +277,13 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
                              'final time point requested.')
         info[3] = 1
         rwork[0] = tstop
+    # There appears to be a bug in ddaskr. If we're in intermediate output mode
+    # and we have events, the daskr may skip a requested time and instead
+    # return an event firing time. A reasonable fix appears to be using tstop
+    # to prevent this.
+    EVENT_INT_BUG_WORKAROUND = False
+    if intermediate_output and nrt:
+        EVENT_INT_BUG_WORKAROUND = True
 
     # Do you want the code to evaluate the partial derivatives automatically by
     # numerical differences?
@@ -405,9 +412,14 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
 
     try:
         while tcurrent < t[-1]:
-
             # set the desired output time
             twanted = t[tindex]
+            if EVENT_INT_BUG_WORKAROUND:
+                info[3] = 1
+                if tstop and tstop < twanted:
+                    rwork[0] = tstop
+                else:
+                    rwork[0] = twanted
 
             # continue the integration
             treached, y, yp, idid, jroot = \
