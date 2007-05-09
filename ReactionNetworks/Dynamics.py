@@ -22,13 +22,12 @@ from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
 if HAVE_PYPAR:
     import pypar
 
-ROUND_EVENT_TIMES_TO = 15
-
-# XXX: Need to incorporate root_grace_t into integrate_sensitivity
 global_rtol = 1e-6
 
-return_derivs = False # do we want time derivatives of all trajectories returned?
-reduce_space = 0 # we may want to not return every timepoint but only 0, reduce_space, 2*reduce_space etc.
+return_derivs = False # do we want time derivatives of all trajectories 
+                      # returned?
+reduce_space = 0 # we may want to not return every timepoint but only 0, 
+                 # reduce_space, 2*reduce_space etc.
 
 failed_args = []
 failed_kwargs = {}
@@ -144,8 +143,9 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     times          A sequence of times to include in the integration output.
     params         Parameters for the integration. If params=None, the current
                    parameters of net are used.
-    rtol           Relative error tolerance for this integration.  If rtol = None
-                   then relative toleran
+    rtol           Relative error tolerance for this integration.  
+                   If rtol = None then relative tolerance is set by 
+                   Dynamics.global_rtol.
     atol           Absolute error tolerance for this integration.
     fill_traj      If True, the integrator will add the times it samples to
                    the returned trajectory. This is slower, but the resulting
@@ -179,9 +179,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
     if (rtol == None or atol == None):
         rtol, atol = generate_tolerances(net, rtol, atol)
-
-    # if times isn't already an array, make it an array
-    times = scipy.asarray(times)
 
     # get the initial state, time, and derivative.
     start = times[0]
@@ -221,11 +218,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     event_just_executed = False
 
     # This is the jacobian for use with ddaskr.
-    #def _ddaskr_jac(t, y, yprime, pd, cj, 
-    #                constants=None, residual=None):
-    #    dc_term = net.dres_dc_function(t, y, yprime) 
-    #    dcdot_term = net.dres_dcdot_function(t, y, yprime)
-    #    return dc_term + cj * dcdot_term
     _ddaskr_jac = net.ddaskr_jac
 
     exception_raised = None
@@ -234,8 +226,11 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         # equal to the start time
         # since some chained events may be added to the pending events list,
         # keep looping until the key has been deleted
-        while pendingEvents.has_key(round(start, ROUND_EVENT_TIMES_TO)):
-            execution_time = round(start, ROUND_EVENT_TIMES_TO)
+        if pendingEvents and min(pendingEvents.keys()) < start:
+            raise ValueError('Missed an event!')
+        while pendingEvents.has_key(start):
+            execution_time = start
+            # We need to backtrack to deal with this event...
             event_list = pendingEvents[execution_time]
 
             # Note: the correct behavior of chained events with events that have
@@ -289,8 +284,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             if len(pendingEvents[execution_time]) == 0:
                 del pendingEvents[execution_time]
 
-        # We remove 'double timepoints' that we would other-wise have when
-        #  an event fired, but didn't execute do to a delay.
+        # We remove 'double timepoints' that we would otherwise have when
+        #  an event fired, but didn't execute due to a delay.
         if not event_just_executed and len(tout) > 0:
             tout = tout[:-1]
             yout = yout[:-1]
@@ -447,7 +442,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
             event_just_fired = True
             event = net.events[event_index]
             logger.debug('Event %s fired at time=%g in network %s.'
-                         % (event.id, time, net.id))          
+                         % (event.id, time, net.id))
 
             # Which clauses of the event fired?
             # These are the crossing_dirs's corresponding to the subclauses
@@ -475,7 +470,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
                                  'changed simultaneously! Sensitivity '
                                  'integration will fail.' % event.trigger)
             delay = net.fireEvent(event, y, time)
-            execution_time = round(time + delay, ROUND_EVENT_TIMES_TO)
+            execution_time = time + delay
 
             # We use this object to record which events have fired
             holder = event_info()
@@ -550,9 +545,6 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     Integrate the sensitivity equations for a single optimization variable.
     """
     logger.debug('Integrating sensitivity for %s.' % opt_var)
-    #
-    # This now uses the ddaskr related-functions.
-    #
     opt_var_index = net.optimizableVars.index_by_key(opt_var)
     N_dyn_vars = len(net.dynamicVars)
 
@@ -601,22 +593,35 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     fired_events = {}
     executed_events = {}
     for holder in events_occurred:
-        firing_time = round(holder.time_fired, ROUND_EVENT_TIMES_TO)
+        firing_time = holder.time_fired
         fired_events.setdefault(firing_time, [])
         fired_events[firing_time].append(holder)
 
-        execution_time = round(holder.time_exec, ROUND_EVENT_TIMES_TO)
+        execution_time = holder.time_exec
         executed_events.setdefault(execution_time, [])
         executed_events[execution_time].append(holder)
 
+    event_just_executed = False
     while current_time < times[-1]:
         logger.debug('sens_int current_time: %f' % current_time)
-        if executed_events.has_key(round(current_time, ROUND_EVENT_TIMES_TO)):
-            execution_time = round(current_time,ROUND_EVENT_TIMES_TO)
-            event_list = executed_events[execution_time]
+        if executed_events and min(executed_events.keys()) < current_time:
+            raise ValueError('Missed an event execution in sensitivity '
+                             'integration!')
+        if executed_events.has_key(current_time):
+            event_list = executed_events[current_time]
             for holder in event_list:
+                logger.debug('Executing event at time %f.' % current_time)
                 IC = net.executeEventAndUpdateSens(holder, IC, opt_var)
-            del executed_events[execution_time]
+            del executed_events[current_time]
+            event_just_executed = True
+
+        # We remove 'double timepoints' that we would otherwise have when
+        #  an event fired, but didn't execute due to a delay.
+        if not event_just_executed and len(tout) > 0:
+            tout = tout[:-1]
+            sens_out = sens_out[:-1]
+            sensdt_out = sensdt_out[:-1]
+        event_just_executed = False
 
         integrate_until = times[-1]
         if fired_events:
@@ -640,9 +645,6 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         # a small amount to make sure the cast doesn't round down stupidly.
         rpar = scipy.concatenate((net.constantVarValues, [opt_var_index+0.1]))
 
-        # We let daskr figure out ypIC
-        if len(int_times) >= 2:
-            logger.debug('int_times[-2:]: %s' % (int_times[-2:]-int_times[-2]))
 
         sens_rhs = net.sens_rhs
         if net.integrateWithLogs:
@@ -650,6 +652,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
             IC[:N_dyn_vars] = scipy.log(IC[:N_dyn_vars])
             sens_rhs = net.sens_rhs_logdv
 
+        # We let daskr figure out ypIC
         try:
             int_outputs = daeint(sens_rhs, int_times,
                                  IC, ypIC, 
@@ -680,13 +683,15 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
             IC[:N_dyn_vars] = scipy.exp(IC[:N_dyn_vars])
             ypIC[:N_dyn_vars] *= IC[:N_dyn_vars]
 
-        while fired_events.has_key(round(current_time, ROUND_EVENT_TIMES_TO)):
-            firing_time = round(current_time,ROUND_EVENT_TIMES_TO)
-            event_list = fired_events[firing_time]
-            holder = event_list.pop()
-            holder.ysens_fired = copy.copy(IC)
-            if len(event_list) == 0:
-                del fired_events[firing_time]
+        if fired_events and min(fired_events.keys()) < current_time:
+            raise ValueError('Missed event firing in sensitivity integration!')
+        if fired_events.has_key(current_time):
+            logger.debug('Firing event at time %f.' % current_time)
+            event_list = fired_events[current_time]
+            while event_list:
+                holder = event_list.pop()
+                holder.ysens_fired = copy.copy(IC)
+            del fired_events[firing_time]
 
     sens_out = _reduce_times(sens_out, tout, times)
     if not return_derivs:
