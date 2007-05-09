@@ -7,11 +7,8 @@ from SloppyCell.ReactionNetworks import *
 
 
 # Load a similar algebraic rule where assignment variables are used in the rule.
-file_path = os.path.join('SBML_files',
-                         'algebraicRules-assignment_in_algebraic.xml')
-base_net = IO.from_SBML_file(file_path,
-                             'algebraicRules-assignment_in_algebraic')
-
+from AlgTestNets import algebraic_net_assignment
+base_net = algebraic_net_assignment.copy()
 
 class test_Interpolation(unittest.TestCase):
     def test_basic(self):

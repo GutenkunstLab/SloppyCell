@@ -8,25 +8,10 @@ import SloppyCell.daskr
 
 from SloppyCell.daskr import daeint
 
-################################################################################
-
 # Load the fast reaction example from the SBML semantic test suite.
-file_path = os.path.join('SBML_files',
-                         'algebraicRules-fastReactionExample-l2.xml')
-algebraic_net = IO.from_SBML_file(file_path,
-                                  'algebraicRules_fastReactionExample')
+# To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
+from AlgTestNets import algebraic_net, algebraic_net_assignment
 tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
-
-################################################################################
-
-# Load a similar algebraic rule where assignment variables are used in the rule.
-file_path = os.path.join('SBML_files',
-                         'algebraicRules-assignment_in_algebraic.xml')
-algebraic_net_assignment = IO.from_SBML_file(file_path,
-                                  'algebraicRules-assignment_in_algebraic')
-
-################################################################################
-
 
 class test_AlgebraicRules(unittest.TestCase):
     def test_basic(self):

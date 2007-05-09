@@ -5,10 +5,8 @@ import scipy
 
 from SloppyCell.ReactionNetworks import *
 
-file_path = os.path.join('SBML_files',
-                         'algebraicRules-assignment_in_algebraic.xml')
-base_net = IO.from_SBML_file(file_path,
-                               'algebraicRules-assignment_in_algebraic')
+from AlgTestNets import algebraic_net_assignment
+base_net = algebraic_net_assignment.copy()
 base_net.remove_component('event0')
 base_net.set_var_constant('k1', False)
 
