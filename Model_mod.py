@@ -193,10 +193,11 @@ class Model:
 
     def free_energy(self, params, T):
         sf_entropy = 0
+        c = self.cost(params)
         for expt, sf_aks in self.internalVars['scaleFactor_aks'].items():
             for var, ak in sf_aks.items():
                 sf_entropy += scipy.log(scipy.sqrt(2*scipy.pi*T/ak))
-        return self.cost(params) - T * sf_entropy
+        return c - T * sf_entropy
         
 
     def _notify(self, **args):
