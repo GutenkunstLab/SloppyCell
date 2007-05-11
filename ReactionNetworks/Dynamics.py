@@ -134,8 +134,7 @@ def generate_tolerances(net, rtol, atol=None):
 
 def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
               return_events=False, return_derivs=False,
-              redirect_msgs=True, calculate_ic = False,
-              root_grace=True):
+              redirect_msgs=True, calculate_ic = False):
     """
     Integrate a Network, returning a Trajectory.
 
@@ -166,6 +165,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                    inapropriately.                   
                    
     """
+    logger.debug('Integrating network %s.' % net.get_id())
 
     if params is not None:
         net.update_optimizable_vars(params)
@@ -884,53 +884,84 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net):
     y = scipy.array(y, scipy.float_)
     yp = scipy.array(yp, scipy.float_)
 
+    dv_typ_vals = scipy.asarray([net.get_var_typical_val(id)
+                                 for id in net.dynamicVars.keys()])
+
     # First we calculate a consistent set of alg_var_vals and d(non_alg_var)/dt
     alg_vals_guess = y[var_types == -1]
     non_alg_yp_guess = yp[var_types == 1]
-    solving_for = scipy.concatenate([alg_vals_guess, non_alg_yp_guess])
+    curr_vals = scipy.concatenate([alg_vals_guess, non_alg_yp_guess])
     rearranged_atol = scipy.concatenate([atol[var_types == -1], 
                                          atol[var_types == 1]])
+    rearranged_typ_vals = scipy.concatenate([dv_typ_vals[var_types == -1],
+                                             dv_typ_vals[var_types == 1]])
+
+    # fsolve can fail if the scale of the variables is really, really wrong.
+    # Here are several possible guesses. Hopefully one of these will succeed
+    #  for almost all possibilities.
+    possible_guesses = [curr_vals, rearranged_typ_vals, 
+                        scipy.ones(len(net.dynamicVars), scipy.float_)]
 
     redir = Utility.Redirector()
     redir.start()
     try:
-        sln = scipy.optimize.fsolve(net.restricted_res_func, x0 = solving_for,
-                                    xtol = min(rtol), 
-                                    args = (y, time, constants))
+        for guess in possible_guesses:
+            sln, infodict, ier, mesg = \
+                    scipy.optimize.fsolve(net.restricted_res_func, x0 = guess,
+                                          xtol = min(rtol), 
+                                          args = (y, time, constants),
+                                          full_output=True)
+            if ier == 1:
+                # This is success.
+                break
+        else:
+            raise Utility.SloppyCellException('Failed to calculate intial '\
+                                              'conditions in network %s.' 
+                                              % net.get_id())
     finally:
-        redir.stop()
-
+        messages = redir.stop()
     sln = scipy.atleast_1d(sln)
-    if scipy.any(net.restricted_res_func(sln, y, time, constants)
-                 > rearranged_atol):
-        logger.warn("find_ics: Didn't meet tolerances in finding non-algebraic "
-                    "var derivatives and algebraic var values.")
 
     N_alg = scipy.sum(var_types == -1)
     alg_vals = sln[:N_alg]
     non_alg_yp = sln[N_alg:]
-
     y[var_types == -1] = alg_vals
     yp[var_types == 1] = non_alg_yp
 
-    if N_alg:
-        # Now we need to figure out yprime for the algebraic vars
-        alg_yp = yp[var_types == -1]
-        rearranged_atol = atol[var_types == -1]
-        redir = Utility.Redirector()
-        redir.start()
-        try:
-            sln = scipy.optimize.fsolve(net.alg_deriv_func, x0 = alg_yp,
-                                        xtol = min(atol),
-                                        args = (y, yp, time, constants))
-        finally:
-            redir.stop()
-        sln = scipy.atleast_1d(sln)
-        if scipy.any(net.alg_deriv_func(sln, y, yp, time, constants)
-                     > rearranged_atol):
-            logger.warn("find_ics: Didn't meet tolerances in finding algebraic "
-                        "var derivatives.")
-        yp[var_types == -1] = sln
+    if not N_alg:
+        return y, yp
+
+    # Now we need to figure out yprime for the algebraic vars
+    curr_alg_yp = yp[var_types == -1]
+    alg_typ_vals = dv_typ_vals[var_types == -1]
+    possible_guesses = [curr_alg_yp, alg_typ_vals, 
+                        scipy.ones(N_alg, scipy.float_)]
+    rearranged_atol = atol[var_types == -1]
+    redir.start()
+    try:
+        for guess in possible_guesses:
+            sln, infodict, ier, mesg = \
+                    scipy.optimize.fsolve(net.alg_deriv_func, x0 = guess,
+                                          xtol = min(atol),
+                                          args = (y, yp, time, constants),
+                                          full_output=True)
+            if ier == 1:
+                # This is success.
+                break
+        else:
+            raise Utility.SloppyCellException('Failed to calculate alg var'\
+                                              'derivatives in network %s.' 
+                                              % net.get_id())
+    finally:
+        messages=redir.stop()
+    sln = scipy.atleast_1d(sln)
+    final_residuals = net.alg_deriv_func(sln, y, yp, time, constants)
+    if scipy.any(final_residuals > rearranged_atol):
+        logger.warn(messages)
+        logger.warn("find_ics: Didn't meet tolerances in finding algebraic "
+                    "var derivatives.")
+        logger.warn("Largest value was %g." % max(final_residuals))
+    yp[var_types == -1] = sln
 
     return y, yp
 
