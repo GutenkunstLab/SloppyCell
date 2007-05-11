@@ -186,7 +186,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     #  algebraic variables are all consistent.
     IC, ypIC = find_ics(IC, ypIC, start,
                         net._dynamic_var_algebraic, rtol, atol,
-                        net.constantVarValues, net)
+                        net.constantVarValues, net, 
+                        redirect_msgs=redirect_msgs)
     
     # start variables for output storage 
     yout = scipy.zeros((0, len(IC)), scipy.float_)
@@ -254,7 +255,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                 #  to algebraic variables and to yprime.
                 IC, ypIC = find_ics(IC, ypIC, start,
                                     net._dynamic_var_algebraic, rtol, atol,
-                                    net.constantVarValues, net)
+                                    net.constantVarValues, net,
+                                    redirect_msgs=redirect_msgs)
                 holder.y_post_exec = copy.copy(IC)
                 holder.yp_post_exec = copy.copy(ypIC)
 
@@ -825,7 +827,8 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
             stable = 0
         return (dvFixed, stable)
 
-def find_ics(y, yp, time, var_types, rtol, atol, constants, net):
+def find_ics(y, yp, time, var_types, rtol, atol, constants, net, 
+             redirect_msgs=False):
     # We use this to find consistent sets of initial conditions for our
     #  integrations. (We don't let ddaskr do it, because it doesn't calculate
     #  values for d(alg_var)/dt, and we need them for sensitivity integration.)
@@ -852,7 +855,8 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net):
                         scipy.ones(len(net.dynamicVars), scipy.float_)]
 
     redir = Utility.Redirector()
-    redir.start()
+    if redirect_msgs:
+        redir.start()
     try:
         for guess in possible_guesses:
             sln, infodict, ier, mesg = \
@@ -860,6 +864,7 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net):
                                           xtol = min(rtol), 
                                           args = (y, time, constants),
                                           full_output=True)
+            sln = scipy.atleast_1d(sln)
             final_residuals = net.restricted_res_func(sln, y, time, constants)
             if not scipy.any(final_residuals > rearranged_atol):
                 # This is success.
@@ -887,7 +892,8 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net):
     possible_guesses = [curr_alg_yp, alg_typ_vals, 
                         scipy.ones(N_alg, scipy.float_)]
     rearranged_atol = atol[var_types == -1]
-    redir.start()
+    if redirect_msgs:
+        redir.start()
     try:
         for guess in possible_guesses:
             sln, infodict, ier, mesg = \
@@ -895,6 +901,7 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net):
                                           xtol = min(rtol),
                                           args = (y, yp, time, constants),
                                           full_output=True)
+            sln = scipy.atleast_1d(sln)
             final_residuals = net.alg_deriv_func(sln, y, yp, time, constants)
             if not scipy.any(final_residuals > rearranged_atol):
                 break
