@@ -153,7 +153,6 @@ def dynamic_function_from_file(obj, filename):
         # We try to get the attribute 'namespace' for the object.
         Network_mod._exec_dynamic_func(obj, func, getattr(obj, 'namespace', {}))
     elif isinstance(obj, Network_mod.Network):
-        print file_type
         if file_type == 'py':
             obj._dynamic_funcs_python[func] = function_body
             obj.exec_dynamic_functions(disable_c = True)
