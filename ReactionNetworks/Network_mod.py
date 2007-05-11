@@ -46,7 +46,6 @@ class Network:
                                   '_make_restricted_res_func', 
                                   '_make_dres_dc_function',
                                   '_make_dres_dcdot_function',
-                                  '_make_restricted_res_jac', 
                                   '_make_ddaskr_jac',
                                   '_make_dres_dsinglep',
                                   '_make_sens_rhs',
@@ -1137,99 +1136,6 @@ class Network:
 
         self._dynamic_funcs_python['restricted_res_func'] = py_body
         self._dynamic_funcs_c['restricted_res_func'] = c_body
-
-    def _make_restricted_res_jac(self):
-        N_alg = len(self.algebraicVars)
-        N_dyn = len(self.dynamicVars)
-
-        py_body = []
-        py_body.append('def restricted_res_jac(solving_for, dynamicVars, '
-                       'time, constants):')
-        py_body.append('solving_for = scipy.asarray(solving_for)')
-        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
-        py_body.append('constants = scipy.asarray(constants)')
-        py_body.append('')
-        py_body.append('yp = scipy.zeros(%i, scipy.float_)' % N_dyn)
-        py_body.append('pd = scipy.empty((%i, %i))' % (N_dyn, N_dyn))
-
-
-        c_body = []
-        c_args = 'double *solving_for, double *dV_in, double *time_ptr, '\
-                'double *constants, double *pd'
-        c_body.append('void restricted_res_jac_(%s){' % c_args)
-        self._prototypes_c['restricted_res_jac'] = \
-                'void restricted_res_jac_(%s);' % c_args
-        c_body.append('')
-
-        # It can cause problems if, in C, I modify a passed in argument that
-        #  I promised not to in the f2py signature.
-        c_body.append('double dynamicVars[%i];' % N_dyn)
-        c_body.append('int jj;')
-        c_body.append('for(jj=0;jj<%i;jj++){' % N_dyn)
-        c_body.append('dynamicVars[jj] = dV_in[jj];}')
-
-        for ii, key in enumerate(self.algebraicVars.keys()):
-            var_index = self.dynamicVars.index_by_key(key)
-            py_body.append('dynamicVars[%i] = solving_for[%i]'
-                           % (var_index, ii))
-            c_body.append('dynamicVars[%i] = solving_for[%i];'
-                          % (var_index, ii))
-
-        non_alg_var_keys = self.dynamicVars.keys()
-        for key in self.algebraicVars.keys():
-            non_alg_var_keys.remove(key)
-
-        c_body.append('double yp[%i] = {0};' % N_dyn)
-        for ii, key in zip(range(N_alg, N_dyn), non_alg_var_keys):
-            var_index = self.dynamicVars.index_by_key(key)
-            py_body.append('yp[%i] = solving_for[%i]' % (var_index, ii))
-            c_body.append('dynamicVars[%i] = solving_for[%i];'
-                          % (var_index, ii))
-
-        py_body.append('')
-        c_body.append('')
-
-        py_body.append('dres_dc = dres_dc_function(time, dynamicVars, yp, '
-                       'constants)')
-        c_body.append('double dres_dc[%i] = {0};' % N_dyn**2)
-        c_body.append('dres_dc_function_(time_ptr, dynamicVars, yp, '
-                      'constants, dres_dc);')
-
-        py_body.append('dres_dcdot = dres_dcdot_function(time, dynamicVars, '
-                       'yp, constants)')
-        c_body.append('double dres_dcdot[%i] = {0};' % N_dyn**2)
-        c_body.append('dres_dcdot_function_(time_ptr, dynamicVars, yp, '
-                      'constants, dres_dcdot);')
-
-        c_body.append('int res_ii;')
-        for ii, key in enumerate(self.algebraicVars.keys()):
-            var_index = self.dynamicVars.index_by_key(key)
-            py_body.append('pd[:,%i] = dres_dc[:,%i]'
-                           % (ii, var_index))
-            c_body.append('for(res_ii = 0; res_ii < %i; res_ii++){' % N_dyn)
-            c_body.append('pd[res_ii+%i*%i] = dres_dc[res_ii+%i*%i];}'
-                          % (ii, N_dyn, var_index, N_dyn))
-
-        non_alg_var_keys = self.dynamicVars.keys()
-        for key in self.algebraicVars.keys():
-            non_alg_var_keys.remove(key)
-
-        for ii, key in zip(range(N_alg, N_dyn), non_alg_var_keys):
-            var_index = self.dynamicVars.index_by_key(key)
-            py_body.append('pd[:,%i] = dres_dcdot[:,%i]' % (ii, var_index))
-            c_body.append('for(res_ii = 0; res_ii < %i; res_ii++){' % N_dyn)
-            c_body.append('pd[res_ii+%i*%i] = dres_dcdot[res_ii+%i*%i];}'
-                          % (ii, N_dyn, var_index, N_dyn))
-
-        py_body.append('')
-        py_body.append('return pd')
-
-        c_body.append('}')
-        c_body = os.linesep.join(c_body)
-
-        py_body = '\n\t'.join(py_body)
-        self._dynamic_funcs_python['restricted_res_jac'] = py_body
-        self._dynamic_funcs_c['restricted_res_jac'] = c_body
 
     def _make_dres_dc_function(self):
         py_body = []

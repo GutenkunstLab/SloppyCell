@@ -46,13 +46,6 @@ interface
         double precision intent(in), dimension(%(N_const)i) :: constants
         double precision intent(out), dimension(%(N_dyn)i) :: residual
     end subroutine restricted_res_func
-    subroutine restricted_res_jac(solving_for, dV_in, time, constants, pd)
-        double precision intent(in), dimension(%(N_dyn)i) :: solving_for
-        double precision intent(in), dimension(%(N_dyn)i) :: dV_in
-        double precision intent(in) :: time
-        double precision intent(in), dimension(%(N_const)i) :: constants
-        double precision intent(out), dimension(%(N_dyn)i, %(N_dyn)i) :: pd
-    end subroutine restricted_res_jac
     subroutine dres_dc_function(time, dynamicVars, yprime, constants, pd)
         double precision intent(in) :: time
         double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
