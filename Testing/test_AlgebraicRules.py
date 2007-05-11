@@ -35,7 +35,7 @@ class test_AlgebraicRules(unittest.TestCase):
 
         # integrate using the same time points as the base case
         algebraic_traj = Dynamics.integrate(algebraic_net_assignment, 
-                                            tlist_algebraic_net)
+                                            tlist_algebraic_net, rtol=1e-9)
 
         # make sure that the correct variables were identified as algebraic
 
