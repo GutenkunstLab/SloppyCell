@@ -1943,9 +1943,10 @@ class Network:
                                         in vars_in_alg_rules])
 
     _last_structure = None
+    # This is an option to disable compilation of C modules.
     disable_c = False
-    _last_compiled_c = None
-    def compile(self, disable_c=False):
+    _last_disabled_c = disable_c
+    def compile(self, disable_c=None):
         """
         Create the dynamically-generated functions for this Network.
 
@@ -1961,6 +1962,9 @@ class Network:
         curr_structure = self._get_structure()
         last_structure = self._last_structure
         structure_changed = (curr_structure != last_structure)
+
+        if disable_c is None:
+            disable_c = self.disable_c
 
         reexec = False
         if self.functionDefinitions != getattr(self, '_last_funcDefs', None)\
@@ -2003,12 +2007,12 @@ class Network:
             raise ValueError('System appears under-determined. Not enough '
                              'algebraic rules.') 
 
-        if self._last_compiled_c != (self.disable_c or disable_c):
-            self._last_compiled_c = (self.disable_c or disable_c)
-            rexec = True
+        if self._last_disabled_c != disable_c:
+            self._last_disabled_c = disable_c
+            reexec = True
 
         if reexec:
-            self.exec_dynamic_functions(disable_c=self._last_compiled_c)
+            self.exec_dynamic_functions(disable_c=disable_c)
 
     def _get_structure(self):
         """
@@ -2174,7 +2178,7 @@ class Network:
                                        % {'exec': sys.executable, 
                                           'mod_name': mod_name})
             if status != 0:
-                print msg
+                logger.warn(msg)
                 raise RuntimeError('Failed to compile module %s.' % mod_name)
         finally:
             if hide_f2py_output:
@@ -2263,8 +2267,7 @@ class Network:
 
         self._makeCrossReferences()
         self.compile()
-        self.exec_dynamic_functions()
-
+        self.exec_dynamic_functions(self._last_disabled_c)
 
     def get_component_name(self, id, TeX_form=False):
         """
