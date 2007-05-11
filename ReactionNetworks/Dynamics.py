@@ -134,8 +134,7 @@ def generate_tolerances(net, rtol, atol=None):
 
 def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
               return_events=False, return_derivs=False,
-              redirect_msgs=True, calculate_ic = False,
-              root_grace=True):
+              redirect_msgs=True, calculate_ic = False):
     """
     Integrate a Network, returning a Trajectory.
 
@@ -161,10 +160,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                    integrator will be returned to the display.
     calculate_ic   If True, the integrator will calculate consistent initial
                    conditions.
-    root_grace     If True, the integration won't fire events for a small period
-                   after an event fires to prevent events from repeatedly firing
-                   inapropriately.                   
-                   
     """
     logger.debug('Integrating network %s.' % net.get_id())
 
@@ -211,10 +206,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     te, ye, ie = [], [], []
     pendingEvents = {}
 
-    # After firing an event, we integrate for root_grace_t without looking for
-    # events to prevent finding the same one over and over again due to
-    # numerical imprecision
-    root_grace_t = (times[-1] - times[0])/1e6
     event_just_fired = False
     event_just_executed = False
 
@@ -297,49 +288,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         nextEventTime = scipy.inf
         if pendingEvents:
             nextEventTime = min(pendingEvents.keys())
-
-        # If an event just fired, we integrate for root_grace_t without looking
-        # for events, to prevent detecting the same event several times.
-        # This section only excecutes if root_grace is True (default).
-        if (event_just_fired and root_grace):
-            logger.debug('Starting event grace time integration.')
-            # This is the next time we're asked to provide
-            next_requested = scipy.compress(times > start, times)[0]
-            # We integrate to the smallest of: the grace time, the
-            #  next_requested_time, and the next event_time
-            integrate_to = min(start + root_grace_t, next_requested,
-                               nextEventTime)
-            curTimes = [start, integrate_to]
-
-            outputs = integrate_tidbit(net, res_func, _ddaskr_jac, 
-                                       root_func=None, 
-                                       IC=IC, yp0=ypIC, curTimes=curTimes, 
-                                       rtol=rtol, atol=atol, 
-                                       fill_traj=fill_traj, 
-                                       return_derivs=True, 
-                                       redirect_msgs=redirect_msgs,
-                                       init_consistent=False,
-                                       var_types=net._dynamic_var_algebraic)
-
-            # only grab the first 4 outputs since we aren't chcking for events
-            exception_raised, yout_this, tout_this, youtdt_this = outputs[:4]
-
-            # Update our initial conditions to reflect the integration we
-            #  just did.
-            start, IC = tout_this[-1], copy.copy(yout_this[-1])
-            ypIC = copy.copy(youtdt_this[-1])
-
-            # We don't append the last point, to prevent a needless 'event
-            #  looking' duplication of times in the trajectory.
-            tout.extend(tout_this[:-1])
-            yout = scipy.concatenate((yout, yout_this[:-1]))
-            youtdt = scipy.concatenate((youtdt,youtdt_this[:-1]))
-
-            logger.debug('Finished event grace time integration.')
-            event_just_fired = False
-
-            if exception_raised:
-                break
 
         # If we have pending events, only integrate until the next one.
         if nextEventTime < times[-1]:
