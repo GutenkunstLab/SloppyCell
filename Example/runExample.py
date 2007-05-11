@@ -58,7 +58,7 @@ Plotting.title('Before fitting')
 #  will probably want looser priors.)
 for id, val in params.items():
     m.AddResidual(Residuals.PriorInLog('prior_on_%s' % id, id, scipy.log(val), 
-                                       scipy.log(1.5e2)))
+                                       scipy.log(10)))
 
 # And now we'll optimize. Note that optimization can be tricky. One needs to
 #  be in the right ball-park before the local routines can help much.
@@ -106,7 +106,7 @@ Network.full_speed()
 # In any case, the warning can be supressed with Utility.disable_warnings()
 #  and re-enabled with Utility.enable_warnings().
 ens, ens_costs, ratio = Ensembles.ensemble_log_params(m, params,
-                                                      steps = 2000,
+                                                      steps = 5000,
                                                       max_run_hours = 10/60.,
                                                       seeds=(113, 207))
 Utility.save((ens, ens_costs, ratio), 'ensemble.bp')
