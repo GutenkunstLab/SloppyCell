@@ -860,7 +860,8 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net):
                                           xtol = min(rtol), 
                                           args = (y, time, constants),
                                           full_output=True)
-            if ier == 1:
+            final_residuals = net.restricted_res_func(sln, y, time, constants)
+            if not scipy.any(final_residuals > rearranged_atol):
                 # This is success.
                 break
         else:
@@ -891,11 +892,11 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net):
         for guess in possible_guesses:
             sln, infodict, ier, mesg = \
                     scipy.optimize.fsolve(net.alg_deriv_func, x0 = guess,
-                                          xtol = min(atol),
+                                          xtol = min(rtol),
                                           args = (y, yp, time, constants),
                                           full_output=True)
-            if ier == 1:
-                # This is success.
+            final_residuals = net.alg_deriv_func(sln, y, yp, time, constants)
+            if not scipy.any(final_residuals > rearranged_atol):
                 break
         else:
             raise Utility.SloppyCellException('Failed to calculate alg var'\
@@ -904,12 +905,6 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net):
     finally:
         messages=redir.stop()
     sln = scipy.atleast_1d(sln)
-    final_residuals = net.alg_deriv_func(sln, y, yp, time, constants)
-    if scipy.any(final_residuals > rearranged_atol):
-        logger.warn(messages)
-        logger.warn("find_ics: Didn't meet tolerances in finding algebraic "
-                    "var derivatives.")
-        logger.warn("Largest value was %g." % max(final_residuals))
     yp[var_types == -1] = sln
 
     return y, yp
