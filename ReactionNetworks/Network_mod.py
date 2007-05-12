@@ -120,7 +120,7 @@ class Network:
 
     # Now add the C versions.
     _common_func_strs_c = []
-    _common_prototypes_c = {}
+    _common_prototypes_c = KeyedList()
     for id, vars, math in _standard_func_defs:
         vars_c = ['double %s' % var for var in vars]
         var_str_c = ','.join(vars_c)
@@ -129,7 +129,7 @@ class Network:
         c_body.append('return %s;' % ExprManip.make_c_compatible(math))
         c_body.append('}')
         c_body = os.linesep.join(c_body)
-        _common_prototypes_c[id] = 'double %s(%s);' % (id, var_str_c)
+        _common_prototypes_c.set(id, 'double %s(%s);' % (id, var_str_c))
         _common_func_strs_c.append((id, c_body))
         for ii, wrt in enumerate(vars):
             deriv_id = '%s_%i' % (id, ii)
@@ -139,8 +139,8 @@ class Network:
             c_body.append('return %s;' % ExprManip.make_c_compatible(diff_math))
             c_body.append('}')
             c_body = os.linesep.join(c_body)
-            _common_prototypes_c[deriv_id] = 'double %s(%s);' % (deriv_id, 
-                                                                 var_str_c)
+            _common_prototypes_c.set(deriv_id,'double %s(%s);' % (deriv_id, 
+                                                                  var_str_c))
             _common_func_strs_c.append((deriv_id, c_body))
 
     # Also do the logical functions. These don't have derivatives.
@@ -194,10 +194,12 @@ class Network:
 
         # These dictionaries are for storing the function bodies of our dynamic
         # functions.
-        self._dynamic_funcs_python = {}
+        self._dynamic_funcs_python = KeyedList()
         self._prototypes_c = self._common_prototypes_c.copy()
-        self._dynamic_funcs_c = {}
-        self._func_defs_c = {}
+        self._dynamic_funcs_c = KeyedList()
+        self._func_defs_c = KeyedList()
+
+        self.compiled = False
         
     add_int_times, add_tail_times = True, True
     def full_speed(cls):
@@ -318,10 +320,10 @@ class Network:
         # Add the function and its partial derivatives to the C code.
         c_vars = ['double %s' % var for var in variables]
         c_var_str = ','.join(c_vars)
-        self._prototypes_c[id] = 'double %s(%s);' % (id, c_var_str)
+        self._prototypes_c.set(id,'double %s(%s);' % (id, c_var_str))
         c_math = ExprManip.make_c_compatible(math)
         c_body = 'double %s(%s){return %s;}' % (id, c_var_str, c_math)
-        self._func_defs_c[id] = c_body
+        self._func_defs_c.set(id, c_body)
 
         for ii, wrt in enumerate(variables):
             # Python derivatives
@@ -332,10 +334,11 @@ class Network:
             self.namespace[diff_id] = eval(func_str, self.namespace)
 
             # C derivatives
-            self._prototypes_c[diff_id] = 'double %s(%s);' % (diff_id,c_var_str)
+            self._prototypes_c.set(diff_id, 
+                                   'double %s(%s);' % (diff_id,c_var_str))
             c_math = ExprManip.make_c_compatible(diff_math)
             c_body = 'double %s(%s){return %s;}' % (diff_id, c_var_str, c_math)
-            self._func_defs_c[diff_id] = c_body
+            self._func_defs_c.set(diff_id, c_body)
 
     def addReaction(self, id, *args, **kwargs):
         # Reactions can be added by (1) passing in a string representing
@@ -875,14 +878,12 @@ class Network:
         # wrapper will hide. 
         # To be callable from Fortran it also needs 1) its name followed by an
         # underscore, and 2) to take all arguments as pointers.
-        c_body.append('void res_function_(double *time_ptr, '
-                      'double *dynamicVars, double *yprime, double *cj_ptr, '
-                      'double *residual, int *ires_ptr, double *constants, '
-                      'int *ipar){')
-        self._prototypes_c['res_function'] = 'void res_function_('\
-                'double *time_ptr, double *dynamicVars, double *yprime, '\
+        c_args = 'double *time_ptr, double *dynamicVars, double *yprime, '\
                 'double *cj_ptr, double *residual, int *ires_ptr, '\
-                'double *constants, int *ipar);'
+                'double *constants, int *ipar'
+        c_body.append('void res_function_(%s){' % c_args)
+        self._prototypes_c.set('res_function', 
+                               'void res_function_(%s);' % c_args)
         c_body.append('double time = *time_ptr;')
         c_body.append('')
         self._add_assignments_to_function_body(c_body, in_c=True)
@@ -934,8 +935,8 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python['res_function'] = py_body
-        self._dynamic_funcs_c['res_function'] = c_body
+        self._dynamic_funcs_python.set('res_function', py_body)
+        self._dynamic_funcs_c.set('res_function', c_body)
                     
         return py_body
         
@@ -956,15 +957,15 @@ class Network:
         py_body.append('')
 
         c_body = []
-        c_body.append('void root_func_(int *neq_ptr, double *time_ptr, '
-                      'double *dynamicVars, double *yprime, int *nrt_ptr, '
-                      'double *root_devs, double *constants, int *ipar){')
+        c_args = 'int *neq_ptr, double *time_ptr, double *dynamicVars, '\
+                'double *yprime, int *nrt_ptr, double *root_devs, '\
+                'double *constants, int *ipar'
+        c_body.append('void root_func_(%s){' % c_args)
         c_body.append('double time = *time_ptr;')
         c_body.append('')
         self._add_assignments_to_function_body(c_body, in_c=True)
-        self._prototypes_c['root_func'] = 'void root_func_(int *neq, '\
-                'double *time_in, double *dynamicVars, double *yprime, '\
-                'int *nrt, double *root_devs, double *constants, int *ipar);'
+        self._prototypes_c.set('root_func', 
+                               'void root_func_(%s);' % c_args)
         c_body.append('')
 
         self.event_clauses = []
@@ -1012,8 +1013,8 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python['root_func'] = py_body
-        self._dynamic_funcs_c['root_func'] = c_body
+        self._dynamic_funcs_python.set('root_func', py_body)
+        self._dynamic_funcs_c.set('root_func', c_body)
 
         return py_body
 
@@ -1037,15 +1038,14 @@ class Network:
         py_body.append('')
 
         c_body = []
-        c_body.append('void alg_deriv_func_(double *alg_yp, '
-                      'double *dynamicVars, double *yp, double *time_ptr, '
-                      'double *constants, double *alg_derivs){')
+        c_args = 'double *alg_yp, double *dynamicVars, double *yp, '\
+                'double *time_ptr, double *constants, double *alg_derivs' 
+        c_body.append('void alg_deriv_func_(%s){' % c_args)
         c_body.append('double time = *time_ptr;')
         c_body.append('')
         self._add_assignments_to_function_body(c_body, in_c=True)
-        self._prototypes_c['alg_deriv_func'] = 'void alg_deriv_func_('\
-                'double *alg_yp, double *dynamicVars, double *yp, '\
-                'double *time_ptr, double *constants, double *alg_derivs);'
+        self._prototypes_c.set('alg_deriv_func', 
+                               'void alg_deriv_func_(%s);' % c_args)
         c_body.append('')
 
         for rule_ii, rule in enumerate(self.algebraicRules.values()):
@@ -1080,8 +1080,8 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python['alg_deriv_func'] = py_body
-        self._dynamic_funcs_c['alg_deriv_func'] = c_body
+        self._dynamic_funcs_python.set('alg_deriv_func', py_body)
+        self._dynamic_funcs_c.set('alg_deriv_func', c_body)
 
         return py_body
 
@@ -1100,8 +1100,8 @@ class Network:
         c_args = 'double *solving_for, double *dynamicVars, double *time_ptr, '\
                 'double *constants, double *residual'
         c_body.append('void restricted_res_func_(%s){' % c_args)
-        self._prototypes_c['restricted_res_func'] =\
-                'void restricted_res_func_(%s);' % c_args
+        self._prototypes_c.set('restricted_res_func',
+                               'void restricted_res_func_(%s);' % c_args)
         c_body.append('')
 
         N_alg = len(self.algebraicVars)
@@ -1134,8 +1134,8 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python['restricted_res_func'] = py_body
-        self._dynamic_funcs_c['restricted_res_func'] = c_body
+        self._dynamic_funcs_python.set('restricted_res_func', py_body)
+        self._dynamic_funcs_c.set('restricted_res_func', c_body)
 
     def _make_dres_dc_function(self):
         py_body = []
@@ -1152,12 +1152,11 @@ class Network:
         py_body.append('')
 
         c_body = []
-        c_body.append('void dres_dc_function_(double *time_ptr, '
-                      'double *dynamicVars, double *yprime, double *constants, '
-                      'double *pd){')
-        self._prototypes_c['dres_dc_function'] ='void dres_dc_function_('\
-                'double *time_ptr, double *dynamicVars, double *yprime, '\
-                'double *constants, double *pd);'
+        c_args = 'double *time_ptr, double *dynamicVars, double *yprime, '\
+                'double *constants, double *pd'
+        c_body.append('void dres_dc_function_(%s){' % c_args)
+        self._prototypes_c.set('dres_dc_function', 
+                               'void dres_dc_function_(%s);' % c_args)
         c_body.append('double time = *time_ptr;')
         c_body.append('')
         self._add_assignments_to_function_body(c_body, in_c=True)
@@ -1186,8 +1185,8 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python['dres_dc_function'] = py_body
-        self._dynamic_funcs_c['dres_dc_function'] = c_body
+        self._dynamic_funcs_python.set('dres_dc_function', py_body)
+        self._dynamic_funcs_c.set('dres_dc_function', c_body)
 
     def _make_dres_dcdot_function(self):
         py_body = []
@@ -1204,12 +1203,11 @@ class Network:
         py_body.append('')
 
         c_body = []
-        c_body.append('void dres_dcdot_function_(double *time_ptr, '
-                      'double *dynamicVars, double *yprime, double *constants, '
-                      'double *pd){')
-        self._prototypes_c['dres_dcdot_function'] ='void dres_dcdot_function_('\
-                'double *time_ptr, double *dynamicVars, double *yprime, '\
-                'double *constants, double *pd);'
+        c_args = 'double *time_ptr, double *dynamicVars, double *yprime, '\
+                'double *constants, double *pd'
+        c_body.append('void dres_dcdot_function_(%s){' % c_args)
+        self._prototypes_c.set('dres_dcdot_function', 
+                               'void dres_dcdot_function_(%s);' % c_args)
         c_body.append('double time = *time_ptr;')
         c_body.append('')
         self._add_assignments_to_function_body(c_body, in_c=True)
@@ -1232,8 +1230,8 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python['dres_dcdot_function'] = py_body
-        self._dynamic_funcs_c['dres_dcdot_function'] = c_body
+        self._dynamic_funcs_python.set('dres_dcdot_function', py_body)
+        self._dynamic_funcs_c.set('dres_dcdot_function', c_body)
 
     def _make_ddaskr_jac(self):
         py_body = []
@@ -1252,12 +1250,11 @@ class Network:
 
         N_dyn = len(self.dynamicVars)
         c_body = []
-        c_body.append('void ddaskr_jac_(double *time_ptr, double *dynamicVars, '
-                      'double *yprime, double *pd, double *cj_ptr, '
-                      'double *constants, int *intpar){')
-        self._prototypes_c['ddaskr_jac'] = 'void ddaskr_jac_('\
-                'double *time_ptr, double *dynamicVars, double *yprime, '\
-                'double *pd, double *cj_ptr, double *constants, int *intpar);'
+        c_args = 'double *time_ptr, double *dynamicVars, double *yprime, '\
+                'double *pd, double *cj_ptr, double *constants, int *intpar'
+        c_body.append('void ddaskr_jac_(%s){' % c_args)
+        self._prototypes_c.set('ddaskr_jac', 
+                               'void ddaskr_jac_(%s);' % c_args)
         c_body.append('double cj = *cj_ptr;')
         c_body.append('')
         c_body.append('dres_dc_function_(time_ptr, dynamicVars, yprime, '
@@ -1274,8 +1271,8 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python['ddaskr_jac'] = py_body
-        self._dynamic_funcs_c['ddaskr_jac'] = c_body
+        self._dynamic_funcs_python.set('ddaskr_jac', py_body)
+        self._dynamic_funcs_c.set('ddaskr_jac', c_body)
 
     def _make_dres_dsinglep(self):
         py_body = []
@@ -1291,12 +1288,11 @@ class Network:
         py_body.append('')
 
         c_body = []
-        c_body.append('void dres_dsinglep_(double *time_ptr, '
-                      'double *dynamicVars, double *yprime, double *constants, '
-                      'int *p_index_ptr, double *pd){')
-        self._prototypes_c['dres_dsinglep'] = 'void dres_dsinglep_('\
-                'double *time_ptr, double *dynamicVars, double *yprime, '\
-                'double *constants, int *p_index_ptr, double *pd);'
+        c_args = 'double *time_ptr, double *dynamicVars, double *yprime, '\
+                'double *constants, int *p_index_ptr, double *pd'
+        c_body.append('void dres_dsinglep_(%s){' % c_args)
+        self._prototypes_c.set('dres_dsinglep',
+                               'void dres_dsinglep_(%s);' % c_args)
         c_body.append('double time = *time_ptr;')
         c_body.append('int p_index = *p_index_ptr;')
         c_body.append('')
@@ -1342,8 +1338,8 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python['dres_dsinglep'] = py_body
-        self._dynamic_funcs_c['dres_dsinglep'] = c_body
+        self._dynamic_funcs_python.set('dres_dsinglep', py_body)
+        self._dynamic_funcs_c.set('dres_dsinglep', c_body)
 
     def _make_sens_rhs(self):
         py_body = []
@@ -1357,13 +1353,12 @@ class Network:
         py_body.append('')
 
         c_body = []
-        c_body.append('void sens_rhs_(double *time_ptr, double *sens_y, '
-                      'double *sens_yp, double *cj_ptr, double *sens_res, '
-                      'int *ires_ptr, double *constants, int *ipar){')
-        self._prototypes_c['sens_rhs']  = 'void sens_rhs_('\
-                'double *time_ptr, double *sens_y, double *sens_yp, '\
+        c_args = 'double *time_ptr, double *sens_y, double *sens_yp, '\
                 'double *cj_ptr, double *sens_res, int *ires_ptr, '\
-                'double *constants, int *ipar);'
+                'double *constants, int *ipar'
+        c_body.append('void sens_rhs_(%s){' % c_args)
+        self._prototypes_c.set('sens_rhs', 
+                               'void sens_rhs_(%s);' % c_args)
         c_body.append('')
 
         N_dyn = len(self.dynamicVars)
@@ -1429,8 +1424,8 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python['sens_rhs'] = py_body
-        self._dynamic_funcs_c['sens_rhs'] = c_body
+        self._dynamic_funcs_python.set('sens_rhs', py_body)
+        self._dynamic_funcs_c.set('sens_rhs', c_body)
 
     def _make_log_funcs(self):
         N_dyn = len(self.dynamicVars)
@@ -1447,15 +1442,15 @@ class Network:
         py_body.append('return res_function(time, dynamicVars, yprime, '
                        'constants)')
         py_body = '\n    '.join(py_body)
-        self._dynamic_funcs_python['res_function_logdv'] = py_body
+        self._dynamic_funcs_python.set('res_function_logdv', py_body)
 
         c_body = []
         c_args = 'double *time_ptr, double *log_dv, double *log_yp, '\
                 'double *cj_ptr, double *residual, int *ires_ptr, '\
                 'double *constants, int *ipar'
         c_body.append('void res_function_logdv_(%s){' % c_args)
-        self._prototypes_c['res_function_logdv'] = \
-                'void res_function_logdv_(%s);' % c_args
+        self._prototypes_c.set('res_function_logdv',
+                               'void res_function_logdv_(%s);' % c_args)
         c_body.append('double dynamicVars[%i];' % N_dyn)
         c_body.append('double yprime[%i];' % N_dyn)
         c_body.append('int ii;')
@@ -1466,7 +1461,7 @@ class Network:
                       'residual, ires_ptr, constants, ipar);')
         c_body.append('}')
         c_body = os.linesep.join(c_body)
-        self._dynamic_funcs_c['res_function_logdv'] = c_body
+        self._dynamic_funcs_c.set('res_function_logdv', c_body)
 
         py_body = []
         py_body.append('def root_func_logdv(time, log_dv, log_yp, constants):')
@@ -1479,15 +1474,15 @@ class Network:
         py_body.append('return root_func(time, dynamicVars, yprime, '
                        'constants)')
         py_body = '\n    '.join(py_body)
-        self._dynamic_funcs_python['root_func_logdv'] = py_body
+        self._dynamic_funcs_python.set('root_func_logdv', py_body)
 
         c_body = []
         c_args = 'int *neq_ptr, double *time_ptr, double *log_dv, '\
                 'double *log_yp, int *nrt_ptr, double *root_devs, '\
                 'double *constants, int *ipar'
         c_body.append('void root_func_logdv_(%s){' % c_args)
-        self._prototypes_c['root_func_logdv'] =\
-                'void root_func_logdv_(%s);' % c_args
+        self._prototypes_c.set('root_func_logdv',
+                               'void root_func_logdv_(%s);' % c_args)
         c_body.append('double dynamicVars[%i];' % N_dyn)
         c_body.append('double yprime[%i];' % N_dyn)
         c_body.append('int ii;')
@@ -1498,7 +1493,7 @@ class Network:
                       'nrt_ptr, root_devs, constants, ipar);')
         c_body.append('}')
         c_body = os.linesep.join(c_body)
-        self._dynamic_funcs_c['root_func_logdv'] = c_body
+        self._dynamic_funcs_c.set('root_func_logdv', c_body)
 
 
         py_body = []
@@ -1514,15 +1509,15 @@ class Network:
                        % (N_dyn, N_dyn, N_dyn))
         py_body.append('return sens_rhs(time, sens_y, sens_yp, constants)')
         py_body = '\n    '.join(py_body)
-        self._dynamic_funcs_python['sens_rhs_logdv'] = py_body
+        self._dynamic_funcs_python.set('sens_rhs_logdv', py_body)
 
         c_body = []
         c_args = 'double *time_ptr, double *sens_y_log, double *sens_yp_log, '\
                 'double *cj_ptr, double *sens_res, int *ires_ptr, '\
                 'double *constants, int *ipar'
         c_body.append('void sens_rhs_logdv_(%s){' % c_args)
-        self._prototypes_c['sens_rhs_logdv_']  = \
-                'void sens_rhs_logdv_(%s);' % c_args
+        self._prototypes_c.set('sens_rhs_logdv_',
+                               'void sens_rhs_logdv_(%s);' % c_args)
         c_body.append('double sens_y[%i];' % (N_dyn*2))
         c_body.append('double sens_yp[%i];' % (N_dyn*2))
         c_body.append('int ii;')
@@ -1536,7 +1531,7 @@ class Network:
                       'ires_ptr, constants, ipar);')
         c_body.append('}')
         c_body = os.linesep.join(c_body)
-        self._dynamic_funcs_c['sens_rhs_logdv'] = c_body
+        self._dynamic_funcs_c.set('sens_rhs_logdv', c_body)
 
 
     def _add_assignments_to_function_body(self, body, in_c = False):
@@ -1959,12 +1954,13 @@ class Network:
         # Note that this runs at least once, since _last_structure doesn't
         #  exist beforehand. Also note that __setstate__ will exec all our
         #  dynamic functions upon copying.
-        curr_structure = self._get_structure()
-        last_structure = self._last_structure
-        structure_changed = (curr_structure != last_structure)
-
         if disable_c is None:
             disable_c = self.disable_c
+
+        curr_structure = self._get_structure()
+        structure_changed = (curr_structure != self._last_structure)
+        if structure_changed:
+            self._last_structure = copy.deepcopy(curr_structure)
 
         reexec = False
         if self.functionDefinitions != getattr(self, '_last_funcDefs', None)\
@@ -1980,7 +1976,7 @@ class Network:
             self._last_funcDefs = copy.deepcopy(self.functionDefinitions)
             reexec = True
 
-        if curr_structure != getattr(self, '_last_structure', None):
+        if structure_changed:
             logger.debug('Network %s: compiling structure.' % self.id)
             self._makeCrossReferences()
             # Check whether system appears well-determined.
@@ -1990,12 +1986,12 @@ class Network:
             self._makeDiffEqRHS()
             for method in self._dynamic_structure_methods: 
                 getattr(self, method)()
-            self._last_structure = copy.deepcopy(curr_structure)
             reexec = True
 
         if self.events != getattr(self, '_last_events', None)\
            or structure_changed:
             logger.debug('Network %s: compiling events.' % self.id)
+            self._makeCrossReferences()
             for method in self._dynamic_event_methods: 
                 getattr(self, method)()
             self._last_events = copy.deepcopy(self.events)
@@ -2011,6 +2007,7 @@ class Network:
             self._last_disabled_c = disable_c
             reexec = True
 
+        self.compiled=True
         if reexec:
             self.exec_dynamic_functions(disable_c=disable_c)
 
@@ -2112,7 +2109,7 @@ class Network:
         c_code.append('return a > b ? a : b;}')
         
         # Function prototypes
-        for function, proto in self._prototypes_c.items():
+        for func_name, proto in self._prototypes_c.items():
             c_code.append(proto)
             c_code.append('')
         # Functions necessary for SBML math support
@@ -2120,11 +2117,11 @@ class Network:
             c_code.append(body)
             c_code.append('')
         # Function definitions
-        for function, body in self._func_defs_c.items():
+        for func_name, body in self._func_defs_c.items():
             c_code.append(body)
             c_code.append('')
         # The dynamic functions for this network
-        for function, body in self._dynamic_funcs_c.items():
+        for func_name, body in self._dynamic_funcs_c.items():
             c_code.append(body)
             c_code.append('')
 
@@ -2132,6 +2129,7 @@ class Network:
         return c_code
 
     def output_c(self, c_code, mod_name=None):
+        logger.debug('Outputting C for network %s.' % self.get_id())
         if mod_name is None:
             semi_unique = str(time.time()).replace('.', '_')
             mod_name = '%s%s' % (self.get_id(), semi_unique[::-1])
@@ -2165,6 +2163,7 @@ class Network:
         return mod_name
 
     def run_f2py(self, mod_name, hide_f2py_output=True):
+        logger.debug('Running f2py for network %s.' % self.get_id())
         from numpy.distutils.exec_command import exec_command
         # Run f2py. The 'try... finally...' structure ensures that we stop
         #  redirecting output if there's an exection in running f2py
@@ -2266,8 +2265,8 @@ class Network:
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
         self._makeCrossReferences()
-        self.compile()
-        self.exec_dynamic_functions(self._last_disabled_c)
+        if self.compiled:
+            self.exec_dynamic_functions(self._last_disabled_c)
 
     def get_component_name(self, id, TeX_form=False):
         """
@@ -2375,7 +2374,7 @@ def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
     object.
     """
     try:
-        function_body = obj._dynamic_funcs_python[func]
+        function_body = obj._dynamic_funcs_python.get(func)
     except (KeyError, AttributeError):
         function_body = getattr(obj, '%s_functionBody' % func)
     # This exec gives the function access to everything defined in in_namespace
