@@ -34,7 +34,10 @@ class Redirector(object):
             tmpr = open(self.tmpfn, 'rb')
             output = tmpr.read()
             tmpr.close()  # this also closes self.tmpfd
-            os.unlink(self.tmpfn)
+            try:
+                os.unlink(self.tmpfn)
+            except OSError:
+                pass
 
             self.started = False
             return output
