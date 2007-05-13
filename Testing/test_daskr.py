@@ -200,10 +200,10 @@ class test_daskr(unittest.TestCase):
                                                      atol = abstol_vdp,
                                                      intermediate_output=False)
 
-        self.assertAlmostEqual(y[1][0], 1.85821444, 5)
-        self.assertAlmostEqual(y[3][0], 0.1484599E+01, 5)
-        self.assertAlmostEqual(y[7][0], -0.1501730E+01, 5)
-        self.assertAlmostEqual(y[10][0], 0.1718428E+01, 5)
+        self.assertAlmostEqual(y[1][0], 1.85821444, 4)
+        self.assertAlmostEqual(y[3][0], 0.1484599E+01, 4)
+        self.assertAlmostEqual(y[7][0], -0.1501730E+01, 4)
+        self.assertAlmostEqual(y[10][0], 0.1718428E+01, 4)
 
         self.assertAlmostEqual(y[2][1], -0.9068522E-02, 3)
         self.assertAlmostEqual(y[4][1], -0.5847012E-01, 3)
@@ -232,14 +232,15 @@ class test_daskr(unittest.TestCase):
                                                      atol = abstol_vdp,
                                                      intermediate_output=False)
   
-        self.assertAlmostEqual(t_root, 0.8116351E+02, 5)
-        self.assertAlmostEqual(y_root[0], -0.3295063E-12, 5)
+        self.assertAlmostEqual(t_root, 0.8116351E+02, 4)
+        self.assertAlmostEqual(y_root[0], -0.3295063E-12, 4)
         self.assertAlmostEqual(y_root[1], -0.6714100E+02, 3)
         self.assertEqual(i_root[0], -1)
 
     def test_tstop(self):
         """ Test that integration will not continue past tstop """
-        y, t, ypout, t_root, y_root, i_root = daeint(linear_res_func, tlist_linear,
+        y, t, ypout, t_root, y_root, i_root = daeint(linear_res_func, 
+                                                     tlist_linear,
                                                      y0_linear, yp0_linear,
                                                      rtol=reltol_linear,
                                                      atol=abstol_linear,
@@ -247,53 +248,55 @@ class test_daskr(unittest.TestCase):
 
         
         # Check that the final time point returned is for tstop
-        self.assertAlmostEqual(t[-1], tstop_linear, 5)
-        self.assertAlmostEqual(y[2][0], -100, 5)
+        self.assertAlmostEqual(t[-1], tstop_linear, 4)
+        self.assertAlmostEqual(y[2][0], -100, 4)
 
 
     
     def test_algebraic_basic(self):
         """ Test a simpler dae system (algebraicRules-basic-l2.xml) """
-        y, t, ypout, t_root, y_root, i_root = daeint(algExampleBasic_res_func, tlist_algBasic,
+        y, t, ypout, t_root, y_root, i_root = daeint(algExampleBasic_res_func, 
+                                                     tlist_algBasic,
                                                      y0_algBasic, yp0_algBasic,
                                                      rtol = reltol_algBasic,
                                                      atol = abstol_algBasic)
 
-        self.assertAlmostEqual(y[1][0], 0.590635382065755, 5)
-        self.assertAlmostEqual(y[13][0], 0.962863096631099, 5)
+        self.assertAlmostEqual(y[1][0], 0.590635382065755, 4)
+        self.assertAlmostEqual(y[13][0], 0.962863096631099, 4)
 
-        self.assertAlmostEqual(y[15][1], 0.0248936510867585, 5)
-        self.assertAlmostEqual(y[27][1], 0.00225832507503575, 5)
+        self.assertAlmostEqual(y[15][1], 0.0248936510867585, 4)
+        self.assertAlmostEqual(y[27][1], 0.00225832507503575, 4)
 
 
 
     def test_algebraic_fastreactionexample(self):
         """ Test a dae system (algebraicRules-fastReactionExample-l2.xml) """
-        y, t, ypout, t_root, y_root, i_root = daeint(algExample_res_func, tlist_alg,
+        y, t, ypout, t_root, y_root, i_root = daeint(algExample_res_func, 
+                                                     tlist_alg,
                                                      y0_alg, yp0_alg,
                                                      rtol = reltol_alg,
                                                      atol = abstol_alg)
 
-        self.assertAlmostEqual(y[1][0], 0.9231163463, 5)
-        self.assertAlmostEqual(y[13][0], 0.353454681, 5)
+        self.assertAlmostEqual(y[1][0], 0.9231163463, 4)
+        self.assertAlmostEqual(y[13][0], 0.353454681, 4)
 
-        self.assertAlmostEqual(y[8][1], 0.142837751, 5)
-        self.assertAlmostEqual(y[20][1], 0.492844600, 5)
+        self.assertAlmostEqual(y[8][1], 0.142837751, 4)
+        self.assertAlmostEqual(y[20][1], 0.492844600, 4)
 
-        self.assertAlmostEqual(y[15][2], 0.346376313, 5)
-        self.assertAlmostEqual(y[27][2], 0.230837103, 5)
+        self.assertAlmostEqual(y[15][2], 0.346376313, 4)
+        self.assertAlmostEqual(y[27][2], 0.230837103, 4)
         
-        self.assertAlmostEqual(y[22][3], 0.081296859, 5)
-        self.assertAlmostEqual(y[37][3], 0.039501126, 5)
+        self.assertAlmostEqual(y[22][3], 0.081296859, 4)
+        self.assertAlmostEqual(y[37][3], 0.039501126, 4)
 
-        self.assertAlmostEqual(y[29][4], 0.150075280, 5)
-        self.assertAlmostEqual(y[41][4], 0.078591978, 5)
+        self.assertAlmostEqual(y[29][4], 0.150075280, 4)
+        self.assertAlmostEqual(y[41][4], 0.078591978, 4)
 
-        self.assertAlmostEqual(y[50][0], 0.018315639, 5)
-        self.assertAlmostEqual(y[50][1], 0.917958431, 5)
-        self.assertAlmostEqual(y[50][2], 0.06372593, 5)
-        self.assertAlmostEqual(y[50][3], 0.018207409, 5)
-        self.assertAlmostEqual(y[50][4], 0.045518522, 5)
+        self.assertAlmostEqual(y[50][0], 0.018315639, 4)
+        self.assertAlmostEqual(y[50][1], 0.917958431, 4)
+        self.assertAlmostEqual(y[50][2], 0.06372593, 4)
+        self.assertAlmostEqual(y[50][3], 0.018207409, 4)
+        self.assertAlmostEqual(y[50][4], 0.045518522, 4)
 
 
     def test_maxsteps_on(self):
@@ -306,8 +309,8 @@ class test_daskr(unittest.TestCase):
 
         # the integrator will only get to the specified time points if
         # max_steps is increased significantly above the default
-        self.assertAlmostEqual(y[1][0], 0.82689894, 5)
-        self.assertAlmostEqual(y[2][0], 0.93004774, 5)
+        self.assertAlmostEqual(y[1][0], 0.82689894, 4)
+        self.assertAlmostEqual(y[2][0], 0.93004774, 4)
 
     def test_maxsteps_off(self):
         """ Test to make sure the trig_func problem will cause an error \
@@ -315,10 +318,11 @@ if max_steps is not set """
 
         redir.start()
         try:
-            self.assertRaises(SloppyCell.daskr.daeintException, daeint(trig_res_func, tlist_trig,
-                                                     y0_trig, yp0_trig,
-                                                     rtol = reltol_trig,
-                                                     atol = abstol_trig))
+            self.assertRaises(SloppyCell.daskr.daeintException, 
+                              daeint(trig_res_func, tlist_trig,
+                                     y0_trig, yp0_trig,
+                                     rtol = reltol_trig,
+                                     atol = abstol_trig))
         except SloppyCell.daskr.daeintException:
             pass
         messages = redir.stop()
@@ -334,7 +338,8 @@ if max_steps is not set """
         yp0_inconsistent = algExample_func(y0_inconsistent, t0_alg)
         var_types_inconsistent = scipy.array([1, 1, 1, -1, -1])
         
-        y, t, ypout, t_root, y_root, i_root = daeint(algExample_res_func, tlist_alg,
+        y, t, ypout, t_root, y_root, i_root = daeint(algExample_res_func, 
+                                                     tlist_alg,
                                                      y0_inconsistent, yp0_alg,
                                                      rtol = reltol_alg,
                                                      atol = abstol_alg,
@@ -342,28 +347,28 @@ if max_steps is not set """
                                                      var_types = var_types_inconsistent)
 
         # check to make sure the initial condition was calculated correctly
-        self.assertAlmostEqual(y[0][0], 1., 5)
-        self.assertAlmostEqual(y[0][1], 0., 5)
-        self.assertAlmostEqual(y[0][2], 0., 5)
-        self.assertAlmostEqual(y[0][3], 0., 5)
-        self.assertAlmostEqual(y[0][4], 0., 5)
+        self.assertAlmostEqual(y[0][0], 1., 4)
+        self.assertAlmostEqual(y[0][1], 0., 4)
+        self.assertAlmostEqual(y[0][2], 0., 4)
+        self.assertAlmostEqual(y[0][3], 0., 4)
+        self.assertAlmostEqual(y[0][4], 0., 4)
 
         # check other points on the trajectory
-        self.assertAlmostEqual(y[1][0], 0.9231163463, 5)
-        self.assertAlmostEqual(y[13][0], 0.353454681, 5)
-        self.assertAlmostEqual(y[8][1], 0.142837751, 5)
-        self.assertAlmostEqual(y[20][1], 0.492844600, 5)
-        self.assertAlmostEqual(y[15][2], 0.346376313, 5)
-        self.assertAlmostEqual(y[27][2], 0.230837103, 5)
-        self.assertAlmostEqual(y[22][3], 0.081296859, 5)
-        self.assertAlmostEqual(y[37][3], 0.039501126, 5)
-        self.assertAlmostEqual(y[29][4], 0.150075280, 5)
-        self.assertAlmostEqual(y[41][4], 0.078591978, 5)
-        self.assertAlmostEqual(y[50][0], 0.018315639, 5)
-        self.assertAlmostEqual(y[50][1], 0.917958431, 5)
-        self.assertAlmostEqual(y[50][2], 0.06372593, 5)
-        self.assertAlmostEqual(y[50][3], 0.018207409, 5)
-        self.assertAlmostEqual(y[50][4], 0.045518522, 5)
+        self.assertAlmostEqual(y[1][0], 0.9231163463, 4)
+        self.assertAlmostEqual(y[13][0], 0.353454681, 4)
+        self.assertAlmostEqual(y[8][1], 0.142837751, 4)
+        self.assertAlmostEqual(y[20][1], 0.492844600, 4)
+        self.assertAlmostEqual(y[15][2], 0.346376313, 4)
+        self.assertAlmostEqual(y[27][2], 0.230837103, 4)
+        self.assertAlmostEqual(y[22][3], 0.081296859, 4)
+        self.assertAlmostEqual(y[37][3], 0.039501126, 4)
+        self.assertAlmostEqual(y[29][4], 0.150075280, 4)
+        self.assertAlmostEqual(y[41][4], 0.078591978, 4)
+        self.assertAlmostEqual(y[50][0], 0.018315639, 4)
+        self.assertAlmostEqual(y[50][1], 0.917958431, 4)
+        self.assertAlmostEqual(y[50][2], 0.06372593, 4)
+        self.assertAlmostEqual(y[50][3], 0.018207409, 4)
+        self.assertAlmostEqual(y[50][4], 0.045518522, 4)
 
 
 
@@ -374,28 +379,30 @@ if max_steps is not set """
         # check to make sure that the answer is *incorrect* if we don't enforce
         # nonegativity (ineq_constr=0)
             
-        y, t, ypout, t_root, y_root, i_root = daeint(non_neg_res_func, tlist_non_neg,
+        y, t, ypout, t_root, y_root, i_root = daeint(non_neg_res_func, 
+                                                     tlist_non_neg,
                                                      y0_non_neg, yp0_non_neg,
                                                      rtol = reltol_non_neg,
                                                      atol = abstol_non_neg,
                                                      ineq_constr=False)
 
 
-        self.assertAlmostEqual(y[1][0], 0.960000000, 5)
-        self.assertAlmostEqual(y[-4][0], -.8800000000, 5)
+        self.assertAlmostEqual(y[1][0], 0.960000000, 4)
+        self.assertAlmostEqual(y[-4][0], -.8800000000, 4)
 
 
         # check to make sure that the answer is *correct* if we do enforce
         # nonegativity (ineq_constr=2)
 
-        y, t, ypout, t_root, y_root, i_root = daeint(non_neg_res_func, tlist_non_neg,
+        y, t, ypout, t_root, y_root, i_root = daeint(non_neg_res_func, 
+                                                     tlist_non_neg,
                                                      y0_non_neg, yp0_non_neg,
                                                      rtol = reltol_non_neg,
                                                      atol = abstol_non_neg,
                                                      ineq_constr=True)
 
-        self.assertAlmostEqual(y[1][0], 0.960000000, 5)
-        self.assertAlmostEqual(y[-4][0], 0.000000, 5)
+        self.assertAlmostEqual(y[1][0], 0.960000000, 4)
+        self.assertAlmostEqual(y[-4][0], 0.000000, 4)
 
 
     def test_redirect_output(self):
@@ -428,32 +435,6 @@ if max_steps is not set """
         messages = redir.stop()
         self.assertNotEqual(len(messages), 0)
 
-    #def test_args(self):
-    #    """ Test that passing args works. """
-    #    def res_func(t, y, yprime, rpar, extra1, extra2):
-    #        self.assertEqual(extra1, 'extra1')
-    #        self.assertEqual(extra2, 'extra2')
-    #        return vdp_res_func(t, y, yprime, rpar)
-
-    #    def root_func(t, y, yp, rpar, extra1, extra2):
-    #        self.assertEqual(extra1, 'extra1')
-    #        self.assertEqual(extra2, 'extra2')
-    #        return vdp_rt_func(t, y, yp, rpar)
-
-    #    y, t, ypout, t_root, y_root, i_root = daeint(res_func, tlist_vdp,
-    #                                                 y0_vdp, yp0_vdp,
-    #                                                 rt=1,
-    #                                                 rt=root_func,
-    #                                                 rtol = reltol_vdp,
-    #                                                 atol = abstol_vdp,
-    #                                                 intermediate_output=False,
-    #                                                 args = ('extra1','extra2'),
-    #                                                 redir_output=False)
-  
-    #    self.assertAlmostEqual(t_root, 0.8116351E+02, 5)
-    #    self.assertAlmostEqual(y_root[0], -0.3295063E-12, 5)
-    #    self.assertAlmostEqual(y_root[1], -0.6714100E+02, 3)
-    #    self.assertEqual(i_root[0], -1)
 
 ################################################################################
 
