@@ -6,8 +6,6 @@ import SloppyCell.Utility
 import SloppyCell.ReactionNetworks.Network_mod 
 
 def run_all_tests():
-    # This is to run all the tests with C compilation initiall disabled.
-    SloppyCell.ReactionNetworks.Network_mod.Network.disable_c = True
     all_tests = unittest.TestSuite()
 
     testfiles = glob.glob('test_*.py')
@@ -21,14 +19,15 @@ def run_all_tests():
             all_tests.addTest(mod.suite)
 
     SloppyCell.Utility.disable_warnings()
+    if not SloppyCell.disable_c:
+        print '*' * 80
+        print 'Running tests with C compilation enabled.'
+        print '*' * 80
+        unittest.TextTestRunner(verbosity=2).run(all_tests)
+    SloppyCell.ReactionNetworks.Network_mod.Network.disable_c = True
     print '*' * 80
     print 'Running tests with C compilation disabled.'
     print '*' * 80
-    unittest.TextTestRunner(verbosity=2).run(all_tests)
-    print '*' * 80
-    print 'Running tests with C compilation enabled.'
-    print '*' * 80
-    SloppyCell.ReactionNetworks.Network_mod.Network.disable_c = False
     unittest.TextTestRunner(verbosity=2).run(all_tests)
 
     for mod in all_test_mods:
