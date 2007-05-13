@@ -2082,7 +2082,14 @@ class Network:
                 if del_c_files:
                     os.unlink('%s.pyf' % module_name)
                     os.unlink('%s.c' % module_name)
-                    os.unlink('%s.so' % module_name)
+                    try:
+                        os.unlink('%s.so' % module_name)
+                    except OSError:
+                        pass
+                    try:
+                        os.unlink('%s.pyd' % module_name)
+                    except OSError:
+                        pass
             except:
                 # Compiling C failed.
                 logger.warn('Compiling of C functions for network %s failed!'
@@ -2167,14 +2174,21 @@ class Network:
         from numpy.distutils.exec_command import exec_command
         # Run f2py. The 'try... finally...' structure ensures that we stop
         #  redirecting output if there's an exection in running f2py
+        # These options assume we're working with mingw.
+        win_options = ''
+        if sys.platform == 'win32':
+            win_options = '--compiler=mingw32 --fcompiler=gnu'
+            
         try:
             if hide_f2py_output:
                 redir = Utility.Redirector()
                 redir.start()
             status, msg = exec_command('%(exec)s -c '
                                        '"import numpy.f2py;numpy.f2py.main()" '
-                                       '-c %(mod_name)s.pyf %(mod_name)s.c'
-                                       % {'exec': sys.executable, 
+                                       '-c %(win_options)s %(mod_name)s.pyf '
+                                       '%(mod_name)s.c'
+                                       % {'exec': sys.executable,
+                                          'win_options': win_options,
                                           'mod_name': mod_name})
             if status != 0:
                 logger.warn(msg)
