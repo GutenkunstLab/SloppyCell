@@ -785,10 +785,14 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
                            % min(dv0))
             dv0 = scipy.maximum(dv0, scipy.misc.limits.double_tiny)
 
-        # XXX: Would like to replace these with C'd versions.
-        # Also should figure out yprime for optimization.
+        # XXX: Would like to replace these with C'd versions, if it's holding
+        #      any of our users up.
         def func(logy):
             return net.res_function_logdv(time, logy, zeros, consts)
+        def fprime(logy):
+            y = scipy.exp(logy)
+            y = scipy.maximum(y, scipy.misc.limits.double_tiny)
+            return net.dres_dc_function(time, y, zeros, consts)
 
         x0 = scipy.log(dv0)
         # To transform sigma_x to sigma_log_x, we divide by x. We can set
@@ -798,11 +802,14 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
     else:
         def func(y):
             return net.res_function(time, y, zeros, consts)
+        def fprime(y):
+            return net.dres_dc_function(time, y, zeros, consts)
         x0 = dv0
 
     try:
         dvFixed, infodict, ier, mesg =\
                 scipy.optimize.fsolve(func, x0=x0, full_output=True,
+                                      fprime=fprime,
                                       xtol=xtol, maxfev=10000)
     except (scipy.optimize.minpack.error, ArithmeticError), X:
         raise FixedPointException(('Failure in fsolve.', X))
