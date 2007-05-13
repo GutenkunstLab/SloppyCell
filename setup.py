@@ -1,3 +1,9 @@
+# This gets f2py_signatures installed in the correct place. See 
+# http://groups.google.com/group/comp.lang.python/browse_thread/thread/35ec7b2fed36eaec/2105ee4d9e8042cb
+from distutils.command.install import INSTALL_SCHEMES
+for scheme in INSTALL_SCHEMES.values():
+    scheme['data'] = scheme['purelib'] 
+
 import scipy
 if hasattr(scipy, 'Numeric'):
     # Using old scipy
@@ -26,7 +32,7 @@ daskr = core.Extension(name = 'SloppyCell._daskr',
                                   'ddaskr/daux.f', 'ddaskr/dlinpk.f'])
 
 core.setup(name='SloppyCell',
-           version='CVS',
+           version='0.8',
            author='Ryan Gutenkunst',
            author_email='rng7@cornell.edu',
            url='http://sloppycell.sourceforge.net',
@@ -37,7 +43,8 @@ core.setup(name='SloppyCell',
                      'SloppyCell.Vandermonde'
                      ],
            package_dir={'SloppyCell': ''},
-           data_files=[('SloppyCell', ['f2py_signatures.pyf'])],
+           data_files=[('SloppyCell/ReactionNetworks', 
+                        ['ReactionNetworks/f2py_signatures.pyf'])],
 
            ext_modules = [daskr]
            )
