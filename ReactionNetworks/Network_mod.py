@@ -1939,7 +1939,7 @@ class Network:
 
     _last_structure = None
     # This is an option to disable compilation of C modules.
-    disable_c = False
+    disable_c = SloppyCell.disable_c
     _last_disabled_c = disable_c
     def compile(self, disable_c=None):
         """
