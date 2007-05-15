@@ -2139,7 +2139,8 @@ class Network:
         logger.debug('Outputting C for network %s.' % self.get_id())
         if mod_name is None:
             semi_unique = str(time.time()).replace('.', '_')
-            mod_name = '%s%s' % (self.get_id(), semi_unique[::-1])
+            mod_name = '%s_%i_%s' % (self.get_id(), SloppyCell.my_rank,
+                                     semi_unique[::-1])
             mod_name = mod_name.replace('-', '_')
 
         # Write the C code to a file.
