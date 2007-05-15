@@ -42,7 +42,7 @@ class test_fixedpoints(unittest.TestCase):
         self.assertAlmostEqual(fp[1], scipy.sqrt(2), 6, 'Failed on logs 1,1.')
         self.assertAlmostEqual(fp[2], 1, 6, 'Failed on logs 1,2.')
 
-        fp = Dynamics.dyn_var_fixed_point(net, dv0=[0.2,0.2,0.2], 
+        fp = Dynamics.dyn_var_fixed_point(net, dv0=[0.1,0.1,0.1], 
                                           with_logs=True)
         # This should find the fixed-point [0, 0, 0]
         self.assertAlmostEqual(fp[0], 0, 6, 'Failed on logs 2,0.')
@@ -58,13 +58,13 @@ class test_fixedpoints(unittest.TestCase):
         self.assertEqual(stable, -1, 'Failed to classify stable fixed point')
 
         # (0,0,0) is a saddle here
-        fp, stable = Dynamics.dyn_var_fixed_point(net, dv0=[0.2,0.2,0.2], 
+        fp, stable = Dynamics.dyn_var_fixed_point(net, dv0=[0.01,0.01,0.01], 
                                                   stability=True)
         self.assertEqual(stable, 0, 'Failed to classify saddle')
 
         # (0,0,0) is a stable node here
         net.set_var_ic('r', 0.5)
-        fp, stable = Dynamics.dyn_var_fixed_point(net, dv0=[1.0,1.0,1.0], 
+        fp, stable = Dynamics.dyn_var_fixed_point(net, dv0=[0.1,0.1,0.1], 
                                                   stability=True)
         self.assertEqual(stable, -1, 'Failed to classify stable fixed point')
 
