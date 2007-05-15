@@ -806,7 +806,9 @@ class Network:
         self.updateAssignedVars(time)
 
     def updateAssignedVars(self, time):
-        var_vals = [(id, self.get_var_val(id)) for id in self.variables.keys()]
+        to_get = sets.Set(self.variables.keys())
+        to_get.difference_update(sets.Set(self.assignedVars.keys()))
+        var_vals = [(id, self.get_var_val(id)) for id in to_get]
         var_vals = dict(var_vals)
         var_vals['time'] = time
         for id, rhs in self.assignmentRules.items():
