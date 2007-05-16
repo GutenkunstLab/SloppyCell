@@ -32,7 +32,7 @@ daskr = core.Extension(name = 'SloppyCell._daskr',
                                   'ddaskr/daux.f', 'ddaskr/dlinpk.f'])
 
 core.setup(name='SloppyCell',
-           version='0.8',
+           version='CVS',
            author='Ryan Gutenkunst',
            author_email='rng7@cornell.edu',
            url='http://sloppycell.sourceforge.net',
