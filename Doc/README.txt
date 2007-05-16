@@ -8,6 +8,21 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
 .. topic:: News
 
+   May 9th, 2007: **SloppyCell 0.8 released!**
+
+      SloppyCell continues to evolve rapidly.
+
+      This release sees very signficant speed increases. 
+      We've added support for automatically building C versions of all the
+      integration functions. In testing on various networks, this yields a
+      speed up of between a factor of 5 and 20 depending on the application.
+      Additionally, network compilation and sensitivity integration are faster.
+
+      Finally, algebraic rules are now fully supported, and we have moved
+      completely to using DASKR as our integrator.
+
+      See our `download page <http://sourceforge.net/project/showfiles.php?group_id=140498>`_.
+
    January 23rd, 2007: **SloppyCell 0.6 released!**
 
       Lots of work over the past few months. The parallel processing code has
@@ -55,6 +70,7 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 - `Mailing list`_
 - Sourceforge `project page`_
 - CVS snapshot (`.tar.gz <SloppyCell-CVS.tar.gz>`_, `.zip <SloppyCell-CVS.zip>`_) generated CVS_GEN_DATE
+- Win32 binary for integration library (`_daskr.pyd <_daskr.pyd>`_)
 - `API documentation <api/index.html>`_ generated API_DOC_GEN_DATE
 
 .. topic:: Citing SloppyCell:

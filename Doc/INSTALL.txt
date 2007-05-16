@@ -6,41 +6,42 @@ Dependencies
 
 Required to run
 +++++++++++++++
-* Python_
-* SciPy_
-* matplotlib_
+* Python_ (version 2.3 or higher)
+* NumPy_ (version 1.0.2 or higher)
+* SciPy_ (version 0.5.2 or higher)
+* matplotlib_ (version 0.90.0 or higher)
 
-Required to build
-+++++++++++++++++
+Required to build and use C functions
++++++++++++++++++++++++++++++++++++++
+* C compiler
 * Fortran77 compiler
 
 Recommended
 +++++++++++
-* LibSBML_: Required for SBML import and export. Be sure to build ``--with-python``.
+* LibSBML_ (version 2.3.4): Required for SBML import and export.
 * IPython_: A dramatic improvement over the standard python shell.
-* Graphviz_: SloppyCell can generate ``.dot`` files specifying network diagrams,which can be visualized using Graphviz. 
-* Psyco_: A just-in-time compiler for python, Psyco will speed up integrations by about 50% on supported platforms.
-
+* Graphviz_: SloppyCell can generate ``.dot`` files specifying network diagrams which can be visualized using Graphviz. 
 
 Instructions
 ~~~~~~~~~~~~
 .. topic:: On Windows
 
    1. Install required dependencies.
-      Enthought provides `a distribution <http://code.enthought.com/enthon/>`_ of Python that includes NumPy, SciPy, and Matplotlib. Unfortunately, it is a little out of date.
-
-      Alternatively, Python and all three packages each have nice installers of their own. We suggest using Python 2.4, as it is only version for which there are pre-built libsbml libraries.
+      Python, NumPy, SciPy, and matplotlib all have nice windows installers. We
+      suggest using Python 2.4.x, as prebuilt libsbml 2.3.4 binaries are
+      unavailable for other versions of Python.
       
-   2. `Download <http://sourceforge.net/project/showfiles.php?group_id=140498>`_ and run the executable installer. If using the Enthought distribution, you'll want the ``-enthon1.00`` version. Otherwise, you'll want the ``py2.4`` version.
+   2. `Download <http://sourceforge.net/project/showfiles.php?group_id=140498>`_ and run the executable installer.
 
    3. To access libsbml from python, you'll need to `setup your PYTHONPATH and
-      LD_LIBRARY_PATH <http://sysbio.molgen.mpg.de/sbmlmerge/sbmlmerge_manual/node36.html>`_.
+      LD_LIBRARY_PATH <http://sysbio.molgen.mpg.de/sbmlmerge/sbmlmerge_manual/node36.html>`_. All these instructions are performed using the Control Panel.
 
-   4. If you'd like to build SloppyCell yourself, I suggest following the
-      directions to install MinGW as described
-      `here <http://scipy.org/Installing_SciPy/Windows>`_. Then you should be
-      able to do a ``python setup.py build -cmingw32 bdist_wininst`` to build
-      your own installer.
+   4. If you'd like to build SloppyCell yourself or take advantage of the C
+      speed-ups, I suggest installing ``MinGW <http://www.mingw.org/>``_.
+      To do so, `download <http://sourceforge.net/project/showfiles.php?group_id=2435>`_ and run ``MinGW-?.?.?.exe``. (? refers to the version number. I've had success with version 5.1.3.)
+      Tell the installer to setup g++ and g77, in addition to the normal C compiler.
+
+      Unfortunately, there is a slight problem with MinGW. To fix it, follow `these instructions <http://sourceforge.net/mailarchive/message.php?msg_name=000b01c52777%241d7d7580%24d86d65da%40DANNY>`_. On my system, ``libgcc.a`` was in ``c:\mingw\lib\gcc\mingw32\3.4.2``.
 
 .. topic:: On OS X and Linux
 
@@ -49,11 +50,13 @@ Instructions
    2. Unpack the tarball. (``tar xzf SloppyCell-???.tar.gz``)
    3. Descend into the SloppyCell-??? directory. (``cd SloppyCell-???``)
    4. Run the installation script. (``python setup.py install``) 
+      This may fail due to difficulties with fortran compilation. More information on the available fortran compilers can be found with ``python setup.py config_fc --help_fcompiler``
    5. Run the included test routines. (``cd Testing; python test.py``)
 
 $Date$
 
 .. _Python: http://www.python.org
+.. _NumPy: http://www.scipy.org
 .. _SciPy: http://www.scipy.org
 .. _matplotlib: http://matplotlib.sourceforge.net/
 .. _LibSBML: http://www.sbml.org/software/libsbml/
