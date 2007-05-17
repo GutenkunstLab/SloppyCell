@@ -1720,10 +1720,9 @@ class Network:
         # ddelay/dp = ddelay/dp + ddelay_dy*dy/dp + ddelay_dy*dy/dt*dtf/dp
         #             + ddelay/dt*dtf/dp
         delay = event.delay
-        try:
-            float(delay)
+        if not isinstance(delay, str):
             ddelay_dp = 0
-        except ValueError:
+        else:
             # First term
             delay_vars_used = ExprManip.extract_vars(delay)
             ddelay_dp = self.takeDerivative(delay, opt_var, delay_vars_used)
@@ -1769,84 +1768,78 @@ class Network:
         
         # Now compute the sensitivity of each of our new values
         for y_ii, y_id in enumerate(self.dynamicVars.keys()):
-            # Let's say we shift parameters by dp and correspondingly the firing
-            #  time of the events shifts by dtf. Then the total change in
-            #  y divided by dp  is
-            #  dy/dp is dy/dt(pre_exec)*dte/dp + dbump/dp 
-            #           - dy/dt(post_exec)*dte/dp
-            # Here bump = assigned value - prior value, and
-            #  dy/dt(pre_exec) is dy/dt right before the event >executes<.
-            #  dy/dt(post_exec) is dy/dt right after the event >executes<.
-            # Also dbump/dp = da/dp + da/dy * dy/dp + da/dy * dy/dt * dtf/dp
-            #                   + da/dt * dtf/dp - dy/dp
-            
-            # First we calculate dbump_dp
-            # Note that in the logic I've used above, a is y even if there's
-            #  no event assignment as long as I evaluate everything at the time
-            #  of execution.
-            if y_id in event.event_assignments:
-                time_bumped = time_fired
-                ysens_bumped = ysens_fired
-                yp_bumped = yp_fired
-                var_vals_bumped = var_vals_fired
+            if not event.event_assignments.has_key(y_id):
+                # This is the index of y's sensitivity in the sensitivity array
+                index_in_y = y_ii + N_dv
+                # dy_dp after the event of course begins equal to the current
+                #  sensitivity
+                dy_dp_post_exec = ysens_pre_exec[index_in_y]
+                # These next two terms account for possible changes in the 
+                #  derivative of y due to event execution.
+                # dy/dt(pre_exec) * dte/dp term
+                dy_dp_post_exec += yp_pre_exec[y_ii] * dte_dp
+                # -dy/dt(post_exec) * dte/dp
+                dy_dp_post_exec -= yp_post_exec[y_ii] * dte_dp
+                ysens_post_exec[index_in_y] = dy_dp_post_exec
             else:
-                time_bumped = time_exec
-                ysens_bumped = ysens_pre_exec
-                yp_bumped = yp_pre_exec
-                var_vals_bumped = var_vals_pre_exec
+                # If y has been assigned the value a, then the sensitivity of 
+                #  y after the event is da/dp - dy/dt(post_exec) * dte/dp
+                a = event.event_assignments.get(y_id)
+                if not isinstance(a, str):
+                    # If a isn't a string, it must be a constant, so da/dp = 0.
+                    dy_dp_post_exec = -yp_post_exec[y_ii] * dte_dp
+                    index_in_y = y_ii + N_dv
+                    ysens_post_exec[index_in_y] = dy_dp_post_exec
+                else:
+                    # da/dp= da/dp + da/dy * dy/dp + da/dy * dy/dt * dtf/dp
+                    #                   + da/dt * dtf/dp
+                    # All these are calculated at the firing time
+            
+                    # We only need to deal with whatever clause in the 
+                    # piecewise is applicable.
+                    a = self._sub_for_piecewise(a, time_fired)
+                    a_vars_used = ExprManip.extract_vars(a)
 
-            # If there's no explicit event assignment, we'll have e.g. 'x' = 'x'
-            a = event.event_assignments.get(y_id, y_id)
-            a = str(a)
-            # We only need to deal with whatever clause in the piecewise is
-            #  applicable.
-            a = self._sub_for_piecewise(a, time_bumped)
-            a_vars_used = ExprManip.extract_vars(a)
+                    # First term: da/dp 
+                    da_dp = self.takeDerivative(a, opt_var, a_vars_used)
+                    da_dp = self.evaluate_expr(da_dp, time_fired, 
+                                               var_vals_fired)
+                    dy_dp_post_exec = da_dp
 
-            dbump_dp = 0
+                    # Second term: da/dy * dy/dp 
+                    # Third term: da/dy * dy/dt * dtf/dp 
+                    # Together = da/dy * (dy/dp + dy/dt * dtf/dp)
+                    for other_ii,other_id in enumerate(self.dynamicVars.keys()):
+                        try:
+                            da_dother = derivs_cache[(a, other_id)]
+                        except KeyError:
+                            da_dother = self.takeDerivative(a, other_id, 
+                                                            a_vars_used)
+                            derivs_cache[(a, other_id)] = da_dother
+                        da_dother = self.evaluate_expr(da_dother, time_fired, 
+                                                       var_vals_fired)
 
-            # First term: da/dp 
-            da_dp = self.takeDerivative(a, opt_var, a_vars_used)
-            da_dp = self.evaluate_expr(da_dp, time_bumped, var_vals_bumped)
-            dbump_dp += da_dp
+                        # This is the index of dother_dp in the y array
+                        index_in_y = other_ii + N_dv
+                        dother_dp = ysens_fired[index_in_y]
 
-            # Second term: da/dy * dy/dp 
-            # Third term: da/dy * dy/dt * dtf/dp 
-            # = da/dy * (dy/dp + dy/dt * dtf/dp)
-            for other_ii, other_id in enumerate(self.dynamicVars.keys()):
-                try:
-                    da_dother = derivs_cache[(a, other_id)]
-                except KeyError:
-                    da_dother = self.takeDerivative(a, other_id, a_vars_used)
-                    derivs_cache[(a, other_id)] = da_dother
-                da_dother = self.evaluate_expr(da_dother, time_bumped, 
-                                               var_vals_bumped)
+                        dother_dt = yp_fired[other_ii]
 
-                # This is the index of dother_dp in the y array
-                index_in_y = other_ii + N_dv
-                dother_dp = ysens_bumped[index_in_y]
+                        dy_dp_post_exec += da_dother * dother_dp
+                        dy_dp_post_exec += da_dother * dother_dt * dtf_dp
 
-                dother_dt = yp_bumped[other_ii]
+                    # Fourth term: da/dt * dtf/dp
+                    da_dt = self.takeDerivative(a, 'time', a_vars_used)
+                    da_dt = self.evaluate_expr(da_dt, time_fired, 
+                                               var_vals_fired)
+                    dy_dp_post_exec += da_dt * dtf_dp
 
-                dbump_dp += da_dother * (dother_dp + dother_dt * dtf_dp)
+                    # Finally, -dy/dt(post_exec) * dte/dp
+                    # We calculated dy/dt(new) up above in this function
+                    dy_dp_post_exec -= yp_post_exec[y_ii] * dte_dp
 
-            # Fourth term: da/dt * dtf/dp
-            da_dt = self.takeDerivative(a, 'time', a_vars_used)
-            da_dt = self.evaluate_expr(da_dt, time_bumped, var_vals_bumped)
-            dbump_dp += da_dt * dtf_dp
-
-            # Fifth term:  -dy/dp = dy/dt * dtf/dp
-            dbump_dp -= yp_bumped[y_ii] * dtf_dp
-
-            dy_dp = dbump_dp
-            # Now the dy/dt(pre_exec) * dte/dp term
-            dy_dp += yp_pre_exec[y_ii] * dte_dp
-            # Finally, -dy/dt(post_exec) * dte/dp
-            # We calculated dy/dt(new) up above in this function
-            dy_dp -= yp_post_exec[y_ii] * dte_dp
-
-            index_in_y = y_ii + N_dv
-            ysens_post_exec[index_in_y] = dy_dp
+                    index_in_y = y_ii + N_dv
+                    ysens_post_exec[index_in_y] = dy_dp_post_exec
 
         return ysens_post_exec
 
