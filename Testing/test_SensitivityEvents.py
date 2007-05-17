@@ -3,10 +3,8 @@ import os
 
 from SloppyCell.ReactionNetworks import *
 
-file_path = os.path.join('SBML_files',
-                         'algebraicRules-assignment_in_algebraic.xml')
-base_net = IO.from_SBML_file(file_path,
-                               'algebraicRules-assignment_in_algebraic')
+import AlgTestNets
+base_net = AlgTestNets.algebraic_net_assignment.copy()
 base_net.remove_component('event0')
 base_net.set_var_constant('k1', False)
 
@@ -46,6 +44,12 @@ class test_SensitivityEvents(unittest.TestCase):
     def test_basic(self):
         net = base_net.copy('test')
         net.add_event('event 1', 'gt(time, 4)', {'k1': 4.3})
+        sens_traj, traj_central, traj_plus = do_sens_and_fd(net)
+        self.assert_over_all_vars(sens_traj, traj_central, traj_plus)
+
+    def test_constant_assignment(self):
+        net = base_net.copy('test')
+        net.add_event('event 1', 'lt(X0, Keq/4)', {'X1': 4.3})
         sens_traj, traj_central, traj_plus = do_sens_and_fd(net)
         self.assert_over_all_vars(sens_traj, traj_central, traj_plus)
 
