@@ -2032,21 +2032,20 @@ class Network:
 
     # We cache our exec'd python functions and compiled C modules to minimize
     #  redundant compiles.
-    _py_func_dict_cache = []
-    _c_module_cache = []
+    _py_func_dict_cache = {}
+    _c_module_cache = {}
     # This is an option to disable compilation of C modules.
     def exec_dynamic_functions(self, disable_c=False, del_c_files=True, 
                                curr_c_code=None):
         curr_py_bodies = '\n'.join(self._dynamic_funcs_python.values())
 
         # Search our cache of python functions.
-        for py_bodies, py_func_dict in self._py_func_dict_cache:
-            if py_bodies == curr_py_bodies:
-                break
-        else:
+        try:
+            py_func_dict = self._py_func_dict_cache[curr_py_bodies]
+        except KeyError:
             # We don't have a cached version, so we need to generate it.
             py_func_dict = {}
-            self._py_func_dict_cache.append((curr_py_bodies, py_func_dict))
+            self._py_func_dict_cache[curr_py_bodies] = py_func_dict
             for func_name, body in self._dynamic_funcs_python.items():
                 exec body in self.namespace, locals()
                 py_func_dict[func_name] = locals()[func_name]
@@ -2062,10 +2061,9 @@ class Network:
         if curr_c_code is None:
             curr_c_code = self.get_c_code()
         # Search the cache.
-        for c_code, c_module in self._c_module_cache:
-            if c_code == curr_c_code:
-                break
-        else:
+        try:
+            c_module = self._c_module_cache[curr_c_code]
+        except KeyError:
             # Regenerate if needed.
             # Write C to file.
             module_name = self.output_c(curr_c_code)
@@ -2093,7 +2091,7 @@ class Network:
                 # try compiling the same bad C code.
                 c_module = None
                 raise
-            self._c_module_cache.append((curr_c_code, c_module))
+            self._c_module_cache[curr_c_code] = c_module
 
         # Now we add all the appropriate functions to our Network.
         if c_module is not None:
