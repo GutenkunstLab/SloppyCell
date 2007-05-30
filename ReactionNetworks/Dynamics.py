@@ -838,6 +838,8 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
 def find_ypic_sens(y, yp, time, var_types, rtol, atol, constants, net, opt_var,
                   redirect_msgs=False):
     var_types = scipy.asarray(var_types)
+    y = scipy.asarray(y, scipy.float_)
+    yp = scipy.asarray(yp, scipy.float_)
     N_dyn = len(var_types)
     y = copy.copy(y)
     yp = copy.copy(yp)
@@ -854,7 +856,7 @@ def find_ypic_sens(y, yp, time, var_types, rtol, atol, constants, net, opt_var,
     # Now we can solve for yp for all the *non-algebraic* sensitivity variables
     yp_non_alg_sens = yp[N_dyn:][var_types == 1]
     def restricted_sens_rhs(yp_non_alg_sens):
-        yp_local = copy.copy(yp)
+        yp_local = scipy.array(yp, scipy.float_)
         yp_local[N_dyn:][var_types == 1] = yp_non_alg_sens
         res = net.sens_rhs(time, y, yp_local, constants)
         return res[N_dyn:][var_types == 1]
