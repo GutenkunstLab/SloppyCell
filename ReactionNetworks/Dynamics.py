@@ -530,12 +530,16 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
             DwrtOV = net.takeDerivative(var.initialValue, opt_var)
             IC[N_dyn_vars + dvInd] = net.evaluate_expr(DwrtOV, 
                                                        time=current_time)
-    # We'll let ddaskr figure out the initial condition on yprime
-    ypIC = 0*IC + 1
-    # The var_types for the sensitivity variables are identical to those
-    # for the normal variables.
-    var_types = scipy.concatenate((net._dynamic_var_algebraic,
-                                   net._dynamic_var_algebraic))
+
+    # The index of the variable to calculate sensitivity wrt is passed in
+    # the last element of rpar. It is obtained by an (int) cast, so we add
+    # a small amount to make sure the cast doesn't round down stupidly.
+    rpar = scipy.concatenate((net.constantVarValues, [opt_var_index+0.1]))
+
+    # Our intial guess for ypIC will be based on the typical values
+    typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]*2
+    ypIC = scipy.array(typ_vals)
+    ypIC[N_dyn_vars:] /= net.get_var_ic(opt_var)
 
     tout = []
     sens_out = scipy.zeros((0, N_dyn_vars), scipy.float_)
@@ -591,10 +595,9 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
             int_times = scipy.compress(times > current_time, times)
             int_times = scipy.concatenate(([current_time], int_times))
 
-        # The index of the variable to calculate sensitivity wrt is passed in
-        # the last element of rpar. It is obtained by an (int) cast, so we add
-        # a small amount to make sure the cast doesn't round down stupidly.
-        rpar = scipy.concatenate((net.constantVarValues, [opt_var_index+0.1]))
+        ypIC = find_ypic_sens(IC, ypIC, current_time, 
+                              net._dynamic_var_algebraic,
+                              rtol, atol, rpar, net)
 
         sens_rhs = net.sens_rhs
         if net.integrateWithLogs:
@@ -602,15 +605,13 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
             IC[:N_dyn_vars] = scipy.log(IC[:N_dyn_vars])
             sens_rhs = net.sens_rhs_logdv
 
-        # We let daskr figure out ypIC
         try:
             int_outputs = daeint(sens_rhs, int_times,
                                  IC, ypIC, 
                                  rtol_for_sens, atol_for_sens,
                                  rpar = rpar,
                                  max_steps = 1e4,
-                                 init_consistent=True,
-                                 var_types = var_types,
+                                 init_consistent=False,
                                  redir_output = redirect_msgs)
         except Utility.SloppyCellException, X:
             logger.warn('Sensitivity integration failed for network %s on '
@@ -833,6 +834,51 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
         else:
             stable = 0
         return (dvFixed, stable)
+
+def find_ypic_sens(y, yp, time, var_types, rtol, atol, constants, net,
+                  redirect_msgs=False):
+    var_types = scipy.asarray(var_types)
+    N_dyn = len(var_types)
+    y = copy.copy(y)
+    yp = copy.copy(yp)
+
+    # Find the initial conditions for the normal variables
+    y_norm, yp_norm = find_ics(y[:N_dyn], yp[:N_dyn], time,
+                               var_types, rtol, atol,
+                               net.constantVarValues, net, 
+                               redirect_msgs=redirect_msgs)
+    # Copy the updated values into our y and yp arrays
+    y[:N_dyn] = y_norm
+    yp[:N_dyn] = yp_norm
+    
+    # Now we can solve for yp for all the *non-algebraic* sensitivity variables
+    yp_non_alg_sens = yp[N_dyn:][var_types == 1]
+    def restricted_sens_rhs(yp_non_alg_sens):
+        yp_local = copy.copy(yp)
+        yp_local[N_dyn:][var_types == 1] = yp_non_alg_sens
+        res = net.sens_rhs(time, y, yp_local, constants)
+        return res[N_dyn:][var_types == 1]
+
+    redir = Utility.Redirector()
+    if redirect_msgs:
+        redir.start()
+    try:
+        sln, infodict, ier, mesg = \
+                scipy.optimize.fsolve(restricted_sens_rhs, x0=yp_non_alg_sens,
+                                      xtol=min(rtol),
+                                      full_output=True)
+        sln = scipy.atleast_1d(sln)
+        if ier != 1:
+            raise Utility.SloppyCellException('Failed to calculate intial '
+                                              'conditions in network %s for ' 
+                                              'opt_var %s.'
+                                              % (net.get_id(), opt_var))
+    finally:
+        messages = redir.stop()
+
+    yp[N_dyn:][var_types == 1] = sln
+    return yp
+    
 
 def find_ics(y, yp, time, var_types, rtol, atol, constants, net, 
              redirect_msgs=False):
