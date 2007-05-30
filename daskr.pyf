@@ -59,6 +59,7 @@ interface
         ! This will have to be made correct in daeint
         integer intent(in), dimension(2) :: ipar
         integer intent(in) :: nrt
+        ! We can't have size zero arrays, so we need to set a minimum of 1 here
         integer intent(out), dimension(MAX(1, nrt)) :: jroot
         use daskr__user__routines
         external res
