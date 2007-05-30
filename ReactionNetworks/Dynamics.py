@@ -597,7 +597,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
 
         ypIC = find_ypic_sens(IC, ypIC, current_time, 
                               net._dynamic_var_algebraic,
-                              rtol, atol, rpar, net)
+                              rtol, atol, rpar, net, opt_var)
 
         sens_rhs = net.sens_rhs
         if net.integrateWithLogs:
@@ -835,7 +835,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
             stable = 0
         return (dvFixed, stable)
 
-def find_ypic_sens(y, yp, time, var_types, rtol, atol, constants, net,
+def find_ypic_sens(y, yp, time, var_types, rtol, atol, constants, net, opt_var,
                   redirect_msgs=False):
     var_types = scipy.asarray(var_types)
     N_dyn = len(var_types)
@@ -868,7 +868,8 @@ def find_ypic_sens(y, yp, time, var_types, rtol, atol, constants, net,
                                       xtol=min(rtol),
                                       full_output=True)
         sln = scipy.atleast_1d(sln)
-        if ier != 1:
+        res = restricted_sens_rhs(sln)
+        if ier != 1 and max(abs(res)) > min(atol):
             raise Utility.SloppyCellException('Failed to calculate intial '
                                               'conditions in network %s for ' 
                                               'opt_var %s.'
