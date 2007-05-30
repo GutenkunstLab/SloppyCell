@@ -36,6 +36,8 @@ class Trajectory:
                          'arccosh': scipy.arccosh,
                          'arcsinh': scipy.arcsinh,
                          'arctanh': scipy.arctanh,
+                         'pow': scipy.power,
+                         'sqrt': scipy.sqrt,
                          'exponentiale': scipy.e,
                          'pi': scipy.pi,
                          }
