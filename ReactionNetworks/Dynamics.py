@@ -40,7 +40,7 @@ class FixedPointException(Utility.SloppyCellException):
 
 def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes, 
                      rtol, atol, fill_traj, return_derivs,
-                     redirect_msgs, init_consistent, var_types):
+                     redirect_msgs, calculate_ic, var_types):
     N_dyn_var = len(net.dynamicVars)
 
     if net.integrateWithLogs:
@@ -77,7 +77,7 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
                 'intermediate_output': fill_traj,
                 'redir_output': redirect_msgs,
 
-                'init_consistent' : init_consistent,
+                'calculate_ic' : calculate_ic,
                 'var_types' : var_types,
                 }
 
@@ -307,7 +307,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                                    fill_traj=fill_traj, 
                                    return_derivs=True, 
                                    redirect_msgs=redirect_msgs,
-                                   init_consistent = False,
+                                   calculate_ic = False,
                                    var_types = net._dynamic_var_algebraic)
 
         exception_raised, yout_this, tout_this, youtdt_this,\
@@ -611,7 +611,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                                  rtol_for_sens, atol_for_sens,
                                  rpar = rpar,
                                  max_steps = 1e4,
-                                 init_consistent=False,
+                                 calculate_ic = False,
                                  redir_output = redirect_msgs)
         except Utility.SloppyCellException, X:
             logger.warn('Sensitivity integration failed for network %s on '

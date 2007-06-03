@@ -329,7 +329,7 @@ if max_steps is not set """
 
 
 
-    def test_algebraic_init_consistent(self):
+    def test_algebraic_calculate_ic(self):
         """ Test automatic calculation of initial conditions """
 
         # pass an inconsistent set of initial conditions to the fast reaction
@@ -343,7 +343,7 @@ if max_steps is not set """
                                                      y0_inconsistent, yp0_alg,
                                                      rtol = reltol_alg,
                                                      atol = abstol_alg,
-                                                     init_consistent = 1,
+                                                     calculate_ic = True,
                                                      var_types = var_types_inconsistent)
 
         # check to make sure the initial condition was calculated correctly

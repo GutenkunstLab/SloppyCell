@@ -94,7 +94,7 @@ class daeintException(Utility.SloppyCellException):
 
 def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None, 
             tstop=None, intermediate_output=False, ineq_constr=False,
-            init_consistent=False, var_types=None, redir_output=True,
+            calculate_ic=False, var_types=None, redir_output=True,
             max_steps=500, rpar=None):
     """Integrate a system of ordinary differential algebraic equations with or
     without events.
@@ -164,12 +164,12 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
       ineq_constr -- True to have inequality constraint checking on.
               If True, the code will check for non-negativity in Y during the
               integration (not during initial condition calculations).
-      init_consistent -- True to have the DDASKR automatically calculate
-              consistent initial conditions.  Given Y_d, the code will
-              calculate Y_a and Y'_d (note: you must also pass var_types
-              to indicate which variables are algebraic and which are
-              differential.  We do not use the functionality of daskr
-              that allows calculation of Y given Y'.
+      calculate_ic -- True to have the DDASKR automatically calculate
+             consistent initial conditions.  Given Y_d, the code will
+             calculate Y_a and Y'_d (note: you must also pass var_types
+             to indicate which variables are algebraic and which are
+             differential).  We do not use the functionality of daskr
+             that allows calculation of Y given Y'.
       var_types -- this list tells whether each variable in the system is
               differential or algebraic. Vor a variable Yi, var_types[i] = +1 if
               Yi is differential, and var_types[i] = -1 if it is algebraic.
@@ -318,16 +318,17 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
     else:
         raise ValueError, 'ineq_constr must be True or False.'
 
-    # Are the initial t0, y0, yp0 consisent?
-    if init_consistent == False:
+    # Is it necessary to calculate the initial condition?
+    # (i.e., are the initial conditions consistent?)
+    if calculate_ic == False:
         info[10] = 0
     # if they are inconsistent, given Y_d, calculate Y_a and Y'_d must also
     # specify which components are algebraic and which are differential
-    elif init_consistent == True:
+    elif calculate_ic == True:
         info[10] = 1
         # check the var_types parameter
         if var_types == None:
-            raise ValueError('if init_consistent = 1, the var_types array '
+            raise ValueError('if calculate_ic = 1, the var_types array '
                              'must be passed.')
         elif len(var_types) != len(y0):
             raise ValueError('var_types must be of length len(y0)')
@@ -388,7 +389,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
 
     # add the initial point to the output array if the initial condition is
     # consistent
-    if init_consistent == False:
+    if calculate_ic == False:
         tout_l.append(t0)
         yout_l.append(y0)
         ypout_l.append(yp0)
@@ -503,11 +504,11 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
 
                 # if an initial condition was calculated, update info[13]
                 # this allows the integration to proceed.  Also set
-                # init_consistent to False to avoid a redundant initial condition
+                # calculate_ic to False to avoid a redundant initial condition
                 # calculation
                 if idid == 4:
                     info[13] = 0
-                    init_consistent = False
+                    calculate_ic = False
 
                 # if the solution was successful because a root of R(T,Y,Y') was
                 # found at treached, then restart the integration.
