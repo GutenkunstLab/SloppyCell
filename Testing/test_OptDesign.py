@@ -33,9 +33,9 @@ class test_OptDesign(unittest.TestCase):
         sens_vect = OD.get_sens_vect('x',1.1)
         sens_array = OD.get_sens_array('x')
         # tidy up
-        os.system('rm TNjtj')
-        os.system('rm TNparams')
-        os.system('rm TNsenstraj')
+        os.unlink('TNjtj')
+        os.unlink('TNparams')
+        os.unlink('TNsenstraj')
 
 suite = unittest.makeSuite(test_OptDesign)
 
