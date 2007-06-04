@@ -6,6 +6,7 @@ import time
 import scipy
 import scipy.linalg
 import scipy.stats
+import scipy.fftpack
 
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
@@ -21,10 +22,10 @@ def autocorrelation(series):
     """
     # We need to de-mean the series. Also, we want to pad with zeros to avoid
     #  assuming our series is periodic.
-    f = scipy.fft.rfft(scipy.asarray(series)-scipy.mean(series), 
+    f = scipy.fftpack.rfft(scipy.asarray(series)-scipy.mean(series), 
                        n = 2*len(series))
     # The inverse fft of |f|**2 is the autocorrelation
-    ac = scipy.fft.irfft(abs(f)**2)
+    ac = scipy.fftpack.irfft(abs(f)**2)
     # But we padded with zeros, so it's too long
     ac = ac[:len(series)]
     # And we need to adjust to remove the effect of the zeros we added
