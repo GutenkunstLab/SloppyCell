@@ -11,14 +11,14 @@ interface
         integer intent(hide), dimension(2) :: ipar
     end subroutine res_function
     subroutine ddaskr_jac(t,y,yprime,pd,cj,constants,ipar)
-         double precision intent(in) :: t
-         double precision intent(in), dimension(%(N_dyn)i) :: y
-         double precision intent(in), dimension(%(N_dyn)i) :: yprime
-         double precision intent(out), dimension(%(N_dyn)i, %(N_dyn)i) :: pd
-         double precision intent(in) :: cj
-         double precision intent(in), dimension(%(N_const)i) :: constants
-         ! This has been set equal to (neq, len(rpar)) in the daskr call
-         integer dimension(2), intent(hide) :: ipar
+        double precision intent(in) :: t
+        double precision intent(in), dimension(%(N_dyn)i) :: y
+        double precision intent(in), dimension(%(N_dyn)i) :: yprime
+        double precision intent(out), dimension(%(N_dyn)i, %(N_dyn)i) :: pd
+        double precision intent(in) :: cj
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        ! This has been set equal to (neq, len(rpar)) in the daskr call
+        integer dimension(2), intent(hide) :: ipar
     end subroutine ddaskr_jac
     subroutine root_func(neq,t,y,yp,nrt,root_devs,constants,ipar)
         integer intent(hide) :: neq
@@ -60,14 +60,7 @@ interface
         double precision intent(in), dimension(%(N_const)i) :: constants
         double precision intent(out), dimension(%(N_dyn)i, %(N_dyn)i) :: pd
     end subroutine dres_dcdot_function
-    subroutine dres_dsinglep(time, dynamicVars, yprime, constants, p_index, pd)
-        double precision intent(in) :: time
-        double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
-        double precision intent(in), dimension(%(N_dyn)i) :: yprime
-        double precision intent(in), dimension(%(N_const)i) :: constants
-        integer intent(in) :: p_index
-        double precision intent(out), dimension(%(N_dyn)i) :: pd
-    end subroutine dres_dsinglep
+%(dres_dparams)s    
     subroutine sens_rhs(time, sens_y, sens_yp, cj, sens_res, ires, constants, ipar) 
         double precision intent(in) :: time
         double precision intent(in), dimension(2*%(N_dyn)i) :: sens_y
