@@ -1277,73 +1277,71 @@ class Network:
         self._dynamic_funcs_c.set('ddaskr_jac', c_body)
 
     def _make_dres_dsinglep(self):
-        py_body = []
-        py_body.append('def dres_dsinglep(time, dynamicVars, '
-                       'yprime, constants, p_index):')
-        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
-        py_body.append('constants = scipy.asarray(constants)')
-        py_body.append('')
-        py_body.append('pd = scipy.zeros(%i, scipy.float_)'
-                       % len(self.dynamicVars))
-        py_body.append('')
-        self._add_assignments_to_function_body(py_body)
-        py_body.append('')
-
-        c_body = []
-        c_args = 'double *time_ptr, double *dynamicVars, double *yprime, '\
-                'double *constants, int *p_index_ptr, double *pd'
-        c_body.append('void dres_dsinglep_(%s){' % c_args)
-        self._prototypes_c.set('dres_dsinglep',
-                               'void dres_dsinglep_(%s);' % c_args)
-        c_body.append('double time = *time_ptr;')
-        c_body.append('int p_index = *p_index_ptr;')
-        c_body.append('')
-        self._add_assignments_to_function_body(c_body, in_c=True)
-        c_body.append('')
-        c_body.append('switch(p_index){')
-
-        N_dyn = len(self.dynamicVars)
-        N_opt = len(self.optimizableVars)
-
-        # Now the sensitivities. 
-        # We'll cache lists of the variables in each rhs, since extract_vars is
-        # slow.
-        rhs_vars = {}
-        for (rhs, dt) in self._residual_terms:
-            if rhs is None:
-                rhs = '0'
-            rhs_vars[rhs] = ExprManip.extract_vars(rhs)
-
+        # loop over the optimizable params, and for each one create
+        # its own dres_dparam function
         for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
-            if wrt_ii == 0:
-                py_body.append('if p_index == 0:')
-            else:
-                py_body.append('elif p_index == %i:' % wrt_ii)
-            c_body.append('\tcase %i:' % wrt_ii)
+
+            func_name = 'dres_d' + wrt
+
+            py_body = []
+            py_body.append('def ' + func_name + '(time, dynamicVars, '
+                           'yprime, constants):')
+            py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
+            py_body.append('constants = scipy.asarray(constants)')
+            py_body.append('')
+            py_body.append('pd = scipy.zeros(%i, scipy.float_)'
+                           % len(self.dynamicVars))
+            py_body.append('')
+
+            self._add_assignments_to_function_body(py_body)
+            py_body.append('')
+
+            c_body = []
+            c_args = 'double *time_ptr, double *dynamicVars, double *yprime, '\
+                    'double *constants, double *pd'
+            c_body.append('void ' + func_name + '_(%s){' % c_args)
+            self._prototypes_c.set(func_name,
+                                   'void ' + func_name + '_(%s);' % c_args)
+
+            c_body.append('double time = *time_ptr;')
+            c_body.append('')
+            self._add_assignments_to_function_body(c_body, in_c=True)
+            c_body.append('')
+
+            N_dyn = len(self.dynamicVars)
+            N_opt = len(self.optimizableVars)
+
+            # Now the sensitivities. 
+            # We'll cache lists of the variables in each rhs,
+            # since extract_vars is slow.
+            rhs_vars = {}
+            for (rhs, dt) in self._residual_terms:
+                if rhs is None:
+                    rhs = '0'
+                rhs_vars[rhs] = ExprManip.extract_vars(rhs)
+
             for res_ii, (rhs, dt) in enumerate(self._residual_terms):
                 if rhs is None:
                     rhs = '0'
                 rhs_vars_used = rhs_vars[rhs]
                 deriv = self.takeDerivative(rhs, wrt, rhs_vars_used)
                 if (deriv != '0' and deriv != '0.0'):
-                    py_body.append('\tpd[%i] = %s' % (res_ii, deriv))
+                    py_body.append('pd[%i] = %s' % (res_ii, deriv))
                     c_deriv = ExprManip.make_c_compatible(deriv)
-                    c_body.append('\tpd[%i] = %s;' % (res_ii, c_deriv))
-            py_body.append('\tpass')
-            c_body.append('\tbreak;')
-        c_body.append('}')
-                          
-        py_body.append('')
-        py_body.append('return pd')
-        py_body = '\n    '.join(py_body)
+                    c_body.append('pd[%i] = %s;' % (res_ii, c_deriv))
+                              
+            py_body.append('')
+            py_body.append('return pd')
+            py_body = '\n    '.join(py_body)
 
-        c_body.append('}')
-        c_body = os.linesep.join(c_body)
+            c_body.append('}')
+            c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python.set('dres_dsinglep', py_body)
-        self._dynamic_funcs_c.set('dres_dsinglep', c_body)
+            self._dynamic_funcs_python.set(func_name, py_body)
+            self._dynamic_funcs_c.set(func_name, c_body)
 
     def _make_sens_rhs(self):
+
         py_body = []
         py_body.append('def sens_rhs(time, sens_y, sens_yp, constants):')
         py_body.append('sens_y = scipy.asarray(sens_y)')
@@ -1369,12 +1367,28 @@ class Network:
                        'sens_y, sens_yp, constants)'
                        % {'N_dyn': N_dyn})
         py_body.append('')
+
+        # for the python sens_rhs function, we add a dictionary
+        # of dres_dparam function names indexed by parameter index.
+        py_body.append('func_dict = {}')
+        for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
+            py_body.append('func_dict[' + str(wrt_ii) + '] = dres_d' + wrt)
+
+        py_body.append('')
+
         py_body.append('p_index = int(constants[%i])' % N_const)
+
+        # sens_rhs will access a particular dres_dparam function
+        # based on the passed in parameter index
+        py_body.append('dres_dp_func = func_dict[p_index]')
+
+        py_body.append('')
+        
         py_body.append('dc_dp = sens_y[%i:]' % N_dyn)
         py_body.append('dcdot_dp = sens_yp[%i:]' % N_dyn)
-        py_body.append('dres_dp = dres_dsinglep(time, '
-                       'sens_y, sens_yp, constants, p_index)' 
+        py_body.append('dres_dp = dres_dp_func(time, sens_y, sens_yp, constants)'
                        % {'N_dyn': N_dyn, 'N_const': N_const})
+
         py_body.append('dres_dc = dres_dc_function(time, '
                        'sens_y, sens_yp, constants)' 
                        % {'N_dyn': N_dyn, 'N_const': N_const})
@@ -1390,6 +1404,13 @@ class Network:
                       'sens_res, ires_ptr, constants, ipar);')
         c_body.append('')
         c_body.append('int p_index = (int)constants[%i];' % N_const)
+        # we add an array that tracks the constants only, so that
+        # the c version of the dres_dparam function gets an array of the
+        # expected size
+        c_body.append('double constants_only[%i];' % N_const)
+        c_body.append('int jj;')
+        c_body.append('for (jj = 0; jj < %s; jj++){' % N_const)
+        c_body.append('constants_only[jj] = constants[jj];}')
         c_body.append('double *dc_dp = &sens_y[%i];' % N_dyn)
         c_body.append('double *dcdot_dp = &sens_yp[%i];' % N_dyn)
         # We'll directly fill dres_dp into the appropriate place in sens_res
@@ -1399,8 +1420,16 @@ class Network:
         # cpointer.
         c_body.append('for(ii = 0; ii < %s; ii++){' % N_dyn)
         c_body.append('dres_dp[ii] = 0;}')
-        c_body.append('dres_dsinglep_(time_ptr, sens_y, sens_yp, constants, '
-                      '&p_index, dres_dp);')
+
+        # we add a switch-case statement to choose the proper dres_dparam
+        # function based on the passed in parameted index
+        c_body.append('switch(p_index)')
+        c_body.append('{')
+        for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
+            c_body.append('case ' + str(wrt_ii) + ' : dres_d' + wrt + '_(time_ptr, sens_y, sens_yp, constants_only, '
+                      'dres_dp);')
+            c_body.append('break;'), 
+        c_body.append('}')
         # Fill in dres_dc
         c_body.append('double dres_dc[%i] = {0};' % N_dyn**2)
         c_body.append('dres_dc_function_(time_ptr, sens_y, sens_yp, constants, '
@@ -1956,6 +1985,17 @@ class Network:
         structure_changed = (curr_structure != self._last_structure)
         if structure_changed:
             self._last_structure = copy.deepcopy(curr_structure)
+            # The dynamic function lists need to be reset because the number
+            #  and names of the dres_dparam functions can differ between
+            #  networks.
+            # We do not include the list of function definitions because
+            #  they are handled differently than other dynamic functions.
+            # Users should make sure that if they remove a function definition
+            #  from a compiled network that they also remove references to
+            #  that function from the rest of the network
+            self._dynamic_funcs_python = KeyedList()
+            self._prototypes_c = self._common_prototypes_c.copy()
+            self._dynamic_funcs_c = KeyedList()
 
         reexec = False
         if self.functionDefinitions != getattr(self, '_last_funcDefs', None)\
@@ -2147,15 +2187,37 @@ class Network:
                                          'f2py_signatures.pyf')
         pyf_base_fd = file(pyf_base_filename, 'r')
         pyf_base = pyf_base_fd.read()
+        
         pyf_base_fd.close()
 
+        N_dyn = len(self.dynamicVars)
+        N_const = len(self.constantVars)
+        N_alg = len(self.constantVars)
+        
         # Fill in the signatures.
-        pyf_code = pyf_base % {'mod_name': mod_name,
-                               'N_dyn': len(self.dynamicVars),
-                               'N_const': len(self.constantVars),
-                               'N_alg': len(self.algebraicVars),
-                               'N_rt': self.len_root_func}
+        # We begin by generating the signatures for the dres_dparam code.
+        # Since the number of optimizable parameters varies in each network,
+        # we cannot include these functions in the f2p_signatres template.
+        dres_dparams_code = ''
+        for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
+            func_name = 'dres_d' + wrt
+            dres_dparams_code += '    subroutine ' + func_name + '(time, dynamicVars, yprime, constants, pd)\n'
+            dres_dparams_code += '        double precision intent(in) :: time\n'
+            dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: dynamicVars\n'
+            dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: yprime\n'
+            dres_dparams_code += '        double precision intent(in), dimension(' + str(N_const) + ') :: constants\n'
+            dres_dparams_code += '        double precision intent(out), dimension(' + str(N_dyn) + ') :: pd\n'
+            dres_dparams_code += '    end subroutine ' + func_name + '\n'
 
+        # Now update the template with the code we just generated and the other
+        # names and dimensions
+        pyf_code = pyf_base % {'dres_dparams': dres_dparams_code,
+                               'mod_name': mod_name,
+                               'N_dyn': N_dyn,
+                               'N_const': N_const,
+                               'N_alg': N_alg,
+                               'N_rt': self.len_root_func}
+        
         # Write out the signature file.
         pyf_fd = open('%s.pyf' % mod_name, 'w')
         pyf_fd.write(pyf_code)
