@@ -149,6 +149,12 @@ class Network:
         func = 'lambda %s: %s' % (var_str, math)
         _common_func_strs.append((id, func))
 
+    # These are the strings we eval to create the extra functions our
+    # Network defines. We'll evaluate them all to start with, to get the
+    # common ones in there.
+    for func_id, func_str in _common_func_strs:
+        _common_namespace[func_id] = eval(func_str, _common_namespace, {})
+
     def __init__(self, id, name=''):
         self.id, self.name = id, name
 
@@ -178,13 +184,7 @@ class Network:
         # All expressions are evaluated, and functions exec'd in self.namespace.
         # (A dictionary mapping names to objects they represent)
         self.namespace = copy.copy(self._common_namespace)
-
-        # These are the strings we eval to create the extra functions our
-        # Network defines. We'll evaluate them all to start with, to get the
-        # common ones in there.
         self._func_strs = copy.copy(self._common_func_strs)
-        for func_id, func_str in self._func_strs:
-            self.namespace[func_id] = eval(func_str, self.namespace, {})
 
         # Option to integrate with log concentrations (to avoid negative
         # concentrations)
@@ -317,28 +317,39 @@ class Network:
         self._func_strs.append((id, func_str))
         self.namespace[id] = eval(func_str, self.namespace)
 
-        # Add the function and its partial derivatives to the C code.
-        c_vars = ['double %s' % var for var in variables]
-        c_var_str = ','.join(c_vars)
-        self._prototypes_c.set(id,'double %s(%s);' % (id, c_var_str))
-        c_math = ExprManip.make_c_compatible(math)
-        c_body = 'double %s(%s){return %s;}' % (id, c_var_str, c_math)
-        self._func_defs_c.set(id, c_body)
+    def make_func_defs(self):
+        for id, func in self.functionDefinitions.items():
+            variables = func.variables
+            math = func.math
 
-        for ii, wrt in enumerate(variables):
-            # Python derivatives
-            diff_id = '%s_%i' % (id, ii)
-            diff_math = ExprManip.diff_expr(math, wrt)
-            func_str = 'lambda %s: %s' % (var_str, diff_math)
-            self._func_strs.append((diff_id, func_str))
-            self.namespace[diff_id] = eval(func_str, self.namespace)
+            var_str = ','.join(variables)
+            func_str = 'lambda %s: %s' % (var_str, math)
+            self._func_strs.append((id, func_str))
+            self.namespace[id] = eval(func_str, self.namespace)
 
-            # C derivatives
-            self._prototypes_c.set(diff_id, 
-                                   'double %s(%s);' % (diff_id,c_var_str))
-            c_math = ExprManip.make_c_compatible(diff_math)
-            c_body = 'double %s(%s){return %s;}' % (diff_id, c_var_str, c_math)
-            self._func_defs_c.set(diff_id, c_body)
+            # Add the function and its partial derivatives to the C code.
+            c_vars = ['double %s' % var for var in variables]
+            c_var_str = ','.join(c_vars)
+            self._prototypes_c.set(id,'double %s(%s);' % (id, c_var_str))
+            c_math = ExprManip.make_c_compatible(math)
+            c_body = 'double %s(%s){return %s;}' % (id, c_var_str, c_math)
+            self._func_defs_c.set(id, c_body)
+
+            for ii, wrt in enumerate(variables):
+                # Python derivatives
+                diff_id = '%s_%i' % (id, ii)
+                diff_math = ExprManip.diff_expr(math, wrt)
+                func_str = 'lambda %s: %s' % (var_str, diff_math)
+                self._func_strs.append((diff_id, func_str))
+                self.namespace[diff_id] = eval(func_str, self.namespace)
+
+                # C derivatives
+                self._prototypes_c.set(diff_id, 
+                                       'double %s(%s);' % (diff_id,c_var_str))
+                c_math = ExprManip.make_c_compatible(diff_math)
+                c_body = 'double %s(%s){return %s;}' % (diff_id, c_var_str, 
+                                                        c_math)
+                self._func_defs_c.set(diff_id, c_body)
 
     def addReaction(self, id, *args, **kwargs):
         # Reactions can be added by (1) passing in a string representing
@@ -363,6 +374,8 @@ class Network:
         self.set_var_constant(var_id, False)
         self.assignmentRules.set(var_id, rhs)
         self._makeCrossReferences()
+        # Put this assignment into effect...
+        self.updateAssignedVars(time=scipy.nan)
 
     def add_rate_rule(self, var_id, rhs):
         """
@@ -2006,8 +2019,7 @@ class Network:
             #  self.namespace, so that, for example, if f(x) = 1  + g(x)
             #  the evaluation of f has the definition of g.
             self.namespace = copy.copy(self._common_namespace)
-            for func_id, func_str in self._func_strs:
-                self.namespace[func_id] = eval(func_str, self.namespace, {})
+            self.make_func_defs()
             self._last_funcDefs = copy.deepcopy(self.functionDefinitions)
             reexec = True
 
