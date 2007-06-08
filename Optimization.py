@@ -1,6 +1,9 @@
 import copy
 import sys
 
+import logging
+logger = logging.getLogger('Optimization')
+
 import scipy
 
 import SloppyCell.KeyedList_mod as KeyedList_mod
