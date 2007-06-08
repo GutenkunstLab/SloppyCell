@@ -106,20 +106,20 @@ class Network:
                                ]
                            
     # Add our common function definitions to a func_strs list.
-    _common_func_strs = []
+    _common_func_strs = KeyedList()
     for id, vars, math in _standard_func_defs:
         var_str = ','.join(vars)
         func = 'lambda %s: %s' % (var_str, math)
-        _common_func_strs.append((id, func))
+        _common_func_strs.set(id, func)
         # These are all the partial derivatives
         for ii, wrt in enumerate(vars):
             deriv_id = '%s_%i' % (id, ii)
             diff_math = ExprManip.diff_expr(math, wrt)
             func = 'lambda %s: %s' % (var_str, diff_math)
-            _common_func_strs.append((deriv_id, func))
+            _common_func_strs.set(deriv_id, func)
 
     # Now add the C versions.
-    _common_func_strs_c = []
+    _common_func_strs_c = KeyedList()
     _common_prototypes_c = KeyedList()
     for id, vars, math in _standard_func_defs:
         vars_c = ['double %s' % var for var in vars]
@@ -130,7 +130,7 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
         _common_prototypes_c.set(id, 'double %s(%s);' % (id, var_str_c))
-        _common_func_strs_c.append((id, c_body))
+        _common_func_strs_c.set(id, c_body)
         for ii, wrt in enumerate(vars):
             deriv_id = '%s_%i' % (id, ii)
             diff_math = ExprManip.diff_expr(math, wrt)
@@ -141,18 +141,18 @@ class Network:
             c_body = os.linesep.join(c_body)
             _common_prototypes_c.set(deriv_id,'double %s(%s);' % (deriv_id, 
                                                                   var_str_c))
-            _common_func_strs_c.append((deriv_id, c_body))
+            _common_func_strs_c.set(deriv_id, c_body)
 
     # Also do the logical functions. These don't have derivatives.
     for id, vars, math in _logical_comp_func_defs:
         var_str = ','.join(vars)
         func = 'lambda %s: %s' % (var_str, math)
-        _common_func_strs.append((id, func))
+        _common_func_strs.set(id, func)
 
     # These are the strings we eval to create the extra functions our
     # Network defines. We'll evaluate them all to start with, to get the
     # common ones in there.
-    for func_id, func_str in _common_func_strs:
+    for func_id, func_str in _common_func_strs.items():
         _common_namespace[func_id] = eval(func_str, _common_namespace, {})
 
     def __init__(self, id, name=''):
@@ -314,17 +314,19 @@ class Network:
         # Also do the evaluation.
         var_str = ','.join(variables)
         func_str = 'lambda %s: %s' % (var_str, math)
-        self._func_strs.append((id, func_str))
+        self._func_strs.set(id, func_str)
         self.namespace[id] = eval(func_str, self.namespace)
 
     def make_func_defs(self):
+        self.namespace = copy.copy(self._common_namespace)
         for id, func in self.functionDefinitions.items():
             variables = func.variables
             math = func.math
 
             var_str = ','.join(variables)
             func_str = 'lambda %s: %s' % (var_str, math)
-            self._func_strs.append((id, func_str))
+            self._func_strs.set(id, func_str)
+            logger.debug('Adding function to namespace: %s, %s' % (id, func_str))
             self.namespace[id] = eval(func_str, self.namespace)
 
             # Add the function and its partial derivatives to the C code.
@@ -340,7 +342,7 @@ class Network:
                 diff_id = '%s_%i' % (id, ii)
                 diff_math = ExprManip.diff_expr(math, wrt)
                 func_str = 'lambda %s: %s' % (var_str, diff_math)
-                self._func_strs.append((diff_id, func_str))
+                self._func_strs.set(diff_id, func_str)
                 self.namespace[diff_id] = eval(func_str, self.namespace)
 
                 # C derivatives
@@ -2011,18 +2013,6 @@ class Network:
             self._dynamic_funcs_c = KeyedList()
 
         reexec = False
-        if self.functionDefinitions != getattr(self, '_last_funcDefs', None)\
-           or structure_changed:
-            logger.debug('Network %s: compiling function defs.' % self.id)
-            # Eval our function definitions. Note that these need to be done
-            #  in order, and at each point we need to refer back to 
-            #  self.namespace, so that, for example, if f(x) = 1  + g(x)
-            #  the evaluation of f has the definition of g.
-            self.namespace = copy.copy(self._common_namespace)
-            self.make_func_defs()
-            self._last_funcDefs = copy.deepcopy(self.functionDefinitions)
-            reexec = True
-
         if structure_changed:
             logger.debug('Network %s: compiling structure.' % self.id)
             self._makeCrossReferences()
@@ -2030,7 +2020,9 @@ class Network:
             if len(self.algebraicVars) > len(self.algebraicRules):
                 raise ValueError('System appears under-determined. '
                                  'Not enough  algebraic rules.') 
+            self.make_func_defs()
             self._makeDiffEqRHS()
+            logger.debug(self.namespace['f'](32.0))
             for method in self._dynamic_structure_methods: 
                 getattr(self, method)()
             reexec = True
@@ -2091,13 +2083,14 @@ class Network:
                                curr_c_code=None):
         curr_py_bodies = '\n'.join(self._dynamic_funcs_python.values())
 
+        key = (curr_py_bodies, tuple(self._func_strs.items()))
         # Search our cache of python functions.
         try:
-            py_func_dict = self._py_func_dict_cache[curr_py_bodies]
+            py_func_dict = self._py_func_dict_cache[key]
         except KeyError:
             # We don't have a cached version, so we need to generate it.
             py_func_dict = {}
-            self._py_func_dict_cache[curr_py_bodies] = py_func_dict
+            self._py_func_dict_cache[key] = py_func_dict
             for func_name, body in self._dynamic_funcs_python.items():
                 exec body in self.namespace, locals()
                 py_func_dict[func_name] = locals()[func_name]
@@ -2165,7 +2158,7 @@ class Network:
             c_code.append(proto)
             c_code.append('')
         # Functions necessary for SBML math support
-        for function, body in self._common_func_strs_c:
+        for function, body in self._common_func_strs_c.items():
             c_code.append(body)
             c_code.append('')
         # Function definitions
@@ -2343,7 +2336,7 @@ class Network:
         self.namespace = copy.copy(self._common_namespace)
 
         # Recreate our namespace
-        for func_id, func_str in self._func_strs:
+        for func_id, func_str in self._func_strs.items():
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
         self._makeCrossReferences()

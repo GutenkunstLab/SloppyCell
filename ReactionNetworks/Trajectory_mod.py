@@ -91,7 +91,7 @@ class Trajectory:
         # We make a copy of the Network's namespace.
         self._func_strs = copy.copy(net._func_strs)
         self.namespace = copy.copy(self._common_namespace)
-        for func_id, func_str in self._func_strs:
+        for func_id, func_str in self._func_strs.items():
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
         # To avoid generating our function bodies every Trajectory creation, we
@@ -425,7 +425,7 @@ class Trajectory:
         self.__dict__.update(newdict)
         # Remake our namespace
         self.namespace = copy.copy(self._common_namespace)
-        for func_id, func_str in self._func_strs:
+        for func_id, func_str in self._func_strs.items():
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
     def _sub_var_names(self, input):
