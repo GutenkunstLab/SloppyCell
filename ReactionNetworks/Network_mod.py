@@ -377,7 +377,8 @@ class Network:
         self.assignmentRules.set(var_id, rhs)
         self._makeCrossReferences()
         # Put this assignment into effect...
-        # The time=0 is arbitrary...
+        # The time=0 is somewhat arbitrary, reflecting the fact that we usually
+        #  start integrations from time=0.
         self.updateAssignedVars(time=0)
 
     def add_rate_rule(self, var_id, rhs):
