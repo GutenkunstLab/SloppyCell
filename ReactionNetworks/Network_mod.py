@@ -2022,7 +2022,6 @@ class Network:
                                  'Not enough  algebraic rules.') 
             self.make_func_defs()
             self._makeDiffEqRHS()
-            logger.debug(self.namespace['f'](32.0))
             for method in self._dynamic_structure_methods: 
                 getattr(self, method)()
             reexec = True
