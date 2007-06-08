@@ -377,7 +377,8 @@ class Network:
         self.assignmentRules.set(var_id, rhs)
         self._makeCrossReferences()
         # Put this assignment into effect...
-        self.updateAssignedVars(time=scipy.nan)
+        # The time=0 is arbitrary...
+        self.updateAssignedVars(time=0)
 
     def add_rate_rule(self, var_id, rhs):
         """
