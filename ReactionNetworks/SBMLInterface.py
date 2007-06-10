@@ -175,6 +175,17 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         
     rn = Network_mod.Network(id = modelId, name = m.getName())
 
+    for f in m.getListOfFunctionDefinitions():
+        id, name = f.getId(), f.getName()
+        math = f.getMath()
+        variables = []
+        for ii in range(math.getNumChildren() - 1):
+            variables.append(libsbml.formulaToString(math.getChild(ii)))
+
+        math = libsbml.formulaToString(math.getRightChild())
+
+        rn.addFunctionDefinition(id, variables, math)
+
     for c in m.getListOfCompartments():
         id, name = c.getId(), c.getName()
         size = c.getSize()
@@ -292,16 +303,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             elif r.getTypeCode() == libsbml.SBML_RATE_RULE:
                 rn.addRateRule(variable, math)
 
-    for f in m.getListOfFunctionDefinitions():
-        id, name = f.getId(), f.getName()
-        math = f.getMath()
-        variables = []
-        for ii in range(math.getNumChildren() - 1):
-            variables.append(libsbml.formulaToString(math.getChild(ii)))
 
-        math = libsbml.formulaToString(math.getRightChild())
-
-        rn.addFunctionDefinition(id, variables, math)
 
     for ii, e in enumerate(m.getListOfEvents()):
         id, name = e.getId(), e.getName()
