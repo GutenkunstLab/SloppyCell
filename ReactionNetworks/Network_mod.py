@@ -2198,7 +2198,7 @@ class Network:
 
         N_dyn = len(self.dynamicVars)
         N_const = len(self.constantVars)
-        N_alg = len(self.constantVars)
+        N_alg = len(self.algebraicVars)
         
         # Fill in the signatures.
         # We begin by generating the signatures for the dres_dparam code.
