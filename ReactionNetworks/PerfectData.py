@@ -120,7 +120,7 @@ def discrete_data(net, params, pts, interval, vars=None, random=False,
     int_times.sort()
 
     # Get the trajectory
-    traj = Dynamics.integrate(net, int_times, params, fill_traj=False)
+    traj = Dynamics.integrate(net, int_times, params=params, fill_traj=False)
 
     # Build up our data dictionary
     data = {}
