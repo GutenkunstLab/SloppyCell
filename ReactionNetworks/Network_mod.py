@@ -701,16 +701,20 @@ class Network:
         return KeyedList([(id, self.get_var_val(id)) for id in
                           self.variables.keys()])
 
-    def get_initial_velocities(self) :
+    def get_initial_velocities(self):
         """
         Returns the vector field evaluated at the initial conditions
         """
         ics = [self.evaluate_expr(self.getInitialVariableValue(dvid))
                for dvid in self.dynamicVars.keys()]
         # the evaluate_expr is in case an initial condition is a parameter
-        initialv = Dynamics.find_ics(ics, 0*ics + 1, 0, [1e-6]*len(ics),
-                                     [1e-6]*len(ics),
-                                     self._dynamic_var_algebraic, 1e-6, self)
+        y0, initialv = Dynamics.find_ics(y=ics, yp=scipy.ones(len(ics)), 
+                                         time=0, 
+                                         var_types=self._dynamic_var_algebraic,
+                                         rtol=[1e-6]*len(ics), 
+                                         atol=[1e-6]*len(ics),
+                                         constants=self.constantVarValues, 
+                                         net=self)
         return initialv
 
     def set_var_ics(self, kl):

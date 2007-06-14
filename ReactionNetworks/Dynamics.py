@@ -892,6 +892,9 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
     #  integrations. (We don't let ddaskr do it, because it doesn't calculate
     #  values for d(alg_var)/dt, and we need them for sensitivity integration.)
     var_types = scipy.asarray(var_types)
+    atol = scipy.asarray(atol)
+    rtol = scipy.asarray(rtol)
+    # Note that we're copying y and yprime
     y = scipy.array(y, scipy.float_)
     yp = scipy.array(yp, scipy.float_)
 
