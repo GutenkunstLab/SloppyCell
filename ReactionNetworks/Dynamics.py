@@ -22,6 +22,9 @@ from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
 if HAVE_PYPAR:
     import pypar
 
+# This specifies the maximum number of steps daeint will take between timepoints
+MAX_STEPS = 1e5
+
 global_rtol = 1e-6
 
 return_derivs = False # do we want time derivatives of all trajectories 
@@ -72,7 +75,7 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
 
                 'rtol': rtol,
                 'atol': atol,
-                'max_steps': 1e6,
+                'max_steps': MAX_STEPS,
 
                 'intermediate_output': fill_traj,
                 'redir_output': redirect_msgs,
@@ -610,7 +613,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                                  IC, ypIC, 
                                  rtol_for_sens, atol_for_sens,
                                  rpar = rpar,
-                                 max_steps = 1e4,
+                                 max_steps = MAX_STEPS,
                                  calculate_ic = False,
                                  redir_output = redirect_msgs)
         except Utility.SloppyCellException, X:
