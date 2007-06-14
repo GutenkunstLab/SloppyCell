@@ -509,7 +509,7 @@ class Trajectory:
         """
         local_tcks = self.tcks
 
-        nDVs = len(dynamicVarKeys)
+        nDVs = len(self.dynamicVarKeys)
         dv_y = [scipy.interpolate.splev(time, local_tcks[subinterval][dv_ind],
                                         der=der) for dv_ind in range(0,nDVs)]
 
