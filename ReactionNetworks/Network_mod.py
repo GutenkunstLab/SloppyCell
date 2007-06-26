@@ -458,6 +458,245 @@ class Network:
         """
         return self.name
 
+    def set_deterministic(self):
+        """
+        Disables the stochastic simulation of network dynamics
+        """
+        if hasattr(self, 'stochastic'): delattr(self, 'stochastic')
+        
+    def set_periodic(self, period, xtol=0.001, maxfun=100, phase=None,
+                     minVel=None, level=2, log=False):
+        """
+        set_periodic ensures that a period solution has satisfactorily
+        approached a limit cycle before returning the solution. Please note that
+        this has not been implemented for sensitivity calculations.
+
+        Inputs:
+        (period, xtol=0.001, maxfun=100, phase=None, minVel=None, level=2)
+        period -- initial guess of the period (required)
+        xtol -- tolerance required for convergence (all chemicals). If set too
+                high, numerical (in)precision may cause no stable limit cycle.
+        maxfun -- maximum number of iterations (one trajectory found in each)
+        phase -- set to a ('name', value) tuple to set the t=0 solution to a
+                 particular state in systems which no forcing. Value may be
+                 'max','min', or a float concentration (careful with the later).
+        minVel -- used to detect fixed points:
+                  when the (max IC velocity)**2 < minVel the integration
+                  is halted, the stability set to True, and the period set to
+                  0.0 (indicating nonperiodic, fixed point soln).
+        level -- correlation level (>=1) to use to find the period. For example,
+                 if level=2, the difference between x(0)-x(1*tau) and
+                 x(0)-x(2*tau) is used.
+        log -- Set to True to use logarithms of state variables, constraining
+               the solution to non-zero values
+        
+        Outputs: (stored in net.periodic dictionary)
+        tol -- tolerance of the solution (rmsd of ic1 to ic0 for each level)
+        period -- actual period of oscillation
+        stable -- whether a stable solution was found
+        feval -- number of iterations
+        stableIC -- stable initial condition
+        """
+        self.periodic = {'xtol': xtol, 'maxfun':maxfun, 'phase':phase,
+                         'level':int(level), 'log':log, 'stable': False,
+                         'feval': 0, 'period': period, 'minVel': minVel,
+                         'stableIC': {}}
+
+    def _iter_limit_cycle(self, params, varNames, s0):
+        """
+        Internal function used to integrate a trajectory and find the point
+        nearest the initial point (defined as the root sum squared distance)
+        in the period range of [0.475*tau, 1.5*tau]. The point found and period
+        (tau) is returned.
+
+        Inputs:
+        (params, varNames, s0)
+        params -- Network parameters
+        varNames -- Names corresponding to the values in ln_x0
+        s0 -- Initial state (period and conditions) where s0[0]=period and
+              s0[1:]=initial conditions
+
+        Outputs:
+        (s1)
+        s1 -- New state found (period and conditions defined same as input)
+        """
+        if self.periodic['log']:
+            rmsd = lambda _s1, _s2: \
+                   scipy.sqrt(sum(scipy.log(_s1/_s2)**2)/len(_s1))
+        else:
+            rmsd = lambda _s1, _s2: scipy.sqrt(sum((_s1-_s2)**2)/len(_s1))
+
+        # Set the initial condition
+        s0 = scipy.array(s0)
+        tau0, x0 = s0[0], s0[1:]
+        for name, value in zip(varNames, x0):
+            self.set_var_ic(name, value)
+            
+        # Find the trajectory
+        max_time = tau0 * 1.5 * float(self.periodic['level'])
+        self.trajectory = self.integrate([0.,max_time], params, addTimes = True)
+        self.trajectory.build_interpolated_traj()
+        ev_inter_traj = self.trajectory.evaluate_interpolated_traj
+        
+        # Find the period between 1/2*tau0 and 3/2*tau0
+        s = lambda t: scipy.array([t] + \
+                                  [ev_inter_traj(name, t) for name in varNames])
+        
+        def __iter_cost(t):
+            t = abs(t)
+            res = scipy.array([t], scipy.float_)
+            for lvl in range(1, self.periodic['level']+1):
+                res = scipy.concatenate((res, s(t*float(lvl))[1:]))
+            res0 = scipy.concatenate(([tau0], list(x0)*self.periodic['level']))
+            return rmsd(res, res0)
+
+        tau1 = scipy.optimize.fminbound(__iter_cost, tau0 * 0.475, tau0 * 1.5)
+        tau1 = abs(tau1)
+        s1 = s(tau1)
+
+        # Update the periodic dictionary
+        self.periodic['feval'] += 1
+        self.periodic['period'] = tau1
+        self.periodic['tol'] = __iter_cost(tau1)
+        if self.periodic['tol'] < self.periodic['xtol']:
+            self.periodic['stable']=True
+            
+        return s1
+
+    def _eliminate_slowest_mode(self, s0, s1, s2):
+        """
+        Internal function which finds and eliminates the slowest decaying
+        mode in the approach to a limit cycle:
+        si = [tau_i, x0_0, .., x0_i]
+        F0 = s_star + vector_1 + ...
+        F1 = s_star + lambda_1 * vector_1 + ...
+        F2 = s_star + lambda_1^2 * vector_1 + ...
+
+        lambda_1 = (F2-F1)*(F1-F0)/|F1-F0|^2
+        vector_1 = (F2-F1)/(lambda_1 * (lambda_1 - 1.0))
+
+        Inputs: (s0, s1, s2)
+        Three vectors representing three consecutive steps towards a limit cycle
+
+        Ouptuts: (s_star)
+        s_star = s2 - lambda_1^2 * vector_1
+        """
+        x0, x1, x2 = s0[1:], s1[1:], s2[1:]
+        lambda_1  = sum( (x2-x1) * (x1-x0) ) / sum( (x1-x0)**2 )
+        vector_1 = (x2-x1)/(lambda_1 * (lambda_1-1.))
+        s = scipy.array(s2) # make a copy of s2
+        s[1:] -= lambda_1*lambda_1*vector_1
+        return s
+
+    def _find_limit_cycle(self, params):
+        """
+        Internal function to find a stable limit cycle (if one exists), given a
+        parameter set, an estimated period, and a set of initial conditions.
+        This function calculates two iterations (which are hopefully approaching
+        a limit cycle), and use this to estimate a point on the limit cycle - an
+        estimation which is kept if it is closer to the limit cycle.
+
+        Inputs:
+        (params,)
+        params -- model parameters
+
+        Outputs: None
+        """
+        self.periodic['stable'] = False
+        self.periodic['feval'] = 0
+        
+        # We only want dynamic variables whose value is not assigned
+        varNames = [name for name in self.dynamicVars.keys()
+                   if name in self.species.keys()]
+
+        # The initial period and state
+        tau0 = self.periodic['period']
+        x0 = [self.periodic['stableIC'].get(name, self.get_var_ic(name))
+              for name in varNames]
+        s0 = scipy.array([tau0]+x0)
+
+        while not self.periodic['stable'] and \
+                  self.periodic['feval'] < self.periodic['maxfun']:
+
+            # Perform the first two searched
+            s1 = self._iter_limit_cycle(params, varNames, s0)
+            if self.periodic['stable']:
+                s0 = s1
+                break
+
+            s2 = self._iter_limit_cycle(params, varNames, s1)
+            tol2 = self.periodic['tol']
+            if self.periodic['stable']:
+                s0 = s2
+                break
+
+            if self.periodic['log']:
+                ls0, ls1, ls2 = scipy.log(s0), scipy.log(s1), scipy.log(s2)
+                s_star = scipy.exp(self._eliminate_slowest_mode(ls0, ls1, ls2))
+            else:
+                s_star = self._eliminate_slowest_mode(s0, s1, s2)
+            
+            # Predict a point on the orbit, and choose the best point to
+            # use as the next round (either the last search #2 or the
+            # prediction)
+            try:
+                s3 = self._iter_limit_cycle(params, varNames, s_star)
+
+                # Did we find a better solution?
+                if self.periodic['tol'] < tol2: s0 = s3
+                else: s0 = s2  # Prediction (s_star) was worse
+            except:
+                s0 = s2
+                
+            # Found NANs, cut losses and run
+            if scipy.any(scipy.isnan(s0)):
+                self.periodic['stable'] = False
+                break
+
+            # Test for a fixed point, stopping if one is found
+            if self.periodic['minVel'] is not None:
+                for name, val in zip(varNames, s0[1:]):
+                    self.set_var_ic(name, val)
+
+                maxVel = max(
+                    [iV**2 for name, iV in zip(self.dynamicVars.keys(),
+                                               self.get_initial_velocities())
+                     if name in varNames])
+
+                if maxVel < self.periodic['minVel']:
+                    self.periodic['period']=0.0
+                    self.periodic['stable']=True
+                    break
+
+
+        if self.periodic['stable']:
+            # Record the initial conditions (if stable)
+            for name, value in zip(varNames, s0[1:]):
+                self.periodic['stableIC'][name] = value
+                self.set_var_ic(name, value)
+
+            # Set the phase of the cycle (or else return, we're done)
+            if self.periodic['phase'] is not None:
+                # Define the cost
+                pN, pV = self.periodic['phase']
+                _eit = self.trajectory.evaluate_interpolated_traj
+
+                if pV=='min': cost = lambda t: _eit(pN, t)
+                elif pV=='max': cost = lambda t: 1.0 / _eit(pN, t)
+                else: cost = lambda t: (pV - _eit(pN, t))**2
+
+                # Find the best-fitting point
+                tau = self.periodic['period']
+                lowerB = float(self.periodic['level'] - 1) * tau
+                upperB = float(self.periodic['level']) * tau
+                t0 = scipy.optimize.fminbound(cost, lowerB, upperB)
+
+                # Set the initial point, fall through and integrate
+                for name in varNames:
+                    self.periodic['stableIC'][name] = _eit(name, t0)
+                    self.set_var_ic(name, _eit(name, t0))
+
+
     #
     # Methods to become a 'SloppyCell.Model'
     #
@@ -484,6 +723,10 @@ class Network:
         # This takes care of the normal data points
         t = list(t)
         t.sort()
+
+        if hasattr(self, 'periodic'):
+            self._find_limit_cycle(params)
+
         self.trajectory = self.integrate(t, params=params, 
                                          addTimes=ret_full_traj)
         
