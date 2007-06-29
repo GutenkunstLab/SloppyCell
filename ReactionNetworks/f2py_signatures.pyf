@@ -102,5 +102,15 @@ interface
         double precision intent(in), dimension(%(N_const)i+1) :: constants
         integer intent(hide), dimension(2) :: ipar
     end subroutine sens_rhs_logdv
+    subroutine integrate_stochastic_tidbit(seed_ptr, reseed, time_ptr, dv, cv, rmsd_ptr, stop_time_ptr, trajectory)
+	integer intent(in) :: seed_ptr
+	integer intent(in) :: reseed
+	double precision intent(in,out) :: time_ptr
+	integer intent(in,out), dimension(%(N_dyn)i) :: dv
+	double precision intent(in), dimension(%(N_const)i) :: cv
+	double precision intent(in) :: rmsd_ptr
+	double precision intent(in,out) :: stop_time_ptr
+	double precision intent(out), dimension(%(N_dyn)s) :: trajectory
+    end subroutine integrate_stochastic_tidbit
 end interface
 end module %(mod_name)s

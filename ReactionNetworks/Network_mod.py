@@ -35,6 +35,7 @@ if SloppyCell.my_rank == 0:
 import Reactions
 from Components import *
 import Dynamics
+import Trajectory_mod
 
 class Network:
     # These are the methods that should be called to generate all the dynamic
@@ -49,7 +50,8 @@ class Network:
                                   '_make_ddaskr_jac',
                                   '_make_dres_dsinglep',
                                   '_make_sens_rhs',
-                                  '_make_log_funcs'
+                                  '_make_log_funcs',
+                                  '_make_integrate_stochastic_tidbit'
                                   ]
     _dynamic_event_methods = ['_make_root_func']
     
@@ -464,6 +466,72 @@ class Network:
         """
         if hasattr(self, 'stochastic'): delattr(self, 'stochastic')
         
+    def set_stochastic(self, seed=None, fill_dt=None, rmsd=None):
+        """
+        set_stochastic enables the stochastic simulation of the network
+        dynamics (instead of deterministic integration). This will discretize
+        the dynamic variables in the model (making them integrers). This
+        simulation does not implement events*, algebraic rules**, or rates
+        rules**. We use a kinetic MC algorithm (aka Gillespie algorithm). The
+        complementary function 'set_deterministic' may be used to disable
+        stochastic simulations of network dynamics. Please note the results
+        returned for exactly the times asked are interpolations between the
+        surrounding points, thus concentrations may be floats instead of
+        integers.
+
+        * No exact way exists to implement events in a stochastic simulation,
+          although a possible future implementation would be to execute
+          immediately after the event was triggered (would need a method of
+          tracking how close the executions were).
+        ** Possible future implementation, although parsing rate rules have the
+           possible issue of creating negative reaction rates (which have no
+           physical meaning). Add reactions instead of rate rules for stochastic
+           simulations.
+        
+        Inputs:
+        (seed=None, fill_dt=None, rmsd=None)
+        seed -- RNG seed used in the simulation. If none, generated from the
+                system time and os.urandom (if available).
+        fill_dt -- Fill in the trajectory at the requested time interval. This
+                   is the simplest way to fill in a trajectory.
+        rmsd -- Maximum root mean squared distance in the dynamic variable
+                space before taking a data point (a better trajectory filler).
+
+        Outputs: None
+        """
+        if seed==None: 
+            def rehash(key): # From numpy's mtrand module
+                key += ~(key << 15)
+                key ^=  (key >> 10)
+                key +=  (key << 3)
+                key ^=  (key >> 6)
+                key += ~(key << 11)
+                key ^=  (key >> 16)
+                return key
+
+            t = time.time()
+            ts = int(t)
+            tms = int((t-float(ts))*1000000.0)
+            seed = rehash(ts)^rehash(tms)
+
+            try:
+                import struct
+                seed ^= rehash(
+                    struct.unpack('i', os.urandom(struct.calcsize('i')))[0])
+            except: pass
+
+        if rmsd==None:
+            rmsd = scipy.misc.limits.double_max
+            
+        self.stochastic = {'seed':seed, 'reseed':True,
+                           'fill_dt':fill_dt, 'rmsd':rmsd}
+
+    def set_deterministic(self):
+        """
+        Disables the stochastic simulation of network dynamics.
+        """
+        if hasattr(self, 'stochastic'): delattr(self, 'stochastic')
+
     def set_periodic(self, period, xtol=0.001, maxfun=100, phase=None,
                      minVel=None, level=2, log=False):
         """
@@ -726,6 +794,9 @@ class Network:
 
         if hasattr(self, 'periodic'):
             self._find_limit_cycle(params)
+        elif hasattr(self, 'stochastic'):
+            self.trajectory = self.integrateStochastic(t, params=params)
+            return
 
         self.trajectory = self.integrate(t, params=params, 
                                          addTimes=ret_full_traj)
@@ -797,6 +868,64 @@ class Network:
         return Dynamics.integrate_sensitivity(self, times, params, rtol,
                                               fill_traj=self.add_int_times)
 
+    def integrateStochastic(self, times, params=None):
+        if len(self.rateRules):
+            logger.warn('WARNING! Rate rules will not used in stochastic '
+                        'simulations.')
+        if len(self.events):
+            logger.warn('WARNING! Events will not be used in stochastic '
+                        'simulations.')
+
+        if self.stochastic['fill_dt'] is not None:
+            times = sets.Set(times)
+            times.union_update(scipy.arange(min(times), max(times),
+                                            self.stochastic['fill_dt']))
+            times = list(times)
+            times.sort()
+
+        if times[0]==0.:
+            self.resetDynamicVariables()
+            times = times[1:]
+            
+        if params is not None: self.update_optimizable_vars(params)
+
+        self.compile()
+        
+        dv=scipy.array([self.get_var_val(_) for _ in self.dynamicVars.keys()])
+        cv = self.constantVarValues
+
+        trajectory = Trajectory_mod.Trajectory(self, holds_dt=0, const_vals=cv)
+        trajectory.appendFromODEINT(scipy.array([0.0]), scipy.array([dv]))
+
+        t, tInd = 0.0, 0
+        while t < times[-1]:
+            # Get the next chunk
+            t, dv, tout, dvout = self.integrate_stochastic_tidbit(
+                self.stochastic['seed'], self.stochastic['reseed'],
+                t, dv, cv, self.stochastic['rmsd'], times[tInd])
+            self.stochastic['reseed']=False
+
+            trajectory.appendFromODEINT(scipy.array([tout]),
+                                        scipy.array([dvout]))
+
+            if t>=times[tInd]: tInd +=1
+
+            if t==tout: continue
+
+            while tInd<len(times) and times[tInd]<=t: # Fill in the trajectory
+                dt = t - trajectory.timepoints[-1]
+                val = trajectory.values[-1]+(dv - trajectory.values[-1])/\
+                      dt*(times[tInd] - trajectory.timepoints[-1])
+                trajectory.appendFromODEINT(scipy.array([times[tInd]]),
+                                            scipy.array([val]))
+                tInd += 1
+
+            if trajectory.timepoints[-1]<t:
+                trajectory.appendFromODEINT(scipy.array([t]),
+                                            scipy.array([dv]))
+
+        return trajectory
+    
     def _sub_for_piecewise(self, expr, time):
         """
         Runs through expr and replaces all piecewise expressions by the
@@ -1827,6 +1956,299 @@ class Network:
         c_body.append('}')
         c_body = os.linesep.join(c_body)
         self._dynamic_funcs_c.set('sens_rhs_logdv', c_body)
+
+
+    def _make_integrate_stochastic_tidbit(self):
+        # Function definitions
+        py_body = []
+        py_body.append('def integrate_stochastic_tidbit'
+                       '(seed, reseed, time, dv, cv, rmsd, stop_time):')
+
+        c_args = 'unsigned long* seed_ptr, int* reseed, double* time_ptr, '\
+                 'int* dv, double* cv, '\
+                 'double* rmsd_ptr, double* stop_time_ptr, double* trajectory'
+        c_body = []
+        c_body.append('void integrate_stochastic_tidbit_(%s) {'%c_args)
+
+        N_CON = len(self.constantVars)
+        N_DYN = len(self.dynamicVars)
+        N_ASN = len(self.assignedVars)
+        N_RXN = len(self.reactions)
+
+        def parse(s, c=True):
+            if c: s = ExprManip.make_c_compatible(s)
+            for index, name in enumerate(self.constantVars.keys()):
+                s = ExprManip.Substitution.sub_for_var(s, name, 'cv[%i]'%index)
+            for index, name in enumerate(self.dynamicVars.keys()):
+                s = ExprManip.Substitution.sub_for_var(s, name, 'dv[%i]'%index)
+            for index, name in enumerate(self.assignedVars.keys()):
+                s = ExprManip.Substitution.sub_for_var(s, name, 'av[%i]'%index)
+            return s
+
+        # Find the stoichiometry and reaction dependencies
+        stch_body = []
+        depd_body = []
+        asnKeys = self.assignedVars.keys()
+        for rxnInd, (rxn_id, rxn) in enumerate(self.reactions.items()):
+            stch_body.append(repr([rxn.stoichiometry.get(_,0)
+                                   for _ in self.dynamicVars.keys()])[1:-1])
+            depd = [0]*N_RXN
+            for varName, val in rxn.stoichiometry.items():
+                if val==0: continue
+                for _rxnInd, _rxn in enumerate(self.reactions.values()):
+                    evars = ExprManip.Extraction.extract_vars(_rxn.kineticLaw)
+                    evars = sets.Set(evars)
+                    while len(evars.intersection(asnKeys)):
+                        for asnName in evars.intersection(asnKeys):
+                            evars.remove(asnName)
+                            rule = self.assignmentRules.get(asnName)
+                            evars.union_update( \
+                                ExprManip.Extraction.extract_vars(rule))
+                    if varName in evars:
+                        depd[_rxnInd]=1
+            depd_body.append(repr(depd)[1:-1])
+        depd_body.append(repr([1]*N_RXN)[1:-1])
+
+        # Python body assembly
+        py_body.append('import numpy.random')
+        py_body.append('if reseed: rs = numpy.random.seed(seed)')
+        py_body.append('')
+        py_body.append('stch = [[%s]]' % '],\n        ['.join(stch_body))
+        py_body.append('depd = [[%s]]' % '],\n        ['.join(depd_body))
+        py_body.append('')
+        py_body.append('av = [0.0]*%i'%N_ASN)
+        py_body.append('dv0 = [_ for _ in dv]')
+        py_body.append('props = [0.0]*%i'%N_RXN)
+        py_body.append('rxnInd = %i'%N_RXN)
+        py_body.append('while time < stop_time:')
+        for index, rule in enumerate(self.assignmentRules.values()):
+            py_body.append('    av[%i]=%s;'%(index, parse(rule, False)))
+        py_body.append('')
+        for index, rxn in enumerate(self.reactions.values()):
+            py_body.append('    if depd[rxnInd][%i]: props[%i]=%s'%
+                           (index, index, parse(rxn.kineticLaw, False)))
+        py_body.append('    propensity=sum(props)')
+        py_body.append('    if propensity==0.0:')
+        py_body.append('        dt = stop_time - time')
+        py_body.append('        time=stop_time')
+        py_body.append('        break')
+        py_body.append('    ')
+        py_body.append('    dt = -log(1.0-numpy.random.rand())/propensity')
+        py_body.append('    time += dt')
+        py_body.append('    ')
+        py_body.append('    selection=propensity*numpy.random.rand()')
+        py_body.append('    for rxnInd in range(%i):'%N_RXN)
+        py_body.append('        if selection<props[rxnInd]: break')
+        py_body.append('        else: selection-=props[rxnInd]')
+        py_body.append('    ')
+        py_body.append('    for index, st in enumerate(stch[rxnInd]):')
+        py_body.append('        dv[index] += st')
+        py_body.append('    ')
+        py_body.append('    _rmsd = sum([(_-__)**2 for _, __ in zip(dv,dv0)])')
+        py_body.append('    _rmsd = (_rmsd/%i.)**0.5'%N_DYN)
+        py_body.append('    if _rmsd>rmsd: break')
+        py_body.append('')
+        py_body.append('if time > stop_time: # Back interpolate')
+        py_body.append('    trajectory = ['
+                       'float(_)+float(stch[rxnInd][ii])/dt*(stop_time-time) '
+                       'for ii, _ in enumerate(dv)]')
+        py_body.append('else:')
+        py_body.append('    stop_time = time')
+        py_body.append('    trajectory = [float(_) for _ in dv]')
+        py_body.append('return time, dv, stop_time, trajectory')
+        py_body = '\n    '.join(py_body)
+
+        # C body assembly
+        mt = ['/* ',
+              'A C-program for MT19937, with initialization improved',
+              '2002/1/26.',
+              'Coded by Takuji Nishimura and Makoto Matsumoto.',
+              '',
+              'Before using, initialize the state by using ',
+              'init_genrand(seed) or init_by_array(init_key, key_length).',
+              '',
+              'Copyright(C) 1997-2002, Makoto Matsumoto and Takuji Nishimura',
+              'All rights reserved.',
+              '',
+              'Redistribution and use in source and binary forms, with or',
+              'without modification, are permitted provided that the',
+              'following conditions are met: ',
+              '  1. Redistributions of source code must retain the above',
+              '     copyright notice, this list of conditions and the',
+              '     following disclaimer.',
+              '',
+              '  2. Redistributions in binary form must reproduce the above',
+              '     copyright notice, this list of conditions and the',
+              '     following disclaimer in the documentation and/or other',
+              '     materials provided with the distribution.',
+              '',
+              '  3. The names of its contributors may not be used to endorse',
+              '     or promote products derived from this software without',
+              '     specific prior written permission.',
+              '',
+              'THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND',
+              'CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,',
+              'INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF',
+              'MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE',
+              'DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR',
+              'CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,',
+              'SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT',
+              'NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;',
+              'LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)',
+              'HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN',
+              'CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR',
+              'OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS',
+              'SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.',
+              '',
+              '',
+              'Any feedback is very welcome.',
+              'http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html',
+              'email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)',
+              '*/',
+              '',
+              '/* Period parameters */',
+              '#define N 624',
+              '#define M 397',
+              '#define MATRIX_A 0x9908b0dfUL  /* constant vector a */',
+              '#define UPPER_MASK 0x80000000UL /*most significant w-r bits*/',
+              '#define LOWER_MASK 0x7fffffffUL /*least significant r bits*/',
+              '',
+              'unsigned long mt[N]; /* the array for the state vector  */',
+              'int mti=N+1; /* mti==N+1 means mt[N] is not initialized */',
+              '',
+              '/* initializes mt[N] with a seed */',
+              'void init_genrand(unsigned long s) {',
+              '  mt[0]= s & 0xffffffffUL;',
+              '  for (mti=1; mti<N; mti++) {',
+              '    mt[mti]=(1812433253UL*(mt[mti-1]^(mt[mti-1]>>30))+mti); ',
+              '    /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */',
+              '    /* In the previous versions, MSBs of the seed affect   */',
+              '    /* only MSBs of the array mt[].                        */',
+              '    /* 2002/01/09 modified by Makoto Matsumoto             */',
+              '    mt[mti] &= 0xffffffffUL;',
+              '    /* for >32 bit machines */',
+              '  }',
+              '}',
+              '',
+              '/* generates a random number on [0,0xffffffff]-interval */',
+              'unsigned long genrand_int32(void) {',
+              '  unsigned long y;',
+              '  int kk;',
+              '  static unsigned long mag01[2]={0x0UL, MATRIX_A};',
+              '  /* mag01[x] = x * MATRIX_A  for x=0,1 */',
+              '  ',
+              '  if (mti >= N) { /* generate N words at one time */',
+              '    if (mti==N+1) /* if init_genrand has not been called, */',
+              '      init_genrand(5489UL); /* use a default initial seed */',
+              '',
+              '    for (kk=0;kk<N-M;kk++) {',
+              '      y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);',
+              '      mt[kk] = mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1UL];',
+              '    }',
+              '    for (;kk<N-1;kk++) {',
+              '      y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);',
+              '      mt[kk] = mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1UL];',
+              '    }',
+              '    y = (mt[N-1]&UPPER_MASK)|(mt[0]&LOWER_MASK);',
+              '    mt[N-1] = mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1UL];',
+              '    mti = 0;',
+              '  }',
+              '  ',
+              '  y = mt[mti++];',
+              '    ',
+              '  /* Tempering */',
+              '  y ^= (y >> 11);',
+              '  y ^= (y << 7) & 0x9d2c5680UL;',
+              '  y ^= (y << 15) & 0xefc60000UL;',
+              '  y ^= (y >> 18);',
+             '  return y;',
+              '}',
+              '/* generates a random number on [0,1)-real-interval */',
+              'double genrand_real32(void) {',
+              '    return genrand_int32()*(1.0/4294967296.0); ',
+              '    /* divided by 2^32 */',
+              '}']
+
+        c_body = mt + c_body # Prepend the RNG
+        c_body.append('')
+        c_body.append('  int i; /* Temp variables */')
+        c_body.append('')
+        c_body.append('  unsigned long seed = *seed_ptr;')
+        c_body.append('  if (*reseed) {init_genrand(seed);}')
+        c_body.append('')
+        c_body.append('  short stch[%i][%i] = {{%s}};' %
+                      (N_RXN, N_DYN,
+                       '},\n                    {'.join(stch_body)))
+        c_body.append('  short depd[%i+1][%i] = {{%s}};' %
+                      (N_RXN, N_DYN,
+                       '},\n                    {'.join(depd_body)))
+        c_body.append('')
+        c_body.append('  double time = *time_ptr;')
+        c_body.append('  double sd = (*rmsd_ptr)*(*rmsd_ptr)*%i.;'%N_DYN)
+        c_body.append('  double stop_time = *stop_time_ptr;')
+        c_body.append('  double dt;')
+        c_body.append('')
+        c_body.append('  double dv0[%i];'%N_DYN)
+        c_body.append('  for (i=0;i<%i;i++) {dv0[i]=dv[i];}'%N_DYN)
+        c_body.append('')
+        c_body.append('  int rxnInd = %i;'%N_RXN)
+        c_body.append('  double propensity, selection, props[%i], av[%i];'%
+                      (N_RXN, N_ASN))
+        c_body.append('  while (time < stop_time) {')
+        for index, rule in enumerate(self.assignmentRules.values()):
+            c_body.append('    av[%i]=%s;'%(index, parse(rule)))
+        c_body.append('')
+        for index, rxn in enumerate(self.reactions.values()):
+            c_body.append("    if (depd[rxnInd][%i]) {props[%i]=%s;}"% \
+                          (index, index, parse(rxn.kineticLaw)))
+        c_body.append('')
+        c_body.append('    propensity = 0.0;')
+        c_body.append('    for (i=0;i<%i;i++) {'%N_RXN)
+        c_body.append('      propensity += props[i];}')
+        c_body.append('   if (propensity<=0.0) {')
+        c_body.append('      dt = stop_time-time;')
+        c_body.append('      time = stop_time;')
+        c_body.append('      break;')
+        c_body.append('   }')
+        c_body.append('')
+        c_body.append('    dt = -log(1.0-genrand_real32())/propensity;')
+        c_body.append('    time += dt;')
+        c_body.append('')
+        c_body.append('    selection = propensity * genrand_real32();')
+        c_body.append('')
+        c_body.append('    for (rxnInd=0; rxnInd<%i; rxnInd++) {'%N_RXN)
+        c_body.append('      if (selection < props[rxnInd]) {break;}')
+        c_body.append('      else {selection -= props[rxnInd];}}')
+        c_body.append('')
+        c_body.append('    for (i=0;i<%i;i++) {dv[i]+=stch[rxnInd][i];}'%N_DYN)
+        c_body.append('')
+        c_body.append('    double _sd = 0.0;')
+        c_body.append('    for (i=0;i<%i;i++) {'%N_DYN)
+        c_body.append('        _sd += (dv0[i]-dv[i])*(dv0[i]-dv[i]);')
+        c_body.append('    }')
+        c_body.append('    if (_sd > sd) {break;}')
+        c_body.append('  }')
+        c_body.append('')
+        c_body.append('  for (i=0;i<%i;i++) {'%N_DYN)
+        c_body.append('    trajectory[i]=(double)dv[i];')
+        c_body.append('    if (time > stop_time) {')
+        c_body.append('      trajectory[i] += (double)stch[rxnInd][i]/dt*'
+                      '(stop_time - time);')
+        c_body.append('    }')
+        c_body.append('  }')
+        c_body.append('  if (time>stop_time) {(*stop_time_ptr) = stop_time;}')
+        c_body.append('  else {(*stop_time_ptr) = time;}')
+        c_body.append('')
+        c_body.append('  (*time_ptr) = time;')
+        c_body.append('}')
+        c_body.append('')
+        c_body = os.linesep.join(c_body)
+
+        self._prototypes_c.set('integrate_stochastic_tidbit', 
+                               'void integrate_stochatic_tidbit_(%s);' % c_args)
+
+        self._dynamic_funcs_python.set('integrate_stochastic_tidbit', py_body)
+        self._dynamic_funcs_c.set('integrate_stochastic_tidbit', c_body)
 
 
     def _add_assignments_to_function_body(self, body, in_c = False):

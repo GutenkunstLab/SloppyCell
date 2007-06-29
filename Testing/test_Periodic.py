@@ -145,6 +145,7 @@ LDic = {'M_P': 0.091103911665979753, 'P_0': 0.023248542312634367,
 
 class test_Periodic(unittest.TestCase):
     def test_Unforced(self):
+        """Test that an unforced limit cycle can be found with the correct phase"""
         period = 25.036999481467504
 
         net = base_net.copy('test_Unforces')
@@ -229,6 +230,7 @@ class test_Periodic(unittest.TestCase):
                                    'Failed for %s.'%varName)
 
     def test_Forced(self):
+        """Test that a forced limit cycle can be found"""
         period = 24.0
 
         net = base_net.copy('test_Forced')
@@ -319,6 +321,7 @@ class test_Periodic(unittest.TestCase):
                                    'Failed for %s.'%varName)
 
     def test_Nonoscillatory(self):
+        """Test that a nonoscillatory network is detected"""
         net = base_net.copy('test_NonOsillatory')
 
         # Deleting transcription makes the network non-oscillatory
