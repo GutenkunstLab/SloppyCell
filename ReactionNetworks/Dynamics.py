@@ -129,7 +129,7 @@ def generate_tolerances(net, rtol, atol=None):
     # We set atol to be a minimum of 1e-6 to avoid variables with large typical
     #  values going negative.
     if (scipy.isscalar(atol) or atol==None):
-        typ_vals = [net.get_var_typical_val(id)
+        typ_vals = [abs(net.get_var_typical_val(id))
                     for id in net.dynamicVars.keys()]
         atol = scipy.minimum(rtol * scipy.asarray(typ_vals), 1e-6)
     return rtol, atol
@@ -512,7 +512,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     rtol_for_sens = scipy.concatenate((rtol, rtol))
     # Absolute tolerances depend on the typical value of the optimizable
     # variable
-    atol_for_sens = atol/net.get_var_typical_val(opt_var)
+    atol_for_sens = atol/abs(net.get_var_typical_val(opt_var))
     atol_for_sens = scipy.concatenate((atol, atol_for_sens))
 
     # The passed-in normal trajectory tells us what times we need to return,
@@ -928,7 +928,7 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
                                           full_output=True)
             sln = scipy.atleast_1d(sln)
             final_residuals = net.restricted_res_func(sln, y, time, constants)
-            if not scipy.any(final_residuals > rearranged_atol):
+            if not scipy.any(abs(final_residuals) > abs(rearranged_atol)):
                 # This is success.
                 break
         else:
@@ -965,7 +965,7 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
                                           full_output=True)
             sln = scipy.atleast_1d(sln)
             final_residuals = net.alg_deriv_func(sln, y, yp, time, constants)
-            if not scipy.any(final_residuals > rearranged_atol):
+            if not scipy.any(abs(final_residuals) > abs(rearranged_atol)):
                 break
         else:
             raise Utility.SloppyCellException('Failed to calculate alg var'\
