@@ -133,7 +133,7 @@ Plotting.plot_ensemble_trajs(best_traj, mean_traj, std_traj,
 #
 # Now for a complete data hessian
 #
-sens_traj = Dynamics.integrate_sensitivity(growth_net, [0, 100])
+sens_traj = Dynamics.integrate_sensitivity(growth_net, [0, 100], fill_traj=True)
 h_pd = PerfectData.hessian_log_params(sens_traj, fixed_sf=True)
 
 # This will pop up all the plots we've generated
