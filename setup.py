@@ -4,6 +4,14 @@ from distutils.command.install import INSTALL_SCHEMES
 for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib'] 
 
+# Importing these adds a 'bdist_mpkg' option that allows building binary packages on OS X.
+try:
+    import setuptools
+    import bdist_mpkg
+except ImportError:
+    pass
+
+
 import scipy
 if hasattr(scipy, 'Numeric'):
     # Using old scipy
