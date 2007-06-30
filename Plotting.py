@@ -55,6 +55,20 @@ reset_vals_cw()
 
 def plot_eigvals(vals, label=None, offset=0, indicate_neg=True, join=False, 
                  sym=None, ax=None):
+    """
+    Make a nice eigenvalue plot.
+
+    vals: The eigenvalues to plot.
+    label: Label to give the line, for use in a legend.
+    offset: Horizontal offset for the starting point of the eigenvalue plot.
+    indicate_neg: If True (default), negative eigenvalues are indicated by red
+                  points.
+    join: If True, the eigenvalues are plotted with a line joining them.
+    sym: If not None, the supplied symbol/color combination is used for the 
+         plot. Otherwise it is automatically rotated.
+    ax: If not None, this matplotlib Axes object is plotted to. Otherwise the
+        current interactive axes are used.
+    """
     posVals = abs(scipy.compress(scipy.real(vals) > 0, vals))
     posRange = scipy.compress(scipy.real(vals) > 0, range(len(vals)))
     negVals = abs(scipy.compress(scipy.real(vals) < 0, vals))
