@@ -2059,15 +2059,6 @@ class Network:
         py_body = '\n    '.join(py_body)
 
         # C body assembly
-        mtrand_base_filename = os.path.join(SloppyCell.__path__[0], 
-                                            'ReactionNetworks',
-                                            'mtrand.c')
-        mtrand_base_fd = file(mtrand_base_filename, 'r')
-        mtrand_base = mtrand_base_fd.read()
-
-
-        c_body = [mtrand_base] + c_body # Prepend the RNG
-        c_body.append('')
         c_body.append('  int i; /* Temp variables */')
         c_body.append('')
         c_body.append('  unsigned long seed = *seed_ptr;')
@@ -2713,6 +2704,7 @@ class Network:
         c_code.append('#include <math.h>')
         c_code.append('#include <stdio.h>')
         c_code.append('#include <float.h>')
+        c_code.append('#include "mtrand.h"')
         c_code.append('#define exponentiale M_E')
         c_code.append('#define pi M_PI')
         c_code.append('double max(double a, double b){')
@@ -2809,13 +2801,17 @@ class Network:
             if hide_f2py_output:
                 redir = Utility.Redirector()
                 redir.start()
+
+            sc_path = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
             status, msg = exec_command('%(exec)s -c '
                                        '"import numpy.f2py;numpy.f2py.main()" '
                                        '-c %(win_options)s %(mod_name)s.pyf '
-                                       '%(mod_name)s.c'
+                                       '%(mod_name)s.c %(sc_path)s/mtrand.c '
+                                       '-I%(sc_path)s'
                                        % {'exec': sys.executable,
                                           'win_options': win_options,
-                                          'mod_name': mod_name})
+                                          'mod_name': mod_name,
+                                          'sc_path': sc_path})
             if status != 0:
                 logger.warn(msg)
                 raise RuntimeError('Failed to compile module %s.' % mod_name)
