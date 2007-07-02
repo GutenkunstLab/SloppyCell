@@ -57,10 +57,6 @@ class Model:
             calcs = Collections.CalculationCollection(calcs.values())
         self.SetCalculationCollection(calcs)
 
-        # Echo the cost or chi-squared on each evaluation
-        self.costVerbose = False
-        self.chisqVerbose = False
-
         self.observers = KeyedList()
 
     def compile(self):
@@ -232,7 +228,6 @@ class Model:
         for obs in self.observers:
             if hasattr(obs, 'reset'):
                 obs.reset()
-
 	
     # Deprecating...
     def CostPerResidualFromLogParams(self, params):
@@ -309,8 +304,6 @@ class Model:
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
         self.calcVals = self.GetCalculationCollection().Calculate(varsByCalc, 
                                                                   params)
-        #self.calcVals = self.GetCalculationCollection().\
-        #        GetResults(varsByCalc)
         return self.calcVals
 
     def CalculateSensitivitiesForAllDataPoints(self, params):
@@ -325,15 +318,8 @@ class Model:
         """
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
         self.calcVals, self.calcSensitivityVals =\
-                self.GetCalculationCollection().CalculateSensitivity(varsByCalc, params)
-        #self.calcSensitivityVals = self.GetCalculationCollection().\
-        #        GetSensitivityResults(varsByCalc)
-        # might as well fill up the values for the trajectory (calcVals)
-        #  while we're at it:
-        # no need to Calculate because the values are stored after the call to
-        #  CalculateSensitivity
-        # self.GetCalculationCollection().Calculate(varsByCalc, params)
-        #self.calcVals = self.GetCalculationCollection().GetResults(varsByCalc)
+                self.GetCalculationCollection().CalculateSensitivity(varsByCalc,
+                                                                     params)
         return self.calcSensitivityVals
 
     def ComputeInternalVariables(self):
@@ -462,8 +448,8 @@ class Model:
         Returns the scale factor derivatives w.r.t. parameters
 	appropriate for each chemical in each
         experiment, given the current parameters. The returned dictionary
-        is of the form: internalVarsDerivs['scaleFactors'] = dict[experiment][chemical][parametername]
-	 -> derivative.
+        is of the form: internalVarsDerivs['scaleFactors'] \
+                = dict[experiment][chemical][parametername] -> derivative.
         """
 
         self.internalVarsDerivs['scaleFactors'] = {}
@@ -629,8 +615,7 @@ class Model:
         return self.jacobian_fd(params, epsf, 
                                 relativeScale, stepSizeCutoff)
 
-    def GetJandJtJ(self,params) :
-	
+    def GetJandJtJ(self,params):
 	j = self.GetJacobian(params)
 	mn = scipy.zeros((len(params),len(params)),scipy.float_)
 
@@ -643,14 +628,14 @@ class Model:
 	    mn[paramind][paramind1] = sum
     	return j,mn
    
-    def GetJandJtJInLogParameters(self,params) :
+    def GetJandJtJInLogParameters(self,params):
     	# Formula below is exact if you have perfect data. If you don't
 	# have perfect data (residuals != 0) you get an extra term when you
 	# compute d^2(Cost)/(dlogp[i]dlogp[j]) which is
 	# sum_resname (residual[resname] * jac[resname][j] * delta_jk * p[k])
 	# but can be ignored when residuals are zeros, and maybe should be
-	# ignored altogether because it can make the Hessian approximation non-positive
-	# definite
+	# ignored altogether because it can make the Hessian approximation 
+        # non-positive definite
 	pnolog = scipy.exp(params)	
 	jac, jtj = self.GetJandJtJ(pnolog)
 	for i in range(len(params)) :
@@ -834,15 +819,6 @@ class Model:
 
         return hess
 
-
-    def ComputeHessianElement(self, costFunc, chiSq, 
-                              params, i, j, epsi, epsj, 
-                              relativeScale, stepSizeCutoff, verbose):
-        return 0.5 * self.hessian_elem(costFunc, chiSq, 
-                                       params, i, j, epsi, epsj, 
-                                       relativeScale, stepSizeCutoff, 
-                                       verbose)
-
     def CalcHessianInLogParameters(self, params, eps, relativeScale = False, 
                                    stepSizeCutoff = 1e-6, verbose = False):
         return self.hessian_log_params(params, eps, relativeScale,
@@ -863,121 +839,10 @@ class Model:
         return self.hessian(params, epsf, relativeScale,
                             stepSizeCutoff, jacobian, verbose)
 
-    def CalcHessianUsingResiduals(self,params,epsf,relativeScale = True, moreAcc = False) :
-    	currParams = copy.copy(params)
-	nOp = len(currParams)
-	J,jtj = self.GetJandJtJ(currParams)
-	self.CalculateForAllDataPoints(currParams)
-	self.ComputeInternalVariables()
-	localCalcVals = self.calcVals
-	localIntVars = self.internalVars
-
-	paramlist = scipy.array(currParams)
-
-        # epsf may be an array or scalar
-        if scipy.isscalar(epsf):
-            min_epsf = epsf
-        else:
-            min_epsf = min(epsf)
-
-	if relativeScale is True :
-            ## eps should be epsf*abs(typicalvalue) JJW 7.22.05
-            eps = epsf * abs(paramlist)
-            for i in range(0,len(eps)) :
-                if eps[i] < min_epsf:
-                    eps[i] = min_epsf
-	else:
-            eps = epsf * scipy.ones(len(paramlist),scipy.float_)
-
-	secondDeriv = scipy.zeros((nOp,nOp),scipy.float_)
-	
-	if moreAcc == False :
-		for index in range(0,len(params)) :
-            		paramsPlus = currParams.__copy__()
-	    		paramsPlus[index] = paramsPlus[index] + eps[index]
-	    		JPlus = self.GetJacobian(paramsPlus)
-	    		for res in J.keys() :
-				resvalue = self.residuals.getByKey(res).GetValue\
-					(localCalcVals, localIntVars, currParams)
-				secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(J[res]))/ \
-					eps[index]*resvalue
-
-	elif moreAcc == True :
-		for index in range(0,len(params)) :
-                        paramsPlus = currParams.__copy__()
-                        paramsPlus[index] = paramsPlus[index] + eps[index]
-                        JPlus = self.GetJacobian(paramsPlus)
-                       	paramsMinus = currParams.__copy__()
-			paramsMinus[index] = paramsMinus[index] - eps[index] 
-			JMinus =  self.GetJacobian(paramsMinus)
-	
-			for res in J.keys() :
-                                resvalue = self.residuals.getByKey(res).GetValue\
-                                        (localCalcVals, localIntVars, currParams)
-                                secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(JMinus[res]))/ \
-                                        (2.0*eps[index])*resvalue
-	
-	self.params.update(currParams)
-	# force symmetry, because it will never be exactly symmetric.
-	# Should check that (jtj+secondDeriv) is approximately symmetric if concerned
-	# about accuracy of the calculation --- the difference between the i,j and the
-	# j,i entries should give you an indication of the accuracy
-	hess = 0.5*(scipy.transpose(jtj + secondDeriv) + (jtj + secondDeriv))
-	return hess
-
-    def CalcHessianUsingResidualsInLogParams(self,params,epsf,relativeScale = True, moreAcc = False) :
-    	currParams = copy.copy(params)
-        currRawParams = copy.copy(params)
-        currRawParams.update(scipy.exp(params))
-	nOp = len(currParams)
-	J,jtj = self.GetJandJtJInLogParameters(currParams)
-	self.ComputeInternalVariables()
-	localCalcVals = self.calcVals
-	localIntVars = self.internalVars
-
-	paramlist = scipy.array(currParams)
-        eps = epsf * scipy.ones(len(paramlist),scipy.float_)
-
-	secondDeriv = scipy.zeros((nOp,nOp),scipy.float_)
-	if moreAcc == False :	
-		for index in range(0,len(params)) :
-            		paramsPlus = currParams.__copy__()
-	    		paramsPlus[index] = paramsPlus[index] + eps[index]
-	    		JPlus,tmp = self.GetJandJtJInLogParameters(paramsPlus)
-
-	    		for res in J.keys() :
-				resvalue = self.residuals.getByKey(res).GetValue\
-					(localCalcVals, localIntVars, currRawParams)
-				secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(J[res]))/ \
-					eps[index]*resvalue
-
-	elif moreAcc == True :
-		for index in range(0,len(params)) :
-                        paramsPlus = currParams.__copy__()
-                        paramsPlus[index] = paramsPlus[index] + eps[index]
-                        JPlus,tmp = self.GetJandJtJInLogParameters(paramsPlus)
-			paramsMinus = currParams.__copy__()
-                        paramsMinus[index] = paramsMinus[index] - eps[index]
-                       	JMinus,tmp = self.GetJandJtJInLogParameters(paramsMinus) 
-			
-			for res in J.keys() :
-                                resvalue = self.residuals.getByKey(res).GetValue\
-                                        (localCalcVals, localIntVars, currRawParams)
-                                print JPlus[res], '\n\n', JMinus[res], '\n\n', eps[index], '\n\n', res, resvalue 
-                                secondDeriv[index,:] += (scipy.array(JPlus[res])-scipy.array(JMinus[res]))/ \
-                                        (2.0*eps[index])*resvalue
-	self.params.update(scipy.exp(currParams))
-	# force symmetry, because it will never be exactly symmetric.
-	# Should check that (jtj+secondDeriv) is approximately symmetric if concerned
-	# about accuracy of the calculation --- the difference between the i,j and the
-	# j,i entries should give you an indication of the accuracy
-	hess = 0.5*(scipy.transpose(jtj + secondDeriv) + (jtj + secondDeriv))
-	return hess
-        
     def CalcResidualResponseArray(self, j, h) :
         """
-        Calculate the Residual Response array. This array represents the change in
-        a residual obtained by a finite change in a data value.
+        Calculate the Residual Response array. This array represents the change
+        in a residual obtained by a finite change in a data value.
 
         Inputs:
         (self, j, h)
@@ -1000,8 +865,9 @@ class Model:
 
     def CalcParameterResponseToResidualArray(self,j,h):
         """
-        Calculate the parameter response to residual array. This array represents
-        the change in parameter resulting from a change in data (residual).
+        Calculate the parameter response to residual array. This array
+        represents the change in parameter resulting from a change in data
+        (residual).
 
         Inputs:
         (self, j, h)

@@ -11,75 +11,28 @@ net = TestNetwork.net
 m = copy.deepcopy(TestNetwork.m)
 # the following is useful to see if prior derivatives are computed
 # correctly
-m.AddResidual(SloppyCell.Residuals.PriorInLog('priorOnA', 'A',
-	        scipy.log(1.1),scipy.log(2.0) ) )
+m.AddResidual(Residuals.PriorInLog('priorOnA', 'A',
+                                   scipy.log(1.1),scipy.log(2.0) ) )
 
 class test_DerivativeCalculators(unittest.TestCase):
-    def test_GetJandJtJ(self):
-        """Test that finite difference Jacobian matches sensitivity Jacobian"""
-       	p = m.params.__copy__()
-	j,jtj = m.GetJandJtJ(p)
+    def test_jacobian_sens(self):
+        """
+        Test that sensitivity and finite-difference jacobians agree.
+        """
+        params = m.get_params()
 
-	# compare with finite diffences
-	net.fdSensitivities = True
-	p = m.params.__copy__()	
-	jfd,jtjfd = m.GetJandJtJ(p) 
-       	maxdiff = 0.0	
-	for resname in j.keys() :
-		avg = .5*abs(scipy.asarray(j[resname]))+.5*abs(scipy.asarray(jfd[resname]))	
-		diff = abs(scipy.asarray(j[resname])-scipy.asarray(jfd[resname]))
-		for i in range(len(diff)) :
-			if avg[i] > 1.0 :  # use relative error for big entries	
-				diff[i] = diff[i]/avg[i]
-		diff = max(diff)	
-		if diff > maxdiff :
-			maxdiff = diff
-	self.assertAlmostEqual(maxdiff, 0.0, 3,'Failed on J accuracy')
-	
-	maxdiff = 0.0	
-	for i in range(len(p)) :
-		for j in range(len(p)) :
-			avg = .5*abs(jtj[i][j])+abs(jtjfd[i][j])
-			diff = abs(jtj[i][j]-jtjfd[i][j])
-			if avg > 1.0 : 	
-				diff = diff/avg	
-			if diff > maxdiff :
-				maxdiff = diff	 
-	self.assertAlmostEqual(maxdiff, 0.0, 3, 'Failed on JtJ accuracy')
+        J_sens = m.jacobian_sens(params)
+        J_fd = m.jacobian_fd(params, 1e-4)
 
-    def test_HessianFunctions(self) :
-	""" Test CalcHessian against CalcHessianUsingResiduals with and without log parameters """
-	p = m.params.__copy__()
-	h = m.CalcHessianUsingResiduals(p,1.0e-6,moreAcc=False)
-	p = m.params.__copy__()	
-	hfd = m.CalcHessian(p,1.0e-5)
-	maxdiff = 0.0
-
-	for i in range(len(p)) :
-                for j in range(i,len(p)) :
-                       	avg = .5*abs(h[i][j]) + .5*abs(hfd[i][j]) 
-			diff = abs(h[i][j]-hfd[i][j])
-			if avg > 1.0 :
-				diff = diff/avg 
-			if diff > maxdiff :
-                                maxdiff = diff
-        self.assertAlmostEqual(maxdiff, 0.0, 1, 'Failed on Hessian accuracy') # within 10% error is fine
-	p = m.params.__copy__()
-        for ii, val in enumerate(p.values()):
-            p[ii] = scipy.log(val)
-	h = m.CalcHessianUsingResidualsInLogParams(p, 1.0e-6,moreAcc=False)
-	p = m.params.__copy__()	
-	hfd = m.CalcHessianInLogParameters(p,1.0e-5)
-	maxdiff = 0.0
-        for i in range(len(p)) :
-                for j in range(len(p)) :
-                       	avg = .5*abs(h[i][j]) + .5*abs(hfd[i][j]) 
-			diff = abs(h[i][j]-hfd[i][j])
-                       	if avg > 1.0 :
-                                diff = diff/avg 
-			if diff > maxdiff :
-                                maxdiff = diff
-        self.assertAlmostEqual(maxdiff, 0.0, 1, 'Failed on Hessian in log parameters accuracy') # within 10% error is fine
+        for res_name in J_sens.keys():
+            sens_vals = J_sens[res_name]
+            fd_vals = J_sens[res_name]
+            for sens_val, fd_val in zip(sens_vals, fd_vals):
+                if (sens_val == 0) and (fd_val == 0):
+                    continue
+                rel_diff = abs(sens_val - fd_val)/max(abs(sens_val), abs(fd_val))
+                self.assertAlmostEqual(rel_diff, 0, 3, 
+                                       'Failed on residual %s.' % str(res_name))
 	 
 suite = unittest.makeSuite(test_DerivativeCalculators)
 
