@@ -2802,7 +2802,7 @@ class Network:
                 redir = Utility.Redirector()
                 redir.start()
             prev_cflags = os.getenv('CFLAGS', '')
-            os.putenv('CFLAGS', prev_cflags + '-Wno-unused-variable')
+            os.putenv('CFLAGS', prev_cflags + ' -Wno-unused-variable')
             sc_path = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
             status, msg = exec_command('%(exec)s -c '
                                        '"import numpy.f2py;numpy.f2py.main()" '
