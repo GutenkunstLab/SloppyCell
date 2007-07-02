@@ -52,7 +52,9 @@ core.setup(name='SloppyCell',
                      ],
            package_dir={'SloppyCell': ''},
            data_files=[('SloppyCell/ReactionNetworks', 
-                        ['ReactionNetworks/f2py_signatures.pyf'])],
+                        ['ReactionNetworks/f2py_signatures.pyf',
+                         'ReactionNetworks/mtrand.h',
+                         'ReactionNetworks/mtrand.c'])],
 
            ext_modules = [daskr]
            )
