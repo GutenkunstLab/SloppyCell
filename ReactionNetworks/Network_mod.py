@@ -2075,7 +2075,7 @@ class Network:
         c_body.append('')
         c_body.append('  short stch[][%i] = {{%s}};' %
                       (N_DYN, '},\n                    {'.join(stch_body)))
-        c_body.append('  short depd[[%i] = {{%s}};' %
+        c_body.append('  short depd[][%i] = {{%s}};' %
                       (N_DYN, '},\n                    {'.join(depd_body)))
         c_body.append('')
         c_body.append('  double time = *time_ptr;')
