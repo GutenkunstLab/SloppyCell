@@ -2801,7 +2801,8 @@ class Network:
             if hide_f2py_output:
                 redir = Utility.Redirector()
                 redir.start()
-
+            prev_cflags = os.getenv('CFLAGS', '')
+            os.putenv('CFLAGS', prev_cflags + '-Wno-unused-variable')
             sc_path = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
             status, msg = exec_command('%(exec)s -c '
                                        '"import numpy.f2py;numpy.f2py.main()" '
@@ -2812,6 +2813,8 @@ class Network:
                                           'win_options': win_options,
                                           'mod_name': mod_name,
                                           'sc_path': sc_path})
+            os.putenv('CFLAGS', prev_cflags)
+
             if status != 0:
                 logger.warn(msg)
                 raise RuntimeError('Failed to compile module %s.' % mod_name)
