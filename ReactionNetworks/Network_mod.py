@@ -520,6 +520,8 @@ class Network:
                     struct.unpack('i', os.urandom(struct.calcsize('i')))[0])
             except: pass
 
+            seed = seed % sys.maxint
+            
         if rmsd==None:
             rmsd = scipy.misc.limits.double_max
             
@@ -1990,7 +1992,7 @@ class Network:
         depd_body = []
         asnKeys = self.assignedVars.keys()
         for rxnInd, (rxn_id, rxn) in enumerate(self.reactions.items()):
-            stch_body.append(repr([rxn.stoichiometry.get(_,0)
+            stch_body.append(repr([int(rxn.stoichiometry.get(_,0))
                                    for _ in self.dynamicVars.keys()])[1:-1])
             depd = [0]*N_RXN
             for varName, val in rxn.stoichiometry.items():
@@ -2007,14 +2009,18 @@ class Network:
                     if varName in evars:
                         depd[_rxnInd]=1
             depd_body.append(repr(depd)[1:-1])
-        depd_body.append(repr([1]*N_RXN)[1:-1])
+        if N_RXN>0: depd_body.append(repr([1]*N_RXN)[1:-1])
 
         # Python body assembly
         py_body.append('import numpy.random')
         py_body.append('if reseed: rs = numpy.random.seed(seed)')
         py_body.append('')
-        py_body.append('stch = [[%s]]' % '],\n        ['.join(stch_body))
-        py_body.append('depd = [[%s]]' % '],\n        ['.join(depd_body))
+        if N_RXN > 0:
+            py_body.append('stch = [[%s]]' % '],\n        ['.join(stch_body))
+            py_body.append('depd = [[%s]]' % '],\n        ['.join(depd_body))
+        else:
+            py_body.append('stch = [[]]')
+            py_body.append('depd = [[]]')
         py_body.append('')
         py_body.append('av = [0.0]*%i'%N_ASN)
         py_body.append('dv0 = [_ for _ in dv]')
@@ -2064,15 +2070,20 @@ class Network:
         c_body.append('  unsigned long seed = *seed_ptr;')
         c_body.append('  if (*reseed) {init_genrand(seed);}')
         c_body.append('')
-        c_body.append('  short stch[][%i] = {{%s}};' %
-                      (N_DYN, '},\n                    {'.join(stch_body)))
-        c_body.append('  short depd[][%i] = {{%s}};' %
-                      (N_DYN, '},\n                    {'.join(depd_body)))
+        if N_RXN > 0:
+            c_body.append('  short stch[%i][%i] = {{%s}};' %
+                          (N_RXN, N_DYN,
+                           '},\n                    {'.join(stch_body)))
+            c_body.append('  short depd[%i+1][%i] = {{%s}};' %
+                          (N_RXN, N_RXN,
+                           '},\n                    {'.join(depd_body)))
+        else:
+            c_body.append('  short stch[0][0];')
         c_body.append('')
         c_body.append('  double time = *time_ptr;')
         c_body.append('  double sd = (*rmsd_ptr)*(*rmsd_ptr)*%i.;'%N_DYN)
         c_body.append('  double stop_time = *stop_time_ptr;')
-        c_body.append('  double dt;')
+        c_body.append('  double dt=0.0;')
         c_body.append('')
         c_body.append('  double dv0[%i];'%N_DYN)
         c_body.append('  for (i=0;i<%i;i++) {dv0[i]=dv[i];}'%N_DYN)
