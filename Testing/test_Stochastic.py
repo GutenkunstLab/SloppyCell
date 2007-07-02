@@ -40,7 +40,7 @@ class test_Events(unittest.TestCase):
     def test_RngSeed(self):
         """Test that the reseeding the same RNG seed produces identical results"""
         net = base_net.copy('test_RngSeed')
-        net.set_stochastic(seed=240482969431598366)
+        net.set_stochastic(seed=24048296)
 
         res1 = net.calculate({'x':times}, params)
 
