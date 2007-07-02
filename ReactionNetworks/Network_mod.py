@@ -520,7 +520,7 @@ class Network:
                     struct.unpack('i', os.urandom(struct.calcsize('i')))[0])
             except: pass
 
-            seed = seed % sys.maxint
+            seed = int(seed % sys.maxint)
             
         if rmsd==None:
             rmsd = scipy.misc.limits.double_max
