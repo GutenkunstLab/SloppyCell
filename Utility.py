@@ -104,10 +104,14 @@ def disable_debugging_msgs():
     logging.basicConfig()
 
 def disable_warnings():
+    scipy.seterr(over='ignore', divide='ignore', invalid='ignore', 
+                 under='ignore')
     logging.root.setLevel(logging.CRITICAL)
 
 def enable_warnings():
     logging.root.setLevel(logging.WARNING)
+    scipy.seterr(over='print', divide='print', invalid='print', 
+                 under='ignore')
 
 class SloppyCellException(Exception):
     pass

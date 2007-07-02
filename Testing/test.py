@@ -1,5 +1,6 @@
 import glob
 import unittest
+import sys
 
 import SloppyCell
 import SloppyCell.Utility
@@ -18,7 +19,8 @@ def run_all_tests():
         if hasattr(mod, 'suite'):
             all_tests.addTest(mod.suite)
 
-    SloppyCell.Utility.disable_warnings()
+    if not '-v' in sys.argv:
+        SloppyCell.Utility.disable_warnings()
     if not SloppyCell.disable_c:
         print '*' * 80
         print 'Running tests with C compilation enabled.'
