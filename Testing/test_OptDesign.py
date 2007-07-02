@@ -24,7 +24,10 @@ class test_OptDesign(unittest.TestCase):
         save(jtj,'TNjtj')
         # Make the nensitivity trajectory for this network and save
         # it in 'TNsenstraj'
-        OD.make_sens_traj(net,p,scipy.linspace(0.0,2.6,100),'TNsenstraj')
+        times = scipy.linspace(0, 2.6, 100)
+        times = scipy.append(times, 1.1)
+        times.sort()
+        OD.make_sens_traj(net,p,times,'TNsenstraj')
         OD.setup('TNparams',net,'TNsenstraj','TNjtj')
         best_change,best_chem,best_time = OD.design_over_chems(['x'],['y'],
                 scipy.log(1000.0))
