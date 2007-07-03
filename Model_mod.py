@@ -2,14 +2,11 @@
 Model class that unites theory with data.
 """
 
-__docformat__ = "restructuredtext en"
-
 import logging
 logger = logging.getLogger('Model_mod')
 
 import copy
 import sets
-import sys, traceback # For exception handling
 
 import scipy
 
@@ -105,7 +102,7 @@ class Model:
         for (calcName, varName), initialValue in ics.items():
             self.calcColl[calcName].set_var_ic(varName, initialValue)
 
-    def _evaluate(self, params):
+    def _evaluate(self, params, T=1):
         """
         Evaluate the cost for the model, returning the intermediate residuals,
         and chi-squared.
@@ -115,7 +112,7 @@ class Model:
         """
         self.params.update(params)
         self.CalculateForAllDataPoints(params)
-        self.ComputeInternalVariables()
+        self.ComputeInternalVariables(T)
 
         resvals = [res.GetValue(self.calcVals, self.internalVars, self.params)
                    for res in self.residuals.values()]
@@ -129,14 +126,20 @@ class Model:
             logger.warn('Chi^2 is NaN, converting to Infinity.')
             chisq = scipy.inf
         cost = 0.5 * chisq
+
+        entropy = 0
+        for expt, sf_ents in self.internalVars['scaleFactor_entropies'].items():
+            for group, ent in sf_ents.items():
+                entropy += ent
+
         self._notify(event = 'evaluation', 
                      resvals = resvals,
                      chisq = chisq,
                      cost = cost, 
+                     entropy = entropy,
                      params = self.params)
 
-        return resvals, chisq, cost
-
+        return resvals, chisq, cost, entropy
 
     def res(self, params):
         """
@@ -179,8 +182,6 @@ class Model:
         """
         return self._evaluate(params)[2]
 
-        return cost
-
     def cost_log_params(self, log_params):
         """
         Return the cost given the logarithm of the input parameters
@@ -188,13 +189,8 @@ class Model:
         return self.cost(scipy.exp(log_params))
 
     def free_energy(self, params, T):
-        sf_entropy = 0
-        c = self.cost(params)
-        for expt, sf_aks in self.internalVars['scaleFactor_aks'].items():
-            for var, ak in sf_aks.items():
-                sf_entropy += scipy.log(scipy.sqrt(2*scipy.pi*T/ak))
-        return c - T * sf_entropy
-        
+        temp, temp, c, entropy = self._evaluate(params, T=T)
+        return c - T * entropy
 
     def _notify(self, **args):
         """
@@ -267,9 +263,9 @@ class Model:
         if stepSizeCutoff==None:
             stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
             
-	if relativeScale is True :
+	if relativeScale is True:
             eps = epsf * abs(params)
-	else :
+	else:
             eps = epsf * scipy.ones(len(params),scipy.float_)
 
         for i in range(0,len(eps)):
@@ -322,60 +318,52 @@ class Model:
                                                                      params)
         return self.calcSensitivityVals
 
-    def ComputeInternalVariables(self):
-        sf, sf_aks = self.compute_scale_factors()
+    def ComputeInternalVariables(self, T):
+        sf, sf_ents = self.compute_scale_factors(T)
         self.internalVars['scaleFactors'] = sf
-        self.internalVars['scaleFactor_aks'] = sf_aks
+        self.internalVars['scaleFactor_entropies'] = sf_ents
 
-    def compute_scale_factors(self):
+    def compute_scale_factors(self, T):
         """
         Compute the scale factors for the current parameters and return a dict.
 
         The dictionary is of the form dict[exptId][varId] = scale_factor
         """
-
         scale_factors = {}
-        scale_factor_aks = {}
+        scale_factor_entropies = {}
         for exptId, expt in self.GetExperimentCollection().items():
-            scale_factors[exptId], scale_factor_aks[exptId] =\
-                    self._compute_sf_for_expt(expt)
+            scale_factors[exptId], scale_factor_entropies[exptId] =\
+                    self._compute_sf_and_sfent_for_expt(expt, T)
 
-        return scale_factors, scale_factor_aks
+        return scale_factors, scale_factor_entropies
 
-    def _compute_sf_for_expt(self, expt):
+    def _compute_sf_and_sfent_for_expt(self, expt, T):
         # Compute the scale factors for a given experiment
         scale_factors = {}
-        scale_factor_aks = {}
+        scale_factor_entropies = {}
 
         exptData = expt.GetData()
         expt_integral_data = expt.GetIntegralDataSets()
         fixed_sf = expt.get_fixed_sf()
 
-        # Get the variables measured in this experiment
-        measuredVars = sets.Set()
-        for calcId in exptData:
-            measuredVars.union_update(sets.Set(exptData[calcId].keys()))
-        for dataset in expt_integral_data:
-            measuredVars.union_update(sets.Set(dataset['vars']))
-
-        sf_groups = map(sets.Set, expt.get_shared_sf())
-        # Flatten out the list of shared scale factors.
-        flattened = []
-        for g in sf_groups:
-            flattened.extend(g)
-        # These are variables that don't share scale factors
-        unshared = [sets.Set([var]) for var in measuredVars
-                    if var not in flattened]
-        sf_groups.extend(unshared)
+        sf_groups = expt.get_sf_groups()
 
         for group in sf_groups:
             # Do any of the variables in this group have fixed scale factors?
-            fixed = group.intersection(sets.Set(fixed_sf.keys()))
+            fixed = sets.Set(group).intersection(sets.Set(fixed_sf.keys()))
             fixedAt = sets.Set([fixed_sf[var] for var in fixed])
+
+            # We'll need to index the scale factor entropies on the *group*
+            # that shares a scale factor, since we only have one entropy per
+            # shared scale factor. So we need to index on the group of
+            # variables. We sort the group and make it hashable to avoid any
+            # double-counting.
+            hash_group = expt._hashable_group(group)
             if len(fixedAt) == 1:
                 value = fixedAt.pop()
                 for var in group:
                     scale_factors[var] = value
+                    scale_factor_entropies[hash_group] = 0
                 continue
             elif len(fixedAt) > 1:
                     raise ValueError('Shared scale factors fixed at '
@@ -387,7 +375,7 @@ class Model:
             # For discrete data
             for calc in exptData:
                 # Pull out the vars we have measured for this calculation
-                for var in group.intersection(sets.Set(exptData[calc].keys())):
+                for var in sets.Set(group).intersection(sets.Set(exptData[calc].keys())):
                     for indVar, (data, error) in exptData[calc][var].items():
                         theory = self.calcVals[calc][var][indVar]
                         theoryDotData += (theory * data) / error**2
@@ -415,11 +403,13 @@ class Model:
             for var in group:
                 if theoryDotTheory != 0:
                     scale_factors[var] = theoryDotData/theoryDotTheory
-                    scale_factor_aks[var] = theoryDotTheory
                 else:
                     scale_factors[var] = 1
+                entropy = expt.compute_sf_entropy(hash_group, theoryDotTheory,
+                                                  theoryDotData, T)
+                scale_factor_entropies[hash_group] = entropy
 
-        return scale_factors, scale_factor_aks
+        return scale_factors, scale_factor_entropies
 
     def _integral_theorytheory(self, var, theory_traj, uncert_traj, interval):
         def integrand(t):
@@ -467,7 +457,7 @@ class Model:
             for depVar in exptDepVars:
 		self.internalVarsDerivs['scaleFactors'][exptName][depVar] = {}
 		if depVar in expt.GetFixedScaleFactors():
-                    for pname in p.keys() :
+                    for pname in p.keys():
 		    	self.internalVarsDerivs['scaleFactors'][exptName]\
                                 [depVar][pname] = 0.0
                     continue
@@ -482,12 +472,12 @@ class Model:
                             theoryDotTheory += theory**2 / error**2
 
                 # now get derivative of the scalefactor
-                for pname in p.keys() :
+                for pname in p.keys():
                     theorysensDotData, theorysensDotTheory = 0, 0
 
                     for calc in exptData:
-                       clc = self.calcColl[calc]
-                       if depVar in exptData[calc].keys():
+                        clc = self.calcColl[calc]
+                        if depVar in exptData[calc].keys():
                             for indVar, (data, error)\
                                     in exptData[calc][depVar].items():
                                 theory = self.calcVals[calc][depVar][indVar]
@@ -499,12 +489,12 @@ class Model:
                                 theorysensDotData += (theorysens * data) / error**2
                                 theorysensDotTheory += (theorysens * theory) / error**2
 
+                    deriv_dict = self.internalVarsDerivs['scaleFactors'][exptName][depVar]
                     try:
-                        self.internalVarsDerivs['scaleFactors'][exptName][depVar]\
-                                [pname] = theorysensDotData/theoryDotTheory - \
-                                2*theoryDotData*theorysensDotTheory/(theoryDotTheory)**2
+                        deriv_dict[pname] = theorysensDotData/theoryDotTheory\
+                                - 2*theoryDotData*theorysensDotTheory/(theoryDotTheory)**2
                     except ZeroDivisionError:
-                        self.internalVarsDerivs['scaleFactors'][exptName][depVar][pname] = 0
+                        deriv_dict[pname] = 0
 
 	return self.internalVarsDerivs['scaleFactors']
 
@@ -575,7 +565,7 @@ class Model:
 
             params[ii] = orig_vals[ii]
 
-	    for resId in res.keys() :
+	    for resId in res.keys():
                 J[resId].append((resPlus[resId]-resMinus[resId])/(2.*eps_l[ii]))
 	
 	# NOTE: after call to ComputeResidualsWithScaleFactors the Model's
@@ -583,7 +573,7 @@ class Model:
         self.params.update(params)
 	return J
 
-    def GetJacobian(self,params) :
+    def GetJacobian(self,params):
     	"""
 	GetJacobian(parameters) -> dictionary
 
@@ -619,10 +609,10 @@ class Model:
 	j = self.GetJacobian(params)
 	mn = scipy.zeros((len(params),len(params)),scipy.float_)
 
-	for paramind in range(0,len(params)) :
-	  for paramind1 in range(0,len(params)) :
+	for paramind in range(0,len(params)):
+	  for paramind1 in range(0,len(params)):
 	    sum = 0.0
-	    for kys in j.keys() :
+	    for kys in j.keys():
 	      sum = sum + j[kys][paramind]*j[kys][paramind1]
 
 	    mn[paramind][paramind1] = sum
@@ -638,13 +628,13 @@ class Model:
         # non-positive definite
 	pnolog = scipy.exp(params)	
 	jac, jtj = self.GetJandJtJ(pnolog)
-	for i in range(len(params)) :
-            for j in range(len(params)) :
+	for i in range(len(params)):
+            for j in range(len(params)):
                 jtj[i][j] = jtj[i][j]*pnolog[i]*pnolog[j]
 
 	res = self.resDict(pnolog)	
-	for resname in self.residuals.keys() :
-            for j in range(len(params)) :
+	for resname in self.residuals.keys():
+            for j in range(len(params)):
                	# extra term --- not including it 
 		# jtj[j][j] += res[resname]*jac[resname][j]*pnolog[j]
                 jac[resname][j] = jac[resname][j]*pnolog[j]
@@ -839,7 +829,7 @@ class Model:
         return self.hessian(params, epsf, relativeScale,
                             stepSizeCutoff, jacobian, verbose)
 
-    def CalcResidualResponseArray(self, j, h) :
+    def CalcResidualResponseArray(self, j, h):
         """
         Calculate the Residual Response array. This array represents the change
         in a residual obtained by a finite change in a data value.

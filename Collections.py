@@ -3,6 +3,8 @@ logger = logging.getLogger('Collections')
 
 import sets, copy
 
+import scipy
+
 import SloppyCell
 import SloppyCell.Utility as Utility
 import SloppyCell.KeyedList_mod as KeyedList_mod
@@ -119,6 +121,125 @@ class Experiment:
         self.periodChecks=[]
         self.amplitudeChecks=[]
         self.integral_data=[]
+        self.sf_priors = {}
+
+    def _hashable_group(self, group):
+        """
+        Return a sorted tuple of the elements of group.
+        """
+        if isinstance(group, str):
+            group = [group]
+        hash_group = sets.Set(group)
+        hash_group = list(hash_group)
+        list(group).sort()
+        hash_group = tuple(group)
+        return hash_group
+
+    def get_sf_groups(self):
+        """
+        Return tuples representing all the scale factors in this experiment.
+
+        A tuple will contain multiple entries if several variables share a
+        scale factor.
+        """
+        # Get the variables measured in this experiment
+        measuredVars = sets.Set()
+        for calcId in self.data:
+            measuredVars.union_update(sets.Set(self.data[calcId].keys()))
+        for dataset in self.integral_data:
+            measuredVars.union_update(sets.Set(dataset['vars']))
+
+        sf_groups = [self._hashable_group(group) for group 
+                     in self.get_shared_sf()]
+        # Flatten out the list of shared scale factors so we can also get
+        #  the unshared ones...
+        flattened = []
+        for g in sf_groups:
+            flattened.extend(g)
+        # These are variables that don't share scale factors
+        unshared = [self._hashable_group(var) for var in measuredVars
+                    if var not in flattened]
+        sf_groups.extend(unshared)
+        return sf_groups
+
+    def set_sf_prior(self, group, prior_type, prior_params=None):
+        """
+        Set the type of prior to place on a given group of scalefactors.
+
+        The group contains a collection of variables that are sharing a given
+        scale factor which may be just one variable. You can see what the current groups are with expt.get_sf_groups().
+
+        Currently implemented prior types are:
+            'uniform in sf': This is a uniform prior over scale factors. This
+            is simplest and fastest to compute, but it tends to weight
+            parameter sets that yield large scale factors heavily. It takes no
+            parameters.
+
+            'gaussian in log sf': This is a Gaussian prior over the logarithm
+            of the scale factor. This should avoid the problem of weighting
+            large factors heavily. It takes two parameters: the mean of the
+            normal distribution, and it's standard deviation. For example,
+            parameters (log(3.0), log(10)), will place a prior that holds 95%
+            of the probability between 3 / 10**2 and 3 * 10**2.
+        """
+        hash_group = self._hashable_group(group)
+
+        if hash_group not in self.get_sf_groups():
+            raise ValueError('Unrecognized group to set scale factor prior on. '
+                             'If it is a shared scale factor, you need to '
+                             'specify every member of the sharing group.')
+
+        available_types = ['uniform in sf', 'gaussian in log sf']
+        if prior_type not in available_types:
+            raise ValueError('Unknown prior type %s. Available types are %s.'
+                             % (prior_type, available_types))
+        self.sf_priors[hash_group] = (prior_type, prior_params)
+
+    def compute_sf_entropy(self, sf_group, theoryDotTheory, theoryDotData, T):
+        """
+        Compute the entropy for a given scale factor.
+        """
+        try:
+            prior_type, prior_params = self.sf_priors[sf_group]
+        except KeyError:
+            prior_type, prior_params = 'uniform in sf', None
+
+        if prior_type == 'uniform in sf':
+            if theoryDotTheory != 0:
+                entropy = scipy.log(scipy.sqrt(2*scipy.pi*T/theoryDotTheory))
+            else:
+                entropy = 0
+        elif prior_type == 'gaussian in log sf':
+            # This is the integrand for the prior. Note that it's important
+            #  that u = 0 corresponds to B_best. This ensures that the
+            #  integration doesn't miss the (possibly sharp) peak there.
+            exp = scipy.exp
+            def integrand(u, ak, bk, mulB, siglB, T, B_best, lB_best):
+                B = exp(u) * B_best
+                lB = u + lB_best
+                ret = exp(-ak/(2*T) * (B-B_best)**2
+                          - (lB-mulB)**2/(2 * siglB**2))
+                return ret
+
+            mulB, siglB = prior_params
+            B_best = theoryDotData/theoryDotTheory
+            lB_best = scipy.log(B_best)
+
+            # Often we get overflow errors in the integration, but they
+            #  don't actually cause a problem. (exp(-inf) is still 0.) This
+            #  prevents scipy from printing annoying error messages in this
+            #  case.
+            prev_err = scipy.seterr(over='ignore')
+            int_args = (theoryDotTheory, theoryDotData, mulB, siglB, T, B_best,
+                        lB_best)
+            ans, temp = scipy.integrate.quad(integrand, -scipy.inf, scipy.inf, 
+                                             args = int_args, limit=1000)
+            scipy.seterr(**prev_err)
+            entropy = scipy.log(ans)
+        else:
+            raise ValueError('Unrecognized prior type: %s.' % prior_type)
+
+        return entropy
         
     def SetName(self, name):
         self.name = name
