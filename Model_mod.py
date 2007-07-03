@@ -318,7 +318,7 @@ class Model:
                                                                      params)
         return self.calcSensitivityVals
 
-    def ComputeInternalVariables(self, T):
+    def ComputeInternalVariables(self, T=1):
         sf, sf_ents = self.compute_scale_factors(T)
         self.internalVars['scaleFactors'] = sf
         self.internalVars['scaleFactor_entropies'] = sf_ents
