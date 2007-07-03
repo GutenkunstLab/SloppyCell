@@ -600,7 +600,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
 
         ypIC = find_ypic_sens(IC, ypIC, current_time, 
                               net._dynamic_var_algebraic,
-                              rtol, atol, rpar, net, opt_var)
+                              rtol, atol_for_sens, rpar, net, opt_var)
 
         sens_rhs = net.sens_rhs
         if net.integrateWithLogs:
@@ -838,18 +838,20 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
             stable = 0
         return (dvFixed, stable)
 
-def find_ypic_sens(y, yp, time, var_types, rtol, atol, constants, net, opt_var,
-                  redirect_msgs=False):
+def find_ypic_sens(y, yp, time, var_types, rtol, atol_for_sens, constants, 
+                   net, opt_var, redirect_msgs=False):
     var_types = scipy.asarray(var_types)
     y = scipy.asarray(y, scipy.float_)
     yp = scipy.asarray(yp, scipy.float_)
+    atol_for_sens = scipy.asarray(atol_for_sens)
+
     N_dyn = len(var_types)
     y = copy.copy(y)
     yp = copy.copy(yp)
 
     # Find the initial conditions for the normal variables
     y_norm, yp_norm = find_ics(y[:N_dyn], yp[:N_dyn], time,
-                               var_types, rtol, atol,
+                               var_types, rtol, atol_for_sens[:N_dyn],
                                net.constantVarValues, net, 
                                redirect_msgs=redirect_msgs)
     # Copy the updated values into our y and yp arrays
@@ -858,6 +860,7 @@ def find_ypic_sens(y, yp, time, var_types, rtol, atol, constants, net, opt_var,
     
     # Now we can solve for yp for all the *non-algebraic* sensitivity variables
     yp_non_alg_sens = yp[N_dyn:][var_types == 1]
+    atol_non_alg_sens = atol_for_sens[N_dyn:][var_types == 1]
     def restricted_sens_rhs(yp_non_alg_sens):
         yp_local = scipy.array(yp, scipy.float_)
         yp_local[N_dyn:][var_types == 1] = yp_non_alg_sens
@@ -874,7 +877,7 @@ def find_ypic_sens(y, yp, time, var_types, rtol, atol, constants, net, opt_var,
                                       full_output=True)
         sln = scipy.atleast_1d(sln)
         res = restricted_sens_rhs(sln)
-        if ier != 1 and max(abs(res)) > min(atol):
+        if ier != 1 and scipy.any(abs(res) > atol_non_alg_sens):
             raise Utility.SloppyCellException('Failed to calculate intial '
                                               'conditions in network %s for ' 
                                               'opt_var %s.'
