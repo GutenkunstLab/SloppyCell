@@ -26,7 +26,7 @@ class test_fixedpoints(unittest.TestCase):
         self.assertAlmostEqual(fp[1], scipy.sqrt(2), 6, 'Failed on basic 1,1.')
         self.assertAlmostEqual(fp[2], 1, 6, 'Failed on basic 1,2.')
 
-        fp = Dynamics.dyn_var_fixed_point(net, dv0=[-0.2,-0.2,-0.2], 
+        fp = Dynamics.dyn_var_fixed_point(net, dv0=[-0.1,-0.1,-0.1], 
                                           with_logs=False)
         # This should find the fixed-point [0, 0, 0]
         self.assertAlmostEqual(fp[0], 0, 6, 'Failed on basic 2,0.')
