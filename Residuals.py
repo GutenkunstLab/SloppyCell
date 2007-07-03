@@ -5,83 +5,131 @@ class Residual:
         self.key = key
 
     def GetKey(self):
+        """
+        A unique (and hashable) identifier for this residual.
+        """
         return key
 
     def GetValue(self, predictions, internalVars, params):
+        """
+        The value of the residual give a current set of parameters and
+        resulting predictions.
+        """
         raise NotImplementedError
 
     def GetRequiredVarsByCalc(self):
-        return {}
+        """
+        The variables that need to be calculated to evaluate this residual.
+
+        Should return a nested dictionary of the form:
+            {calc name: {dependent var name: [independent var values]}}
+        """
+        raise NotImplementedError
 
     def dp(self, predictions, internalVars, params):
-        return {}
+        """
+        Partial derivative of the residual with respect to any parameters.
+
+        Should return a dictionary of the form:
+            {parameter name: derivative}
+        """
+        raise NotImplementedError
 
     def dy(self, predictions, internalVars, params):
-        return {}
+        """
+        Partial derivative of the residual with respect to any calculated 
+        variables.
+
+        Should return a dictionary of the form:
+            {calculation name: {variable name: {x value: deriv}}}
+        """
+        raise NotImplementedError
+
+    def dintVars(self, predictions, internalVars, params):
+        """
+        Partial derivative of the residual with respect to any internal
+        variables.
+
+        Should return a dictionary of the form:
+            {type of internal var: {expt name: {variable name: derivative}}}
+
+        XXX: This form of nesting is only appropriate for scale factors.
+        """
+        raise NotImplementedError
 
     def Dp(self, predictions, senspredictions, internalVars, internalVarsDerivs,
            params):
-        return scipy.zeros(len(params), scipy.float_)
+	""" 
+        Total derivatives with respect to all parameters of the residual.
+
+        Should return a list with the derivatives in the same order as params.
+
+        XXX: This only works with internvalVars that are indexed like scale
+        factors.
+        """
+	derivs_wrt_p = []
+	for pname in params.keys():
+            deriv = 0
+
+            # This first term is dres/dy * dy/dp
+            dres_dy = self.dy(predictions, internalVars, params)
+            for calcKey in dres_dy.keys():
+                for yKey in dres_dy[calcKey].keys():
+                    for xVal in dres_dy[calcKey][yKey].keys():
+                        dres_dy_this = dres_dy[calcKey][yKey][xVal]
+                        # We default to 0 if parameter not in senspredictions. 
+                        # (It may not be involved in a given calculation.)
+                        dy_dp_this = senspredictions[calcKey][yKey][xVal].get(pname, 0)
+                        deriv += dres_dy_this * dy_dp_this
+
+            # This term is dres/dintVar * dintVar/dp
+            dres_dintVars = self.dintVars(predictions, internalVars, params)
+            for intVar_type in dres_dintVars.keys():
+                for exptKey in dres_dintVars[intVar_type].keys():
+                    for yKey in dres_dintVars[intVar_type][exptKey].keys():
+                        dres_dintVar_this = dres_dintVars[intVar_type][exptKey][yKey]
+                        dintVar_dp_this = internalVarsDerivs[intVar_type][exptKey][yKey][pname]
+                        deriv += dres_dintVar_this * dintVar_dp_this
+
+            # Finally dres/dp
+            dres_dp = self.dp(predictions, internalVars, params)
+            deriv += dres_dp.get(pname, 0)
+
+            derivs_wrt_p.append(deriv)
+
+	return derivs_wrt_p
 
 class ScaledErrorInFit(Residual):
     def __init__(self, key, depVarKey, calcKey, indVarValue,  depVarMeasurement,
                  depVarSigma, exptKey):
         Residual.__init__(self, key)
         self.yKey = depVarKey
-        self.cKey = calcKey
+        self.calcKey = calcKey
         self.xVal = indVarValue
         self.yMeas = depVarMeasurement
         self.ySigma = depVarSigma
         self.exptKey = exptKey
 
     def GetRequiredVarsByCalc(self):
-        return {self.cKey: {self.yKey: [self.xVal]}}
+        return {self.calcKey: {self.yKey: [self.xVal]}}
 
     def GetValue(self, predictions, internalVars, params):
-        theoryVal = internalVars['scaleFactors'][self.exptKey][self.yKey]\
-                * predictions[self.cKey][self.yKey][self.xVal]
-        return (theoryVal - self.yMeas)/self.ySigma
+        scale_factor = internalVars['scaleFactors'][self.exptKey][self.yKey]
+        raw_pred_val = predictions[self.calcKey][self.yKey][self.xVal]
+        return (scale_factor * raw_pred_val - self.yMeas)/self.ySigma
 
     def dp(self, predictions, internalVars, params):
         return {}
 
     def dy(self, predictions, internalVars, params):
-        deriv = internalVars['scaleFactors'][self.exptKey][self.yKey]\
-                / self.ySigma
-        return {self.cKey: {self.yKey: {self.xVal: deriv}}}
-    def dintVar(self, predictions, internalVars, params):
-	deriv = predictions[self.cKey][self.yKey][self.xVal]/self.ySigma
-	return {self.cKey: {self.yKey: {self.xVal: deriv}}}
+        scale_factor = internalVars['scaleFactors'][self.exptKey][self.yKey]
+        deriv = scale_factor / self.ySigma
+        return {self.calcKey: {self.yKey: {self.xVal: deriv}}}
 
-    def Dp(self,predictions,senspredictions,internalVars,internalVarsDerivs,\
-    	params):
-	""" Total derivative w.r.t p of the residual. Can be used as it stands 
-        for other residual
-	types but v3 may have to be changed depending on how it is decided 
-        to key dp """
-	deriv = []
-	for pname in params.keys() :
-	  if len(self.dy(predictions, internalVars, params)) > 0 :
-            # Default to 0 if parameter not in senspredictions, (i.e. it may
-            #  not have been in a given calculation
-	    v1 = self.dy(predictions, internalVars, params)[self.cKey][self.yKey][self.xVal]*\
-	    senspredictions[self.cKey][self.yKey][self.xVal].get(pname, 0)
-	    #v1 = senspredictions[self.cKey][self.yKey][self.xVal][pname]
-	  else :
-	    v1 = 0.0
-	  if len(self.dintVar(predictions, internalVars, params)) > 0 :
-	    v2 = self.dintVar(predictions, internalVars, params)[self.cKey][self.yKey][self.xVal]*\
-	    internalVarsDerivs['scaleFactors'][self.exptKey][self.yKey][pname]
-	  else :
-	    v2 = 0.0
-	  if len(self.dp(predictions, internalVars, params)) > 0 and self.pKey == pname:
-	    # dp should be keyed on the residual name? Should dy and dintVar be aswell?
-	    v3 = self.dp(predictions, internalVars, params)[self.key]
-	  else :
-	    v3 = 0.0
-	  deriv.append(v1+v2+v3)
-
-	return deriv
+    def dintVars(self, predictions, internalVars, params):
+	raw_pred_val = predictions[self.calcKey][self.yKey][self.xVal]
+        deriv = raw_pred_val / self.ySigma
+        return {'scaleFactors': {self.exptKey: {self.yKey: deriv}}}
 
 class PriorInLog(Residual):
     def __init__(self, key, pKey, logPVal, sigmaLogPVal):
@@ -90,50 +138,17 @@ class PriorInLog(Residual):
         self.logPVal = logPVal
         self.sigmaLogPVal = sigmaLogPVal
 
-    def GetRequiredVarsByCalc(self):
-        return {}
-
     def GetValue(self, predictions, internalVars, params):
-        return (scipy.log(params.getByKey(self.pKey)) - self.logPVal)\
-                / self.sigmaLogPVal
+        return (scipy.log(params.get(self.pKey)) - self.logPVal) / self.sigmaLogPVal
 
     def dp(self, predictions, internalVars, params):
-        return {self.pKey: 1./(params.getByKey(self.pKey)*self.sigmaLogPVal)}
+        return {self.pKey: 1./(params.get(self.pKey) * self.sigmaLogPVal)}
 
     def dy(self, predictions, internalVars, params):
         return {}
-    
-    def dintVar(self, predictions, internalVars, params):
-    	return {}
 
-    def Dp(self,predictions,senspredictions,internalVars,internalVarsDerivs,\
-    	params):
-	""" Total derivative w.r.t p of the residual. Can be used as it stands 
-        for other residual
-	types but v3 may have to be changed depending on how it is decided 
-        to key dp """
-	deriv = []
-	for pname in params.keys() :
-            if len(self.dy(predictions, internalVars, params)) > 0 :
-                # Default to 0 if parameter not in senspredictions, (i.e. it may
-                #  not have been in a given calculation
-                v1 = self.dy(predictions, internalVars, params)[self.cKey][self.yKey][self.xVal]*\
-                     senspredictions[self.cKey][self.yKey][self.xVal].get(pname, 0)
-	        #v1 = senspredictions[self.cKey][self.yKey][self.xVal][pname]
-            else :
-                v1 = 0.0
-            if len(self.dintVar(predictions, internalVars, params)) > 0 :
-                v2 = self.dintVar(predictions, internalVars, params)[self.cKey][self.yKey][self.xVal]*\
-                     internalVarsDerivs['scaleFactors'][self.exptKey][self.yKey].get(pname, 0)
-            else :
-                v2 = 0.0
-            if len(self.dp(predictions, internalVars, params)) > 0 and self.pKey == pname:
-                # dp should be keyed on the residual name? Should dy and dintVar be aswell?
-                v3 = self.dp(predictions, internalVars, params).get(pname, 0)
-            else :
-                v3 = 0.0
-            deriv.append(v1+v2+v3)
-	return deriv
+    def dintVars(self, predictions, internalVars, params):
+        return {}
 
 class PeriodCheckResidual(Residual):
     def __init__(self, key, calcKey, depVarKey, indVarValue,  depVarMeasurement,
@@ -174,20 +189,6 @@ class PeriodCheckResidual(Residual):
             theoryVal = maximums[1] - maximums[0]
 
         return (theoryVal - self.yMeas)/self.ySigma
-
-    def dp(self, predictions, internalVars, params):
-        return {}
-
-    def dy(self, predictions, internalVars, params):
-        return {}
-
-    def Dp(self,predictions,senspredictions,internalVars,internalVarsDerivs,
-           params):
-	""" Total derivative w.r.t p of the residual. Can be used as it stands 
-        for other residual types but v3 may have to be changed depending on how
-        it is decided to key dp """
-        raise NotImplementedError
-
 
 class AmplitudeCheckResidual(Residual):
     def __init__(self, key, calcKey, depVarKey, indVarValue0, indVarValue1, period,
@@ -232,18 +233,6 @@ class AmplitudeCheckResidual(Residual):
         theoryVal = scipy.integrate.simps(y,x)
 
         return (theoryVal - measVal)/self.ySigma
-
-    def dp(self, predictions, internalVars, params):
-        return {}
-
-    def dy(self, predictions, internalVars, params):
-        return {}
-
-    def Dp(self,predictions,senspredictions,internalVars,internalVarsDerivs,params):
-	""" Total derivative w.r.t p of the residual. Can be used as it stands 
-        for other residual types but v3 may have to be changed depending on how
-        it is decided to key dp """
-        raise NotImplementedError
 
 class IntegralDataResidual(Residual):
     def __init__(self, name, var, exptKey, calc, traj, uncert_traj, interval):
