@@ -54,6 +54,8 @@ Plotting.title('Before fitting')
 # This is a bit of python logic here...
 # We loop through our parameters, and add loose priors on all their values. This
 #  prevents the optimization from wandering too far.
+# A prior of width log(10) corresponds to constraining the parameter to lie,
+#  with 95% probility, between val/100 and val * 100.
 # (These are quite tight priors. Real applications (with more constraining data)
 #  will probably want looser priors.)
 for id, val in params.items():
@@ -98,6 +100,7 @@ Plotting.plot_eigvect(evects[:,0], params.keys())
 # Now we'll build an ensemble of parameters.
 # Make sure we run at full speed
 Network.full_speed()
+
 # Building the ensemble may generate some warnings about integration errors.
 # Because our parameter space is very poorly constrained, the ensemble explores
 #  regions where the equations are very difficult to integrate, so sometimes
@@ -133,7 +136,8 @@ Plotting.plot_ensemble_trajs(best_traj, mean_traj, std_traj,
 #
 # Now for a complete data hessian
 #
-sens_traj = Dynamics.integrate_sensitivity(growth_net, [0, 100], fill_traj=True)
+sens_traj = Dynamics.integrate_sensitivity(growth_net, [0, 100], fill_traj=True,
+                                           params=params)
 h_pd = PerfectData.hessian_log_params(sens_traj, fixed_sf=True)
 
 # This will pop up all the plots we've generated
