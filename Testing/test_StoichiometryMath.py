@@ -5,6 +5,7 @@ import scipy
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks import *
 
+redir=Utility.Redirector()
 
 # Load the stoichiometryMathML example from the SBML semantic test suite.
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
@@ -27,6 +28,21 @@ class test_StoichiometryMath(unittest.TestCase):
                                0.153505642887153, 5)
         self.assertAlmostEqual(stoichMath_traj.get_var_val('B', 1.84), 
                                0.44697495892817, 5)
+
+
+    def test_stochastic_integrate_when_stoichMath_present(self):
+        """ Test to make sure stochastic integration doesn't occur when stoichMath expressions are used """
+        redir.start()
+        stoichMath_net.set_stochastic()            
+        try:
+            self.assertRaises(RuntimeError, stoichMath_net.integrateStochastic(
+                tlist_stoichMath_net))
+        except RuntimeError:
+            pass
+        stoichMath_net.set_deterministic()
+        messages = redir.stop()
+        
+ 
 
 
 ################################################################################
