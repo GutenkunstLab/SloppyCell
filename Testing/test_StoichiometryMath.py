@@ -16,18 +16,19 @@ tlist_stoichMath_net = scipy.array([0] + [0.04*x for x in range(1, 51)])
 class test_StoichiometryMath(unittest.TestCase):
     def test_basic(self):
         """ Basic test of stoichiometry math """
-        stoichMath_traj = Dynamics.integrate(stoichMath_net, tlist_stoichMath_net)
+        stoichMath_traj = Dynamics.integrate(stoichMath_net, tlist_stoichMath_net,
+                                             rtol=scipy.array([1e-7,1e-7]))
 
         self.assertAlmostEqual(stoichMath_traj.get_var_val('A',0.32), 
-                               0.62283185811441, 5)
+                               0.62283185811441, 6)
         self.assertAlmostEqual(stoichMath_traj.get_var_val('A',1.28), 
-                               0.0129772159879822, 5)
+                               0.0129772159879822, 6)
         self.assertAlmostEqual(stoichMath_traj.get_var_val('A', 1.96), 
-                               0.000623972556903647, 5)
+                               0.000623972556903647, 6)
         self.assertAlmostEqual(stoichMath_traj.get_var_val('B', 0.16), 
-                               0.153505642887153, 5)
+                               0.153505642887153, 6)
         self.assertAlmostEqual(stoichMath_traj.get_var_val('B', 1.84), 
-                               0.44697495892817, 5)
+                               0.44697495892817, 6)
 
 
     def test_stochastic_integrate_when_stoichMath_present(self):
