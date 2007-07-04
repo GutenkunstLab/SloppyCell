@@ -1,4 +1,4 @@
-import os
+import os, sys
 import scipy
 import unittest
 
@@ -76,28 +76,52 @@ class test_Events(unittest.TestCase):
                 self.assertTrue(res[var][t]>=0,
                                 'Failed to keep %s concentration above 0.'%var)
 
-    def test_NoReactions(self):
-        """Test that the stochastic integrator is quiet when no reactions are found"""
-        net = Network_mod.Network('test')
-        net.add_compartment('testTube')
+    def test_NonBuildingStochastic(self):
+        """Test that the stochastic integrator does not build when unsupported network components are present"""
+        def passed(_net, msg):
+            _net.compile()
+            self.assertTrue(
+                'pass' in 
+                _net._dynamic_funcs_python.get('integrate_stochastic_tidbit'),
+                'Stochastic integrator compiled with %s.'%msg)
+        
+        net = base_net.copy('test_Network')
 
-        net.add_species('x', 'testTube', 1000.0)
-        net.add_species('y', 'testTube', 0.0)
+        # No Reactions
+        for key in net.reactions.keys():
+            net.remove_component(key)
+        passed(net, 'no reactions')
+        net.addReaction('y->0', kineticLaw='-B*y', stoichiometry={'y':-1})
 
-        net.add_parameter('A')
-        net.add_parameter('B')
+        # Rate Rules
+        net.add_rate_rule('x', '-A*x')
+        passed(net, 'a rate rule')
+        net.rateRules.remove_by_key('x')
 
-        # These wouldn't be used (no rate rules are), but do raise warnings
-        #net.add_rate_rule('x', '-A*x+B*y')
-        #net.add_rate_rule('y', 'A*x-B*y')
+        # Algebraic Rules / Vars
+        net.add_algebraic_rule('x+y')
+        passed(net, 'an algebraic rule')
+        net.algebraicRules.remove_by_key('x+y')
 
+        # Non-int-able stoichiometry
+        net.addReaction('x->0', kineticLaw='-A*x', stoichiometry={'x':1.001})
+        passed(net, 'non-integer stoichiometry')
+        net.remove_component('x->0')
+
+        net.addReaction('x->0', kineticLaw='-A*x', stoichiometry={'x':'2*x'})
+        passed(net, 'a mathematical stoichiometric expression')
+
+        # Finally, test that the network fails predictably when integrated
         net.set_stochastic()
-
-        res = net.calculate({'x': times}, params)
-
-        for time, val in res['x'].items():
-            self.assertTrue(val==1000.0,
-                            'Failed to silently fail with no rxns present.')
+        err = False
+        try:
+            net.calculate({'x':times}, params)
+        except RuntimeError:
+            self.assertTrue("# Noncastable stoichiometry for x->0: '2*x'" in
+                            '%s'%sys.exc_value,
+                            'Raised an unknown RuntimeError: %s'%sys.exc_value)
+            err = True
+        self.assertTrue(err, 'Failed to raise error with unsupported reaction')
         
 suite = unittest.makeSuite(test_Events)
 if __name__ == '__main__':

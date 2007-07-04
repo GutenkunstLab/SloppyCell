@@ -871,13 +871,6 @@ class Network:
                                               fill_traj=self.add_int_times)
 
     def integrateStochastic(self, times, params=None):
-        if len(self.rateRules):
-            logger.warn('WARNING! Rate rules will not used in stochastic '
-                        'simulations.')
-        if len(self.events):
-            logger.warn('WARNING! Events will not be used in stochastic '
-                        'simulations.')
-
         if self.stochastic['fill_dt'] is not None:
             times = sets.Set(times)
             times.union_update(scipy.arange(min(times), max(times),
@@ -892,6 +885,14 @@ class Network:
         if params is not None: self.update_optimizable_vars(params)
 
         self.compile()
+
+        # Test that we have a working integrator
+        body = self._dynamic_funcs_python.get('integrate_stochastic_tidbit')
+        if 'pass' in body.split('\n')[-1]:
+            err_body = '\n'.join(
+                ['Integrate stochastic failed due to the problem(s):']+
+                body.split('\n')[1:-1])
+            raise RuntimeError(err_body)
         
         dv=scipy.array([self.get_var_val(_) for _ in self.dynamicVars.keys()])
         cv = self.constantVarValues
@@ -1972,6 +1973,45 @@ class Network:
         c_body = []
         c_body.append('void integrate_stochastic_tidbit_(%s) {'%c_args)
 
+        # Test for conditions under which we cannot make these functions
+        err_body = []
+        if len(self.reactions) == 0:
+            err_body.append('# No reactions present.')
+        if len(self.rateRules) > 0:
+            err_body.append('# %i rate rules are present'%len(self.rateRules))
+        if len(self.algebraicRules) > 0:
+            err_body.append('# %i algebraic rules are present'%
+                            len(self.algebraicRules))
+        if len(self.algebraicVars) > 0:
+            err_body.append('# %i algebraic variables are present'%
+                            len(self.algebraicRules))
+        for rxn in self.reactions.values():
+            for val in rxn.stoichiometry.values():
+                try: intVal = int(val)
+                except: intVal = None
+                if intVal is None:
+                    err_body.append('# Noncastable stoichiometry for %s: %s'%
+                                    (rxn.id, repr(val)))
+                elif intVal != val:
+                    err_body.append('# Reaction stoichiometry for %s: %s!=%s'%
+                                    (rxn.id, repr(val), repr(intVal)))
+
+        if err_body!=[]:
+            py_body = py_body + err_body
+            py_body.append('pass')
+            py_body = '\n    '.join(py_body)
+            self._dynamic_funcs_python.set('integrate_stochastic_tidbit',
+                                           py_body)
+            
+            c_body.append('return;}')
+            c_body = os.linesep.join(c_body)
+            self._prototypes_c.set('integrate_stochastic_tidbit', 
+                                   'void integrate_stochatic_tidbit_(%s);' %
+                                   c_args)
+            self._dynamic_funcs_c.set('integrate_stochastic_tidbit', c_body)
+
+            return
+        
         N_CON = len(self.constantVars)
         N_DYN = len(self.dynamicVars)
         N_ASN = len(self.assignedVars)
