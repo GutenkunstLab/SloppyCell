@@ -98,6 +98,11 @@ class test_Events(unittest.TestCase):
         passed(net, 'a rate rule')
         net.rateRules.remove_by_key('x')
 
+        # Events
+        net.add_event('event 1', 'gt(time, 5)', {'A': 2})
+        passed(net, 'an event')
+        net.remove_component('event 1')
+        
         # Algebraic Rules / Vars
         net.add_algebraic_rule('x+y')
         passed(net, 'an algebraic rule')

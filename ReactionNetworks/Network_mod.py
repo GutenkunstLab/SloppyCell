@@ -1979,6 +1979,8 @@ class Network:
             err_body.append('# No reactions present.')
         if len(self.rateRules) > 0:
             err_body.append('# %i rate rules are present'%len(self.rateRules))
+        if len(self.events) > 0:
+            err_body.append('# %i events are present'%len(self.events))
         if len(self.algebraicRules) > 0:
             err_body.append('# %i algebraic rules are present'%
                             len(self.algebraicRules))
