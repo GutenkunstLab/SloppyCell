@@ -26,9 +26,9 @@ def net_DOT_file(net, filename = None):
         lines.append('\t"%s"[shape=box][color=red]' % rxn_name)
         for rid, stoich in rxn.stoichiometry.items():
             rname = net.get_component_name(rid)
-            if stoich < 0:
+            if stoich > 0:
                 lines.append('\t\t"%s" -> "%s";' % (rxn_name, rname))
-            elif stoich > 0:
+            elif stoich < 0:
                 lines.append('\t\t"%s" -> "%s";' % (rname, rxn_name))
             else:
                 lines.append('\t\t"%s" -> "%s"[arrowhead=dot];' % (rname, 
