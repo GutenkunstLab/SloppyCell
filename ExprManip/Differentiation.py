@@ -2,6 +2,7 @@ from compiler.ast import *
 import copy
 import cPickle
 import logging
+import os
 logger = logging.getLogger('ExprManip.Differentiation')
 
 import AST
@@ -14,13 +15,28 @@ _ONE = Const(1)
 
 __deriv_saved = {}
 def load_derivs(filename):
+    """
+    Load up a pickled dictionary of saved derivatives.
+    """
     global __deriv_saved
     try:
-        __deriv_saved = cPickle.load(file(filename, 'rb'))
+        f = file(filename, 'rb')
     except IOError:
-        pass
-    except EOFError:
-        pass
+        # This failure probably indicates that the file doesn't exist.
+        return
+    try:
+        __deriv_saved = cPickle.load(f)
+        return
+    except:
+        # For some reason, pulling the data from the file failed.
+        logger.warn('Failed to load saved derivative file %s. Trying to delete it to '
+                    'avoid future problems.' % filename)
+        try:
+            # Let's try to remove it...
+            f.close()
+            os.remove(filename)
+        except:
+            logger.warn('File removal failed. Please delete %s manually.' % filename)
 
 def save_derivs(filename):
     f = file(filename, 'wb')
