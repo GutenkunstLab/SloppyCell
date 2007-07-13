@@ -44,7 +44,7 @@ class Network:
     # also have prototypes stored in self._prototypes_c.
     _dynamic_structure_methods = ['_make_res_function',
                                   '_make_alg_deriv_func',
-                                  '_make_restricted_res_func', 
+                                  '_make_alg_res_func',
                                   '_make_dres_dc_function',
                                   '_make_dres_dcdot_function',
                                   '_make_ddaskr_jac',
@@ -427,8 +427,11 @@ class Network:
             logger.warn("Specifying 'time' as a variable is dangerous! Are you "
                         "sure you know what you're doing?")
         elif id == 'default':
-            logger.warn("'default' is a reserved keyword in C. This will cause"
+            logger.warn("'default' is a reserved keyword in C. This will cause "
                         "problems using the C-based integrator.")
+        elif id[0].isdigit():
+            raise ValueError("The id %s is invalid. ids must not start with a "
+                             "number." % id)
         if id in self.variables.keys()\
            or id in self.reactions.keys()\
            or id in self.functionDefinitions.keys()\
@@ -440,7 +443,9 @@ class Network:
         """
         Set the id of this Network
         """
-        self.id = id
+        if id != self.id:
+            self._checkIdUniqueness(id)
+            self.id = id
 
     def get_id(self):
         """
@@ -452,7 +457,7 @@ class Network:
         """
         Set the name of this Network
         """
-        self.id = name 
+        self.name = name 
 
     def get_name(self):
         """
@@ -1483,57 +1488,58 @@ class Network:
 
         return py_body
 
-    def _make_restricted_res_func(self):
+    def _make_alg_res_func(self):
         py_body = []
-        py_body.append('def restricted_res_func(solving_for, dynamicVars, '
+        py_body.append('def alg_res_func(alg_vals, dynamicVars, '
                        'time, constants):')
-        py_body.append('solving_for = scipy.asarray(solving_for)')
+        py_body.append('alg_vals = scipy.asarray(alg_vals)')
         py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
         py_body.append('constants = scipy.asarray(constants)')
         py_body.append('')
-        py_body.append('yp = scipy.zeros(%i, scipy.float_)'
-                       % len(self.dynamicVars))
+        py_body.append('residual = scipy.zeros(%i, scipy.float_)'
+                       % len(self.algebraicVars))
 
         c_body = []
-        c_args = 'double *solving_for, double *dynamicVars, double *time_ptr, '\
+        c_args = 'double *alg_vals, double *dynamicVars, double *time_ptr, '\
                 'double *constants, double *residual'
-        c_body.append('void restricted_res_func_(%s){' % c_args)
-        self._prototypes_c.set('restricted_res_func',
-                               'void restricted_res_func_(%s);' % c_args)
+        self._prototypes_c.set('alg_res_func',
+                               'void alg_res_func_(%s);' % c_args)
+        c_body.append('void alg_res_func_(%s){' % c_args)
+        c_body.append('double time = *time_ptr;')
         c_body.append('')
 
-        N_alg = len(self.algebraicVars)
-        N_dyn = len(self.dynamicVars)
-
+        # Copy our algebraic variable guesses into the appropriate slots of
+        # dynamicVars
         for ii, key in enumerate(self.algebraicVars.keys()):
             var_index = self.dynamicVars.index_by_key(key)
-            py_body.append('dynamicVars[%i] = solving_for[%i]'
+            py_body.append('dynamicVars[%i] = alg_vals[%i]'
                            % (var_index, ii))
-            c_body.append('dynamicVars[%i] = solving_for[%i];'
+            c_body.append('dynamicVars[%i] = alg_vals[%i];'
                           % (var_index, ii))
 
-        non_alg_var_keys = self.dynamicVars.keys()
-        for key in self.algebraicVars.keys():
-            non_alg_var_keys.remove(key)
+        # Now make all the assignments from dynamicVars to the variable ids
+        py_body.append('')
+        self._add_assignments_to_function_body(py_body)
+        py_body.append('')
+        c_body.append('')
+        self._add_assignments_to_function_body(c_body, in_c=True)
+        c_body.append('')
 
-        c_body.append('double yp[%i] = {0};' % N_dyn)
-        for ii, key in zip(range(N_alg, N_dyn), non_alg_var_keys):
-            var_index = self.dynamicVars.index_by_key(key)
-            py_body.append('yp[%i] = solving_for[%i]' % (var_index, ii))
-            c_body.append('yp[%i] = solving_for[%i];' % (var_index, ii))
+        # Now evaluate all the algebraic rules.
+        for rhs in self.algebraicRules.values():
+            py_body.append('residual[%i] = %s' % (ii, rhs))
+            c_rhs = ExprManip.make_c_compatible(rhs)
+            c_body.append('residual[%i] = %s;' % (ii, rhs))
 
         py_body.append('')
-        py_body.append('return res_function(time, dynamicVars, yp, constants)')
-        c_body.append('')
-        c_body.append('res_function_(time_ptr, dynamicVars, yp, 0, residual, '
-                      '0, constants, 0);')
+        py_body.append('return residual')
+        py_body = '\n    '.join(py_body)
 
-        py_body = '\n\t'.join(py_body)
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
-        self._dynamic_funcs_python.set('restricted_res_func', py_body)
-        self._dynamic_funcs_c.set('restricted_res_func', c_body)
+        self._dynamic_funcs_python.set('alg_res_func', py_body)
+        self._dynamic_funcs_c.set('alg_res_func', c_body)
 
     def _make_dres_dc_function(self):
         py_body = []

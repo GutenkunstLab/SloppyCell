@@ -39,13 +39,13 @@ interface
         double precision intent(in), dimension(%(N_const)i) :: constants
         double precision intent(out), dimension(%(N_alg)i) :: alg_derivs
     end subroutine alg_deriv_func
-    subroutine restricted_res_func(solving_for, dynamicVars, time, constants, residual) 
-        double precision intent(in), dimension(%(N_dyn)i) :: solving_for
+    subroutine alg_res_func(alg_vals, dynamicVars, time, constants, residual) 
+        double precision intent(in), dimension(%(N_alg)i) :: alg_vals
         double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
         double precision intent(in) :: time
         double precision intent(in), dimension(%(N_const)i) :: constants
-        double precision intent(out), dimension(%(N_dyn)i) :: residual
-    end subroutine restricted_res_func
+        double precision intent(out), dimension(%(N_alg)i) :: residual
+    end subroutine alg_res_func
     subroutine dres_dc_function(time, dynamicVars, yprime, constants, pd)
         double precision intent(in) :: time
         double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars

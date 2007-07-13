@@ -859,35 +859,14 @@ def find_ypic_sens(y, yp, time, var_types, rtol, atol_for_sens, constants,
     yp[:N_dyn] = yp_norm
     
     # Now we can solve for yp for all the *non-algebraic* sensitivity variables
-    yp_non_alg_sens = yp[N_dyn:][var_types == 1]
-    atol_non_alg_sens = atol_for_sens[N_dyn:][var_types == 1]
-    def restricted_sens_rhs(yp_non_alg_sens):
-        yp_local = scipy.array(yp, scipy.float_)
-        yp_local[N_dyn:][var_types == 1] = yp_non_alg_sens
-        res = net.sens_rhs(time, y, yp_local, constants)
-        return res[N_dyn:][var_types == 1]
+    # Notice that they are simply the appropriate residual evaluated when
+    #  yp for the sens variable is zero.
+    yp[N_dyn:][var_types == 1] = 0
+    res = net.sens_rhs(time, y, yp, constants)
+    yp[N_dyn:][var_types == 1] = res[N_dyn:][var_types == 1]
+    new_res = net.sens_rhs(time, y, yp, constants)
 
-    redir = Utility.Redirector()
-    if redirect_msgs:
-        redir.start()
-    try:
-        sln, infodict, ier, mesg = \
-                scipy.optimize.fsolve(restricted_sens_rhs, x0=yp_non_alg_sens,
-                                      xtol=min(rtol),
-                                      full_output=True)
-        sln = scipy.atleast_1d(sln)
-        res = restricted_sens_rhs(sln)
-        if ier != 1 and scipy.any(abs(res) > atol_non_alg_sens):
-            raise Utility.SloppyCellException('Failed to calculate intial '
-                                              'conditions in network %s for ' 
-                                              'opt_var %s.'
-                                              % (net.get_id(), opt_var))
-    finally:
-        messages = redir.stop()
-
-    yp[N_dyn:][var_types == 1] = sln
     return yp
-    
 
 def find_ics(y, yp, time, var_types, rtol, atol, constants, net, 
              redirect_msgs=False):
@@ -901,62 +880,54 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
     y = scipy.array(y, scipy.float_)
     yp = scipy.array(yp, scipy.float_)
 
+    N_alg = scipy.sum(var_types == -1)
+
     dv_typ_vals = scipy.asarray([net.get_var_typical_val(id)
                                  for id in net.dynamicVars.keys()])
 
-    # First we calculate a consistent set of alg_var_vals and d(non_alg_var)/dt
-    alg_vals_guess = y[var_types == -1]
-    non_alg_yp_guess = yp[var_types == 1]
-    curr_vals = scipy.concatenate([alg_vals_guess, non_alg_yp_guess])
-    rearranged_atol = scipy.concatenate([atol[var_types == -1], 
-                                         atol[var_types == 1]])
-    rearranged_typ_vals = scipy.concatenate([dv_typ_vals[var_types == -1],
-                                             dv_typ_vals[var_types == 1]])
+    if N_alg:
+        # First we calculate a consistent set of algebraic variable values
+        alg_vars_guess = y[var_types == -1]
+        alg_typ_vals = dv_typ_vals[var_types == -1]
+        possible_guesses = [alg_vars_guess, alg_typ_vals, 
+                            scipy.ones(N_alg, scipy.float_)]
+        redir = Utility.Redirector()
+        if redirect_msgs:
+            redir.start()
+        try:
+            for guess in possible_guesses:
+                sln, infodict, ier, mesg = \
+                        scipy.optimize.fsolve(net.alg_res_func, x0 = guess,
+                                              xtol = min(rtol), 
+                                              args = (y, time, constants),
+                                              full_output=True)
+                sln = scipy.atleast_1d(sln)
+                final_residuals = net.alg_res_func(sln, y, time, constants)
+                if not scipy.any(abs(final_residuals) 
+                                 > abs(atol[var_types == -1])):
+                    # This is success.
+                    break
+            else:
+                message = ('Failed to calculate consistent algebraic values in '
+                           'network %s.' % net.get_id())
+                raise Utility.SloppyCellException(message)
+        finally:
+            messages = redir.stop()
 
-    # fsolve can fail if the scale of the variables is really, really wrong.
-    # Here are several possible guesses. Hopefully one of these will succeed
-    #  for almost all possibilities.
-    possible_guesses = [curr_vals, rearranged_typ_vals, 
-                        scipy.ones(len(net.dynamicVars), scipy.float_)]
+        # Now plug those values into the current y
+        y[var_types == -1] = sln
 
-    redir = Utility.Redirector()
-    if redirect_msgs:
-        redir.start()
-    try:
-        for guess in possible_guesses:
-            sln, infodict, ier, mesg = \
-                    scipy.optimize.fsolve(net.restricted_res_func, x0 = guess,
-                                          xtol = min(rtol), 
-                                          args = (y, time, constants),
-                                          full_output=True)
-            sln = scipy.atleast_1d(sln)
-            final_residuals = net.restricted_res_func(sln, y, time, constants)
-            if not scipy.any(abs(final_residuals) > abs(rearranged_atol)):
-                # This is success.
-                break
-        else:
-            raise Utility.SloppyCellException('Failed to calculate intial '\
-                                              'conditions in network %s.' 
-                                              % net.get_id())
-    finally:
-        messages = redir.stop()
-    sln = scipy.atleast_1d(sln)
-
-    N_alg = scipy.sum(var_types == -1)
-    alg_vals = sln[:N_alg]
-    non_alg_yp = sln[N_alg:]
-    y[var_types == -1] = alg_vals
-    yp[var_types == 1] = non_alg_yp
-
+    # The non-algebraic variable yprimes come straight from the residuals
+    yp_non_alg = net.res_function(time, y, y*0, constants)[var_types == 1]
+    yp[var_types == 1] = yp_non_alg
+                                              
     if not N_alg:
         return y, yp
 
     # Now we need to figure out yprime for the algebraic vars
     curr_alg_yp = yp[var_types == -1]
-    alg_typ_vals = dv_typ_vals[var_types == -1]
     possible_guesses = [curr_alg_yp, alg_typ_vals, 
                         scipy.ones(N_alg, scipy.float_)]
-    rearranged_atol = atol[var_types == -1]
     if redirect_msgs:
         redir.start()
     try:
@@ -968,7 +939,7 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
                                           full_output=True)
             sln = scipy.atleast_1d(sln)
             final_residuals = net.alg_deriv_func(sln, y, yp, time, constants)
-            if not scipy.any(abs(final_residuals) > abs(rearranged_atol)):
+            if not scipy.any(abs(final_residuals) > abs(atol[var_types == -1])):
                 break
         else:
             raise Utility.SloppyCellException('Failed to calculate alg var'\
