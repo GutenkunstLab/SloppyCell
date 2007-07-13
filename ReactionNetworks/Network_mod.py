@@ -2241,7 +2241,7 @@ class Network:
         new_values = {}
         var_vals = [(id, self.get_var_val(id)) for id in self.variables.keys()]
         var_vals = dict(var_vals)
-        var_vals['time'] = time
+        var_vals['time'] = time_fired
         # Calculate the values that will get assigned to the variables
         for id, rhs in event.event_assignments.items():
             new_values[id] = self.evaluate_expr(rhs, time_fired, var_vals)
