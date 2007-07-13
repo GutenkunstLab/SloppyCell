@@ -136,6 +136,7 @@ class Model:
                      resvals = resvals,
                      chisq = chisq,
                      cost = cost, 
+                     free_energy = cost-T*entropy,
                      entropy = entropy,
                      params = self.params)
 

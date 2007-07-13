@@ -32,12 +32,15 @@ import os
 if hasattr(os, 'link'):
     del os.link
 
-# Both these packages include some BLAS functions in them. Strangely, at least
+# These packages include some BLAS functions in them. Strangely, at least
 #  on CCMR, it seems (very slightly), faster to use the included ones rather
 #  than linking against LAPACK.
 daskr = core.Extension(name = 'SloppyCell._daskr',
                        sources = ['daskr.pyf', 'ddaskr/ddaskr.f', 
                                   'ddaskr/daux.f', 'ddaskr/dlinpk.f'])
+
+misc_c = core.Extension(name = 'SloppyCell.misc_c',
+                        sources = ['misc_c.c', 'misc_c.pyf'])
 
 core.setup(name='SloppyCell',
            version='CVS',
@@ -56,5 +59,5 @@ core.setup(name='SloppyCell',
                          'ReactionNetworks/mtrand.h',
                          'ReactionNetworks/mtrand.c'])],
 
-           ext_modules = [daskr]
+           ext_modules = [daskr, misc_c]
            )

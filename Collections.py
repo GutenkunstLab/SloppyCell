@@ -213,13 +213,19 @@ class Experiment:
             # This is the integrand for the prior. Note that it's important
             #  that u = 0 corresponds to B_best. This ensures that the
             #  integration doesn't miss the (possibly sharp) peak there.
-            exp = scipy.exp
-            def integrand(u, ak, bk, mulB, siglB, T, B_best, lB_best):
-                B = exp(u) * B_best
-                lB = u + lB_best
-                ret = exp(-ak/(2*T) * (B-B_best)**2
-                          - (lB-mulB)**2/(2 * siglB**2))
-                return ret
+            try:
+                import SloppyCell.misc_c
+                integrand = SloppyCell.misc_c.log_gaussian_prior_integrand
+            except ImportError:
+                logger.warn('Falling back to python integrand on log gaussian '
+                            'prior integration.')
+                exp = scipy.exp
+                def integrand(u, ak, bk, mulB, siglB, T, B_best, lB_best):
+                    B = exp(u) * B_best
+                    lB = u + lB_best
+                    ret = exp(-ak/(2*T) * (B-B_best)**2
+                              - (lB-mulB)**2/(2 * siglB**2))
+                    return ret
 
             mulB, siglB = prior_params
             B_best = theoryDotData/theoryDotTheory

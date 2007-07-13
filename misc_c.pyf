@@ -1,0 +1,17 @@
+python module misc_c
+interface
+  function log_gaussian_prior_integrand(u, ak, bk, mulB, siglB, T, B_best, lB_best) result (res)
+    intent(c) log_gaussian_prior_integrand
+    intent(c)
+    double precision intent(in) :: u
+    double precision intent(in) :: ak
+    double precision intent(in) :: bk
+    double precision intent(in) :: mulB
+    double precision intent(in) :: siglB
+    double precision intent(in) :: T
+    double precision intent(in) :: B_best
+    double precision intent(in) :: lB_best
+    double precision intent(out) :: res
+  end function  
+end interface
+end python module
