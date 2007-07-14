@@ -2624,6 +2624,16 @@ class Network:
             # Users should make sure that if they remove a function definition
             #  from a compiled network that they also remove references to
             #  that function from the rest of the network
+
+            # We clear out all the dynamic functions that have been defined.
+            all_dynamic_keys = sets.Set(self._dynamic_funcs_python.keys())
+            all_dynamic_keys.union_update(self._dynamic_funcs_c.keys())
+            for dynamic_func in all_dynamic_keys:
+                try:
+                    delattr(self, dynamic_func)
+                except AttributeError:
+                    pass
+
             self._dynamic_funcs_python = KeyedList()
             self._prototypes_c = self._common_prototypes_c.copy()
             self._dynamic_funcs_c = KeyedList()
