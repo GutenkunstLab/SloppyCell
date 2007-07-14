@@ -2877,7 +2877,7 @@ class Network:
                                        '"import numpy.f2py;numpy.f2py.main()" '
                                        '-c %(win_options)s %(mod_name)s.pyf '
                                        '%(mod_name)s.c %(sc_path)s/mtrand.c '
-                                       '-I%(sc_path)s --build-dir .SloppyCell'
+                                       '-I%(sc_path)s'
                                        % {'exec': sys.executable,
                                           'win_options': win_options,
                                           'mod_name': mod_name,
