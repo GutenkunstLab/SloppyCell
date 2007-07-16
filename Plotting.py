@@ -116,13 +116,10 @@ def plot_eigval_spectrum(vals, widths=1.0, offset=0, ax=None, lc='k', lw=3):
 
     vals = scipy.compress(vals > 0, vals)
 
-    segs = [((offset, val), (offset+widths, val)) for val in vals]
-    linewidths = [lw] * len(segs)
-    colors = [lc] * len(segs)
-    coll = matplotlib.collections.LineCollection(segs, linewidths=linewidths,
-                                                 colors=colors)
+    segs = scipy.array([((offset, val), (offset+widths, val)) for val in vals])
+    for seg in segs:
+        ax.plot(seg[:,0], seg[:,1], lw=lw, color=lc)
     ax.set_yscale('log')
-    ax.add_collection(coll)
 
     return
 
