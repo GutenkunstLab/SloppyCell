@@ -12,6 +12,7 @@ class Redirector(object):
 
     def start(self):
         if not self.started:
+            self.flush()
             self.tmpfd, self.tmpfn = tempfile.mkstemp()
 
             self.oldhandle = os.dup(self.fd)
