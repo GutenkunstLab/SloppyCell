@@ -30,9 +30,43 @@ class test_DerivativeCalculators(unittest.TestCase):
             for sens_val, fd_val in zip(sens_vals, fd_vals):
                 if (sens_val == 0) and (fd_val == 0):
                     continue
-                rel_diff = abs(sens_val - fd_val)/max(abs(sens_val), abs(fd_val))
+                rel_diff = abs(sens_val - fd_val)/max(abs(sens_val),abs(fd_val))
                 self.assertAlmostEqual(rel_diff, 0, 3, 
                                        'Failed on residual %s.' % str(res_name))
+
+    def test_gradient(self):
+        """
+        Test sensitivity gradient of cost.
+        """
+        params = m.get_params()
+
+        grad_sens = m.gradient_sens(params)
+
+        c0 = m.cost(params)
+        eps = 1e-4
+        for p_key, p_val in params.items():
+            pplus = params.copy()
+            pplus.set(p_key, p_val + eps)
+            cplus = m.cost(pplus)
+            deriv = (cplus - c0)/eps
+            self.assertAlmostEqual(deriv, grad_sens.get(p_key), 2)
+
+    def test_gradient_log_params(self):
+        """
+        Test sensitivity gradient wrt log params of cost.
+        """
+        params = m.get_params()
+
+        grad_sens = m.gradient_log_params_sens(params)
+
+        c0 = m.cost(params)
+        eps = 1e-6
+        for p_key, p_val in params.items():
+            pplus = params.copy()
+            pplus.set(p_key, scipy.exp(scipy.log(p_val) + eps))
+            cplus = m.cost(pplus)
+            deriv = (cplus - c0)/eps
+            self.assertAlmostEqual(deriv, grad_sens.get(p_key), 2)
 	 
 suite = unittest.makeSuite(test_DerivativeCalculators)
 
