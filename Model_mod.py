@@ -226,16 +226,6 @@ class Model:
             if hasattr(obs, 'reset'):
                 obs.reset()
 	
-    # Deprecating...
-    def CostPerResidualFromLogParams(self, params):
-        return self.Cost(scipy.exp(params))/float(len(self.residuals))
-
-    def Cost(self, params):
-        return 2*self.cost(params)
-
-    def CostFromLogParams(self, params):
-    	return self.Cost(scipy.exp(params))
-
     resDict = res_dict
     # ...
 
@@ -247,10 +237,10 @@ class Model:
         """
         Force(parameters, epsilon factor) -> list
 
-        Returns a list containing the numerical gradient of the Cost with
+        Returns a list containing the numerical gradient of the cost with
         respect to each parameter (in the parameter order of the
         CalculationCollection). Each element of the gradient is:
-            Cost(param + eps) - Cost(param - eps)/(2 * eps).
+            cost(param + eps) - cost(param - eps)/(2 * eps).
         If relativeScale is False then epsf is the stepsize used (it should
         already be multiplied by typicalValues before Jacobian is called)
         If relativeScale is True then epsf is multiplied by params.
@@ -276,15 +266,55 @@ class Model:
         for index, param in enumerate(params):
             paramsPlus = params.copy()
             paramsPlus[index] = param + eps[index]
-            costPlus = self.Cost(paramsPlus)
+            costPlus = self.cost(paramsPlus)
 
             paramsMinus = params.copy()
             paramsMinus[index] = param - eps[index]
-            costMinus = self.Cost(paramsMinus)
+            costMinus = self.cost(paramsMinus)
 
             force.append((costPlus-costMinus)/(2.0*eps[index]))
 
         return force
+
+    def gradient_sens(self, params):
+        """
+        Return the gradient of the cost, d_cost/d_param as a KeyedList.
+
+        This method uses sensitivity integration, so it only applies to
+        ReactionNetworks.
+        """
+        self.params.update(params)
+
+        # The cost is 0.5 * sum(res**2), 
+        # so the gradient is sum(res * dres_dp)
+
+        jac_dict = self.jacobian_sens(params)
+        res_dict = self.res_dict(params)
+
+        force = scipy.zeros(len(params), scipy.float_)
+        for res_key, res_val in res_dict.items():
+            res_derivs = jac_dict[res_key]
+            force += res_val * scipy.asarray(res_derivs)
+
+        gradient = self.params.copy()
+        gradient.update(force)
+
+        return gradient
+
+    def gradient_log_params_sens(self, params):
+        """
+        Return the gradient of the cost wrt log parameters, d_cost/d_log_param
+        as a KeyedList.
+
+        This method uses sensitivity integration, so it only applies to
+        ReactionNetworks.
+        """
+        # We just need to multiply dres_dp by p.
+        gradient = self.gradient_sens(params)
+        gradient_log = gradient.copy()
+        gradient_log.update(scipy.asarray(gradient) * scipy.asarray(params))
+
+        return gradient_log
 
     def CalculateForAllDataPoints(self, params):
         """
@@ -622,7 +652,7 @@ class Model:
     def GetJandJtJInLogParameters(self,params):
     	# Formula below is exact if you have perfect data. If you don't
 	# have perfect data (residuals != 0) you get an extra term when you
-	# compute d^2(Cost)/(dlogp[i]dlogp[j]) which is
+	# compute d^2(cost)/(dlogp[i]dlogp[j]) which is
 	# sum_resname (residual[resname] * jac[resname][j] * delta_jk * p[k])
 	# but can be ignored when residuals are zeros, and maybe should be
 	# ignored altogether because it can make the Hessian approximation 
