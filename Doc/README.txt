@@ -8,6 +8,14 @@ Examples of models developed in SloppyCell can be found at `Jim Sethna's Gene Dy
 
 .. topic:: News
 
+   July 21st, 2007: **SloppyCell 0.81 released**
+
+      Additions include support for scale factor priors, a new Monte Carlo
+      algorithm that recalculates the sampling matrix each step, and numerous
+      bug fixes.
+
+      See our `download page <http://sourceforge.net/project/showfiles.php?group_id=140498>`_.
+
    May 9th, 2007: **SloppyCell 0.8 released!**
 
       SloppyCell continues to evolve rapidly.
