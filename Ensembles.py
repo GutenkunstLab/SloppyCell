@@ -23,7 +23,7 @@ def autocorrelation(series):
     # We need to de-mean the series. Also, we want to pad with zeros to avoid
     #  assuming our series is periodic.
     f = scipy.fftpack.rfft(scipy.asarray(series)-scipy.mean(series), 
-                       n = 2*len(series))
+                           n = 2*len(series))
     # The inverse fft of |f|**2 is the autocorrelation
     ac = scipy.fftpack.irfft(abs(f)**2)
     # But we padded with zeros, so it's too long
@@ -37,22 +37,23 @@ def ensemble(m, params, hess=None,
              steps=scipy.inf, max_run_hours=scipy.inf,
              temperature=1.0, step_scale=1.0,
              sing_val_cutoff=0, seeds=None,
-             recalc_interval=scipy.inf, recalc_func=None,
+             recalc_hess_alg=False, recalc_func=None,
              save_hours=scipy.inf, save_to=None):
     return ensemble_log_params(m, params, hess, steps, max_run_hours,
                                temperature, step_scale, sing_val_cutoff, seeds,
-                               recalc_interval, recalc_func, save_hours, 
+                               recalc_hess_alg, recalc_func, save_hours, 
                                save_to, log_params=False)
 
 def ensemble_log_params(m, params, hess=None, 
                         steps=scipy.inf, max_run_hours=scipy.inf,
                         temperature=1.0, step_scale=1.0,
                         sing_val_cutoff=0, seeds=None,
-                        recalc_interval=scipy.inf, recalc_func=None,
-                        save_hours=scipy.inf, save_to=None, log_params=True):
+                        recalc_hess_alg = False, recalc_func=None,
+                        save_hours=scipy.inf, save_to=None,
+                        log_params=True):
     """
     Generate a Bayesian ensemble of parameter sets consistent with the data in
-    the model.
+    the model. The sampling is done in terms of the logarithm of the parameters.
 
     Inputs:
      m -- Model to generate the ensemble for
@@ -67,16 +68,17 @@ def ensemble_log_params(m, params, hess=None,
      sing_val_cutoff -- Truncate the quadratic approximation at eigenvalues
                         smaller than this fraction of the largest.
      seeds -- A tuple of two integers to seed the random number generator
-     recalc_interval --- The sampling matrix will be recalulated each time this
-                         many trial moves have been attempted.
-     recalc_func --- Function used to calculate the sampling matrix. It should
-                     take only a parameters argument and return the matrix.
+     recalc_hess_alg --- If True, the Monte-Carlo is done by recalculating the
+                         hessian matrix every timestep. This signficantly
+                         increases the computation requirements for each step,
+                         but it may be worth it if it improves convergence.
+     recalc_func --- Function used to calculate the hessian matrix. It should
+                     take only a log parameters argument and return the matrix.
                      If this is None, default is to use 
                      m.GetJandJtJInLogParameteters
-    save_hours --- If save_to is not None, the ensemble will be saved to
-                      that file every 'save_hours' hours.
-    save_to --- Filename to save ensemble to.
-
+     save_hours --- If save_to is not None, the ensemble will be saved to
+                       that file every 'save_hours' hours.
+     save_to --- Filename to save ensemble to.
 
     Outputs:
      ens, ens_fes, ratio
@@ -96,8 +98,9 @@ def ensemble_log_params(m, params, hess=None,
                     'Code will not stop by itself!')
 
     if seeds is None:
-        logger.warn('Seeding random number generator based on system time. '\
-                    'Run will not be repeatable.')
+        seeds = int(time.time()%1 * 1e6)
+        logger.debug('Seeding random number generator based on system time.')
+        logger.debug('Seed used: %s' % str(seeds))
     scipy.random.seed(seeds)
     if isinstance(params, KeyedList):
         param_keys = params.keys()
@@ -110,38 +113,28 @@ def ensemble_log_params(m, params, hess=None,
     curr_params = scipy.array(curr_params)
 
     if recalc_func is None:
-        recalc_func = lambda p : m.GetJandJtJInLogParameters(scipy.log(p))[1]
+        recalc_func = lambda p: m.GetJandJtJInLogParameters(scipy.log(p))[1]
 
-    accepted_moves, F_exceptions, ratio = 0, 0, scipy.nan
+    accepted_moves, attempt_exceptions, ratio = 0, 0, scipy.nan
     start_time = last_save_time = time.time()
-    samp_mat = None
+
+    # Calculate our first hessian if necessary
+    if hess is None:
+        hess = recalc_func(curr_params)
+    # Generate the sampling matrix used to generate candidate moves
+    samp_mat = _sampling_matrix(hess, sing_val_cutoff, temperature, step_scale)
+
     while len(ens) < steps+1:
         # Have we run too long?
         if (time.time() - start_time) >= max_run_hours*3600:
             break
 
-        # This will always be true our first run through
-        if (len(ens)%recalc_interval == 1) or (samp_mat is None):
-            if (hess is None) or (len(ens) > 1):
-                logger.debug('Beginning calculation of JtJ using params %s'
-                             % str(ens[-1]))
-                try:
-                    hess = recalc_func(curr_params)
-                    logger.debug('JtJ recalculated after %i steps' 
-                                 % (len(ens) - 1))
-                except Utility.SloppyCellException:
-                    logger.warn('Calculation of new JtJ failed! ' 
-                                'Continuing with previous JtJ')
-            # Generate the sampling matrix used to generate candidate moves
-            samp_mat, sing_vals, cutoff_sing_val = \
-                    _sampling_matrix(hess, sing_val_cutoff)
-
         # Generate the trial move from the quadratic approximation
-        deltaParams = _trial_move(samp_mat, sing_vals, cutoff_sing_val)
+        deltaParams = _trial_move(samp_mat)
         # Scale the trial move by the step_scale and the temperature
-        scaled_step = step_scale * scipy.sqrt(temperature) * deltaParams
+        #scaled_step = step_scale * scipy.sqrt(temperature) * deltaParams
+        scaled_step = deltaParams
 
-        # I'm assuming log parameters here.
         if log_params:
             next_params = curr_params * scipy.exp(scaled_step)
         else:
@@ -153,13 +146,34 @@ def ensemble_log_params(m, params, hess=None,
             logger.warn('SloppyCellException in free energy evaluation at step '
                         '%i, free energy set to infinity.' % len(ens))
             logger.warn('Parameters tried: %s.' % str(next_params))
-            F_exceptions += 1
+            attempt_exceptions += 1
             next_F = scipy.inf
 
-    	if _accept_move(next_F - curr_F, temperature):
+        if recalc_hess_alg and not scipy.isinf(next_F):
+            try:
+                next_hess = recalc_func(next_params)
+                next_samp_mat = _sampling_matrix(next_hess, sing_val_cutoff,
+                                                 temperature, step_scale)
+                accepted = _accept_move_recalc_alg(curr_F, samp_mat, 
+                                                   next_F, next_samp_mat, 
+                                                   deltaParams, temperature)
+            except Utility.SloppyCellException, X:
+                logger.warn('SloppyCellException in JtJ evaluation at step '
+                            '%i, move not accepted.' % len(ens))
+                logger.warn('Parameters tried: %s.' % str(next_params))
+                attempt_exceptions += 1
+                next_F = scipy.inf
+                accepted = False
+        else:
+            accepted = _accept_move(next_F - curr_F, temperature)
+
+        if accepted:
             accepted_moves += 1.
             curr_params = next_params
             curr_F = next_F
+            if recalc_hess_alg:
+                hess = next_hess
+                samp_mat = next_samp_mat
 
         if isinstance(params, KeyedList):
             ens.append(KeyedList(zip(param_keys, curr_params)))
@@ -171,41 +185,67 @@ def ensemble_log_params(m, params, hess=None,
         # Save to a file
         if save_to is not None\
            and time.time() >= last_save_time + save_hours * 3600:
-            _save_ens(ens, ens_Fs, ratio, save_to, F_exceptions)
+            _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions)
             last_save_time = time.time()
 
     if save_to is not None:
-        _save_ens(ens, ens_Fs, ratio, save_to, F_exceptions)
+        _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions)
 
     return ens, ens_Fs, ratio
 
-def _save_ens(ens, ens_Fs, ratio, save_to, F_exceptions):
+def _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions):
     Utility.save((ens, ens_Fs, ratio), save_to)
     logger.debug('Ensemble of length %i saved to %s.' % (len(ens), save_to))
     logger.debug('Acceptance ratio so far is %f.' % ratio)
-    logger.debug('Cost threw an exception %i times.' % F_exceptions)
-
+    logger.debug('Attempted moves threw an exception %i times.' 
+                 % attempt_exceptions)
 
 def _accept_move(delta_F, temperature):
-    if delta_F < 0.0:
-        return True
-    else:
-        p = scipy.rand()
-        return (p < scipy.exp(-delta_F/temperature))
+    """
+    Basic Metropolis accept/reject step.
+    """
+    p = scipy.rand()
+    return (p < scipy.exp(-delta_F/temperature))
 
-def _sampling_matrix(hessian, cutoff=0):
-    ## basically need SVD of hessian - singular values and eigenvectors
-    ## hessian = u * diag(singVals) * vh
+def _accept_move_recalc_alg(curr_F, curr_samp_mat, next_F, next_samp_mat, 
+                            step, T):
+    """
+    Accept/reject when each the sampling matrix is recalculated each step.
+    """
+    pi_x = scipy.exp(-curr_F/T)
+    # This is the current location's covariance sampling matrix
+    sigma_curr = scipy.dot(curr_samp_mat, scipy.transpose(curr_samp_mat))
+    sigma_curr_inv = scipy.linalg.inv(sigma_curr)
+    # This is the transition probability from the current point to the next.
+    q_x_to_y = scipy.exp(-_quadratic_cost(step, sigma_curr_inv))\
+            / scipy.sqrt(scipy.linalg.det(sigma_curr))
+
+    pi_y = scipy.exp(-next_F/T)
+    sigma_next = scipy.dot(next_samp_mat, scipy.transpose(next_samp_mat))
+    sigma_next_inv = scipy.linalg.inv(sigma_next)
+    q_y_to_x = scipy.exp(-_quadratic_cost(-step, sigma_next_inv))\
+            / scipy.sqrt(scipy.linalg.det(sigma_next))
+
+    p = scipy.rand()
+    accepted = (pi_y*q_y_to_x)/(pi_x*q_x_to_y)
+    did_accepted = p<accepted
+    print pi_y/pi_x, q_y_to_x/q_x_to_y, did_accepted
+    import sys
+    sys.stdout.flush()
+
+    return p < accepted
+
+
+def _sampling_matrix(hessian, cutoff=0, temperature=1, step_scale=1):
+    # basically need SVD of hessian - singular values and eigenvectors
+    # hessian = u * diag(singVals) * vh
     u, sing_vals, vh = scipy.linalg.svd(hessian)
 
-    logger.debug("Hessian decomposed. Condition number is: %g."
-                 % (max(sing_vals)/min(sing_vals)))
-
-    ## scroll through the singular values and find the ones whose inverses will
-    ## be huge and set them to zero also, load up the array of singular values 
-    ## that we store
-    ## cutoff = (1.0/_.singVals[0])*1.0e03
-    ## double cutoff = _.singVals[0]*1.0e-02
+    # scroll through the singular values and find the ones whose inverses will
+    # be huge and set them to zero also, load up the array of singular values 
+    # that we store
+    # cutoff = (1.0/_.singVals[0])*1.0e03
+    # double cutoff = _.singVals[0]*1.0e-02
     cutoff_sing_val = cutoff * max(sing_vals)
 
     D = 1.0/scipy.maximum(sing_vals, cutoff_sing_val)
@@ -215,14 +255,8 @@ def _sampling_matrix(hessian, cutoff=0):
     ## this is because vh is the transpose of his PT -JJW
     samp_mat = scipy.transpose(vh) * scipy.sqrt(D)
 
-    return samp_mat, sing_vals, cutoff_sing_val
-
-def _trial_move(sampling_mat, sing_vals, cutoff_sing_val):
-    ## draw random numbers r ~ N(0,1)
-    randVec = scipy.randn(len(sing_vals))
-    # Divide the random vector by an appropriate constant such
-    # that the acceptance ratio will always be about exp(-1) if
-    # the harmonic approx. is good
+    # Divide the sampling matrix by an additional factor such
+    # that the expected quadratic increase in cost will be about 1.
     cutoff_vals = scipy.compress(sing_vals < cutoff_sing_val, sing_vals)
     if len(cutoff_vals):
         scale = scipy.sqrt(len(sing_vals) - len(cutoff_vals)
@@ -230,9 +264,14 @@ def _trial_move(sampling_mat, sing_vals, cutoff_sing_val):
     else:
         scale = scipy.sqrt(len(sing_vals))
 
-    randVec = randVec/scale
+    samp_mat /= scale
+    samp_mat *= step_scale
+    samp_mat *= scipy.sqrt(temperature)
 
-    ## RIGHT MULTIPLICATION
+    return samp_mat
+
+def _trial_move(sampling_mat):
+    randVec = scipy.randn(len(sampling_mat))
     trialMove = scipy.dot(sampling_mat, randVec)
 
     return trialMove
@@ -245,7 +284,7 @@ def _quadratic_cost(trialMove, hessian):
      cost, without an additional factor of 1/2.)
     """
     quadratic = 0.5*scipy.dot(scipy.transpose(trialMove), 
-                          scipy.dot(hessian, trialMove))
+                              scipy.dot(hessian, trialMove))
     return quadratic
 
 def traj_ensemble_stats(traj_set):
