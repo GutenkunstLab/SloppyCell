@@ -198,7 +198,12 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
     for s in m.getListOfSpecies():
         id, name = s.getId(), s.getName()
         compartment = s.getCompartment()
-        iC = s.getInitialConcentration()
+        if s.isSetInitialConcentration():
+            iC = s.getInitialConcentration()
+        elif s.isSetInitialAmount():
+            iC = s.getInitialAmount()
+        else:
+            iC = scipy.nan
         isBC, isConstant = s.getBoundaryCondition(), s.getConstant()
 	
 	rn.addSpecies(id = id, compartment = compartment,
