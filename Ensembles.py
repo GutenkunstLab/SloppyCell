@@ -1,6 +1,7 @@
 import logging
 logger = logging.getLogger('Ensembles')
 import copy
+import shutil
 import time
 
 import scipy
@@ -194,7 +195,9 @@ def ensemble_log_params(m, params, hess=None,
     return ens, ens_Fs, ratio
 
 def _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions):
-    Utility.save((ens, ens_Fs, ratio), save_to)
+    temp_name = save_to + '_temporary_SloppyCellFile'
+    Utility.save((ens, ens_Fs, ratio), temp_name)
+    shutil.move(temp_name, save_to)
     logger.debug('Ensemble of length %i saved to %s.' % (len(ens), save_to))
     logger.debug('Acceptance ratio so far is %f.' % ratio)
     logger.debug('Attempted moves threw an exception %i times.' 
