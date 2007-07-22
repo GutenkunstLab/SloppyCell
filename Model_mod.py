@@ -149,11 +149,11 @@ class Model:
 
         return self._evaluate(params)[0]
 
-    def res_log_params(self, logparams):
+    def res_log_params(self, log_params):
         """
         Return the residual values given the logarithm of the parameters
         """
-        return self.res(scipy.exp(logparams))
+        return self.res(scipy.exp(log_params))
 
     def res_dict(self, params):
         """
@@ -301,7 +301,7 @@ class Model:
 
         return gradient
 
-    def gradient_log_params_sens(self, params):
+    def gradient_log_params_sens(self, log_params):
         """
         Return the gradient of the cost wrt log parameters, d_cost/d_log_param
         as a KeyedList.
@@ -310,6 +310,7 @@ class Model:
         ReactionNetworks.
         """
         # We just need to multiply dres_dp by p.
+        params = scipy.exp(log_params)
         gradient = self.gradient_sens(params)
         gradient_log = gradient.copy()
         gradient_log.update(scipy.asarray(gradient) * scipy.asarray(params))
