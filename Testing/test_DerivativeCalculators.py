@@ -57,7 +57,7 @@ class test_DerivativeCalculators(unittest.TestCase):
         """
         params = m.get_params()
 
-        grad_sens = m.gradient_log_params_sens(params)
+        grad_sens = m.gradient_log_params_sens(scipy.log(params))
 
         c0 = m.cost(params)
         eps = 1e-6
