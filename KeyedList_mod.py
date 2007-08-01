@@ -38,9 +38,11 @@ class KeyedList(list):
     def reverse(self):
         self.setOrder(self.keys()[::-1])
 
-    def __delitem__(self, index):
-        index = index % len(self)
+    def del_by_key(self, key):
+        index = self.index_by_key(key)
+        del self[index]
 
+    def __delitem__(self, index):
         list.__delitem__(self, index)
         del self.storedKeys[index]
         for key, ii in self.keyToIndex.items():
