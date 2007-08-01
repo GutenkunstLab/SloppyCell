@@ -39,11 +39,21 @@ def ensemble(m, params, hess=None,
              temperature=1.0, step_scale=1.0,
              sing_val_cutoff=0, seeds=None,
              recalc_hess_alg=False, recalc_func=None,
-             save_hours=scipy.inf, save_to=None):
+             save_hours=scipy.inf, skip_elems=0, save_to=None):
+    """
+    Generate a Bayesian ensemble of parameter sets consistent with the data in
+    the model. The sampling is done in terms of the bare parameters.
+
+    Inputs:
+     (All not listed here are identical to those of ensemble_log_params.)
+     recalc_func --- Function used to calculate the hessian matrix. It should
+                     take only a parameters argument and return the matrix.
+                     If this is None, default is to use m.GetJandJtJ.
+    """
     return ensemble_log_params(m, params, hess, steps, max_run_hours,
                                temperature, step_scale, sing_val_cutoff, seeds,
                                recalc_hess_alg, recalc_func, save_hours, 
-                               save_to, log_params=False)
+                               save_to, skip_elems, log_params=False)
 
 def ensemble_log_params(m, params, hess=None, 
                         steps=scipy.inf, max_run_hours=scipy.inf,
@@ -51,7 +61,7 @@ def ensemble_log_params(m, params, hess=None,
                         sing_val_cutoff=0, seeds=None,
                         recalc_hess_alg = False, recalc_func=None,
                         save_hours=scipy.inf, save_to=None,
-                        log_params=True):
+                        skip_elems = 0, log_params=True):
     """
     Generate a Bayesian ensemble of parameter sets consistent with the data in
     the model. The sampling is done in terms of the logarithm of the parameters.
@@ -80,6 +90,10 @@ def ensemble_log_params(m, params, hess=None,
      save_hours --- If save_to is not None, the ensemble will be saved to
                        that file every 'save_hours' hours.
      save_to --- Filename to save ensemble to.
+     skip_elems --- If non-zero, skip_elems are skipped between each included 
+                    step in the returned ensemble. For example, skip_elems=1
+                    will return every other member. Using this option can
+                    reduce memory consumption.
 
     Outputs:
      ens, ens_fes, ratio
@@ -113,8 +127,10 @@ def ensemble_log_params(m, params, hess=None,
     # We work with arrays of params through the rest of the code
     curr_params = scipy.array(curr_params)
 
-    if recalc_func is None:
+    if recalc_func is None and log_params:
         recalc_func = lambda p: m.GetJandJtJInLogParameters(scipy.log(p))[1]
+    else:
+        recalc_func = lambda p: m.GetJandJtJ(p)[1]
 
     accepted_moves, attempt_exceptions, ratio = 0, 0, scipy.nan
     start_time = last_save_time = time.time()
@@ -125,7 +141,8 @@ def ensemble_log_params(m, params, hess=None,
     # Generate the sampling matrix used to generate candidate moves
     samp_mat = _sampling_matrix(hess, sing_val_cutoff, temperature, step_scale)
 
-    while len(ens) < steps+1:
+    steps_attempted = 0
+    while steps_attempted < steps:
         # Have we run too long?
         if (time.time() - start_time) >= max_run_hours*3600:
             break
@@ -168,6 +185,7 @@ def ensemble_log_params(m, params, hess=None,
         else:
             accepted = _accept_move(next_F - curr_F, temperature)
 
+        steps_attempted += 1
         if accepted:
             accepted_moves += 1.
             curr_params = next_params
@@ -176,32 +194,35 @@ def ensemble_log_params(m, params, hess=None,
                 hess = next_hess
                 samp_mat = next_samp_mat
 
-        if isinstance(params, KeyedList):
-            ens.append(KeyedList(zip(param_keys, curr_params)))
-        else:
-            ens.append(curr_params)
-        ens_Fs.append(curr_F)
-        ratio = accepted_moves/(len(ens) - 1)
+        if steps_attempted % (skip_elems + 1) == 0:
+            if isinstance(params, KeyedList):
+                ens.append(KeyedList(zip(param_keys, curr_params)))
+            else:
+                ens.append(curr_params)
+                ens_Fs.append(curr_F)
+        ratio = accepted_moves/steps_attempted
 
         # Save to a file
         if save_to is not None\
            and time.time() >= last_save_time + save_hours * 3600:
-            _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions)
+            _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions,
+                      steps_attempted)
             last_save_time = time.time()
 
     if save_to is not None:
-        _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions)
+        _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions, 
+                  steps_attempted)
 
     return ens, ens_Fs, ratio
 
-def _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions):
+def _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions, steps_attempted):
     temp_name = save_to + '_temporary_SloppyCellFile'
     Utility.save((ens, ens_Fs, ratio), temp_name)
     shutil.move(temp_name, save_to)
     logger.debug('Ensemble of length %i saved to %s.' % (len(ens), save_to))
     logger.debug('Acceptance ratio so far is %f.' % ratio)
-    logger.debug('Attempted moves threw an exception %i times.' 
-                 % attempt_exceptions)
+    logger.debug('Attempted moves threw an exception %i times out of %i ' 
+                 'attempts.' % (attempt_exceptions, steps_attempted))
 
 def _accept_move(delta_F, temperature):
     """
