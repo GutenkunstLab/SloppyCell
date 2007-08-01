@@ -1122,12 +1122,6 @@ class Network:
         if do_assignments:
             self.updateAssignedVars(time)
 
-    def set_var_typical_val(self, id, val):
-        """
-        Set the typical value of the variable with the given id.
-        """
-        self.get_variable(id).typicalValue = val
-
     setTypicalVariableValue = set_var_typical_val
 
     def get_variable(self, id):
