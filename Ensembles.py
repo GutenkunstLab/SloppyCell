@@ -195,11 +195,11 @@ def ensemble_log_params(m, params, hess=None,
                 samp_mat = next_samp_mat
 
         if steps_attempted % (skip_elems + 1) == 0:
+            ens_Fs.append(curr_F)
             if isinstance(params, KeyedList):
                 ens.append(KeyedList(zip(param_keys, curr_params)))
             else:
                 ens.append(curr_params)
-                ens_Fs.append(curr_F)
         ratio = accepted_moves/steps_attempted
 
         # Save to a file
@@ -263,7 +263,7 @@ def _accept_move_recalc_alg(curr_F, curr_samp_mat, next_F, next_samp_mat,
 def _sampling_matrix(hessian, cutoff=0, temperature=1, step_scale=1):
     # basically need SVD of hessian - singular values and eigenvectors
     # hessian = u * diag(singVals) * vh
-    u, sing_vals, vh = scipy.linalg.svd(hessian)
+    u, sing_vals, vh = scipy.linalg.svd(0.5 * hessian)
 
     # scroll through the singular values and find the ones whose inverses will
     # be huge and set them to zero also, load up the array of singular values 
