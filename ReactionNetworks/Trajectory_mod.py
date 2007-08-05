@@ -473,8 +473,11 @@ class Trajectory:
         else :
             # At an event there are two time points in the trajectory that
             # are the same (=tevent) but we want the second one
+            last_t = -1
             for tevent in te :
-                teIndices.append(scipy.nonzero(self.timepoints==tevent)[0][1])
+                if tevent != last_t:
+                    teIndices.append(scipy.nonzero(self.timepoints==tevent)[0][1])
+                    last_t = tevent                 
 
             # don't expect there to be an event at 0, if there is this will be
             # messed up
