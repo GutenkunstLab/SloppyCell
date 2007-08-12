@@ -315,9 +315,9 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         if id == '':
             id = 'event%i' % ii
 
-        trigger = libsbml.formulaToString(e.getTrigger())
+        trigger = libsbml.formulaToString(e.getTrigger().getMath())
         if e.getDelay() is not None:
-            delay = libsbml.formulaToString(e.getDelay())
+            delay = libsbml.formulaToString(e.getDelay().getMath())
         else:
             delay = 0
 
