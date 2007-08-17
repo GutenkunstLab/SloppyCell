@@ -1526,7 +1526,7 @@ class Network:
         c_body.append('')
 
         # Now evaluate all the algebraic rules.
-        for rhs in self.algebraicRules.values():
+        for ii, rhs in enumerate(self.algebraicRules.values()):
             py_body.append('residual[%i] = %s' % (ii, rhs))
             c_rhs = ExprManip.make_c_compatible(rhs)
             c_body.append('residual[%i] = %s;' % (ii, rhs))
