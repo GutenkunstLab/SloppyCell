@@ -31,13 +31,13 @@ interface
         ! This has been set equal to (neq, len(rpar)) in the daskr call
         integer dimension(2), intent(hide) :: ipar
     end subroutine root_func
-    subroutine alg_deriv_func(alg_yp, dynamicVars, yp, time, constants, alg_derivs)
+    subroutine alg_deriv_func(alg_yp, dynamicVars, yp, time, constants, alg_derivs_res)
         double precision intent(in), dimension(%(N_alg)i) :: alg_yp
         double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
         double precision intent(in), dimension(%(N_dyn)i) :: yp
         double precision intent(in) :: time
         double precision intent(in), dimension(%(N_const)i) :: constants
-        double precision intent(out), dimension(%(N_alg)i) :: alg_derivs
+        double precision intent(out), dimension(%(N_alg)i) :: alg_derivs_res
     end subroutine alg_deriv_func
     subroutine alg_res_func(alg_vals, dynamicVars, time, constants, residual) 
         double precision intent(in), dimension(%(N_alg)i) :: alg_vals

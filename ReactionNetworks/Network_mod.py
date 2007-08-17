@@ -1420,6 +1420,12 @@ class Network:
         #  for algebraic variables. It returns the derivative wrt time of
         #  all the algebraic rules. Since the rules are <0=rule>, these should
         #  all be zero when we have consistent values for the variable derivs.
+        # E.g. If we have an algebraic rule 0 = f(x,y), then taking the time
+        #  derivative yields: 0 = df/dx*dx/dt + df/dy*dy/dt. This function
+        #  returns df/dx*dx/dt + df/dy*dy/dt and fsolve twiddles with the
+        #  dx/dt's that correspond to algebraic variables. It's a linear systems
+        #  of equations, so fsolve is kind of overkill, but it hasn't been a
+        #  slow point so far.
         py_body = []
         py_body.append('def alg_deriv_func(alg_yp, dynamicVars, yp, time, '
                        'constants):')
@@ -1428,7 +1434,7 @@ class Network:
         py_body.append('yp = scipy.asarray(yp)')
         py_body.append('constants = scipy.asarray(constants)')
         py_body.append('')
-        py_body.append('alg_derivs = scipy.empty(%i, scipy.float_)'
+        py_body.append('alg_derivs_res = scipy.empty(%i, scipy.float_)'
                        % len(self.algebraicRules))
         py_body.append('')
         self._add_assignments_to_function_body(py_body)
@@ -1436,7 +1442,7 @@ class Network:
 
         c_body = []
         c_args = 'double *alg_yp, double *dynamicVars, double *yp, '\
-                'double *time_ptr, double *constants, double *alg_derivs' 
+                'double *time_ptr, double *constants, double *alg_derivs_res' 
         c_body.append('void alg_deriv_func_(%s){' % c_args)
         c_body.append('double time = *time_ptr;')
         c_body.append('')
@@ -1467,11 +1473,11 @@ class Network:
             rhs = ' + '.join(rhs_terms)
             rhs_c = ' + '.join(rhs_terms_c)
             rhs_c = ExprManip.make_c_compatible(rhs_c)
-            py_body.append('alg_derivs[%i] = %s' % (rule_ii, rhs))
-            c_body.append('alg_derivs[%i] = %s;' % (rule_ii, rhs_c))
+            py_body.append('alg_derivs_res[%i] = %s' % (rule_ii, rhs))
+            c_body.append('alg_derivs_res[%i] = %s;' % (rule_ii, rhs_c))
 
         py_body.append('')
-        py_body.append('return alg_derivs')
+        py_body.append('return alg_derivs_res')
         py_body = '\n\t'.join(py_body)
 
         c_body.append('}')
