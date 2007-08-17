@@ -2,6 +2,7 @@ import logging
 logger = logging.getLogger('Ensembles')
 import copy
 import shutil
+import sys
 import time
 
 import scipy
@@ -253,9 +254,6 @@ def _accept_move_recalc_alg(curr_F, curr_samp_mat, next_F, next_samp_mat,
     p = scipy.rand()
     accepted = (pi_y*q_y_to_x)/(pi_x*q_x_to_y)
     did_accepted = p<accepted
-    print pi_y/pi_x, q_y_to_x/q_x_to_y, did_accepted
-    import sys
-    sys.stdout.flush()
 
     return p < accepted
 
