@@ -1299,9 +1299,9 @@ class Network:
         # Loop over everything in the dynamicVars list
         for ii, (id, var) in enumerate(self.dynamicVars.items()):
             if self.algebraicVars.has_key(id):
-                # It's an algebraic equation. Pop an algebraic rule off the
-                # list.
-                rhs = algebraicRuleList.pop()
+                # It's an algebraic equation. Pop the first algebraic rule off
+                # the list.
+                rhs = algebraicRuleList.pop(0)
                 py_body.append('# Residual function corresponding to an '
                                'algebraic  equation')
                 py_body.append('residual[%i] = %s' % (ii, rhs))
