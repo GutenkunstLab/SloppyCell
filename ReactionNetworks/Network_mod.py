@@ -2586,11 +2586,12 @@ class Network:
                 if (var in vars_in_alg_rules):
                     vars_in_alg_rules.remove(var)
 
-        # Check that we have at most same number of algebraic rules and
-        # algebraic vars. Set the algebraicVars list to the list we just
-        # compiled
-        self.algebraicVars = KeyedList([(id, id) for id
-                                        in vars_in_alg_rules])
+        # Set the algebraicVars list to the list we just compiled, after sorting
+        #  based on the order in self.dynamicVars
+        sorted_alg_vars = [(id, self.variables.get(id))
+                           for id in self.dynamicVars.keys()
+                           if id in vars_in_alg_rules]
+        self.algebraicVars = KeyedList(sorted_alg_vars)
 
     _last_structure = None
     # This is an option to disable compilation of C modules.
