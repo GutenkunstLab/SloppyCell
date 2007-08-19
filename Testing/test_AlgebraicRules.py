@@ -10,7 +10,7 @@ from SloppyCell.daskr import daeint
 
 # Load the fast reaction example from the SBML semantic test suite.
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
-from AlgTestNets import algebraic_net, algebraic_net_assignment
+from AlgTestNets import algebraic_net, algebraic_net_assignment, algebraic_net_multi
 tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
 
 class test_AlgebraicRules(unittest.TestCase):
@@ -28,6 +28,26 @@ class test_AlgebraicRules(unittest.TestCase):
                                0.018207409, 5)
         self.assertAlmostEqual(algebraic_traj.get_var_val('S2', 16.8), 
                                0.210750878, 5)
+
+    def test_several_algebraic_rules(self):
+        """ Test of algebraic system with 3 algebraic rules """
+
+        algebraic_traj = Dynamics.integrate(algebraic_net_multi, tlist_algebraic_net, redirect_msgs=False)
+
+        self.assertAlmostEqual(algebraic_traj.get_var_val('X0',4.8), 
+                               0.618783392, 5)
+        self.assertAlmostEqual(algebraic_traj.get_var_val('X1',21.6), 
+                               0.653837775, 5)
+        self.assertAlmostEqual(algebraic_traj.get_var_val('T', 29.6), 
+                               0.138253942, 5)
+        self.assertAlmostEqual(algebraic_traj.get_var_val('S1', 40.0), 
+                               0.018207409, 5)
+        self.assertAlmostEqual(algebraic_traj.get_var_val('S2', 16.8), 
+                               0.210750878, 5)
+        self.assertAlmostEqual(algebraic_traj.get_var_val('S3', 16.8), 
+                               0.1, 5)
+        self.assertAlmostEqual(algebraic_traj.get_var_val('S4', 16.8), 
+                               0.15, 5)
 
     def test_assignment_in_algebraic(self):
         """ Test that algebraic rhs functions that are functions of assignment
