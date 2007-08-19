@@ -50,3 +50,17 @@ algebraic_net_assignment.add_event('event0', 'lt(X0, 0.5)', {'p_2': 1})
 algebraic_net_assignment.set_var_ics({'p_1': 0,
                                       'p_2': 0,
                                       'p_3': 0})
+
+# algebraic_net_multi is a system that has 3 algebraic rules
+# the dynamics should be the same as in algebraic_net, but
+# having extra algebraic rules helps test whether systems with many algebraic
+# equations will work correctly.
+
+algebraic_net_multi = algebraic_net.copy('alg_net_multi')
+algebraic_net_multi.add_parameter('S3', initial_value = 0.2, is_constant = False)
+algebraic_net_multi.add_parameter('S4', initial_value = 0.2, is_constant = False)
+algebraic_net_multi.add_algebraic_rule('S3-k1')
+algebraic_net_multi.add_algebraic_rule('S4-k2')
+
+
+
