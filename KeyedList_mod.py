@@ -60,11 +60,15 @@ class KeyedList(list):
             del self[index]
 
     def __copy__(self):
-        return KeyedList(self.items())
+        instance = self.__new__(self.__class__)
+        instance.__init__(self.items())
+        return instance
 
     def __deepcopy__(self, memo):
         # XXX: Not handling recursion here
-        return KeyedList(copy.deepcopy(self.items()))
+        instance = self.__new__(self.__class__)
+        instance.__init__(copy.deepcopy(self.items()))
+        return instance
 
     #
     # Methods for manipulating by key.
