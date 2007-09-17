@@ -162,7 +162,8 @@ def plot_model_data(model, expts = None, style = 'errorbars',
 
 def plot_model_results(model, expts = None, style='errorbars',
                        show_legend = True, loc = 'upper left',
-                       plot_data = True, plot_trajectories = True):
+                       plot_data = True, plot_trajectories = True,
+                       data_to_plot=None):
     """
     Plot the fits to the given experiments for the last cost evalution of the
     model.
@@ -181,6 +182,9 @@ def plot_model_results(model, expts = None, style='errorbars',
       plot_data: Boolean that controls whether the data is plotted
       plot_trajectories: Boolean that controls whether the trajectories are
                          plotted
+      data_to_plot: If None, all data variables will be plotted. Otherwise,
+                       pass a list of id's and only variables in  that list
+                       will be plotted.
     """
     exptColl = model.get_expts()
     calcColl = model.get_calcs()
@@ -203,6 +207,10 @@ def plot_model_results(model, expts = None, style='errorbars',
             net = calcColl.get(calcId)
             traj = getattr(net, 'trajectory', None)
             for dataId, dataDict in dataByCalc[calcId].items():
+                # Skip this variable if it's not amongst our data_to_plot
+                #  list.
+                if (data_to_plot is not None) and (dataId not in data_to_plot):
+                    continue
                 color, sym, dash = cW.next()
 
                 if plot_trajectories:
