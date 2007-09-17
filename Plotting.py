@@ -128,12 +128,15 @@ def plot_singvals(vals, label=None, offset=0, join=False):
 
 PlotEigenvalueSpectrum = plot_eigvals
 
-def plot_eigvect(vect, labels=None, bottom = 0, num_label = 5):
+def plot_eigvect(vect, labels=None, bottom=0, num_label=5, label_offset=0.15):
     """
     Plot a given eigenvector.
 
     If a list of labels is passed in, the largest (in magnitude) num_label bars
-     will be labeled on the plot.
+      will be labeled on the plot. label_offset controls how much the labels
+      are shifted from the top of the bars for clarity.
+    bottom controls where the bar plot is centered along the y axis. This is 
+      useful for plotting several e'vectors on the same axes.
     """
     # The 0.4 centers the bars on their numbers, accounting for the default
     #  bar width of 0.8
@@ -152,7 +155,7 @@ def plot_eigvect(vect, labels=None, bottom = 0, num_label = 5):
         mags.reverse()
         for mag, index, val in mags[:num_label]:
             name = labels[index]
-            text(index, val + scipy.sign(val)*0.05, name,
+            text(index, val + scipy.sign(val)*label_offset, name,
                  horizontalalignment='center', verticalalignment='center')
 
         a[2] -= 0.1
