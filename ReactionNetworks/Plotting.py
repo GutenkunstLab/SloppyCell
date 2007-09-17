@@ -200,10 +200,29 @@ def plot_model_results(model, expts = None, style='errorbars',
         for calcId in sortedCalcIds:
             # Pull the trajectory from that calculation, defaulting to None
             #  if it doesn't exist.
-            net = calcColl[calcId]
+            net = calcColl.get(calcId)
             traj = getattr(net, 'trajectory', None)
             for dataId, dataDict in dataByCalc[calcId].items():
                 color, sym, dash = cW.next()
+
+                if plot_trajectories:
+                    if traj is None:
+                        print 'No trajectory in calculation %s!' % calcId
+                        print 'The cost must be evaluated before the results',
+                        print 'can be plotted.'
+                        return
+
+                    scaleFactor = model.GetScaleFactors()[exptId][dataId]
+                    result = scaleFactor*traj.getVariableTrajectory(dataId)
+                    l = plot(traj.timepoints, result, color=color, 
+                             linestyle=dash,linewidth=3)
+
+                    # We superimpose a dotted black line to distinguish
+                    #  theory from data in this case
+                    if style is 'lines':
+                        plot(traj.timepoints, result, 'k--', linewidth=3,
+                                   zorder = 10)
+                
 
                 if plot_data:
                     # Pull the data out of the dictionary and into an array
@@ -219,27 +238,10 @@ def plot_model_results(model, expts = None, style='errorbars',
                         d = scipy.take(d, order, 0)
                         l = plot(d[:,0], d[:,1], color=color,
                                  linestyle=dash)
+                        lines.append(l)
 
-                if plot_trajectories:
-                    if traj is None:
-                        print 'No trajectory in calculation %s!' % calcId
-                        print 'The cost must be evaluated before the results',
-                        print 'can be plotted.'
-                        return
-
-                    scaleFactor = model.GetScaleFactors()[exptId][dataId]
-                    result = scaleFactor*traj.getVariableTrajectory(dataId)
-                    plot(traj.timepoints, result, color=color, 
-                         linestyle=dash,linewidth=3)
-
-                    # We superimpose a dotted black line to distinguish
-                    #  theory from data in this case
-                    if style is 'lines':
-                        plot(traj.timepoints, result, 'k--', linewidth=3,
-                                   zorder = 10)
-                
-                lines.append(l)
                 # Let's print the pretty name for our variable if we can.
+                lines.append(l)
                 name = net.get_component_name(dataId)
                 labels.append('%s in %s for %s' % (name, calcId, exptId))
 
@@ -304,7 +306,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
                 results[exptId].setdefault(netId, {})
                 # Pull the trajectory from that calculation, defaulting to None
                 #  if it doesn't exist.
-                net = nets[netId]
+                net = nets.get(netId)
                 traj = net.trajectory
                 for dataId in dataByCalc[netId].keys():
                     results[exptId][netId].setdefault(dataId, [])
@@ -339,7 +341,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
                                  linestyle=dash)
 
                 if plot_trajectories:
-                    times = model.get_calcs()[netId].trajectory.get_times()
+                    times = model.get_calcs().get(netId).trajectory.get_times()
                     mean_vals = scipy.mean(results[exptId][netId][dataId], 0)
                     std_vals = scipy.std(results[exptId][netId][dataId], 0)
 
@@ -349,7 +351,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
                     # Plot the polygon
                     xpts = scipy.concatenate((times, times[::-1]))
                     ypts = scipy.concatenate((lower_vals, upper_vals[::-1]))
-                    fill(xpts, ypts, color=color, alpha=0.4)
+                    fill(xpts, ypts, fc=color, alpha=0.4)
 
                 lines.append(l)
                 # Let's print the pretty name for our variable if we can.
