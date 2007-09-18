@@ -608,13 +608,22 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
             IC[:N_dyn_vars] = scipy.log(IC[:N_dyn_vars])
             sens_rhs = net.sens_rhs_logdv
 
+        # Note that IC is not necessarily correct for the sensitivities of
+        # algebraic variables. We'll let ddaskr calculate them using
+        # calculate_ic = True.
+        # They will be correct in the returned trajectory. For now, we don't
+        # use d/dt of sensitivities, so it doesn't matter if those are wrong
+        # at single points in the trajectory.
+        var_types = scipy.concatenate((net._dynamic_var_algebraic,
+                                       net._dynamic_var_algebraic))
         try:
             int_outputs = daeint(sens_rhs, int_times,
                                  IC, ypIC, 
                                  rtol_for_sens, atol_for_sens,
                                  rpar = rpar,
                                  max_steps = MAX_STEPS,
-                                 calculate_ic = False,
+                                 var_types = var_types,
+                                 calculate_ic = True,
                                  redir_output = redirect_msgs)
         except Utility.SloppyCellException, X:
             logger.warn('Sensitivity integration failed for network %s on '
@@ -864,7 +873,6 @@ def find_ypic_sens(y, yp, time, var_types, rtol, atol_for_sens, constants,
     yp[N_dyn:][var_types == 1] = 0
     res = net.sens_rhs(time, y, yp, constants)
     yp[N_dyn:][var_types == 1] = res[N_dyn:][var_types == 1]
-    new_res = net.sens_rhs(time, y, yp, constants)
 
     return yp
 
