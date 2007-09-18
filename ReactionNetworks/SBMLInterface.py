@@ -111,9 +111,16 @@ def toSBMLString(net):
         se = libsbml.Event()
         se.setName(e.name)
         formula = e.trigger.replace('**', '^')
-        se.setTrigger(libsbml.parseFormula(formula))
+        try:
+            se.setTrigger(libsbml.parseFormula(formula))
+        except TypeError:
+            se.setTrigger(libsbml.Trigger(libsbml.parseFormula(formula)))
+
         formula = str(e.delay).replace('**', '^')
-        se.setDelay(libsbml.parseFormula(formula))
+        try:
+            se.setDelay(libsbml.parseFormula(formula))
+        except TypeError:
+            se.setDelay(libsbml.Delay(libsbml.parseFormula(formula)))
         for varId, formula in e.event_assignments.items():
             sea = libsbml.EventAssignment()
             sea.setVariable(varId)
@@ -203,7 +210,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         elif s.isSetInitialAmount():
             iC = s.getInitialAmount()
         else:
-            iC = scipy.nan
+            iC = 1
         isBC, isConstant = s.getBoundaryCondition(), s.getConstant()
 	
 	rn.addSpecies(id = id, compartment = compartment,
@@ -315,9 +322,22 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         if id == '':
             id = 'event%i' % ii
 
-        trigger = libsbml.formulaToString(e.getTrigger().getMath())
+        try:
+            # For libSBML 3.0
+            trigger_math = e.getTrigger().getMath()
+        except AttributeError:
+            # For older versions
+            trigger_math = e.getTrigger()
+        trigger = libsbml.formulaToString(trigger_math)
+
         if e.getDelay() is not None:
-            delay = libsbml.formulaToString(e.getDelay().getMath())
+            try:
+                # For libSBML 3.0
+                delay_math = e.getDelay().getMath()
+            except AttributeError:
+                # For older versions
+                delay_math = e.getDelay()
+            delay = libsbml.formulaToString(delay_math)
         else:
             delay = 0
 
