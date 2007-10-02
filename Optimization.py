@@ -91,7 +91,30 @@ def fmin_xform(m, params, xforms, invforms, *args, **kwargs):
     else:
         return pmin
 
+import SloppyCell.lmopt as lmopt
+def fmin_lm_log_params(m, params, *args, **kwargs):
+    """
+    Minimize the cost of a model using Levenberg-Marquadt in terms of log 
+    parameters.
+
+    The *args and **kwargs represent additional parmeters that will be passed to
+    the optimization algorithm. For your convenience, the docstring of that
+    function is appended below:
+
+    """
+    jac = lambda lp: scipy.asarray(m.jacobian_log_params_sens(lp))
+    sln = lmopt.fmin_lm(f=m.res_log_params, x0=scipy.log(params), fprime=jac,
+                        *args, **kwargs)
+    if isinstance(params, KeyedList):
+        pout = params.copy()
+        pout.update(scipy.exp(sln))
+        return pout
+    else:
+        return scipy.exp(sln)
+fmin_lm_log_params.__doc__ = fmin_lm_log_params.__doc__ + lmopt.fmin_lm.__doc__
+
 def leastsq_log_params(m, params, *args, **kwargs):
+    # Dfun = m.jacobian_log_params_sens
     func = m.res_log_params
 
     pmin, msg = scipy.optimize.leastsq(func, scipy.log(params), *args, **kwargs)
