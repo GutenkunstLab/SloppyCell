@@ -1,3 +1,6 @@
+"""
+Holds the KeyedList class.
+"""
 import copy
 import os
 
@@ -23,7 +26,7 @@ class KeyedList(list):
     def deepcopy(self):
         return copy.deepcopy(self)
 
-    def setOrder(self, order):
+    def set_order(self, order):
         if len(order) != len(self):
             raise ValueError, 'New order is of a different length!'
 
@@ -35,8 +38,10 @@ class KeyedList(list):
             self.storedKeys.append(key)
             self[index] = oldValues[oldOrder[key]]
 
+    setOrder = set_order
+
     def reverse(self):
-        self.setOrder(self.keys()[::-1])
+        self.set_order(self.keys()[::-1])
 
     def del_by_key(self, key):
         index = self.index_by_key(key)
@@ -134,25 +139,83 @@ class KeyedList(list):
     #
     # list methods not supported
     #
-    def  __add__(self, other):
-        raise NotImplementedError
+    def __add__(self, other):
+        new_kl = self.copy()
+        new_kl += other
+        return new_kl
+
     def __iadd__(self, other):
-        raise NotImplementedError
+        if not isinstance(other, self.__class__):
+            raise TypeError('Can only add another KeyedList to a KeyedList')
+        for k,v in other.items():
+            if not self.has_key(k):
+                self.set(k, v)
+            else:
+                raise ValueError('Addition would result in duplicated keys.')
+        return self
+
+    def extend(self, other):
+        self += other
+
     def __imul__(self, factor):
         raise NotImplementedError
     def __mul__(self, factor):
         raise NotImplementedError
     def  __rmul__(self, factor):
         raise NotImplementedError
-    def append(self, item):
+
+    def append(self, object):
         raise NotImplementedError
-    def extend(self, other):
+
+    def insert(self, index, object):
         raise NotImplementedError
-    def insert(self, other):
-        raise NotImplementedError
-    def pop(self, other):
-        raise NotImplementedError
-    def remove(self, other):
-        raise NotImplementedError
-    def sort(self):
-        raise NotImplementedError
+
+    def insert_item(self, index, key, value):
+        if self.has_key(key):
+            raise ValueError('Insertion would result in duplicated key: %s.'
+                             % str(key))
+        list.insert(self, index, value)
+        self.storedKeys.insert(index, key)
+        for k, ii in self.keyToIndex.items():
+            if ii > index:
+                self.keyToIndex[k] += 1
+        self.keyToIndex[key] = index
+
+    def pop_value(self, index=-1):
+        val = self[index]
+        del self[index]
+        return val
+    pop = pop_value
+
+    def pop_key(self, index=-1):
+        key = self.storedKeys[index]
+        del self[index]
+        return key
+
+    def pop_item(self, index=-1):
+        item = (self.storedKeys[index], self[index])
+        del self[index]
+        return key
+
+    def remove_by_value(self, other):
+        index = self.index(other)
+        del self[index]
+    remove = remove_by_value
+
+    def sort_by_key(self):
+        """
+        Sort based on key of each entry
+        """
+        keys = self.keys()
+        keys.sort()
+        self.set_order(keys)
+
+    def sort_by_value(self):
+        """
+        Sort based on value of each entry
+        """
+        decorated = zip(self.values(), self.keys())
+        decorated.sort()
+        sorted_keys = [k for (v,k) in decorated]
+        self.set_order(sorted_keys)
+    sort = sort_by_value
