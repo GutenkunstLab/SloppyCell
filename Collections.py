@@ -34,7 +34,8 @@ class ExperimentCollection(dict):
         Adds the experiments in the list to the collection
         """
         if expt.GetName() in self:
-            raise ValueError, "Experiment already has name %s" % str(expt.GetName())
+            raise ValueError("Experiment already has name %s" 
+                             % str(expt.GetName()))
 
         self[expt.GetName()] = expt
 
@@ -72,7 +73,9 @@ class ExperimentCollection(dict):
 
             for amplitude in expt.GetAmplitudeChecks():
                 calc, depVar = amplitude['calcKey'], amplitude['depVarKey']
-                start, test, period = amplitude['startTime'], amplitude['testTime'], amplitude['period']
+                start, test, period = (amplitude['startTime'], 
+                                       amplitude['testTime'], 
+                                       amplitude['period'])
                 if calc not in varsByCalc.keys():
                     varsByCalc[calc].setdefault(calc, {})
                 if depVar not in varsByCalc[calc]:
@@ -167,7 +170,8 @@ class Experiment:
         Set the type of prior to place on a given group of scalefactors.
 
         The group contains a collection of variables that are sharing a given
-        scale factor which may be just one variable. You can see what the current groups are with expt.get_sf_groups().
+        scale factor which may be just one variable. You can see what the
+        current groups are with expt.get_sf_groups().
 
         Currently implemented prior types are:
             'uniform in sf': This is a uniform prior over scale factors. This
@@ -289,12 +293,14 @@ class Experiment:
         startTime and two periods after the startTime.
         """
         self.periodChecks.append({'calcKey':calcKey, 'depVarKey':chemical,
-                                  'period': period, 'sigma': sigma, 'startTime': startTime})
+                                  'period': period, 'sigma': sigma, 
+                                  'startTime': startTime})
 
     def GetPeriodChecks(self):
         return self.periodChecks
 
-    def AddAmplitudeCheck(self, calcKey, chemical, startTime, testTime, period, sigma):
+    def AddAmplitudeCheck(self, calcKey, chemical, startTime, testTime, period,
+                          sigma):
         """
         Turn on applying a constraint that the integrated
         area in two different parts of the plot should be the
@@ -302,8 +308,9 @@ class Experiment:
         begin the integration for the period-long each.
         """
         self.amplitudeChecks.append({'calcKey': calcKey, 'depVarKey': chemical,
-                                   'startTime': startTime, 'testTime': testTime,
-                                   'period': period, 'sigma': sigma})
+                                     'startTime': startTime, 
+                                     'testTime': testTime,
+                                     'period': period, 'sigma': sigma})
 
     def GetAmplitudeChecks(self):
         return self.amplitudeChecks
@@ -331,7 +338,7 @@ class Experiment:
                                    'interval': interval})
         
 
-class CalculationCollection(dict):
+class CalculationCollection(KeyedList):
     """
     CalculationCollection(calculation name list)
 
@@ -345,9 +352,17 @@ class CalculationCollection(dict):
     """
 
     def __init__(self, calcList = []):
+        KeyedList.__init__(self)
+
         self.params = KeyedList()
         for calc in calcList:
-            self.AddCalculation(calc)
+            try:
+                if len(calc) == 2:
+                    self.AddCalculation(calc[1])
+                else:
+                    raise ValueError('Incorrect form for calcList')
+            except:
+                self.AddCalculation(calc)
 
     def AddCalculation(self, calc):
         """
@@ -357,9 +372,10 @@ class CalculationCollection(dict):
         parameters to the parameterSet
         """
         if calc.GetName() in self:
-            raise ValueError, "Calculation already has name %s" % str(calc.GetName())
+            raise ValueError("Calculation already has name %s" 
+                             % str(calc.GetName()))
 
-        self[calc.GetName()] = calc 
+        self.set(calc.GetName(), calc )
         for pName, pValue in calc.GetParameters().items():
             self.params.setdefault(pName, pValue)
 
@@ -392,7 +408,7 @@ class CalculationCollection(dict):
                 logger.debug('Assigning calculation %s to worker %i.'
                              % (calc, worker))
                 command = 'Network.calculate(net, vars, params)'
-                args = {'net': self[calc], 'vars': varsByCalc[calc],
+                args = {'net': self.get(calc), 'vars': varsByCalc[calc],
                         'params': self.params}
                 pypar.send((command, args), worker)
 
@@ -402,8 +418,8 @@ class CalculationCollection(dict):
             #  *always* wait for replies from the workers, even if the master
             #  encounters an exception in his evaluation.
             try:
-                results[calc] = self[calc].calculate(varsByCalc[calc], 
-                                                     self.params)
+                results[calc] = self.get(calc).calculate(varsByCalc[calc], 
+                                                         self.params)
             finally:
                 # Collect results from the workers
                 for worker in range(1, len_this_block):
@@ -436,10 +452,12 @@ class CalculationCollection(dict):
 		
         calcSensVals, calcVals = {}, {}
         for (calcName, vars) in varsByCalc.items():
-            calcPOrder = self[calcName].GetParameters().keys()
-            self[calcName].CalculateSensitivity(varsByCalc[calcName], self.params)
-            calcSensVals[calcName] = self[calcName].GetSensitivityResult(varsByCalc[calcName])
-            calcVals[calcName] = self[calcName].GetResult(varsByCalc[calcName])
+            calc = self.get(calcName)
+            vars = varsByCalc[calcName]
+            calcPOrder = calc.GetParameters().keys()
+            calc.CalculateSensitivity(varsByCalc[calcName], self.params)
+            calcSensVals[calcName] = calc.GetSensitivityResult(vars)
+            calcVals[calcName] = calc.GetResult(vars)
 
         return calcVals, calcSensVals
 
@@ -447,4 +465,8 @@ class CalculationCollection(dict):
         """
         Return a deep copy of the collections parameter KeyedList.
         """
-        return copy.deepcopy(self.params)
+        self.params = KeyedList()
+        for calc in self.values():
+            for pName, pValue in calc.GetParameters().items():
+                self.params.setdefault(pName, pValue)
+        return self.params

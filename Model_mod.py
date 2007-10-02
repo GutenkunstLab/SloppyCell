@@ -65,6 +65,9 @@ class Model:
 
     def copy(self):
         return copy.deepcopy(self)
+
+    def __repr__(self):
+        return 'CalculationCollection(%s)' % repr(self.items())
         
     def get_params(self):
         """
@@ -100,7 +103,7 @@ class Model:
          None
         """
         for (calcName, varName), initialValue in ics.items():
-            self.calcColl[calcName].set_var_ic(varName, initialValue)
+            self.calcColl.get(calcName).set_var_ic(varName, initialValue)
 
     def _evaluate(self, params, T=1):
         """
@@ -293,7 +296,7 @@ class Model:
 
         force = scipy.zeros(len(params), scipy.float_)
         for res_key, res_val in res_dict.items():
-            res_derivs = jac_dict[res_key]
+            res_derivs = jac_dict.get(res_key)
             force += res_val * scipy.asarray(res_derivs)
 
         gradient = self.params.copy()
@@ -309,7 +312,7 @@ class Model:
         This method uses sensitivity integration, so it only applies to
         ReactionNetworks.
         """
-        # We just need to multiply dres_dp by p.
+        # We just need to multiply dcost_dp by p.
         params = scipy.exp(log_params)
         gradient = self.gradient_sens(params)
         gradient_log = gradient.copy()
@@ -508,7 +511,7 @@ class Model:
                     theorysensDotData, theorysensDotTheory = 0, 0
 
                     for calc in exptData:
-                        clc = self.calcColl[calc]
+                        clc = self.calcColl.get(calc)
                         if depVar in exptData[calc].keys():
                             for indVar, (data, error)\
                                     in exptData[calc][depVar].items():
@@ -530,16 +533,34 @@ class Model:
 
 	return self.internalVarsDerivs['scaleFactors']
 
+    def jacobian_log_params_sens(self, log_params):
+    	"""
+	Return a KeyedList of the derivatives of the model residuals w.r.t.
+        the lograithms of the parameters parameters.
+
+        The method uses the sensitivity integration. As such, it will only
+        work with ReactionNetworks.
+
+        The KeyedList is of the form:
+            kl.get(resId) = [dres/dlogp1, dres/dlogp2...]
+	"""
+        params = scipy.exp(log_params)
+        j = self.jacobian_sens(params)
+        j_log = j.copy()
+        j_log.update(scipy.asarray(j) * scipy.asarray(params))
+
+        return j_log
+
     def jacobian_sens(self, params):
     	"""
-	Return a dictionary of the derivatives of the model residuals w.r.t.
+	Return a KeyedList of the derivatives of the model residuals w.r.t.
         parameters.
 
         The method uses the sensitivity integration. As such, it will only
         work with ReactionNetworks.
 
-        The dictionary is of the form:
-            dict[resId] = [dres/dp1, dres/dp2...]
+        The KeyedList is of the form:
+            kl[resId] = [dres/dp1, dres/dp2...]
 	"""
         self.params.update(params)
 
@@ -549,17 +570,17 @@ class Model:
 	self.ComputeInternalVariableDerivs()
 
         # Calculate residual derivatives
-        deriv = dict([(resId, res.Dp(self.calcVals, self.calcSensitivityVals,
-                                     self.internalVars, self.internalVarsDerivs,
-                                     self.params))
-                      for (resId, res) in self.residuals.items()])
+        deriv = [(resId, res.Dp(self.calcVals, self.calcSensitivityVals,
+                                self.internalVars, self.internalVarsDerivs,
+                                self.params))
+                 for (resId, res) in self.residuals.items()]
 
-	return deriv
+	return KeyedList(deriv)
 
     def jacobian_fd(self, params, eps, 
                     relativeScale=False, stepSizeCutoff=None):
     	"""
-	Return a dictionary of the derivatives of the model residuals w.r.t.
+	Return a KeyedList of the derivatives of the model residuals w.r.t.
         parameters.
 
         The method uses finite differences.
@@ -584,9 +605,9 @@ class Model:
             eps_l = scipy.maximum(eps * scipy.ones(len(params),scipy.float_),
                                   stepSizeCutoff)
 
-	J = {} # will hold the result
+	J = KeyedList() # will hold the result
 	for resId in res.keys():
-            J[resId] = []
+            J.set(resId, [])
         # Two-sided finite difference
 	for ii in range(len(params)):
             params[ii] = orig_vals[ii] + eps_l[ii]
@@ -598,7 +619,8 @@ class Model:
             params[ii] = orig_vals[ii]
 
 	    for resId in res.keys():
-                J[resId].append((resPlus[resId]-resMinus[resId])/(2.*eps_l[ii]))
+                res_deriv = (resPlus[resId]-resMinus[resId])/(2.*eps_l[ii])
+                J.get(resId).append(res_deriv)
 	
 	# NOTE: after call to ComputeResidualsWithScaleFactors the Model's
 	# parameters get updated, must reset this:
@@ -645,7 +667,7 @@ class Model:
 	  for paramind1 in range(0,len(params)):
 	    sum = 0.0
 	    for kys in j.keys():
-	      sum = sum + j[kys][paramind]*j[kys][paramind1]
+	      sum = sum + j.get(kys)[paramind]*j.get(kys)[paramind1]
 
 	    mn[paramind][paramind1] = sum
     	return j,mn
@@ -669,7 +691,7 @@ class Model:
             for j in range(len(params)):
                	# extra term --- not including it 
 		# jtj[j][j] += res[resname]*jac[resname][j]*pnolog[j]
-                jac[resname][j] = jac[resname][j]*pnolog[j]
+                jac.get(resname)[j] = jac.get(resname)[j]*pnolog[j]
 
 	return jac,jtj
 
@@ -968,6 +990,14 @@ class Model:
                
     def get_expts(self):
         return self.exptColl
+
+    def set_var_optimizable(self, var, is_optimizable):
+        for calc in self.get_calcs().values():
+            try:
+                calc.set_var_optimizable(var, is_optimizable)
+            except KeyError:
+                pass
+        self.params = self.calcColl.GetParameters()
 
     GetExperimentCollection = get_expts
 

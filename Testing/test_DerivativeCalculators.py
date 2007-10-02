@@ -25,8 +25,8 @@ class test_DerivativeCalculators(unittest.TestCase):
         J_fd = m.jacobian_fd(params, 1e-4)
 
         for res_name in J_sens.keys():
-            sens_vals = J_sens[res_name]
-            fd_vals = J_sens[res_name]
+            sens_vals = J_sens.get(res_name)
+            fd_vals = J_sens.get(res_name)
             for sens_val, fd_val in zip(sens_vals, fd_vals):
                 if (sens_val == 0) and (fd_val == 0):
                     continue
