@@ -1,0 +1,645 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <model id="net1">
+    <listOfCompartments>
+      <compartment id="Cytoplasm" name="Cytoplasm" size="1"/>
+      <compartment id="Nucleus" name="Nucleus" size="1"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="v1" name="STAT5" compartment="Cytoplasm"/>
+      <species id="v2" name="STAT5p" compartment="Cytoplasm" initialConcentration="0"/>
+      <species id="v3" name="STAT5p2c" compartment="Cytoplasm" initialConcentration="0"/>
+      <species id="v4" name="STAT5p2n" compartment="Nucleus" initialConcentration="0"/>
+      <species id="data1" compartment="Cytoplasm" initialConcentration="0"/>
+      <species id="data2" compartment="Cytoplasm" initialConcentration="0"/>
+      <species id="frac_v1" compartment="Cytoplasm" initialConcentration="0"/>
+      <species id="frac_v2" compartment="Cytoplasm" initialConcentration="0"/>
+      <species id="frac_v3" compartment="Nucleus" initialConcentration="0"/>
+      <species id="frac_v4" compartment="Cytoplasm" initialConcentration="0"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="r1" value="0.0385139271078"/>
+      <parameter id="r3" value="1.80654170952"/>
+      <parameter id="r4" value="0" constant="false"/>
+      <parameter id="D" value="0" constant="false"/>
+      <parameter id="tao" value="3.99999916482"/>
+      <parameter id="r4_0" value="0.346199153378"/>
+      <parameter id="v1_0" value="0.183152297817"/>
+      <parameter id="smooth_D" value="0" constant="false"/>
+      <parameter id="smooth_D_slope" value="1" constant="false"/>
+      <parameter id="smooth_D_offset" value="1" constant="false"/>
+    </listOfParameters>
+    <listOfRules>
+      <assignmentRule variable="data1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> v2 </ci>
+            <apply>
+              <times/>
+              <cn type="integer"> 2 </cn>
+              <ci> v3 </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="data2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> v1 </ci>
+            <ci> v2 </ci>
+            <apply>
+              <times/>
+              <cn type="integer"> 2 </cn>
+              <ci> v3 </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="smooth_D">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <apply>
+              <times/>
+              <ci> smooth_D_slope </ci>
+              <ci> time </ci>
+            </apply>
+            <ci> smooth_D_offset </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="D">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> smooth_D </ci>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="frac_v1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> v1 </ci>
+            <ci> v1_0 </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="frac_v2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> v2 </ci>
+            <ci> v1_0 </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="frac_v3">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <apply>
+              <times/>
+              <cn type="integer"> 2 </cn>
+              <ci> v3 </ci>
+            </apply>
+            <ci> v1_0 </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="frac_v4">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <apply>
+              <times/>
+              <cn type="integer"> 2 </cn>
+              <ci> v4 </ci>
+            </apply>
+            <ci> v1_0 </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+    </listOfRules>
+    <listOfReactions>
+      <reaction id="R1">
+        <listOfReactants>
+          <speciesReference species="v1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="v2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> Cytoplasm </ci>
+              <ci> r1 </ci>
+              <ci> v1 </ci>
+              <ci> D </ci>
+              <cn type="integer"> 60 </cn>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R2">
+        <listOfReactants>
+          <speciesReference species="v2" stoichiometry="2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="v3"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> Cytoplasm </ci>
+              <ci> v2 </ci>
+              <ci> v2 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R3">
+        <listOfReactants>
+          <speciesReference species="v3"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="v4"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> Cytoplasm </ci>
+              <ci> r3 </ci>
+              <ci> v3 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R4">
+        <listOfReactants>
+          <speciesReference species="v4"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="v1" stoichiometry="2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> Nucleus </ci>
+              <ci> r4 </ci>
+              <ci> v4 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <listOfEvents>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 0 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.06385 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 2 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.0496 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.0458 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 4 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.26085 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> -0.7992 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 6 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.11705 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.0636 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 8 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> -0.06975 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 1.558 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 10 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> -0.0388 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 1.2485 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 12 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> -0.1062 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 2.0573 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 14 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.0256 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.2121 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 16 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> -0.14535 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 2.9473 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 18 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.0039 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.2608 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 20 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> -0.00544 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.4476 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 25 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> -0.052196 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 1.6165 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 30 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> -0.002558 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.12736 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 40 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> -0.001341 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.07868 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 50 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="smooth_D_slope">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> -0.001163 </cn>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="smooth_D_offset">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0.06978 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event>
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <ci> tao </ci>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="r4">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <ci> r4_0 </ci>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+    </listOfEvents>
+  </model>
+</sbml>
