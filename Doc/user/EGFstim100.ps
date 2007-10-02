@@ -1,0 +1,2421 @@
+%!PS-Adobe-2.0
+%%Creator: dot version 1.13 (v16) (Mon August 23, 2004)
+%%For: (ryang) Ryan Gutenkunst
+%%Title: EGFstim100
+%%Pages: (atend)
+%%BoundingBox: 35 35 577 391
+%%EndComments
+save
+%%BeginProlog
+/DotDict 200 dict def
+DotDict begin
+
+/setupLatin1 {
+mark
+/EncodingVector 256 array def
+ EncodingVector 0
+
+ISOLatin1Encoding 0 255 getinterval putinterval
+
+EncodingVector
+  dup 306 /AE
+  dup 301 /Aacute
+  dup 302 /Acircumflex
+  dup 304 /Adieresis
+  dup 300 /Agrave
+  dup 305 /Aring
+  dup 303 /Atilde
+  dup 307 /Ccedilla
+  dup 311 /Eacute
+  dup 312 /Ecircumflex
+  dup 313 /Edieresis
+  dup 310 /Egrave
+  dup 315 /Iacute
+  dup 316 /Icircumflex
+  dup 317 /Idieresis
+  dup 314 /Igrave
+  dup 334 /Udieresis
+  dup 335 /Yacute
+  dup 376 /thorn
+  dup 337 /germandbls
+  dup 341 /aacute
+  dup 342 /acircumflex
+  dup 344 /adieresis
+  dup 346 /ae
+  dup 340 /agrave
+  dup 345 /aring
+  dup 347 /ccedilla
+  dup 351 /eacute
+  dup 352 /ecircumflex
+  dup 353 /edieresis
+  dup 350 /egrave
+  dup 355 /iacute
+  dup 356 /icircumflex
+  dup 357 /idieresis
+  dup 354 /igrave
+  dup 360 /dcroat
+  dup 361 /ntilde
+  dup 363 /oacute
+  dup 364 /ocircumflex
+  dup 366 /odieresis
+  dup 362 /ograve
+  dup 365 /otilde
+  dup 370 /oslash
+  dup 372 /uacute
+  dup 373 /ucircumflex
+  dup 374 /udieresis
+  dup 371 /ugrave
+  dup 375 /yacute
+  dup 377 /ydieresis  
+
+% Set up ISO Latin 1 character encoding
+/starnetISO {
+        dup dup findfont dup length dict begin
+        { 1 index /FID ne { def }{ pop pop } ifelse
+        } forall
+        /Encoding EncodingVector def
+        currentdict end definefont
+} def
+/Times-Roman starnetISO def
+/Times-Italic starnetISO def
+/Times-Bold starnetISO def
+/Times-BoldItalic starnetISO def
+/Helvetica starnetISO def
+/Helvetica-Oblique starnetISO def
+/Helvetica-Bold starnetISO def
+/Helvetica-BoldOblique starnetISO def
+/Courier starnetISO def
+/Courier-Oblique starnetISO def
+/Courier-Bold starnetISO def
+/Courier-BoldOblique starnetISO def
+cleartomark
+} bind def
+
+%%BeginResource: procset graphviz 0 0
+/coord-font-family /Times-Roman def
+/default-font-family /Times-Roman def
+/coordfont coord-font-family findfont 8 scalefont def
+
+/InvScaleFactor 1.0 def
+/set_scale {
+	dup 1 exch div /InvScaleFactor exch def
+	dup scale
+} bind def
+
+% styles
+/solid { [] 0 setdash } bind def
+/dashed { [9 InvScaleFactor mul dup ] 0 setdash } bind def
+/dotted { [1 InvScaleFactor mul 6 InvScaleFactor mul] 0 setdash } bind def
+/invis {/fill {newpath} def /stroke {newpath} def /show {pop newpath} def} bind def
+/bold { 2 setlinewidth } bind def
+/filled { } bind def
+/unfilled { } bind def
+/rounded { } bind def
+/diagonals { } bind def
+
+% hooks for setting color 
+/nodecolor { sethsbcolor } bind def
+/edgecolor { sethsbcolor } bind def
+/graphcolor { sethsbcolor } bind def
+/nopcolor {pop pop pop} bind def
+
+/beginpage {	% i j npages
+	/npages exch def
+	/j exch def
+	/i exch def
+	/str 10 string def
+	npages 1 gt {
+		gsave
+			coordfont setfont
+			0 0 moveto
+			(\() show i str cvs show (,) show j str cvs show (\)) show
+		grestore
+	} if
+} bind def
+
+/set_font {
+	findfont exch
+	scalefont setfont
+} def
+
+% draw aligned label in bounding box aligned to current point
+/alignedtext {			% width adj text
+	/text exch def
+	/adj exch def
+	/width exch def
+	gsave
+		width 0 gt {
+			text stringwidth pop adj mul 0 rmoveto
+		} if
+		[] 0 setdash
+		text show
+	grestore
+} def
+
+/boxprim {				% xcorner ycorner xsize ysize
+		4 2 roll
+		moveto
+		2 copy
+		exch 0 rlineto
+		0 exch rlineto
+		pop neg 0 rlineto
+		closepath
+} bind def
+
+/ellipse_path {
+	/ry exch def
+	/rx exch def
+	/y exch def
+	/x exch def
+	matrix currentmatrix
+	newpath
+	x y translate
+	rx ry scale
+	0 0 1 0 360 arc
+	setmatrix
+} bind def
+
+/endpage { showpage } bind def
+/showpage { } def
+
+/layercolorseq
+	[	% layer color sequence - darkest to lightest
+		[0 0 0]
+		[.2 .8 .8]
+		[.4 .8 .8]
+		[.6 .8 .8]
+		[.8 .8 .8]
+	]
+def
+
+/layerlen layercolorseq length def
+
+/setlayer {/maxlayer exch def /curlayer exch def
+	layercolorseq curlayer 1 sub layerlen mod get
+	aload pop sethsbcolor
+	/nodecolor {nopcolor} def
+	/edgecolor {nopcolor} def
+	/graphcolor {nopcolor} def
+} bind def
+
+/onlayer { curlayer ne {invis} if } def
+
+/onlayers {
+	/myupper exch def
+	/mylower exch def
+	curlayer mylower lt
+	curlayer myupper gt
+	or
+	{invis} if
+} def
+
+/curlayer 0 def
+
+%%EndResource
+%%EndProlog
+%%BeginSetup
+14 default-font-family set_font
+1 setmiterlimit
+% /arrowlength 10 def
+% /arrowwidth 5 def
+
+% make sure pdfmark is harmless for PS-interpreters other than Distiller
+/pdfmark where {pop} {userdict /pdfmark /cleartomark load put} ifelse
+% make '<<' and '>>' safe on PS Level 1 devices
+/languagelevel where {pop languagelevel}{1} ifelse
+2 lt {
+    userdict (<<) cvn ([) cvn load put
+    userdict (>>) cvn ([) cvn load put
+} if
+
+%%EndSetup
+%%Page: 1 1
+%%PageBoundingBox: 36 36 577 391
+%%PageOrientation: Portrait
+gsave
+35 35 542 356 boxprim clip newpath
+36 36 translate
+0 0 1 beginpage
+0.2811 set_scale
+0 0 translate 0 rotate
+0.000 0.000 0.000 graphcolor
+14.00 /Times-Roman set_font
+
+%	EGF
+gsave 10 dict begin
+213 1242 27 18 ellipse_path
+stroke
+gsave 10 dict begin
+213 1237 moveto 26.4 -0.5 (EGF) alignedtext
+end grestore
+end grestore
+
+%	EGFBindingReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 329 1188 moveto
+193 1188 lineto
+193 1152 lineto
+329 1152 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+261 1165 moveto 121.3 -0.5 (EGFBindingReaction) alignedtext
+end grestore
+end grestore
+
+%	EGF -> EGFBindingReaction
+newpath 224 1225 moveto
+229 1217 236 1206 243 1196 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 246 1198 moveto
+249 1188 lineto
+240 1194 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 246 1198 moveto
+249 1188 lineto
+240 1194 lineto
+closepath
+stroke
+end grestore
+
+%	NGF
+gsave 10 dict begin
+1674 666 27 18 ellipse_path
+stroke
+gsave 10 dict begin
+1674 661 moveto 28.0 -0.5 (NGF) alignedtext
+end grestore
+end grestore
+
+%	NGFBindingReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1850 612 moveto
+1714 612 lineto
+1714 576 lineto
+1850 576 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1782 589 moveto 122.9 -0.5 (NGFBindingReaction) alignedtext
+end grestore
+end grestore
+
+%	NGF -> NGFBindingReaction
+newpath 1693 653 moveto
+1708 643 1728 629 1746 618 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1749 620 moveto
+1755 612 lineto
+1745 615 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1749 620 moveto
+1755 612 lineto
+1745 615 lineto
+closepath
+stroke
+end grestore
+
+%	freeEGFReceptor
+gsave 10 dict begin
+62 954 61 18 ellipse_path
+stroke
+gsave 10 dict begin
+62 949 moveto 98.7 -0.5 (freeEGFReceptor) alignedtext
+end grestore
+end grestore
+
+%	freeEGFReceptor -> EGFBindingReaction
+newpath 62 972 moveto
+63 991 66 1022 80 1044 curveto
+111 1091 167 1127 209 1148 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 207 1151 moveto
+218 1152 lineto
+210 1145 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 207 1151 moveto
+218 1152 lineto
+210 1145 lineto
+closepath
+stroke
+end grestore
+
+%	boundEGFReceptor
+gsave 10 dict begin
+307 1098 68 18 ellipse_path
+stroke
+gsave 10 dict begin
+307 1093 moveto 112.0 -0.5 (boundEGFReceptor) alignedtext
+end grestore
+end grestore
+
+%	EGFUnbindingReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 241 1044 moveto
+89 1044 lineto
+89 1008 lineto
+241 1008 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+165 1021 moveto 136.1 -0.5 (EGFUnbindingReaction) alignedtext
+end grestore
+end grestore
+
+%	boundEGFReceptor -> EGFUnbindingReaction
+newpath 275 1082 moveto
+256 1072 230 1060 209 1049 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 210 1046 moveto
+200 1044 lineto
+207 1052 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 210 1046 moveto
+200 1044 lineto
+207 1052 lineto
+closepath
+stroke
+end grestore
+
+%	SosActivationByEGFReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 446 1044 moveto
+260 1044 lineto
+260 1008 lineto
+446 1008 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+353 1021 moveto 171.9 -0.5 (SosActivationByEGFReaction) alignedtext
+end grestore
+end grestore
+
+%	boundEGFReceptor -> SosActivationByEGFReaction
+newpath 318 1080 moveto
+324 1071 330 1061 337 1051 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+339 1047 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	PI3KbyEGFRActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1505 756 moveto
+1301 756 lineto
+1301 720 lineto
+1505 720 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1403 733 moveto 188.2 -0.5 (PI3KbyEGFRActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	boundEGFReceptor -> PI3KbyEGFRActivationReaction
+newpath 376 1096 moveto
+611 1088 1369 1055 1369 954 curveto
+1369 954 1369 954 1369 882 curveto
+1369 840 1383 792 1393 764 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+1395 760 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	freeNGFReceptor
+gsave 10 dict begin
+1782 666 63 18 ellipse_path
+stroke
+gsave 10 dict begin
+1782 661 moveto 100.3 -0.5 (freeNGFReceptor) alignedtext
+end grestore
+end grestore
+
+%	freeNGFReceptor -> NGFBindingReaction
+newpath 1782 648 moveto
+1782 640 1782 631 1782 622 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1786 622 moveto
+1782 612 lineto
+1779 622 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1786 622 moveto
+1782 612 lineto
+1779 622 lineto
+closepath
+stroke
+end grestore
+
+%	boundNGFReceptor
+gsave 10 dict begin
+1820 810 69 18 ellipse_path
+stroke
+gsave 10 dict begin
+1820 805 moveto 113.5 -0.5 (boundNGFReceptor) alignedtext
+end grestore
+end grestore
+
+%	NGFUnbindingReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1844 756 moveto
+1692 756 lineto
+1692 720 lineto
+1844 720 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1768 733 moveto 137.7 -0.5 (NGFUnbindingReaction) alignedtext
+end grestore
+end grestore
+
+%	boundNGFReceptor -> NGFUnbindingReaction
+newpath 1807 792 moveto
+1801 784 1794 773 1787 764 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1790 762 moveto
+1781 756 lineto
+1784 766 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1790 762 moveto
+1781 756 lineto
+1784 766 lineto
+closepath
+stroke
+end grestore
+
+%	SosActivationByNGFReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 509 36 moveto
+321 36 lineto
+321 0 lineto
+509 0 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+415 13 moveto 173.4 -0.5 (SosActivationByNGFReaction) alignedtext
+end grestore
+end grestore
+
+%	boundNGFReceptor -> SosActivationByNGFReaction
+newpath 1853 794 moveto
+1876 759 1911 676 1911 666 curveto
+1911 666 1911 666 1911 162 curveto
+1911 92 855 38 517 22 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+513 22 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	C3GActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1673 756 moveto
+1523 756 lineto
+1523 720 lineto
+1673 720 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1598 733 moveto 135.3 -0.5 (C3GActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	boundNGFReceptor -> C3GActivationReaction
+newpath 1777 796 moveto
+1744 786 1699 770 1662 758 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+1658 757 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	SosInactive
+gsave 10 dict begin
+271 90 45 18 ellipse_path
+stroke
+gsave 10 dict begin
+271 85 moveto 65.3 -0.5 (SosInactive) alignedtext
+end grestore
+end grestore
+
+%	SosInactive -> SosActivationByEGFReaction
+newpath 239 103 moveto
+220 112 197 126 183 144 curveto
+156 177 153 191 153 234 curveto
+153 882 153 882 153 882 curveto
+153 945 220 984 276 1005 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 275 1008 moveto
+286 1008 lineto
+277 1002 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 275 1008 moveto
+286 1008 lineto
+277 1002 lineto
+closepath
+stroke
+end grestore
+
+%	SosInactive -> SosActivationByNGFReaction
+newpath 299 76 moveto
+319 66 347 52 370 40 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 371 43 moveto
+379 36 lineto
+368 37 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 371 43 moveto
+379 36 lineto
+368 37 lineto
+closepath
+stroke
+end grestore
+
+%	SosActive
+gsave 10 dict begin
+353 954 41 18 ellipse_path
+stroke
+gsave 10 dict begin
+353 949 moveto 57.6 -0.5 (SosActive) alignedtext
+end grestore
+end grestore
+
+%	SosDeactivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 349 180 moveto
+193 180 lineto
+193 144 lineto
+349 144 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+271 157 moveto 141.5 -0.5 (SosDeactivationReaction) alignedtext
+end grestore
+end grestore
+
+%	SosActive -> SosDeactivationReaction
+newpath 321 942 moveto
+274 923 191 879 191 810 curveto
+191 810 191 810 191 306 curveto
+191 260 222 215 246 188 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 249 190 moveto
+253 180 lineto
+244 185 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 249 190 moveto
+253 180 lineto
+244 185 lineto
+closepath
+stroke
+end grestore
+
+%	RasActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 757 900 moveto
+613 900 lineto
+613 864 lineto
+757 864 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+685 877 moveto 129.9 -0.5 (RasActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	SosActive -> RasActivationReaction
+newpath 390 946 moveto
+441 934 535 915 604 900 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+608 899 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	P90RskInactive
+gsave 10 dict begin
+303 378 56 18 ellipse_path
+stroke
+gsave 10 dict begin
+303 373 moveto 88.7 -0.5 (P90RskInactive) alignedtext
+end grestore
+end grestore
+
+%	P90RskActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 387 324 moveto
+219 324 lineto
+219 288 lineto
+387 288 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+303 301 moveto 152.4 -0.5 (P90RskActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	P90RskInactive -> P90RskActivationReaction
+newpath 303 360 moveto
+303 352 303 343 303 334 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 307 334 moveto
+303 324 lineto
+300 334 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 307 334 moveto
+303 324 lineto
+300 334 lineto
+closepath
+stroke
+end grestore
+
+%	P90RskActive
+gsave 10 dict begin
+292 234 52 18 ellipse_path
+stroke
+gsave 10 dict begin
+292 229 moveto 80.9 -0.5 (P90RskActive) alignedtext
+end grestore
+end grestore
+
+%	P90RskActive -> SosDeactivationReaction
+newpath 287 216 moveto
+284 207 281 197 278 188 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+277 184 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	RasInactive
+gsave 10 dict begin
+739 666 46 18 ellipse_path
+stroke
+gsave 10 dict begin
+739 661 moveto 66.1 -0.5 (RasInactive) alignedtext
+end grestore
+end grestore
+
+%	RasInactive -> RasActivationReaction
+newpath 725 683 moveto
+717 693 708 707 704 720 curveto
+688 765 685 820 684 854 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 681 854 moveto
+684 864 lineto
+688 854 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 681 854 moveto
+684 864 lineto
+688 854 lineto
+closepath
+stroke
+end grestore
+
+%	RasActive
+gsave 10 dict begin
+945 810 42 18 ellipse_path
+stroke
+gsave 10 dict begin
+945 805 moveto 58.3 -0.5 (RasActive) alignedtext
+end grestore
+end grestore
+
+%	RasDeactivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 871 756 moveto
+713 756 lineto
+713 720 lineto
+871 720 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+792 733 moveto 142.3 -0.5 (RasDeactivationReaction) alignedtext
+end grestore
+end grestore
+
+%	RasActive -> RasDeactivationReaction
+newpath 917 797 moveto
+895 786 865 772 839 760 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 841 757 moveto
+830 756 lineto
+838 763 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 841 757 moveto
+830 756 lineto
+838 763 lineto
+closepath
+stroke
+end grestore
+
+%	Raf1ByRasActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1077 756 moveto
+889 756 lineto
+889 720 lineto
+1077 720 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+983 733 moveto 173.4 -0.5 (Raf1ByRasActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	RasActive -> Raf1ByRasActivationReaction
+newpath 954 792 moveto
+959 783 965 773 970 763 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+972 759 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	PI3KbyRasActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1283 756 moveto
+1095 756 lineto
+1095 720 lineto
+1283 720 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1189 733 moveto 173.4 -0.5 (PI3KbyRasActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	RasActive -> PI3KbyRasActivationReaction
+newpath 980 800 moveto
+1016 790 1074 772 1120 758 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+1124 757 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	RasGapActive
+gsave 10 dict begin
+792 810 53 18 ellipse_path
+stroke
+gsave 10 dict begin
+792 805 moveto 81.6 -0.5 (RasGapActive) alignedtext
+end grestore
+end grestore
+
+%	RasGapActive -> RasDeactivationReaction
+newpath 792 792 moveto
+792 784 792 773 792 764 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+792 760 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	Raf1Inactive
+gsave 10 dict begin
+1210 378 49 18 ellipse_path
+stroke
+gsave 10 dict begin
+1210 373 moveto 72.3 -0.5 (Raf1Inactive) alignedtext
+end grestore
+end grestore
+
+%	Raf1Inactive -> Raf1ByRasActivationReaction
+newpath 1246 391 moveto
+1274 401 1311 418 1320 432 curveto
+1379 527 1371 611 1285 684 curveto
+1284 685 1174 704 1087 719 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1086 716 moveto
+1077 721 lineto
+1087 722 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1086 716 moveto
+1077 721 lineto
+1087 722 lineto
+closepath
+stroke
+end grestore
+
+%	Raf1Active
+gsave 10 dict begin
+983 666 45 18 ellipse_path
+stroke
+gsave 10 dict begin
+983 661 moveto 64.5 -0.5 (Raf1Active) alignedtext
+end grestore
+end grestore
+
+%	MekbyRaf1ActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 904 612 moveto
+714 612 lineto
+714 576 lineto
+904 576 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+809 589 moveto 175.7 -0.5 (MekbyRaf1ActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	Raf1Active -> MekbyRaf1ActivationReaction
+newpath 951 653 moveto
+925 642 889 628 861 615 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+857 613 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	Raf1byPPtaseDeactivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1090 468 moveto
+876 468 lineto
+876 432 lineto
+1090 432 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+983 445 moveto 199.8 -0.5 (Raf1byPPtaseDeactivationReaction) alignedtext
+end grestore
+end grestore
+
+%	Raf1Active -> Raf1byPPtaseDeactivationReaction
+newpath 983 648 moveto
+983 610 983 523 983 478 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 987 478 moveto
+983 468 lineto
+980 478 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 987 478 moveto
+983 468 lineto
+980 478 lineto
+closepath
+stroke
+end grestore
+
+%	Raf1ByAktDeactivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1310 468 moveto
+1110 468 lineto
+1110 432 lineto
+1310 432 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1210 445 moveto 185.8 -0.5 (Raf1ByAktDeactivationReaction) alignedtext
+end grestore
+end grestore
+
+%	Raf1Active -> Raf1ByAktDeactivationReaction
+newpath 1001 649 moveto
+1041 611 1137 519 1184 475 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1186 478 moveto
+1191 468 lineto
+1181 473 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1186 478 moveto
+1191 468 lineto
+1181 473 lineto
+closepath
+stroke
+end grestore
+
+%	BRafInactive
+gsave 10 dict begin
+1394 234 49 18 ellipse_path
+stroke
+gsave 10 dict begin
+1394 229 moveto 74.6 -0.5 (BRafInactive) alignedtext
+end grestore
+end grestore
+
+%	BRafByRap1ActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1567 468 moveto
+1367 468 lineto
+1367 432 lineto
+1567 432 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1467 445 moveto 184.3 -0.5 (BRafByRap1ActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	BRafInactive -> BRafByRap1ActivationReaction
+newpath 1414 251 moveto
+1425 260 1436 273 1443 288 curveto
+1464 331 1467 388 1468 422 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1465 422 moveto
+1468 432 lineto
+1472 422 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1465 422 moveto
+1468 432 lineto
+1472 422 lineto
+closepath
+stroke
+end grestore
+
+%	BRafActive
+gsave 10 dict begin
+1325 378 45 18 ellipse_path
+stroke
+gsave 10 dict begin
+1325 373 moveto 66.9 -0.5 (BRafActive) alignedtext
+end grestore
+end grestore
+
+%	MekbyBRafActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 858 324 moveto
+664 324 lineto
+664 288 lineto
+858 288 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+761 301 moveto 178.1 -0.5 (MekbyBRafActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	BRafActive -> MekbyBRafActivationReaction
+newpath 1291 366 moveto
+1283 364 1276 361 1268 360 curveto
+1131 331 970 317 866 310 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+862 310 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	BRafbyPPtaseDeactivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1434 324 moveto
+1216 324 lineto
+1216 288 lineto
+1434 288 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1325 301 moveto 202.2 -0.5 (BRafbyPPtaseDeactivationReaction) alignedtext
+end grestore
+end grestore
+
+%	BRafActive -> BRafbyPPtaseDeactivationReaction
+newpath 1325 360 moveto
+1325 352 1325 343 1325 334 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1329 334 moveto
+1325 324 lineto
+1322 334 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1329 334 moveto
+1325 324 lineto
+1322 334 lineto
+closepath
+stroke
+end grestore
+
+%	MekInactive
+gsave 10 dict begin
+761 378 47 18 ellipse_path
+stroke
+gsave 10 dict begin
+761 373 moveto 70.7 -0.5 (MekInactive) alignedtext
+end grestore
+end grestore
+
+%	MekInactive -> MekbyRaf1ActivationReaction
+newpath 772 396 moveto
+778 406 786 419 790 432 curveto
+803 477 807 532 809 566 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 806 566 moveto
+809 576 lineto
+813 566 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 806 566 moveto
+809 576 lineto
+813 566 lineto
+closepath
+stroke
+end grestore
+
+%	MekInactive -> MekbyBRafActivationReaction
+newpath 761 360 moveto
+761 352 761 343 761 334 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 765 334 moveto
+761 324 lineto
+758 334 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 765 334 moveto
+761 324 lineto
+758 334 lineto
+closepath
+stroke
+end grestore
+
+%	MekActive
+gsave 10 dict begin
+562 522 43 18 ellipse_path
+stroke
+gsave 10 dict begin
+562 517 moveto 63.0 -0.5 (MekActive) alignedtext
+end grestore
+end grestore
+
+%	ErkActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 525 468 moveto
+381 468 lineto
+381 432 lineto
+525 432 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+453 445 moveto 129.1 -0.5 (ErkActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	MekActive -> ErkActivationReaction
+newpath 539 507 moveto
+524 497 505 484 488 473 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+484 470 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	MekDeactivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 781 468 moveto
+619 468 lineto
+619 432 lineto
+781 432 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+700 445 moveto 146.9 -0.5 (MekDeactivationReaction) alignedtext
+end grestore
+end grestore
+
+%	MekActive -> MekDeactivationReaction
+newpath 589 508 moveto
+608 498 634 484 656 473 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 658 476 moveto
+665 468 lineto
+655 470 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 658 476 moveto
+665 468 lineto
+655 470 lineto
+closepath
+stroke
+end grestore
+
+%	ErkInactive
+gsave 10 dict begin
+524 234 45 18 ellipse_path
+stroke
+gsave 10 dict begin
+524 229 moveto 65.3 -0.5 (ErkInactive) alignedtext
+end grestore
+end grestore
+
+%	ErkInactive -> ErkActivationReaction
+newpath 502 250 moveto
+491 260 479 273 472 288 curveto
+451 331 450 388 451 422 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 448 422 moveto
+451 432 lineto
+455 422 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 448 422 moveto
+451 432 lineto
+455 422 lineto
+closepath
+stroke
+end grestore
+
+%	ErkActive
+gsave 10 dict begin
+522 378 41 18 ellipse_path
+stroke
+gsave 10 dict begin
+522 373 moveto 57.5 -0.5 (ErkActive) alignedtext
+end grestore
+end grestore
+
+%	ErkDeactivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 637 324 moveto
+481 324 lineto
+481 288 lineto
+637 288 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+559 301 moveto 141.5 -0.5 (ErkDeactivationReaction) alignedtext
+end grestore
+end grestore
+
+%	ErkActive -> ErkDeactivationReaction
+newpath 531 360 moveto
+535 352 540 342 545 333 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 548 334 moveto
+550 324 lineto
+542 331 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 548 334 moveto
+550 324 lineto
+542 331 lineto
+closepath
+stroke
+end grestore
+
+%	ErkActive -> P90RskActivationReaction
+newpath 489 367 moveto
+456 357 406 340 366 327 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+362 325 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	PI3KInactive
+gsave 10 dict begin
+1223 810 49 18 ellipse_path
+stroke
+gsave 10 dict begin
+1223 805 moveto 74.6 -0.5 (PI3KInactive) alignedtext
+end grestore
+end grestore
+
+%	PI3KInactive -> PI3KbyEGFRActivationReaction
+newpath 1257 796 moveto
+1283 786 1319 772 1349 760 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1350 763 moveto
+1358 756 lineto
+1347 757 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1350 763 moveto
+1358 756 lineto
+1347 757 lineto
+closepath
+stroke
+end grestore
+
+%	PI3KInactive -> PI3KbyRasActivationReaction
+newpath 1215 792 moveto
+1211 784 1207 774 1202 765 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1205 764 moveto
+1198 756 lineto
+1199 767 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1205 764 moveto
+1198 756 lineto
+1199 767 lineto
+closepath
+stroke
+end grestore
+
+%	PI3KActive
+gsave 10 dict begin
+1408 666 45 18 ellipse_path
+stroke
+gsave 10 dict begin
+1408 661 moveto 66.9 -0.5 (PI3KActive) alignedtext
+end grestore
+end grestore
+
+%	AktActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1302 612 moveto
+1158 612 lineto
+1158 576 lineto
+1302 576 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1230 589 moveto 129.9 -0.5 (AktActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	PI3KActive -> AktActivationReaction
+newpath 1376 653 moveto
+1349 642 1312 627 1282 615 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+1279 614 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	AktInactive
+gsave 10 dict begin
+1230 666 46 18 ellipse_path
+stroke
+gsave 10 dict begin
+1230 661 moveto 66.1 -0.5 (AktInactive) alignedtext
+end grestore
+end grestore
+
+%	AktInactive -> AktActivationReaction
+newpath 1230 648 moveto
+1230 640 1230 631 1230 622 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1234 622 moveto
+1230 612 lineto
+1227 622 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1234 622 moveto
+1230 612 lineto
+1227 622 lineto
+closepath
+stroke
+end grestore
+
+%	AktActive
+gsave 10 dict begin
+1216 522 42 18 ellipse_path
+stroke
+gsave 10 dict begin
+1216 517 moveto 58.3 -0.5 (AktActive) alignedtext
+end grestore
+end grestore
+
+%	AktActive -> Raf1ByAktDeactivationReaction
+newpath 1214 504 moveto
+1213 496 1212 485 1212 476 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+1212 472 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	C3GInactive
+gsave 10 dict begin
+1598 810 48 18 ellipse_path
+stroke
+gsave 10 dict begin
+1598 805 moveto 71.5 -0.5 (C3GInactive) alignedtext
+end grestore
+end grestore
+
+%	C3GInactive -> C3GActivationReaction
+newpath 1598 792 moveto
+1598 784 1598 775 1598 766 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1602 766 moveto
+1598 756 lineto
+1595 766 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1602 766 moveto
+1598 756 lineto
+1595 766 lineto
+closepath
+stroke
+end grestore
+
+%	C3GActive
+gsave 10 dict begin
+1584 666 44 18 ellipse_path
+stroke
+gsave 10 dict begin
+1584 661 moveto 63.8 -0.5 (C3GActive) alignedtext
+end grestore
+end grestore
+
+%	Rap1ActivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1661 612 moveto
+1507 612 lineto
+1507 576 lineto
+1661 576 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1584 589 moveto 138.4 -0.5 (Rap1ActivationReaction) alignedtext
+end grestore
+end grestore
+
+%	C3GActive -> Rap1ActivationReaction
+newpath 1584 648 moveto
+1584 640 1584 629 1584 620 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+1584 616 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	Rap1Inactive
+gsave 10 dict begin
+1723 378 49 18 ellipse_path
+stroke
+gsave 10 dict begin
+1723 373 moveto 74.6 -0.5 (Rap1Inactive) alignedtext
+end grestore
+end grestore
+
+%	Rap1Inactive -> Rap1ActivationReaction
+newpath 1739 395 moveto
+1747 405 1756 418 1760 432 curveto
+1774 478 1777 503 1745 540 curveto
+1734 552 1702 564 1670 573 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1669 570 moveto
+1660 576 lineto
+1671 576 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1669 570 moveto
+1660 576 lineto
+1671 576 lineto
+closepath
+stroke
+end grestore
+
+%	Rap1Active
+gsave 10 dict begin
+1564 522 45 18 ellipse_path
+stroke
+gsave 10 dict begin
+1564 517 moveto 66.9 -0.5 (Rap1Active) alignedtext
+end grestore
+end grestore
+
+%	Rap1DeactivationReaction
+gsave 10 dict begin
+0.000 1.000 1.000 nodecolor
+newpath 1750 468 moveto
+1586 468 lineto
+1586 432 lineto
+1750 432 lineto
+closepath
+stroke
+gsave 10 dict begin
+0.000 0.000 0.000 nodecolor
+1668 445 moveto 150.8 -0.5 (Rap1DeactivationReaction) alignedtext
+end grestore
+end grestore
+
+%	Rap1Active -> Rap1DeactivationReaction
+newpath 1587 506 moveto
+1601 497 1618 485 1634 474 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1636 477 moveto
+1642 468 lineto
+1632 471 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1636 477 moveto
+1642 468 lineto
+1632 471 lineto
+closepath
+stroke
+end grestore
+
+%	Rap1Active -> BRafByRap1ActivationReaction
+newpath 1542 506 moveto
+1529 496 1512 484 1498 473 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+1494 470 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	RapGapActive
+gsave 10 dict begin
+1682 522 54 18 ellipse_path
+stroke
+gsave 10 dict begin
+1682 517 moveto 83.2 -0.5 (RapGapActive) alignedtext
+end grestore
+end grestore
+
+%	RapGapActive -> Rap1DeactivationReaction
+newpath 1678 504 moveto
+1676 495 1674 485 1672 476 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+1671 472 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	PP2AActive
+gsave 10 dict begin
+690 522 48 18 ellipse_path
+stroke
+gsave 10 dict begin
+690 517 moveto 70.0 -0.5 (PP2AActive) alignedtext
+end grestore
+end grestore
+
+%	PP2AActive -> MekDeactivationReaction
+newpath 693 504 moveto
+694 496 695 485 696 476 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+697 472 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	PP2AActive -> ErkDeactivationReaction
+newpath 660 508 moveto
+643 499 623 485 610 468 curveto
+602 457 578 375 566 332 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+565 328 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	Raf1PPtase
+gsave 10 dict begin
+896 522 45 18 ellipse_path
+stroke
+gsave 10 dict begin
+896 517 moveto 64.6 -0.5 (Raf1PPtase) alignedtext
+end grestore
+end grestore
+
+%	Raf1PPtase -> Raf1byPPtaseDeactivationReaction
+newpath 916 506 moveto
+927 496 942 484 955 473 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+958 471 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	Raf1PPtase -> BRafbyPPtaseDeactivationReaction
+newpath 881 505 moveto
+867 485 849 454 866 432 curveto
+907 377 1086 341 1208 321 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+1212 320 4 4 ellipse_path
+fill
+0.000 0.000 0.000 edgecolor
+end grestore
+
+%	EGFBindingReaction -> boundEGFReceptor
+newpath 273 1152 moveto
+278 1144 285 1134 291 1124 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 294 1126 moveto
+296 1116 lineto
+288 1123 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 294 1126 moveto
+296 1116 lineto
+288 1123 lineto
+closepath
+stroke
+end grestore
+
+%	EGFUnbindingReaction -> EGF
+newpath 165 1044 moveto
+165 1075 168 1137 184 1188 curveto
+187 1198 192 1208 197 1216 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 194 1218 moveto
+202 1225 lineto
+200 1215 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 194 1218 moveto
+202 1225 lineto
+200 1215 lineto
+closepath
+stroke
+end grestore
+
+%	EGFUnbindingReaction -> freeEGFReceptor
+newpath 139 1008 moveto
+125 999 109 987 95 977 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 96 974 moveto
+86 971 lineto
+92 979 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 96 974 moveto
+86 971 lineto
+92 979 lineto
+closepath
+stroke
+end grestore
+
+%	NGFBindingReaction -> boundNGFReceptor
+newpath 1819 612 moveto
+1832 621 1846 633 1854 648 curveto
+1875 690 1867 709 1854 756 curveto
+1851 766 1846 775 1841 783 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1838 782 moveto
+1835 792 lineto
+1843 786 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1838 782 moveto
+1835 792 lineto
+1843 786 lineto
+closepath
+stroke
+end grestore
+
+%	NGFUnbindingReaction -> NGF
+newpath 1744 720 moveto
+1731 710 1714 697 1700 686 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1702 683 moveto
+1692 680 lineto
+1698 689 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1702 683 moveto
+1692 680 lineto
+1698 689 lineto
+closepath
+stroke
+end grestore
+
+%	NGFUnbindingReaction -> freeNGFReceptor
+newpath 1772 720 moveto
+1773 712 1775 703 1777 694 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1780 694 moveto
+1779 684 lineto
+1774 693 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1780 694 moveto
+1779 684 lineto
+1774 693 lineto
+closepath
+stroke
+end grestore
+
+%	SosActivationByEGFReaction -> SosActive
+newpath 353 1008 moveto
+353 1000 353 991 353 982 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 357 982 moveto
+353 972 lineto
+350 982 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 357 982 moveto
+353 972 lineto
+350 982 lineto
+closepath
+stroke
+end grestore
+
+%	SosActivationByNGFReaction -> SosActive
+newpath 415 36 moveto
+415 64 415 117 415 162 curveto
+415 234 415 234 415 234 curveto
+415 364 353 391 353 522 curveto
+353 810 353 810 353 810 curveto
+353 850 353 897 353 926 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 350 926 moveto
+353 936 lineto
+357 926 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 350 926 moveto
+353 936 lineto
+357 926 lineto
+closepath
+stroke
+end grestore
+
+%	SosDeactivationReaction -> SosInactive
+newpath 271 144 moveto
+271 136 271 127 271 118 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 275 118 moveto
+271 108 lineto
+268 118 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 275 118 moveto
+271 108 lineto
+268 118 lineto
+closepath
+stroke
+end grestore
+
+%	RasActivationReaction -> RasActive
+newpath 750 864 moveto
+797 851 859 834 900 823 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 901 826 moveto
+910 820 lineto
+899 820 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 901 826 moveto
+910 820 lineto
+899 820 lineto
+closepath
+stroke
+end grestore
+
+%	RasDeactivationReaction -> RasInactive
+newpath 779 720 moveto
+773 712 765 701 758 692 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 761 690 moveto
+752 684 lineto
+755 694 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 761 690 moveto
+752 684 lineto
+755 694 lineto
+closepath
+stroke
+end grestore
+
+%	Raf1ByRasActivationReaction -> Raf1Active
+newpath 983 720 moveto
+983 712 983 703 983 694 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 987 694 moveto
+983 684 lineto
+980 694 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 987 694 moveto
+983 684 lineto
+980 694 lineto
+closepath
+stroke
+end grestore
+
+%	MekbyRaf1ActivationReaction -> MekActive
+newpath 747 576 moveto
+704 564 647 547 608 536 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 609 533 moveto
+598 533 lineto
+607 539 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 609 533 moveto
+598 533 lineto
+607 539 lineto
+closepath
+stroke
+end grestore
+
+%	MekbyBRafActivationReaction -> MekActive
+newpath 733 324 moveto
+701 346 646 387 610 432 curveto
+594 451 581 476 573 495 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 570 493 moveto
+569 504 lineto
+576 496 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 570 493 moveto
+569 504 lineto
+576 496 lineto
+closepath
+stroke
+end grestore
+
+%	ErkActivationReaction -> ErkActive
+newpath 470 432 moveto
+479 423 490 412 499 402 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 501 405 moveto
+506 395 lineto
+496 400 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 501 405 moveto
+506 395 lineto
+496 400 lineto
+closepath
+stroke
+end grestore
+
+%	MekDeactivationReaction -> MekInactive
+newpath 715 432 moveto
+722 423 731 413 739 404 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 742 406 moveto
+746 396 lineto
+737 401 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 742 406 moveto
+746 396 lineto
+737 401 lineto
+closepath
+stroke
+end grestore
+
+%	ErkDeactivationReaction -> ErkInactive
+newpath 550 288 moveto
+546 280 542 270 537 261 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 540 260 moveto
+533 252 lineto
+534 263 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 540 260 moveto
+533 252 lineto
+534 263 lineto
+closepath
+stroke
+end grestore
+
+%	Raf1byPPtaseDeactivationReaction -> Raf1Inactive
+newpath 1040 432 moveto
+1077 420 1127 404 1163 393 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1164 396 moveto
+1173 390 lineto
+1162 390 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1164 396 moveto
+1173 390 lineto
+1162 390 lineto
+closepath
+stroke
+end grestore
+
+%	P90RskActivationReaction -> P90RskActive
+newpath 300 288 moveto
+299 280 297 271 296 262 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 299 262 moveto
+295 252 lineto
+293 262 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 299 262 moveto
+295 252 lineto
+293 262 lineto
+closepath
+stroke
+end grestore
+
+%	PI3KbyEGFRActivationReaction -> PI3KActive
+newpath 1404 720 moveto
+1405 712 1405 703 1406 694 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1409 694 moveto
+1407 684 lineto
+1403 694 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1409 694 moveto
+1407 684 lineto
+1403 694 lineto
+closepath
+stroke
+end grestore
+
+%	PI3KbyRasActivationReaction -> PI3KActive
+newpath 1244 720 moveto
+1280 708 1328 692 1363 681 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1364 684 moveto
+1373 678 lineto
+1362 678 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1364 684 moveto
+1373 678 lineto
+1362 678 lineto
+closepath
+stroke
+end grestore
+
+%	AktActivationReaction -> AktActive
+newpath 1226 576 moveto
+1225 568 1223 559 1221 550 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1224 549 moveto
+1219 540 lineto
+1218 550 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1224 549 moveto
+1219 540 lineto
+1218 550 lineto
+closepath
+stroke
+end grestore
+
+%	Raf1ByAktDeactivationReaction -> Raf1Inactive
+newpath 1210 432 moveto
+1210 424 1210 415 1210 406 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1214 406 moveto
+1210 396 lineto
+1207 406 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1214 406 moveto
+1210 396 lineto
+1207 406 lineto
+closepath
+stroke
+end grestore
+
+%	C3GActivationReaction -> C3GActive
+newpath 1594 720 moveto
+1593 712 1591 703 1589 694 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1592 693 moveto
+1587 684 lineto
+1586 694 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1592 693 moveto
+1587 684 lineto
+1586 694 lineto
+closepath
+stroke
+end grestore
+
+%	Rap1ActivationReaction -> Rap1Active
+newpath 1579 576 moveto
+1577 568 1574 559 1572 550 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1575 549 moveto
+1569 540 lineto
+1569 551 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1575 549 moveto
+1569 540 lineto
+1569 551 lineto
+closepath
+stroke
+end grestore
+
+%	Rap1DeactivationReaction -> Rap1Inactive
+newpath 1682 432 moveto
+1688 423 1696 413 1704 404 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1707 406 moveto
+1710 396 lineto
+1701 402 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1707 406 moveto
+1710 396 lineto
+1701 402 lineto
+closepath
+stroke
+end grestore
+
+%	BRafByRap1ActivationReaction -> BRafActive
+newpath 1431 432 moveto
+1410 422 1384 408 1362 397 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1363 394 moveto
+1353 392 lineto
+1360 400 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1363 394 moveto
+1353 392 lineto
+1360 400 lineto
+closepath
+stroke
+end grestore
+
+%	BRafbyPPtaseDeactivationReaction -> BRafInactive
+newpath 1342 288 moveto
+1351 279 1361 268 1371 258 curveto
+stroke
+gsave 10 dict begin
+solid
+1 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 1373 261 moveto
+1378 251 lineto
+1368 256 lineto
+closepath
+fill
+0.000 0.000 0.000 edgecolor
+newpath 1373 261 moveto
+1378 251 lineto
+1368 256 lineto
+closepath
+stroke
+end grestore
+endpage
+showpage
+grestore
+%%PageTrailer
+%%EndPage: 1
+%%Trailer
+%%Pages: 1
+end
+restore
+%%EOF
