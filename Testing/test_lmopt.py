@@ -23,7 +23,7 @@ class test_lmopt(unittest.TestCase):
             j,jtj = m.GetJandJtJInLogParameters(x)
             jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.float_)
             for resind, resname in enumerate(m.residuals.keys()) :
-                jarray[resind,:] = j[resname]
+                jarray[resind,:] = j.get(resname)
             return jarray
         
         #print "\n Initial cost", m.cost(m.params)
@@ -47,7 +47,7 @@ class test_lmopt(unittest.TestCase):
             j,jtj = m.GetJandJtJInLogParameters(x)
             jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.float_)
             for resind, resname in enumerate(m.residuals.keys()) :
-                jarray[resind,:] = j[resname]
+                jarray[resind,:] = j.get(resname)
             resvals = m.res_log_params(x)
             grad = scipy.dot(scipy.transpose(jarray),resvals)
             return grad,jtj
@@ -73,7 +73,7 @@ class test_lmopt(unittest.TestCase):
             j,jtj = m.GetJandJtJInLogParameters(x)
             jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.float_)
             for resind, resname in enumerate(m.residuals.keys()) :
-                jarray[resind,:] = j[resname]
+                jarray[resind,:] = j.get(resname)
             return jarray
         
         #print "\n Initial cost", m.cost(m.params)
