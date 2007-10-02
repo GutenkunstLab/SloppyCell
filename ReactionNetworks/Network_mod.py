@@ -533,12 +533,6 @@ class Network:
         self.stochastic = {'seed':seed, 'reseed':True,
                            'fill_dt':fill_dt, 'rmsd':rmsd}
 
-    def set_deterministic(self):
-        """
-        Disables the stochastic simulation of network dynamics.
-        """
-        if hasattr(self, 'stochastic'): delattr(self, 'stochastic')
-
     def set_periodic(self, period, xtol=0.001, maxfun=100, phase=None,
                      minVel=None, level=2, log=False):
         """
