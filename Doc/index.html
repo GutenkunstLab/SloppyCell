@@ -1,0 +1,82 @@
+<html>
+<head>
+<title>SloppyCell</title>
+</head>
+<body>
+<center><h1>SloppyCell</h1></center>
+
+
+<p>SloppyCell is a software environment for simulation and analysis of biomolecular networks developed by the groups of <a href="http://www.lassp.cornell.edu/sethna/">Jim Sethna</a> and <a href="http://www.tc.cornell.edu/~myers/">Chris Myers</a> at <a href="http://www.cornell.edu">Cornell University</a>.</p>
+
+<p>Examples of models developed in SloppyCell can be found at <a href="http://www.lassp.cornell.edu/sethna/GeneDynamics/">Jim Sethna's Gene Dynamics page</a>.</p>
+
+<h2>Features</h2>
+<ul>
+<li>support for much of the <a href="http://sbml.org">Systems Biology Markup Language (SBML)</a> level 2 version 3</li>
+<li>deterministic and stochastic dynamical simulations</li>
+<li>sensitivity analysis without finite-difference derviatives</li>
+<li>optimization methods to fit parameters to experimental data</li>
+<li>simulation of multiple related networks sharing common parameters</li>
+<li>stochastic Bayesian analysis of parameter space to estimate error bars
+associated with optimal fits</li>
+</ul>
+
+<h2>News</h2>
+<blockquote>July 21st, 2007: <strong>SloppyCell 0.81 released</strong>
+<blockquote>
+<p>Additions include support for scale factor priors, a new Monte Carlo
+algorithm that recalculates the sampling matrix each step, and numerous
+bug fixes.</p> 
+
+<p>See our <a href="http://sourceforge.net/project/showfiles.php?group_id=140498">download page</a>.</p>
+</blockquote>
+</blockquote>
+
+<blockquote>May 9th, 2007: <strong>SloppyCell 0.8 released!</strong>
+<blockquote>
+<p>SloppyCell continues to evolve rapidly.</p>
+
+<p>This release sees very signficant speed increases.
+We've added support for automatically building C versions of all the
+integration functions. In testing on various networks, this yields a
+speed up of between a factor of 5 and 20 depending on the application.
+Additionally, network compilation and sensitivity integration are faster.</p>
+
+<p>Finally, algebraic rules are now fully supported, and we have moved
+completely to using DASKR as our integrator.</p>
+
+<p>See our <a href="http://sourceforge.net/project/showfiles.php?group_id=140498">download page</a>.</p>
+</blockquote>
+</blockquote>
+
+<blockquote>January 23rd, 2007: <strong>SloppyCell 0.6 released!</strong>
+<blockquote>
+<p>Lots of work over the past few months. The parallel processing code has
+been completely rewritten. Preliminary support for algebraic rules is also
+in. (Many thanks to Jordan Atlas for his help.)</p>
+
+<p>Grab it from our <a href="http://sourceforge.net/project/showfiles.php?group_id=140498">download page</a>.</p>
+</blockquote>
+</blockquote>
+
+<h2>Documentation</h2>
+<ul>
+<li><a href="user/user.pdf">User documentation</a> (pdf)</li>
+<li><a href="devel/devel.pdf">Developer documentation</a> (pdf)</li>
+<li><a href="api/SloppyCell.ReactionNetworks-module.html">API documentation</a> generated API_DOC_GEN_DATE</li>
+<li><a href="http://lists.sourceforge.net/lists/listinfo/sloppycell-users">Mailing list</a></li>
+</ul>
+
+<h2>Miscellaneous</h2>
+<ul>
+<li>Sourceforge <a href="http://www.sourceforge.net/projects/sloppycell/">project page</a></li>
+<li>CVS snapshot (<a href="SloppyCell-CVS.tar.gz">.tar.gz</a>, <a href="SloppyCell-CVS.zip">.zip</a>) generated CVS_GEN_DATE</li>
+<li>Win32 binary for integration library (<a href="_daskr.pyd">_daskr.pyd</a>)</li>
+<li><strong>Reference:</strong><br>
+Ryan N. Gutenkunst, Jordan C. Atlas, Fergal P. Casey, Robert S. Kuczenski, Joshua J. Waterfall, Chris R. Myers, and James P. Sethna.<br>
+SloppyCell. <a href="http://sloppycell.sourceforge.net/">http://sloppycell.sourceforge.net/</a> (2007)</li>
+</ul>
+
+<p>$Date$</p>
+</body>
+</html>
