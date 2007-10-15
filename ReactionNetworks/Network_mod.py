@@ -56,10 +56,8 @@ class Network:
     _dynamic_event_methods = ['_make_root_func']
     
     # These are-predefined functions we want in our working namespace
-    def two_arg_log(x, base=math.e):
-        return math.log(x)/math.log(base)
-    _common_namespace = {'log': two_arg_log,
-                         'log10': math.log10,
+    _common_namespace = {'log': scipy.log,
+                         'log10': scipy.log10,
                          'exp': math.exp,
                          'cos': math.cos,
                          'sin': math.sin,
