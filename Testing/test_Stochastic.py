@@ -15,7 +15,9 @@ base_net.addReaction('x->y', kineticLaw='A*x', stoichiometry={'x':-1, 'y':+1})
 base_net.add_parameter('B')
 base_net.addReaction('y->x', kineticLaw='B*y', stoichiometry={'y':-1, 'x':+1})
 
-times = scipy.arange(0., 5., .1)
+base_net.add_event('event 0', 'gt(time, 5)', {'x': 0.0, 'y': 1000.0})
+
+times = scipy.arange(0., 10.05, .1)
 params = [1., 1.]
 
 class test_Events(unittest.TestCase):
@@ -23,20 +25,25 @@ class test_Events(unittest.TestCase):
         """Test that the stochastic integrator's basic functions work"""
         net = base_net.copy('test_basic')
         net.set_deterministic()
-        resDt = net.calculate({'x':times}, params)
-
+        net.Calculate({'x':times}, params)
+        trajDt = net.trajectory.time_slice(0.,10.)
+        
         net.set_stochastic()
-        resSt = net.calculate({'x':times}, params)
-
+        net.Calculate({'x':times}, params)
+        trajSt = net.trajectory.time_slice(0.,10.)
+        
         import pylab
         pylab.figure()
-        pylab.plot(times, [resDt['x'][_] for _ in times], 'b--')
-        pylab.plot(times, [resSt['x'][_] for _ in times], 'b-')
+        pylab.plot(trajSt.get_times(), trajSt.get_var_traj('x'), 'b-',\
+                   label='Stochastic')
+        pylab.plot(trajDt.get_times(), trajDt.get_var_traj('x'), 'b--',\
+                   label='Deterministic')
         
         pylab.xlabel('Time')
         pylab.ylabel('Number of Molecules')
         pylab.title('Stochastic Test - Do the trajectories look similar?')
-
+        pylab.legend(loc=0)
+        
     def test_RngSeed(self):
         """Test that the reseeding the same RNG seed produces identical results"""
         net = base_net.copy('test_RngSeed')
@@ -99,7 +106,7 @@ class test_Events(unittest.TestCase):
         net.rateRules.remove_by_key('x')
 
         # Events
-        net.add_event('event 1', 'gt(time, 5)', {'A': 2})
+        net.add_event('event 1', 'gt(y, 5)', {'A': 2})
         passed(net, 'an event')
         net.remove_component('event 1')
         

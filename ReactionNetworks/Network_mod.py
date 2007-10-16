@@ -473,19 +473,25 @@ class Network:
         """
         set_stochastic enables the stochastic simulation of the network
         dynamics (instead of deterministic integration). This will discretize
-        the dynamic variables in the model (making them integrers). This
-        simulation does not implement events*, algebraic rules**, or rates
-        rules**. We use a kinetic MC algorithm (aka Gillespie algorithm). The
-        complementary function 'set_deterministic' may be used to disable
-        stochastic simulations of network dynamics. Please note the results
-        returned for exactly the times asked are interpolations between the
-        surrounding points, thus concentrations may be floats instead of
-        integers.
+        the dynamic variables in the model (making them integers). This
+        simulation has only limited support for events*, and does not
+        implement algebraic rules** or rates rules**. We use a kinetic MC
+        algorithm (aka Gillespie algorithm). The complementary function
+        'set_deterministic' may be used to disable stochastic simulations of
+        network dynamics. Please note the results returned for exactly the
+        times asked are interpolations between the surrounding points, thus
+        concentrations may be floats instead of integers.
 
-        * No exact way exists to implement events in a stochastic simulation,
-          although a possible future implementation would be to execute
-          immediately after the event was triggered (would need a method of
-          tracking how close the executions were).
+        * Since there is no exact way to implement events in a stochastic
+          simulation, only a very primative method is present. This algorithm
+          currently only supports time triggered events (more complex triggers
+          may be added in the future) and fires them as soon after that time
+          is passed as possible. Please note that it is the users
+          responsibility to ensure the events are firing in a sensible
+          way. Non-sensible output will arise when the time steps are too
+          large and events are not fired near their target trigger times. The
+          fired times are logged in the logger at the debug level.
+        
         ** Possible future implementation, although parsing rate rules have the
            possible issue of creating negative reaction rates (which have no
            physical meaning). Add reactions instead of rate rules for stochastic
@@ -531,6 +537,10 @@ class Network:
         self.stochastic = {'seed':seed, 'reseed':True,
                            'fill_dt':fill_dt, 'rmsd':rmsd}
 
+        if hasattr(self, 'periodic'):
+            logger.warn('Cannot find periodic solutions with a stochastic solution, disabling periodic solution finding')
+            delattr(self, 'periodic')
+            
     def set_periodic(self, period, xtol=0.001, maxfun=100, phase=None,
                      minVel=None, level=2, log=False):
         """
@@ -568,7 +578,10 @@ class Network:
                          'level':int(level), 'log':log, 'stable': False,
                          'feval': 0, 'period': period, 'minVel': minVel,
                          'stableIC': {}}
-
+        if hasattr(self, 'stochastic'):
+            logger.warn('Cannot find periodic solutions with a stochastic solution, switching to dynamic solution')
+            self.set_deterministic()
+            
     def _iter_limit_cycle(self, params, varNames, s0):
         """
         Internal function used to integrate a trajectory and find the point
@@ -875,8 +888,16 @@ class Network:
             times = list(times)
             times.sort()
 
-        if times[0]==0.:
+        if times[0]==0.: # Only reset if specifically requested (not by event)
             self.resetDynamicVariables()
+
+        # Add in the event times
+        times = sets.Set(times)
+        times.union_update([_.triggeringTime for _ in self.events])
+        times = list(times)
+        times.sort()
+        
+        if times[0]==0.:
             times = times[1:]
             
         if params is not None: self.update_optimizable_vars(params)
@@ -897,6 +918,13 @@ class Network:
         trajectory = Trajectory_mod.Trajectory(self, holds_dt=0, const_vals=cv)
         trajectory.appendFromODEINT(scipy.array([0.0]), scipy.array([dv]))
 
+        # VERY simple event handling...
+        events_occurred = []
+        pendingEvents = {}
+        for event in self.events.values():
+            pendingEvents.setdefault(event.triggeringTime, [])
+            pendingEvents[event.triggeringTime].append(event)
+        
         t, tInd = 0.0, 0
         while t < times[-1]:
             # Get the next chunk
@@ -905,19 +933,35 @@ class Network:
                 t, dv, cv, self.stochastic['rmsd'], times[tInd])
             self.stochastic['reseed']=False
 
-            trajectory.appendFromODEINT(scipy.array([tout]),
-                                        scipy.array([dvout]))
+            # Fill in trajectory and execute any events that occurred
+            while tInd<len(times) and t >= times[tInd]:
+                # Extrapolate the dynamic vars, if not the stop_time requested
+                if times[tInd]!=tout:
+                    dt = t - trajectory.timepoints[-1]
+                    dvout = trajectory.values[-1]+(dv-trajectory.values[-1])/\
+                            dt*(times[tInd] - trajectory.timepoints[-1])
 
-            if t>=times[tInd]: tInd +=1
-
-            if t==tout: continue
-
-            while tInd<len(times) and times[tInd]<=t: # Fill in the trajectory
-                dt = t - trajectory.timepoints[-1]
-                val = trajectory.values[-1]+(dv - trajectory.values[-1])/\
-                      dt*(times[tInd] - trajectory.timepoints[-1])
                 trajectory.appendFromODEINT(scipy.array([times[tInd]]),
-                                            scipy.array([val]))
+                                            scipy.array([dvout]))
+
+                # Is this where an event fires?
+                if times[tInd] in pendingEvents.keys():
+                    events = pendingEvents.pop(times[tInd])
+                    for event in events:
+                        # Execute twice b/c we want to update the dvout at
+                        # the fired time in addition to updating the dv for
+                        # any future extrapolations. This is really a product
+                        # of not being able to ensure we haven't overstepped
+                        # our desired timepoint and crossed the next.
+                        dvout = self.executeEvent(event, times[tInd], dvout, \
+                                                  dvout, times[tInd])
+                        dv = self.executeEvent(event, times[tInd], dvout, dv, t)
+                        events_occurred.append(event)
+                        logger.debug('Executed event %s in net %s at t=%s'%\
+                                     (event.id, self.id, t))
+                    trajectory.appendFromODEINT(scipy.array([times[tInd]]),
+                                                scipy.array([dvout]))
+                    
                 tInd += 1
 
             if trajectory.timepoints[-1]<t:
@@ -1977,8 +2021,10 @@ class Network:
             err_body.append('# No reactions present.')
         if len(self.rateRules) > 0:
             err_body.append('# %i rate rules are present'%len(self.rateRules))
-        if len(self.events) > 0:
-            err_body.append('# %i events are present'%len(self.events))
+        if len([_ for _ in self.events if not _.timeTriggered]) > 0:
+            err_body.append('# %i non-time-triggered events are present'%\
+                            len([_ for _ in self.events \
+                                 if not _.timeTriggered]))
         if len(self.algebraicRules) > 0:
             err_body.append('# %i algebraic rules are present'%
                             len(self.algebraicRules))
