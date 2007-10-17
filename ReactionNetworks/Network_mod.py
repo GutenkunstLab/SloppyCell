@@ -2063,37 +2063,48 @@ class Network:
         N_ASN = len(self.assignedVars)
         N_RXN = len(self.reactions)
 
-        def parse(s, c=True):
-            if c: s = ExprManip.make_c_compatible(s)
-            for index, name in enumerate(self.constantVars.keys()):
-                s = ExprManip.Substitution.sub_for_var(s, name, 'cv[%i]'%index)
-            for index, name in enumerate(self.dynamicVars.keys()):
-                s = ExprManip.Substitution.sub_for_var(s, name, 'dv[%i]'%index)
-            for index, name in enumerate(self.assignedVars.keys()):
-                s = ExprManip.Substitution.sub_for_var(s, name, 'av[%i]'%index)
-            return s
+        # Use a custom AST walk to get 12x faster than ExprManip.sub_for_vars
+        mapping = {}
+        for index, name in enumerate(self.constantVars.keys()):
+            mapping[name] = 'cv[%i]'%index
+        for index, name in enumerate(self.dynamicVars.keys()):
+            mapping[name] = 'dv[%i]'%index
+        for index, name in enumerate(self.assignedVars.keys()):
+            mapping[name] = 'av[%i]'%index
+        
+        class Parse(ExprManip.AST.compiler.visitor.ASTVisitor):
+            def __call__(slf,s,c=True):
+                if c: s = ExprManip.make_c_compatible(s)
+                ast = ExprManip.strip_parse(s)
+                ExprManip.AST.compiler.walk(ast, slf)
+                return ExprManip.ast2str(ast)
 
+            def visitName(slf,node,*args):
+                if mapping.has_key(node.name): node.name=mapping[node.name]
+        parse = Parse()
+        
         # Find the stoichiometry and reaction dependencies
+        asnKeys = self.assignedVars.keys()
+        evars = [] # The extracted dynamic variables each rxn depends upon
+        for rxnInd, rxn in enumerate(self.reactions.values()):
+            evar = ExprManip.Extraction.extract_vars(rxn.kineticLaw)
+            evar = sets.Set(evar)
+            while len(evar.intersection(asnKeys)):
+                for asnName in evar.intersection(asnKeys):
+                    rule = self.assignmentRules.get(asnName)
+                    evar.remove(asnName)
+                    evar.union_update( \
+                        ExprManip.Extraction.extract_vars(rule))
+            evars.append(evar)
+
         stch_body = []
         depd_body = []
-        asnKeys = self.assignedVars.keys()
         for rxnInd, (rxn_id, rxn) in enumerate(self.reactions.items()):
             stch_body.append(repr([int(rxn.stoichiometry.get(_,0))
                                    for _ in self.dynamicVars.keys()])[1:-1])
-            depd = [0]*N_RXN
-            for varName, val in rxn.stoichiometry.items():
-                if val==0: continue
-                for _rxnInd, _rxn in enumerate(self.reactions.values()):
-                    evars = ExprManip.Extraction.extract_vars(_rxn.kineticLaw)
-                    evars = sets.Set(evars)
-                    while len(evars.intersection(asnKeys)):
-                        for asnName in evars.intersection(asnKeys):
-                            evars.remove(asnName)
-                            rule = self.assignmentRules.get(asnName)
-                            evars.union_update( \
-                                ExprManip.Extraction.extract_vars(rule))
-                    if varName in evars:
-                        depd[_rxnInd]=1
+            varNames = sets.Set([n
+                                 for n,v in rxn.stoichiometry.items() if v!=0])
+            depd = [int(len(evar.intersection(varNames))>0) for evar in evars]
             depd_body.append(repr(depd)[1:-1])
         if N_RXN>0: depd_body.append(repr([1]*N_RXN)[1:-1])
 
