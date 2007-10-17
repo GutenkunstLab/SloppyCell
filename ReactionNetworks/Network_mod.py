@@ -891,9 +891,10 @@ class Network:
         if times[0]==0.: # Only reset if specifically requested (not by event)
             self.resetDynamicVariables()
 
-        # Add in the event times
+        # Add in the event times (only if they don't extend the trajectoy!)
         times = sets.Set(times)
-        times.union_update([_.triggeringTime for _ in self.events])
+        times.union_update([_.triggeringTime for _ in self.events
+                            if _.triggeringTime<max(times)])
         times = list(times)
         times.sort()
         
