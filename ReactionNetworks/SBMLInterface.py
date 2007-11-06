@@ -169,6 +169,15 @@ def fromSBMLFile(fileName, id = None, duplicate_rxn_params=False):
     f.close()
     return net
 
+def stoichToString(species, stoich):
+    if stoich is None:
+        stoich = str(species.getStoichiometry())
+    elif hasattr(stoich, 'getMath'): # libsbml > 3.0
+        stoich = libsbml.formulaToString(stoich.getMath())
+    else: # libsbml 2.3.4
+        stoich = libsbml.formulaToString(stoich) 
+    return stoich    
+
 def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
     r = libsbml.SBMLReader()
     d = r.readSBMLFromString(sbmlStr)
@@ -272,20 +281,14 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             species = reactant.getSpecies()
             stoichiometry.setdefault(species, '0')
             stoich = reactant.getStoichiometryMath()
-            if stoich is None:
-                stoich = str(reactant.getStoichiometry())
-            else:
-                stoich = libsbml.formulaToString(stoich)
+            stoich = stoichToString(reactant, stoich)
             stoichiometry[species] += '-(%s)' % stoich
     
         for product in rxn.getListOfProducts():
             species = product.getSpecies()
             stoichiometry.setdefault(species, '0')
             stoich = product.getStoichiometryMath()
-            if stoich is None:
-                stoich = str(product.getStoichiometry())
-            else:
-                stoich = libsbml.formulaToString(stoich)
+            stoich = stoichToString(product, stoich)
             stoichiometry[species] += '+(%s)' % stoich
 
         for species, stoich in stoichiometry.items():
