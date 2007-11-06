@@ -17,7 +17,7 @@ res = Residuals.PriorInLog('tao_prior', 'tao', log(4), sqrt(log(4)))
 m.AddResidual(res)                                                             # (@\label{code:prior_end}@)
 
 print 'Initial cost:', m.cost(params)                                          # (@\label{code:initial_cost}@)
-params = Optimization.lm_log_params(m, params, maxiter=20, disp=False)         # (@\label{code:lm_opt}@)
+params = Optimization.fmin_lm_log_params(m, params, maxiter=20, disp=False)         # (@\label{code:lm_opt}@)
 print 'Optimized cost:', m.cost(params)
 print 'Optimized parameters:', params
 
