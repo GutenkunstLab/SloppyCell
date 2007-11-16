@@ -16,9 +16,27 @@ import scipy
 if hasattr(scipy, 'Numeric'):
     # Using old scipy
     import scipy_distutils.core as core
+    data_files = [('SloppyCell/ReactionNetworks', 
+                   ['ReactionNetworks/f2py_signatures.pyf',
+                    'ReactionNetworks/mtrand.h',
+                    'ReactionNetworks/mtrand.c'])]
 else:
     # Using new scipy
     import numpy.distutils.core as core
+
+    from numpy.distutils.misc_util import Configuration
+    # Annoyingly, distutils doesn't have an option to recursively include
+    # a data directory. We can use numpy's Configuration class, however,
+    # to do the recursion for us.
+    config = Configuration('SloppyCell')
+    config.add_data_files(('SloppyCell/ReactionNetworks', 
+                           ['ReactionNetworks/f2py_signatures.pyf',
+                            'ReactionNetworks/mtrand.h',
+                            'ReactionNetworks/mtrand.c']))
+    config.add_data_dir('Doc')
+    config.add_data_dir('ddaskr')
+    config.add_data_dir('Examples')
+    data_files = config.todict()['data_files']
 
 # This is a kludge so that sdist works on AFS systems.
 # AFS doesn't allow hard-linking across directories, but if we're on linux
@@ -51,13 +69,10 @@ core.setup(name='SloppyCell',
                      'SloppyCell.ReactionNetworks', 
                      'SloppyCell.Testing',
                      'SloppyCell.ExprManip',
-                     'SloppyCell.Vandermonde'
+                     'SloppyCell.Vandermonde',
                      ],
            package_dir={'SloppyCell': ''},
-           data_files=[('SloppyCell/ReactionNetworks', 
-                        ['ReactionNetworks/f2py_signatures.pyf',
-                         'ReactionNetworks/mtrand.h',
-                         'ReactionNetworks/mtrand.c'])],
+           data_files=data_files,
 
            ext_modules = [daskr, misc_c]
            )
