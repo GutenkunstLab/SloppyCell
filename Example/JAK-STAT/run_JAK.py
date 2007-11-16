@@ -1,4 +1,4 @@
-from pylab import *                                                            # (@\label{code:import_start}@)
+from pylab import *                                                            # (@\label{whatever is inside these special 'at-parens comments' is visible to LaTeX}\label{code:import_start}@)
 from scipy import *
 from SloppyCell.ReactionNetworks import *                                      # (@\label{code:import_end}@)
 
@@ -17,7 +17,7 @@ res = Residuals.PriorInLog('tao_prior', 'tao', log(4), sqrt(log(4)))
 m.AddResidual(res)                                                             # (@\label{code:prior_end}@)
 
 print 'Initial cost:', m.cost(params)                                          # (@\label{code:initial_cost}@)
-params = Optimization.fmin_lm_log_params(m, params, maxiter=20, disp=False)         # (@\label{code:lm_opt}@)
+params = Optimization.fmin_lm_log_params(m, params, maxiter=20, disp=False)    # (@\label{code:lm_opt}@)
 print 'Optimized cost:', m.cost(params)
 print 'Optimized parameters:', params
 
