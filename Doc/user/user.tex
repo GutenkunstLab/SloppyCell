@@ -59,6 +59,8 @@ SloppyCell's development has been driven by the research interests of the Sethna
 This document opens begins with an example application, followed by a high-level overview of SloppyCell's architecture.
 We then delve into additional features and installation (Section~\ref{sec:user:install}), and we close with some troubleshooting.
 
+Note: If you are using a binary installer, you will still want to download the source distribution (as described in Section~\ref{sec:test}) so that you will have access to the \shell{Example} and \shell{Doc} directories.
+
 \section{JAK-STAT Example\label{sec:user:example}}
 
 Here we consider an example application using the JAK-STAT model of Swameye et al.~\cite{bib:Swameye2003}, which was also used as an example by the SBML Parameter Estimation Toolkit (SBML-PET)~\cite{bib:Zi2006}.
@@ -495,7 +497,7 @@ Pre-built binaries are available for Python 2.4 and Python 2.5.
 \subsubsection{From source code}
 Given that you installed \shell{g77} along during the MinGW install, you should be able to follow the Linux install instructions.
 
-\subsection{Testing the Installation}
+\subsection{Testing the Installation}\label{sec:test}
 The SloppyCell source code includes a large package of test routines.
 To access them: download and unpack \shell{SloppyCell-XXX.tar.gz} or \shell{SloppyCell-XXX.zip}, descend into the SloppyCell-XXX directory (\shell{cd SloppyCell-XXX}), and run \shell{cd Testing; python test.py}.
 This will run an extensive series of tests, both with and without C-compilation.
