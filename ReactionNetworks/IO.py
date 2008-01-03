@@ -107,7 +107,7 @@ def _net_eqns_to_TeX(net):
         outputs.append(r'\section*{Events}')
         outputs.append(r'\begin{description}')
         for e in net.events:
-            outputs.append(r'\item[%s]' % (e.id))
+            outputs.append(r'\item[$%s$]' % (e.name))
             trigger_str = ExprManip.Py2TeX.expr2TeX(e.trigger, name_dict)
             outputs.append(r'Trigger: $%s$' % trigger_str)
             outputs.append(r'\begin{itemize}')
