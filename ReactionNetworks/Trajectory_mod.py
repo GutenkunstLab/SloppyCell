@@ -140,12 +140,12 @@ class Trajectory:
 
         return new_traj
 
-    def time_slice(self, start, stop):
+    def time_slice(self, start, stop, eps=1e-6):
         """
         Return a new trajectory containing only times from start to stop.
         """
-        start_index = self._get_time_index(start)
-        stop_index = self._get_time_index(stop)
+        start_index = self._get_time_index(start, eps)
+        stop_index = self._get_time_index(stop, eps)
         return self[start_index:stop_index+1]
 
     def keys(self):
