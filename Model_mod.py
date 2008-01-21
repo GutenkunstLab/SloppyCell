@@ -50,7 +50,7 @@ class Model:
 
         if isinstance(calcs, list):
             calcs = Collections.CalculationCollection(calcs)
-        elif isinstance(expts, dict):
+        elif isinstance(calcs, dict):
             calcs = Collections.CalculationCollection(calcs.values())
         self.SetCalculationCollection(calcs)
 
