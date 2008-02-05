@@ -92,6 +92,12 @@ class Event:
         return not (self == other)
         
     def parseTrigger(self, trigger):
+        if '<' in trigger or '>' in trigger or '=' in trigger:
+            raise ValueError('Event triggers must use the functions gt and lt, '
+                             'rather than the symbols > and <. For example, '
+                             'to trigger when B becomes less than A, use '
+                             'lt(B,A).')
+
         # Figures out if the event is time-triggered and parses it to niceness.
 
         # 'and' is a reserved keyword in python, so the parser will break
