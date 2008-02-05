@@ -114,10 +114,16 @@ def toSBMLString(net):
         se = libsbml.Event()
         se.setName(e.name)
         formula = e.trigger.replace('**', '^')
+        ast = libsbml.parseFormula(formula)
+        if ast is None:
+            raise ValueError('Problem parsing event trigger: %s. Problem may '
+                             'be use of relational operators (< and >) rather '
+                             'than libsbml-friendly functions lt and gt.'
+                             % formula)
         try:
-            se.setTrigger(libsbml.parseFormula(formula))
+            se.setTrigger(ast)
         except TypeError:
-            se.setTrigger(libsbml.Trigger(libsbml.parseFormula(formula)))
+            se.setTrigger(libsbml.Trigger(ast))
 
         formula = str(e.delay).replace('**', '^')
         try:
