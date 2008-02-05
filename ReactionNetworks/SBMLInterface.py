@@ -88,11 +88,8 @@ def toSBMLString(net):
         srxn.setName(rxn.name)
         for rid, stoich in rxn.stoichiometry.items():
             sr = libsbml.SpeciesReference(rid)
-            if isinstance(stoich, str):
-                formula = stoich.replace('**', '^')
-                sr.setStoichiometryMath(libsbml.parseFormula(formula))
-                srxn.addReactant(sr)
-            else:
+            try:
+                float(stoich)
                 if stoich < 0:
                     sr.setStoichiometry(-stoich)
                     srxn.addReactant(sr)
@@ -102,6 +99,12 @@ def toSBMLString(net):
                 if stoich == 0:
                     sr = libsbml.ModifierSpeciesReference(rid)
                     srxn.addModifier(sr)
+            except ValueError:
+                formula = stoich.replace('**', '^')
+                math_ast = libsbml.parseFormula(formula)
+                smath = libsbml.StoichiometryMath(math_ast)
+                sr.setStoichiometryMath(smath)
+                srxn.addReactant(sr)
         formula = rxn.kineticLaw.replace('**', '^')
         kl = libsbml.KineticLaw(formula)
         srxn.setKineticLaw(kl)
