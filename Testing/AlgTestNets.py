@@ -22,8 +22,10 @@ algebraic_net.add_assignment_rule('S2', 'Keq * S1')
 
 algebraic_net.addReaction('in', kineticLaw = 'k1 * X0',
                           stoichiometry = {'X0': -1, 'T': 1})
+# The reaction 'out' has the stoichiometryMath expression 1/1
+# for X1 to test the stoichiometry math compatibility of SloppyCell
 algebraic_net.addReaction('out', kineticLaw = 'k2 * S2',
-                          stoichiometry = {'X1': 1, 'T': -1})
+                          stoichiometry = {'X1': '1/1', 'T': -1})
 
 algebraic_net.set_var_ics({'X0': 1.0,
                            'X1': 0.0,
