@@ -89,7 +89,7 @@ def toSBMLString(net):
         for rid, stoich in rxn.stoichiometry.items():
             sr = libsbml.SpeciesReference(rid)
             try:
-                float(stoich)
+                stoich = float(stoich)
                 if stoich < 0:
                     sr.setStoichiometry(-stoich)
                     srxn.addReactant(sr)
