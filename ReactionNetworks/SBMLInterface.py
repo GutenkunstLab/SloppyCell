@@ -26,6 +26,32 @@ def toSBMLFile(net, fileName):
 def SBMLtoDOT(sbmlFileName, dotFileName):
     raise DeprecationWarning, 'SBMLtoDOT has been deprecated. Instead, use IO.net_DOT_file(net, filename)'
 
+def rxn_add_stoich(srxn, rid, stoich, is_product=True):
+    sr = libsbml.SpeciesReference(rid)
+    try:
+        stoich = float(stoich)
+        if stoich < 0:
+            sr.setStoichiometry(-stoich)
+            srxn.addReactant(sr)
+        if stoich > 0:
+            sr.setStoichiometry(stoich)
+            srxn.addProduct(sr)
+        if stoich == 0:
+            sr = libsbml.ModifierSpeciesReference(rid)
+            srxn.addModifier(sr)
+    except ValueError:
+        formula = stoich.replace('**', '^')
+        math_ast = libsbml.parseFormula(formula)
+        smath = libsbml.StoichiometryMath(math_ast)
+        sr.setStoichiometryMath(smath)
+        if is_product == True:
+            srxn.addProduct(sr)
+        else:
+            srxn.addReactant(sr)
+
+
+    
+
 def toSBMLString(net):
     m = libsbml.Model(net.id)
     m.setName(net.name)
@@ -86,25 +112,23 @@ def toSBMLString(net):
     for id, rxn in net.reactions.items():
         srxn = libsbml.Reaction(id)
         srxn.setName(rxn.name)
-        for rid, stoich in rxn.stoichiometry.items():
-            sr = libsbml.SpeciesReference(rid)
-            try:
-                stoich = float(stoich)
-                if stoich < 0:
-                    sr.setStoichiometry(-stoich)
-                    srxn.addReactant(sr)
-                if stoich > 0:
-                    sr.setStoichiometry(stoich)
-                    srxn.addProduct(sr)
-                if stoich == 0:
-                    sr = libsbml.ModifierSpeciesReference(rid)
-                    srxn.addModifier(sr)
-            except ValueError:
-                formula = stoich.replace('**', '^')
-                math_ast = libsbml.parseFormula(formula)
-                smath = libsbml.StoichiometryMath(math_ast)
-                sr.setStoichiometryMath(smath)
-                srxn.addReactant(sr)
+        # Handle the case where the model was originally read in from an
+        # SBML file, so that the reactants and products of the Reaction
+        # object are explicitly set.
+        if rxn.reactant_stoichiometry != None and \
+            rxn.product_stoichiometry != None:
+            for rid, stoich_list in rxn.reactant_stoichiometry.items():
+                for stoich in stoich_list:
+                    rxn_add_stoich(rxn, rid, stoich, is_product=False)
+            for rid, stoich_list in rxn.product_stoichiometry.items():
+                for stoich in stoich_list:
+                    rxn_add_stoich(rxn, rid, stoich, is_product=True)
+        # Handle the case where the model was created using the SloppyCell
+        # API, in which case reactants and products are inferred from their
+        # stoichiometries
+        else:
+            for rid, stoich in rxn.stoichiometry.items():
+                rxn_add_stoich(srxn, rid, stoich)
         formula = rxn.kineticLaw.replace('**', '^')
         kl = libsbml.KineticLaw(formula)
         srxn.setKineticLaw(kl)
@@ -286,12 +310,18 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         # representing the stoichiometry. Then we'll simplify that string and
         # see whether we ended up with a float value in the end.
         stoichiometry = {}
+        reactant_stoichiometry = {}
+        product_stoichiometry = {}
         for reactant in rxn.getListOfReactants():
             species = reactant.getSpecies()
             stoichiometry.setdefault(species, '0')
             stoich = reactant.getStoichiometryMath()
             stoich = stoichToString(reactant, stoich)
             stoichiometry[species] += '-(%s)' % stoich
+            if species in reactant_stoichiometry:
+                reactant_stoichiometry[species].append(stoich)
+            else:
+                reactant_stoichiometry[species] = [stoich]
     
         for product in rxn.getListOfProducts():
             species = product.getSpecies()
@@ -299,6 +329,10 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             stoich = product.getStoichiometryMath()
             stoich = stoichToString(product, stoich)
             stoichiometry[species] += '+(%s)' % stoich
+            if species in product_stoichiometry:
+                product_stoichiometry[species].append(stoich)
+            else:
+                product_stoichiometry[species] = [stoich]
 
         for species, stoich in stoichiometry.items():
             stoich = ExprManip.simplify_expr(stoich)
@@ -313,7 +347,9 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             stoichiometry.setdefault(modifier.getSpecies(), 0)
 
         rn.addReaction(id = id, stoichiometry = stoichiometry,
-                       kineticLaw = kLFormula)
+                       kineticLaw = kLFormula,
+                       reactant_stoichiometry = reactant_stoichiometry,
+                       product_stoichiometry = product_stoichiometry)
 
     for ii, r in enumerate(m.getListOfRules()):
         if r.getTypeCode() == libsbml.SBML_ALGEBRAIC_RULE:
