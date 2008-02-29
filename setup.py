@@ -29,10 +29,9 @@ else:
     # a data directory. We can use numpy's Configuration class, however,
     # to do the recursion for us.
     config = Configuration('SloppyCell')
-    config.add_data_files(('SloppyCell/ReactionNetworks', 
-                           ['ReactionNetworks/f2py_signatures.pyf',
-                            'ReactionNetworks/mtrand.h',
-                            'ReactionNetworks/mtrand.c']))
+    config.add_data_files('ReactionNetworks/f2py_signatures.pyf',
+                          'ReactionNetworks/mtrand.h',
+                          'ReactionNetworks/mtrand.c')
     config.add_data_dir('Doc')
     config.add_data_dir('ddaskr')
     config.add_data_dir('Examples')
