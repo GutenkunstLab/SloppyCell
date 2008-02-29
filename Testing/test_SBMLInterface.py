@@ -5,6 +5,8 @@ import copy
 import scipy
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks import *
+# Check whether we actually have the SBML methods.
+_HAVE_SBML = (hasattr(IO, 'to_SBML_file') and hasattr(IO, 'from_SBML_file'))
 
 # Load the fast reaction example from the SBML semantic test suite.
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
@@ -75,7 +77,9 @@ class test_SBMLInterface(unittest.TestCase):
 
 ################################################################################
         
-suite = unittest.makeSuite(test_SBMLInterface)
+if _HAVE_SBML:
+    suite = unittest.makeSuite(test_SBMLInterface)
 
 if __name__ == '__main__':
-    unittest.main()
+    if _HAVE_SBML:
+        unittest.main()
