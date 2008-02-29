@@ -821,14 +821,22 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
 
     try:
         dvFixed, infodict, ier, mesg =\
-                scipy.optimize.fsolve(func, x0=x0, full_output=True,
+                scipy.optimize.fsolve(func, x0=x0.copy(), full_output=True,
                                       fprime=fprime,
                                       xtol=xtol, maxfev=10000)
     except (scipy.optimize.minpack.error, ArithmeticError), X:
         raise FixedPointException(('Failure in fsolve.', X))
 
+    tiny = scipy.misc.limits.double_epsilon
     if ier != 1:
-        raise FixedPointException(mesg, infodict)
+        if scipy.all(abs(dvFixed) < tiny) and not scipy.all(abs(x0) < 1e6*tiny):
+            # This is the case where the answer is zero, and our initial guess
+            # was reasonably large. In this case, the solver fails because
+            # it's looking at a relative tolerance, but it's not really a
+            # failure.
+            pass
+        else:
+            raise FixedPointException(mesg, infodict)
 
     if with_logs:
         dvFixed = scipy.exp(dvFixed)
