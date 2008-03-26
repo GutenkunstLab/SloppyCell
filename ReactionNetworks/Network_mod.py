@@ -542,14 +542,15 @@ class Network:
             delattr(self, 'periodic')
             
     def set_periodic(self, period, xtol=0.001, maxfun=100, phase=None,
-                     minVel=None, level=2, log=False):
+                     minVel=None, level=2, log=False, rel=False):
         """
         set_periodic ensures that a period solution has satisfactorily
         approached a limit cycle before returning the solution. Please note that
         this has not been implemented for sensitivity calculations.
 
         Inputs:
-        (period, xtol=0.001, maxfun=100, phase=None, minVel=None, level=2)
+        (period, xtol=0.001, maxfun=100, phase=None, minVel=None, level=2,
+        log=False, rel=False)
         period -- initial guess of the period (required)
         xtol -- tolerance required for convergence (all chemicals). If set too
                 high, numerical (in)precision may cause no stable limit cycle.
@@ -566,7 +567,9 @@ class Network:
                  x(0)-x(2*tau) is used.
         log -- Set to True to use logarithms of state variables, constraining
                the solution to non-zero values
-        
+        rel -- Set to True to use relative differences (x1-x0)/min(x0,x1) in
+               the limit cycle period search.
+               
         Outputs: (stored in net.periodic dictionary)
         tol -- tolerance of the solution (rmsd of ic1 to ic0 for each level)
         period -- actual period of oscillation
@@ -575,9 +578,9 @@ class Network:
         stableIC -- stable initial condition
         """
         self.periodic = {'xtol': xtol, 'maxfun':maxfun, 'phase':phase,
-                         'level':int(level), 'log':log, 'stable': False,
+                         'level':int(level), 'log':log, 'rel':rel,
                          'feval': 0, 'period': period, 'minVel': minVel,
-                         'stableIC': {}}
+                         'stable': False, 'stableIC': {}}
         if hasattr(self, 'stochastic'):
             logger.warn('Cannot find periodic solutions with a stochastic solution, switching to dynamic solution')
             self.set_deterministic()
@@ -600,20 +603,31 @@ class Network:
         (s1)
         s1 -- New state found (period and conditions defined same as input)
         """
-        if self.periodic['log']:
+        if self.periodic['rel']:
             rmsd = lambda _s1, _s2: \
-                   scipy.sqrt(sum(scipy.log(_s1/_s2)**2)/len(_s1))
+                   scipy.sqrt(scipy.average(((_s1-_s2) / \
+                                             scipy.minimum(_s1,_s2))**2))
+        elif self.periodic['log']:
+            rmsd = lambda _s1, _s2: \
+                   scipy.sqrt(scipy.average((scipy.log(_s1/_s2)**2)))
         else:
-            rmsd = lambda _s1, _s2: scipy.sqrt(sum((_s1-_s2)**2)/len(_s1))
+            rmsd = lambda _s1, _s2: scipy.sqrt(scipy.average((_s1-_s2)**2))
 
         # Set the initial condition
         s0 = scipy.array(s0)
         tau0, x0 = s0[0], s0[1:]
         for name, value in zip(varNames, x0):
             self.set_var_ic(name, value)
-            
+
+        # Set the period search interval, restrictions:
+        # 1) first guess by fminbound is at tau0
+        # 2) Lower bound < 0.5*tau0 (to possibly detect double periods)
+        # 3) Upper bound < 2.0*tau0 (to prevent double periods)
+        a = 0.475
+        b = a + (1.0-a)/(0.5*(3.0-scipy.sqrt(5.0))) # ~1.85
+        
         # Find the trajectory
-        max_time = tau0 * 1.5 * float(self.periodic['level'])
+        max_time = b * tau0 * float(self.periodic['level'])
         self.trajectory = self.integrate([0.,max_time], params, addTimes = True)
         self.trajectory.build_interpolated_traj()
         ev_inter_traj = self.trajectory.evaluate_interpolated_traj
@@ -630,7 +644,7 @@ class Network:
             res0 = scipy.concatenate(([tau0], list(x0)*self.periodic['level']))
             return rmsd(res, res0)
 
-        tau1 = scipy.optimize.fminbound(__iter_cost, tau0 * 0.475, tau0 * 1.5)
+        tau1 = scipy.optimize.fminbound(__iter_cost, a * tau0, b * tau0)
         tau1 = abs(tau1)
         s1 = s(tau1)
 
@@ -640,7 +654,12 @@ class Network:
         self.periodic['tol'] = __iter_cost(tau1)
         if self.periodic['tol'] < self.periodic['xtol']:
             self.periodic['stable']=True
-            
+
+        logger.debug('Limit Cycle Iteration #%i: period = %f, tol = %f, %s'% \
+                     (self.periodic['feval'], self.periodic['period'],
+                      self.periodic['tol'],
+                      '%sstable'%('un'*(not self.periodic['stable']))))
+        
         return s1
 
     def _eliminate_slowest_mode(self, s0, s1, s2):
@@ -806,6 +825,8 @@ class Network:
 
         if hasattr(self, 'periodic'):
             self._find_limit_cycle(params)
+            if self.periodic['period'] > max(t):
+                t.append(self.periodic['period'])
         elif hasattr(self, 'stochastic'):
             self.trajectory = self.integrateStochastic(t, params=params)
             return
