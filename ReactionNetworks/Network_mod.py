@@ -540,6 +540,7 @@ class Network:
         if hasattr(self, 'periodic'):
             logger.warn('Cannot find periodic solutions with a stochastic solution, disabling periodic solution finding')
             delattr(self, 'periodic')
+            self.remove_component('_tau')
             
     def set_periodic(self, period, xtol=0.001, maxfun=100, phase=None,
                      minVel=None, level=2, log=False, rel=False):
@@ -576,6 +577,10 @@ class Network:
         stable -- whether a stable solution was found
         feval -- number of iterations
         stableIC -- stable initial condition
+
+        Additionally, the period is accessible during the calculation and
+        afterwards via the '_tau' variable (useful for assignments which
+        rely on the period).
         """
         self.periodic = {'xtol': xtol, 'maxfun':maxfun, 'phase':phase,
                          'level':int(level), 'log':log, 'rel':rel,
@@ -584,7 +589,9 @@ class Network:
         if hasattr(self, 'stochastic'):
             logger.warn('Cannot find periodic solutions with a stochastic solution, switching to dynamic solution')
             self.set_deterministic()
-            
+        self.add_parameter('_tau', period, is_constant=True,
+                           is_optimizable=False)
+        
     def _iter_limit_cycle(self, params, varNames, s0):
         """
         Internal function used to integrate a trajectory and find the point
@@ -651,6 +658,7 @@ class Network:
         # Update the periodic dictionary
         self.periodic['feval'] += 1
         self.periodic['period'] = tau1
+        self.set_var_val('_tau', tau1)
         self.periodic['tol'] = __iter_cost(tau1)
         if self.periodic['tol'] < self.periodic['xtol']:
             self.periodic['stable']=True
@@ -764,6 +772,7 @@ class Network:
 
                 if maxVel < self.periodic['minVel']:
                     self.periodic['period']=0.0
+                    self.set_var_val('_tau', 0.0)
                     self.periodic['stable']=True
                     break
 
