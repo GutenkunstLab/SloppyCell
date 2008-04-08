@@ -1587,7 +1587,7 @@ class Network:
         for ii, rhs in enumerate(self.algebraicRules.values()):
             py_body.append('residual[%i] = %s' % (ii, rhs))
             c_rhs = ExprManip.make_c_compatible(rhs)
-            c_body.append('residual[%i] = %s;' % (ii, rhs))
+            c_body.append('residual[%i] = %s;' % (ii, c_rhs))
 
         py_body.append('')
         py_body.append('return residual')
