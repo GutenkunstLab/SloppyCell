@@ -942,8 +942,17 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
 
     # Now we need to figure out yprime for the algebraic vars
     curr_alg_yp = yp[var_types == -1]
+    ones_arr = scipy.ones(N_alg, scipy.float_)
+    # We try a range of possible guesses. Note that this is really just
+    # a linear system, so we continue to have difficulties with this part of
+    # the calculation, or if it becomes a slow-down, we should consider doing
+    # it by a linear solve, rather than using fsolve.
     possible_guesses = [curr_alg_yp, alg_typ_vals, 
-                        scipy.ones(N_alg, scipy.float_)]
+                        ones_arr,
+                        scipy.mean(abs(yp)) * ones_arr, 
+                        -scipy.mean(abs(yp)) * ones_arr,
+                        max(abs(yp)) * ones_arr, 
+                        -max(abs(yp)) * ones_arr]
     if redirect_msgs:
         redir.start()
     try:
@@ -958,7 +967,7 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
             if not scipy.any(abs(final_residuals) > abs(atol[var_types == -1])):
                 break
         else:
-            raise Utility.SloppyCellException('Failed to calculate alg var'\
+            raise Utility.SloppyCellException('Failed to calculate alg var '\
                                               'derivatives in network %s.' 
                                               % net.get_id())
     finally:
