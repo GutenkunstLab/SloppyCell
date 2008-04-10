@@ -26,6 +26,7 @@ if HAVE_PYPAR:
 MAX_STEPS = 1e5
 
 global_rtol = 1e-6
+global_hmax = None
 
 return_derivs = False # do we want time derivatives of all trajectories 
                       # returned?
@@ -82,6 +83,7 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
 
                 'calculate_ic' : calculate_ic,
                 'var_types' : var_types,
+                'hmax' : global_hmax,
                 }
 
     exception_raised = False
@@ -624,7 +626,8 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                                  max_steps = MAX_STEPS,
                                  var_types = var_types,
                                  calculate_ic = True,
-                                 redir_output = redirect_msgs)
+                                 redir_output = redirect_msgs,
+                                 hmax = global_hmax)
         except Utility.SloppyCellException, X:
             logger.warn('Sensitivity integration failed for network %s on '
                         'node %i during optimizable variable %s.'

@@ -95,7 +95,7 @@ class daeintException(Utility.SloppyCellException):
 def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None, 
             tstop=None, intermediate_output=False, ineq_constr=False,
             calculate_ic=False, var_types=None, redir_output=True,
-            max_steps=500, rpar=None):
+            max_steps=500, rpar=None, hmax=None):
     """Integrate a system of ordinary differential algebraic equations with or
     without events.
 
@@ -178,13 +178,18 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
               redirected.
       max_steps -- set this if you want the integrator to be able to take more
               than 500 steps between time points when you're not in
-              "intermediate output" mode.  If intermediate_output = True then every
-              time step is considered an output point so there are never
-              multiple steps between time points.  If intermediate_output = False
-              (default) then the integrator will stop after taking 500 steps
-              unless max_steps is set > 500.  The default value for max_steps is
-              500.
-
+              "intermediate output" mode.  If intermediate_output = True then
+              every time step is considered an output point so there are never
+              multiple steps between time points.  If intermediate_output =
+              False (default) then the integrator will stop after taking 500
+              steps unless max_steps is set > 500.  The default value for
+              max_steps is 500.
+      rpar -- If not None, this is passed to the function being evaluated and 
+              can be used to pass additional arguments.
+      hmax -- If not None, this sets an upper limit to the step sizes that 
+              ddaskr will take during the integration. Setting this can help
+              integration for difficult systems, but it can also slow things
+              down.
          
     Outputs:  (yout, tout, ypout, t_root, y_root, i_root)
 
@@ -294,6 +299,9 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
         info[4] = 1
 
     # info[5], info[6], info[7], info[8] are not used
+    if hmax is not None:
+        info[7] = 1
+        rwork[2] = hmax
 
     # Do you want the code to solve the problem without invoking any special
     # inequality constraints?
