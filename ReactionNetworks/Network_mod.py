@@ -1141,12 +1141,16 @@ class Network:
         val = self.get_variable(id).value
         return self.evaluate_expr(val)
 
-    def get_var_vals(self):
+    def get_var_vals(self, ids=None):
         """
         Return the current variable values as a KeyedList
+
+        ids -- List o variable ids to return values for. If None, all variables
+               are used.
         """
-        return KeyedList([(id, self.get_var_val(id)) for id in
-                          self.variables.keys()])
+        if ids is None:
+            ids = self.variables.keys()
+        return KeyedList([(id, self.get_var_val(id)) for id in ids])
 
     def get_initial_velocities(self):
         """
