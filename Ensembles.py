@@ -400,9 +400,18 @@ def PCA_eig_log_params(ens):
     Return the Principle Component Analysis eigenvalues and eigenvectors (in 
      log parameters) of an ensemble. (This function takes the logs for you.)
     """
-    X = scipy.log(scipy.asarray(ens))
-    X -= scipy.mean(X, 0)
+    return PCA_eig(scipy.log(scipy.asarray(ens)))
+
+def PCA_eig(ens):
+    """
+    Return the Principle Component Analysis eigenvalues and eigenvectors 
+     of an ensemble.
+    """
+    X = scipy.asarray(ens)
+    mean_vals = scipy.mean(X, 0)
+    X -= mean_vals
     u, s, vh = scipy.linalg.svd(scipy.transpose(X))
-    # This return adjust things so that can be easily compared with the JtJ
+    # This return adjusts things so that can be easily compared with the JtJ
     #  eigensystem.
+    X += mean_vals
     return len(X)/s[::-1]**2, u[:,::-1]
