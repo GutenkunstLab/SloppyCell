@@ -2887,10 +2887,12 @@ class Network:
     def output_c(self, c_code, mod_name=None):
         logger.debug('Outputting C for network %s.' % self.get_id())
         if mod_name is None:
-            semi_unique = str(time.time()).replace('.', '_')
+            semi_unique = str(time.time())
             mod_name = '%s_%i_%s' % (self.get_id(), SloppyCell.my_rank,
                                      semi_unique[::-1])
             mod_name = mod_name.replace('-', '_')
+            # f2py fails if base filename has a '.' in it.
+            mod_name = mod_name.replace('.', '_')
 
         # Write the C code to a file.
         c_fd = open('%s.c' % mod_name, 'w')
