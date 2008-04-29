@@ -26,6 +26,10 @@ if HAVE_PYPAR:
 MAX_STEPS = 1e5
 
 global_rtol = 1e-6
+# global_atol overrides the default of rtol*typical_value. It may be useful if
+# we're having problems with large values going negative. (Although then it
+# might be better to just use logarithmic integration.)
+global_atol = 1
 global_hmax = None
 
 return_derivs = False # do we want time derivatives of all trajectories 
@@ -128,12 +132,12 @@ def generate_tolerances(net, rtol, atol=None):
         rtol = [rtol] * len(net.dynamicVars)
     rtol = scipy.minimum(rtol, global_rtol)
 
-    # We set atol to be a minimum of 1e-6 to avoid variables with large typical
-    #  values going negative.
+    # We set atol to be a minimum of global_atol to avoid variables with large
+    # typical values going negative.
     if (scipy.isscalar(atol) or atol==None):
         typ_vals = [abs(net.get_var_typical_val(id))
                     for id in net.dynamicVars.keys()]
-        atol = scipy.minimum(rtol * scipy.asarray(typ_vals), 1e-6)
+        atol = scipy.minimum(rtol * scipy.asarray(typ_vals), global_atol)
     return rtol, atol
 
 
