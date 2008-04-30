@@ -183,7 +183,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         if (len(ssqrt) == n) :
             s = ssqrt**2
         elif (len(ssqrt)<n) :
-            s = zeros((n,),scipy.scipy.float_)
+            s = zeros((n,),scipy.float_)
             s[0:len(ssqrt)] = ssqrt**2
         #print "s is (in original) ", s
         #rhsvect = -mat(transpose(u))*mat(transpose(grad))
@@ -768,7 +768,7 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         if (len(ssqrt) == n) :
             s = ssqrt**2
         elif (len(ssqrt)<n) :
-            s = zeros((n,),scipy.scipy.float_)
+            s = zeros((n,),scipy.float_)
             s[0:len(ssqrt)] = ssqrt**2
         #rhsvect = -mat(transpose(u))*mat(transpose(grad))
         rhsvect = -mat(vt)*mat(transpose(grad))
