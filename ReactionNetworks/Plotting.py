@@ -338,7 +338,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
                     d = scipy.array([[t, v, e] for (t, (v, e))
                                      in dataDict.items()])
                     if style is 'errorbars':
-                        l = errorbar(d[:,0], d[:,1], yerr=d[:,2], 
+                        l = errorbar(d[:,0], d[:,1], yerr=d[:,2], fmt='o', 
                                      color=color, markerfacecolor=color,
                                      marker=sym, ecolor='k', capsize=6)[0]
                     elif style is 'lines':
@@ -347,6 +347,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
                         d = scipy.take(d, order, 0)
                         l = plot(d[:,0], d[:,1], color=color,
                                  linestyle=dash)
+		    lines.append(l)
 
                 if plot_trajectories:
                     times = model.get_calcs().get(netId).trajectory.get_times()
@@ -361,7 +362,6 @@ def plot_ensemble_results(model, ensemble, expts = None,
                     ypts = scipy.concatenate((lower_vals, upper_vals[::-1]))
                     fill(xpts, ypts, fc=color, alpha=0.4)
 
-                lines.append(l)
                 # Let's print the pretty name for our variable if we can.
                 name = net.get_component_name(dataId)
                 labels.append('%s in %s for %s' % (name, netId, exptId))
