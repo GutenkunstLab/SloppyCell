@@ -2845,7 +2845,6 @@ class Network:
                 # We stored None for the c_module, so we don't repeatedly
                 # try compiling the same bad C code.
                 c_module = None
-                raise
             self._c_module_cache[curr_c_code] = c_module
 
         # Now we add all the appropriate functions to our Network.
