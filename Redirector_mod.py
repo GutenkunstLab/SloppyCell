@@ -2,6 +2,9 @@ import os
 import sys
 import tempfile
 
+# Adapted from code by Robert Kern. 
+# See http://osdir.com/ml/python.ipython.devel/2005-08/msg00014.html
+
 STDOUT = 1
 STDERR = 2
 
