@@ -14,7 +14,7 @@ class test_IntegrateWithLogs(unittest.TestCase):
         for var in net.variables.keys():
             norm_val = traj.get_var_val_index(var, -1)
             log_val = log_traj.get_var_val_index(var, -1)
-            self.assertAlmostEqual(norm_val, log_val, 6, 'Failed for %s.' % var)
+            self.assertAlmostEqual(norm_val, log_val, 5, 'Failed for %s.' % var)
 
     def test_roots(self):
         net = base_net.copy('test_basic')
@@ -25,7 +25,7 @@ class test_IntegrateWithLogs(unittest.TestCase):
         for var in net.variables.keys():
             norm_val = traj.get_var_val_index(var, -1)
             log_val = log_traj.get_var_val_index(var, -1)
-            self.assertAlmostEqual(norm_val, log_val, 6, 'Failed for %s.' % var)
+            self.assertAlmostEqual(norm_val, log_val, 5, 'Failed for %s.' % var)
 
     def test_sens(self):
         net = base_net.copy('test_basic')
@@ -39,7 +39,7 @@ class test_IntegrateWithLogs(unittest.TestCase):
                 log_val = log_traj.get_var_val_index((dyn_var, opt_var), -1)
                 msg = 'Failed for (%s, %s) %f v %f'\
                         % (dyn_var, opt_var, norm_val, log_val)
-                self.assertAlmostEqual(norm_val, log_val, 6, msg)
+                self.assertAlmostEqual(norm_val, log_val, 5, msg)
         
 suite = unittest.makeSuite(test_IntegrateWithLogs)
 if __name__ == '__main__':
