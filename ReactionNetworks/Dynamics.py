@@ -131,7 +131,7 @@ def generate_tolerances(net, rtol, atol=None):
     if rtol == None:
         rtol = global_rtol
     if scipy.isscalar(rtol):
-        rtol = [rtol] * len(net.dynamicVars)
+        rtol = scipy.ones(len(net.dynamicVars)) * rtol
 
     # We set atol to be a minimum of global_atol to avoid variables with large
     # typical values going negative.
