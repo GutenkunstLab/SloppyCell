@@ -184,8 +184,8 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
               False (default) then the integrator will stop after taking 500
               steps unless max_steps is set > 500.  The default value for
               max_steps is 500.
-      rpar -- If not None, this is passed to the function being evaluated and 
-              can be used to pass additional arguments.
+      rpar -- If not None, this sequence is passed to the function being
+              evaluated and can be used to pass additional arguments.
       hmax -- If not None, this sets an upper limit to the step sizes that 
               ddaskr will take during the integration. Setting this can help
               integration for difficult systems, but it can also slow things
@@ -208,7 +208,10 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
       
     """
 
-    if rpar is None:
+    if scipy.isscalar(rpar):
+	raise ValueError('rpar must be a sequence.')
+
+    if rpar is None or len(rpar) == 0:
         # rpar needs to have at least length 1 or daskr will screw up arguments.
         rpar = scipy.empty(1)
 
