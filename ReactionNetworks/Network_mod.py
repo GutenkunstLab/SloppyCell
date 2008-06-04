@@ -904,7 +904,7 @@ class Network:
 
     def integrateSensitivity(self, times, params = None,
                              returnEvents = False, addTimes = True,
-                             rtol=1e-6):
+                             rtol=None):
         if self.add_tail_times:
             times = scipy.concatenate((times, [1.05*times[-1]]))
         return Dynamics.integrate_sensitivity(self, times, params, rtol,

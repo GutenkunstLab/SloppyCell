@@ -25,11 +25,13 @@ if HAVE_PYPAR:
 # This specifies the maximum number of steps daeint will take between timepoints
 MAX_STEPS = 1e5
 
+# global_rtol is the default relative tolerance to use if none is specied in
+# calls.
 global_rtol = 1e-6
 # global_atol overrides the default of rtol*typical_value. It may be useful if
 # we're having problems with large values going negative. (Although then it
 # might be better to just use logarithmic integration.)
-global_atol = 1
+global_atol = None
 global_hmax = None
 
 return_derivs = False # do we want time derivatives of all trajectories 
@@ -127,17 +129,18 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
 
 def generate_tolerances(net, rtol, atol=None):
     if rtol == None:
-        rtol = 1e-6
+        rtol = global_rtol
     if scipy.isscalar(rtol):
         rtol = [rtol] * len(net.dynamicVars)
-    rtol = scipy.minimum(rtol, global_rtol)
 
     # We set atol to be a minimum of global_atol to avoid variables with large
     # typical values going negative.
     if (scipy.isscalar(atol) or atol==None):
         typ_vals = [abs(net.get_var_typical_val(id))
                     for id in net.dynamicVars.keys()]
-        atol = scipy.minimum(rtol * scipy.asarray(typ_vals), global_atol)
+        atol = rtol * scipy.asarray(typ_vals)
+        if global_atol:
+            atol = scipy.minimum(atol, global_atol)
     return rtol, atol
 
 
@@ -454,7 +457,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
     return event_just_fired
 
 
-def integrate_sens_subset(net, times, rtol=1e-6,
+def integrate_sens_subset(net, times, rtol=None,
                           fill_traj=False, opt_vars=None,
                           return_derivs=False, redirect_msgs=True):
     """
@@ -688,7 +691,7 @@ def _parse_sens_result(result, net, opt_vars, yout, youtdt=None):
             youtdt[:, net_start: net_end] =\
                     result[2][:, work_start:work_end]
 
-def integrate_sensitivity(net, times, params=None, rtol=1e-6, 
+def integrate_sensitivity(net, times, params=None, rtol=None, 
                           fill_traj=False, return_derivs=False,
                           redirect_msgs=True):
     logger.debug('Entering integrate_sens on node %i' % my_rank)
