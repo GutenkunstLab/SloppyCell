@@ -33,7 +33,7 @@ class test_ScaleFactors(unittest.TestCase):
         mCopy.get_expts()['expt1'].set_shared_sf([['x', 'y']])
         mCopy.get_expts()['expt1'].set_fixed_sf({'x': 0.2})
         c = mCopy.cost(params)
-        self.assertAlmostEqual(c, 182.61850579, 4,
+        self.assertAlmostEqual(c, 182.61850579, 3,
                                'Failed on test of fixed shared scale factors.')
 
     def test_consistent_fixed_and_shared_scale_factors(self):
@@ -43,7 +43,7 @@ class test_ScaleFactors(unittest.TestCase):
                                             'y': 0.2})
         mCopy.get_expts()['expt1'].set_shared_sf([['x', 'y']])
         c = mCopy.cost(params)
-        self.assertAlmostEqual(c, 182.61850579, 4,
+        self.assertAlmostEqual(c, 182.61850579, 3,
                                'Failed on test of dual fixed shared scale factors.')
     
     def test_shared_scale_factors(self):
