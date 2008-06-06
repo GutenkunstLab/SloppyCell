@@ -775,7 +775,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
     return ddv_dpTrajectory
 
 def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
-                        stability=False):
+                        stability=False, fsolve_factor=100):
     """
     Return the dynamic variables values at the closest fixed point of the net.
 
@@ -787,6 +787,8 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
     time Time to plug into equations.
     stability   If True, return the stability for the fixed point. -1 indicates
                 stable node, +1 indicates unstable node, 0 indicates saddle
+    fsolve_factor   'factor' argument for fsolve. For more information, see 
+                    help(scipy.optimize.factor). Should be in range 0.1 to 100.
     """
     net.compile()
 
@@ -833,7 +835,8 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
         dvFixed, infodict, ier, mesg =\
                 scipy.optimize.fsolve(func, x0=x0.copy(), full_output=True,
                                       fprime=fprime,
-                                      xtol=xtol, maxfev=10000)
+                                      xtol=xtol, maxfev=10000,
+                                      factor=fsolve_factor)
     except (scipy.optimize.minpack.error, ArithmeticError), X:
         raise FixedPointException(('Failure in fsolve.', X))
 
