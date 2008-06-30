@@ -48,6 +48,8 @@ class test_Trajectory(unittest.TestCase):
     def test_include_assigned_vars_in_event_info(self):
         """ Test that values of assigned variables can be included in event information """
 
+        # First we test a trajectory that doesn't store the assigned
+        # variables at events.
         net1 = base_net.copy('test')        
         net1.add_event('event 1', 'gt(time, 5)', 
                       {'k1': 2})
@@ -57,6 +59,7 @@ class test_Trajectory(unittest.TestCase):
 
         self.assertEqual(len(traj1.event_info), 3)
         
+        # Then we test a trajectory that does store the assigned variables.
         net2 = net1.copy('test')        
         traj2 = Dynamics.integrate(net2, [0, 5.5, 15], include_assigned_vals=True)
         te, ye, ie, assign_e = traj2.event_info
