@@ -44,6 +44,26 @@ class test_Trajectory(unittest.TestCase):
         self.assertAlmostEqual(interp_traj[8], 2.24340106e-03, 5)
         self.assertAlmostEqual(interp_traj[10], 4.37991652e-06, 5)
         self.assertAlmostEqual(interp_traj[14], 3.76502117e-12, 5)
+
+    def test_include_assigned_vars_in_event_info(self):
+        """ Test that values of assigned variables can be included in event information """
+
+        net1 = base_net.copy('test')        
+        net1.add_event('event 1', 'gt(time, 5)', 
+                      {'k1': 2})
+        net1.add_event('event2', 'gt(k1, 1)', 
+                      {'k1': 4})
+        traj1 = Dynamics.integrate(net1, [0, 5.5, 15])
+
+        self.assertEqual(len(traj1.event_info), 3)
+        
+        net2 = net1.copy('test')        
+        traj2 = Dynamics.integrate(net2, [0, 5.5, 15], include_assigned_vals=True)
+        te, ye, ie, assign_e = traj2.event_info
+        s_sum = assign_e[0]['S_sum']
+
+        self.assertEqual(len(traj2.event_info), 4)
+        self.assertAlmostEqual(s_sum, 0.29791465091325, 7)
         
 
 suite = unittest.makeSuite(test_Trajectory)
