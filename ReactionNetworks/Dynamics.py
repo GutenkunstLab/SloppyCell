@@ -146,7 +146,8 @@ def generate_tolerances(net, rtol, atol=None):
 
 def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
               return_events=False, return_derivs=False,
-              redirect_msgs=True, calculate_ic = False):
+              redirect_msgs=True, calculate_ic = False,
+              include_assigned_vals = False):
     """
     Integrate a Network, returning a Trajectory.
 
@@ -374,7 +375,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         te.append(holder.time_exec)
         ye.append(holder.y_pre_exec)
         ie.append(holder.event_index)
-    trajectory.add_event_info((te,ye,ie))
+    trajectory.add_event_info(net, (te,ye,ie), tout[-1],
+                              include_assigned_vals = include_assigned_vals)
     trajectory.events_occurred = events_occurred
     net.trajectory = trajectory
 
