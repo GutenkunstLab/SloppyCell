@@ -45,7 +45,7 @@ class test_Trajectory(unittest.TestCase):
         self.assertAlmostEqual(interp_traj[10], 4.37991652e-06, 5)
         self.assertAlmostEqual(interp_traj[14], 3.76502117e-12, 5)
 
-    def test_include_assigned_vars_in_event_info(self):
+    def test_include_extra_info_in_event_info(self):
         """ Test that values of assigned variables can be included in event information """
 
         # First we test a trajectory that doesn't store the assigned
@@ -61,11 +61,11 @@ class test_Trajectory(unittest.TestCase):
         
         # Then we test a trajectory that does store the assigned variables.
         net2 = net1.copy('test')        
-        traj2 = Dynamics.integrate(net2, [0, 5.5, 15], include_assigned_vals=True)
-        te, ye, ie, assign_e = traj2.event_info
+        traj2 = Dynamics.integrate(net2, [0, 5.5, 15], include_extra_event_info =True)
+        te, ye_pre, ye_post, ie, assign_e = traj2.event_info
         s_sum = assign_e[0]['S_sum']
 
-        self.assertEqual(len(traj2.event_info), 4)
+        self.assertEqual(len(traj2.event_info), 5)
         self.assertAlmostEqual(s_sum, 0.29791465091325, 7)
         
 
