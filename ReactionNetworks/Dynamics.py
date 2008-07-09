@@ -147,7 +147,7 @@ def generate_tolerances(net, rtol, atol=None):
 def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
               return_events=False, return_derivs=False,
               redirect_msgs=True, calculate_ic = False,
-              include_assigned_vals = False):
+              include_extra_event_info = False):
     """
     Integrate a Network, returning a Trajectory.
 
@@ -173,6 +173,9 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                    integrator will be returned to the display.
     calculate_ic   If True, the integrator will calculate consistent initial
                    conditions.
+    include_extra_event_info    If True, the returned trajectory will have more
+                    detailed event information, inclusing pre- and post- execution
+                    state, and assigned variable informtaion.
     """
     logger.debug('Integrating network %s.' % net.get_id())
 
@@ -370,13 +373,22 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
     trajectory.appendFromODEINT(tout, yout, holds_dt=return_derivs)
     # Fill in the historical te, ye, ie lists
-    te, ye, ie = [],[],[]
+    te, ye, ie, ye_post = [],[],[],[]
     for holder in events_occurred:
         te.append(holder.time_exec)
         ye.append(holder.y_pre_exec)
+        ye_post.append(holder.y_post_exec)
         ie.append(holder.event_index)
-    trajectory.add_event_info(net, (te,ye,ie), tout[-1],
-                              include_assigned_vals = include_assigned_vals)
+
+    # We only include y_post_exec and assignned vars if requested
+    if include_extra_event_info == False:
+        trajectory.add_event_info(net, (te,ye,ie), tout[-1],
+                              include_extra_event_info = include_extra_event_info)
+    elif include_extra_event_info == True:
+        trajectory.add_event_info(net, (te,ye,ye_post,ie), tout[-1],
+                              include_extra_event_info = include_extra_event_info)
+
+
     trajectory.events_occurred = events_occurred
     net.trajectory = trajectory
 

@@ -154,7 +154,7 @@ class Trajectory:
     def get_times(self):
         return self.timepoints
 
-    def add_event_info(self, net, eventinfo, time_traj_ended, include_assigned_vals = False):
+    def add_event_info(self, net, eventinfo, time_traj_ended, include_extra_event_info = False):
         """
         Add information about the network state at each event execution
         """
@@ -163,11 +163,11 @@ class Trajectory:
         # the eventinfo tuple that contains the values of the assigned
         # vars in the network, evaluated at each event state
 
-        if include_assigned_vals == True:
-            (te, ye, ie) = eventinfo
+        if include_extra_event_info == True:
+            (te, ye_pre, ye_post, ie) = eventinfo
             assigned_states = []
             prev_vals = net.get_var_vals()
-            for t, y, ii in zip(te, ye, ie):
+            for t, y, ii in zip(te, ye_pre, ie):
                 net.updateVariablesFromDynamicVars(y, t)
                 a_ids = [id for id in net.assignedVars.keys()]
                 a_vals = [net.get_var_val(id) for id in net.assignedVars.keys()]
@@ -175,11 +175,10 @@ class Trajectory:
                 a_state = dict(zip(a_ids,a_vals))
                 assigned_states.append(a_state)
             net.set_var_vals(prev_vals, time_traj_ended)
+            eventinfo = (te,ye_pre,ye_post,ie,assigned_states)
 
-            eventinfo = (te,ye,ie,assigned_states)
-
-        # the information is a triple (te,ye,ie), or a quadruple
-        # if include_assigned_vals is returned
+        # the information is a triple (te,ye,ie), or a quintuple
+        # if include_extra_event_info is True
         self.event_info = eventinfo  
 
         
