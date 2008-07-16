@@ -2949,9 +2949,10 @@ class Network:
         #  redirecting output if there's an exection in running f2py
         # These options assume we're working with mingw.
         win_options = ''
+        executable = sys.executable
         if sys.platform == 'win32':
             win_options = '--compiler=mingw32 --fcompiler=gnu'
-            
+            executable = executable.replace('\\', '\\\\')
         try:
             if hide_f2py_output:
                 redir = Utility.Redirector()
@@ -2964,7 +2965,7 @@ class Network:
                                        '-c %(win_options)s %(mod_name)s.pyf '
                                        '%(mod_name)s.c %(sc_path)s/mtrand.c '
                                        '-I%(sc_path)s'
-                                       % {'exec': sys.executable,
+                                       % {'exec': executable,
                                           'win_options': win_options,
                                           'mod_name': mod_name,
                                           'sc_path': sc_path})
