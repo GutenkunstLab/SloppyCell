@@ -182,6 +182,9 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     if params is not None:
         net.update_optimizable_vars(params)
     constants = net.constantVarValues
+    # On some systems, f2py'd functions fail if len(constants) == 0.
+    if len(constants) == 0:
+        constants = [0]
     # If you ask for time = 0, we'll assume you want dynamic variable values
     # reset.
     times = scipy.asarray(times)
@@ -888,6 +891,9 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
 
 def find_ypic_sens(y, yp, time, var_types, rtol, atol_for_sens, constants, 
                    net, opt_var, redirect_msgs=False):
+    # On some systems, the f2py'd functions don't like len(constants)=0.
+    if len(constants) == 0:
+        constants = [0]
     var_types = scipy.asarray(var_types)
     y = scipy.asarray(y, scipy.float_)
     yp = scipy.asarray(yp, scipy.float_)
@@ -920,6 +926,10 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
     # We use this to find consistent sets of initial conditions for our
     #  integrations. (We don't let ddaskr do it, because it doesn't calculate
     #  values for d(alg_var)/dt, and we need them for sensitivity integration.)
+
+    # On some systems, the f2py'd functions don't like len(constants)=0.
+    if len(constants) == 0:
+        constants = [0]
     var_types = scipy.asarray(var_types)
     atol = scipy.asarray(atol)
     rtol = scipy.asarray(rtol)
