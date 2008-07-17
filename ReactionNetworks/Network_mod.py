@@ -2838,10 +2838,11 @@ class Network:
                         os.unlink('%s.pyd' % module_name)
                     except OSError:
                         pass
-            except:
+            except ImportError, X:
                 # Compiling C failed.
-                logger.warn('Compiling of C functions for network %s failed!'
-                            % self.get_id())
+                logger.warn('Failed to import dynamically compiled C module %s '
+                            'for network %s.' % (module_name, self.get_id()))
+                logger.warn(X)
                 # We stored None for the c_module, so we don't repeatedly
                 # try compiling the same bad C code.
                 c_module = None
@@ -2949,31 +2950,31 @@ class Network:
         #  redirecting output if there's an exection in running f2py
         # These options assume we're working with mingw.
         win_options = ''
-        executable = sys.executable
         if sys.platform == 'win32':
             win_options = '--compiler=mingw32 --fcompiler=gnu'
-            executable = executable.replace('\\', '\\\\')
         try:
             if hide_f2py_output:
                 redir = Utility.Redirector()
                 redir.start()
+            sc_path = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
+            command = '-c %(win_options)s %(mod_name)s.pyf '\
+                    '%(mod_name)s.c %(sc_path)s/mtrand.c -I%(sc_path)s'\
+                    % {'win_options': win_options, 'mod_name': mod_name, 
+                       'sc_path': sc_path}
+
             prev_cflags = os.getenv('CFLAGS', '')
             os.putenv('CFLAGS', prev_cflags + ' -Wno-unused-variable')
-            sc_path = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
-            status, msg = exec_command('%(exec)s -c '
-                                       '"import numpy.f2py;numpy.f2py.main()" '
-                                       '-c %(win_options)s %(mod_name)s.pyf '
-                                       '%(mod_name)s.c %(sc_path)s/mtrand.c '
-                                       '-I%(sc_path)s'
-                                       % {'exec': executable,
-                                          'win_options': win_options,
-                                          'mod_name': mod_name,
-                                          'sc_path': sc_path})
+            # f2py wants an extra argument at the front here. It's not actually
+            # used though...
+            oldargv = sys.argv
+            sys.argv =  ['f2py'] + command.split()
+            import numpy.f2py.f2py2e
+            output = numpy.f2py.f2py2e.run_compile()
+            sys.argv = sys.argv
             os.putenv('CFLAGS', prev_cflags)
-
-            if status != 0:
-                logger.warn(msg)
-                raise RuntimeError('Failed to compile module %s.' % mod_name)
+        except SystemExit, X:
+            logger.warn('Call to f2py failed for network %s.' % self.get_id())
+            logger.warn(X)
         finally:
             if hide_f2py_output:
                 redir.stop()
