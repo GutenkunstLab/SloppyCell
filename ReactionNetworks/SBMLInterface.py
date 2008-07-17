@@ -214,6 +214,17 @@ def stoichToString(species, stoich):
 def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
     r = libsbml.SBMLReader()
     d = r.readSBMLFromString(sbmlStr)
+    if d.getNumErrors():
+        message = 'libSBML reported errors in SBML file. Try running file '\
+                'through the online validator: '\
+                'http://www.sbml.org/Facilities/Validator . Specific errors '\
+                'noted are: '
+        errors = []
+        for ii in range(d.getNumErrors()):
+            pm = d.getError(ii)
+            errors.append(pm.getMessage())
+        raise ValueError(message + '; '.join(errors))
+
     m = d.getModel()
 
     modelId = m.getId()
