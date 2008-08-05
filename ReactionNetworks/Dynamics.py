@@ -22,6 +22,9 @@ from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
 if HAVE_PYPAR:
     import pypar
 
+_double_epsilon_ = scipy.finfo(scipy.float_).eps
+_double_tiny_ = scipy.finfo(scipy.float_).tiny
+
 # This specifies the maximum number of steps daeint will take between timepoints
 MAX_STEPS = 1e5
 
@@ -828,7 +831,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
                            'point and with_logs = True. Rounding them up to '
                            'double_tiny. The most negative value was %g.' 
                            % min(dv0))
-            dv0 = scipy.maximum(dv0, scipy.misc.limits.double_tiny)
+            dv0 = scipy.maximum(dv0, _double_tiny_)
 
         # XXX: Would like to replace these with C'd versions, if it's holding
         #      any of our users up.
@@ -836,7 +839,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
             return net.res_function_logdv(time, logy, zeros, consts)
         def fprime(logy):
             y = scipy.exp(logy)
-            y = scipy.maximum(y, scipy.misc.limits.double_tiny)
+            y = scipy.maximum(y, _double_tiny_)
             return net.dres_dc_function(time, y, zeros, consts)
 
         x0 = scipy.log(dv0)
@@ -860,7 +863,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
     except (scipy.optimize.minpack.error, ArithmeticError), X:
         raise FixedPointException(('Failure in fsolve.', X))
 
-    tiny = scipy.misc.limits.double_epsilon
+    tiny = _double_epsilon_
 
     if with_logs:
         dvFixed = scipy.exp(dvFixed)

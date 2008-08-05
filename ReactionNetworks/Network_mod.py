@@ -37,6 +37,9 @@ from Components import *
 import Dynamics
 import Trajectory_mod
 
+_double_max_ = scipy.finfo(scipy.float_).max
+_double_tiny_ = scipy.finfo(scipy.float_).tiny
+
 class Network:
     # These are the methods that should be called to generate all the dynamic
     # functions. Each method should store the resulting function body in
@@ -532,7 +535,7 @@ class Network:
             seed = int(seed % sys.maxint)
             
         if rmsd==None:
-            rmsd = scipy.misc.limits.double_max
+            rmsd = _double_max_
             
         self.stochastic = {'seed':seed, 'reseed':True,
                            'fill_dt':fill_dt, 'rmsd':rmsd}
@@ -1940,8 +1943,8 @@ class Network:
         py_body.append('log_dv = scipy.asarray(log_dv)')
         py_body.append('log_yp = scipy.asarray(log_yp)')
         py_body.append('dynamicVars = scipy.exp(log_dv)')
-        py_body.append('dynamicVars = scipy.maximum(dynamicVars, '
-                       'scipy.misc.limits.double_tiny)')
+        py_body.append('dynamicVars = scipy.maximum(dynamicVars, %g)' 
+                       % _double_tiny_)
         py_body.append('yprime = log_yp * dynamicVars')
         py_body.append('return res_function(time, dynamicVars, yprime, '
                        'constants)')
@@ -1972,8 +1975,8 @@ class Network:
         py_body.append('log_dv = scipy.asarray(log_dv)')
         py_body.append('log_yp = scipy.asarray(log_yp)')
         py_body.append('dynamicVars = scipy.exp(log_dv)')
-        py_body.append('dynamicVars = scipy.maximum(dynamicVars, '
-                       'scipy.misc.limits.double_tiny)')
+        py_body.append('dynamicVars = scipy.maximum(dynamicVars, %g)'
+                       % _double_tiny_)
         py_body.append('yprime = log_yp * dynamicVars')
         py_body.append('return root_func(time, dynamicVars, yprime, '
                        'constants)')
@@ -2007,8 +2010,8 @@ class Network:
         py_body.append('sens_y = scipy.array(sens_y)')
         py_body.append('sens_yp = scipy.array(sens_yp)')
         py_body.append('sens_y[:%i] = scipy.exp(sens_y[:%i])' % (N_dyn, N_dyn))
-        py_body.append('sens_y[:%i] = scipy.maximum(sens_y[:%i], '
-                       'scipy.misc.limits.double_tiny)' % (N_dyn, N_dyn))
+        py_body.append('sens_y[:%i] = scipy.maximum(sens_y[:%i], %g)'
+                       % (N_dyn, N_dyn, _double_tiny_))
         py_body.append('sens_yp[:%i] = sens_yp[:%i] * sens_y[:%i]'
                        % (N_dyn, N_dyn, N_dyn))
         py_body.append('return sens_rhs(time, sens_y, sens_yp, constants)')

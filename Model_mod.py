@@ -16,6 +16,8 @@ import SloppyCell.Collections as Collections
 import SloppyCell.Utility as Utility
 import KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
+
+_double_epsilon_ = scipy.finfo(scipy.float_).eps
     
 class Model:
     """
@@ -255,7 +257,7 @@ class Model:
         params = scipy.array(params)
         
         if stepSizeCutoff==None:
-            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(_double_epsilon_)
             
 	if relativeScale is True:
             eps = epsf * abs(params)
@@ -597,7 +599,7 @@ class Model:
 	orig_vals = scipy.array(params)
 
         if stepSizeCutoff is None:
-            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(_double_epsilon_)
             
 	if relativeScale:
             eps_l = scipy.maximum(eps * abs(params), stepSizeCutoff)
@@ -774,7 +776,7 @@ class Model:
 
 	nOv = len(params)
         if stepSizeCutoff is None:
-            stepSizeCutoff = scipy.sqrt(scipy.misc.limits.double_epsilon)
+            stepSizeCutoff = scipy.sqrt(_double_epsilon_)
             
         params = scipy.asarray(params)
 	if relativeScale:

@@ -20,7 +20,7 @@ import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
 abs = absolute
-_epsilon = sqrt(scipy.misc.limits.double_epsilon)
+_epsilon = sqrt(scipy.finfo(scipy.float_).eps)
 
         
 def approx_fprime(xk,f,epsilon,*args):
