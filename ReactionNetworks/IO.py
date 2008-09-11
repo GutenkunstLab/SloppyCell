@@ -43,7 +43,16 @@ def net_DOT_file(net, filename = None):
     f.close()
 
 
-def eqns_TeX_file(net, filename = None):
+def eqns_TeX_file(net, filename=None, simpleTeX=False):
+    """
+    Output a TeX file containing the network equations and other information.
+
+    net: Network to work with.
+    filename: Filename for resulting TeX file. If filename==None, the output 
+              file will be <network id>.tex
+    simpleTeX: If True, some TeX that causes problems in WYSIWYG editors such as
+               LyX will be omitted.
+    """
     net.compile()
 
     lines = []
@@ -52,7 +61,7 @@ def eqns_TeX_file(net, filename = None):
     lines.append(r'\usepackage{fullpage}')
     lines.append(r'\usepackage{longtable}')
     lines.append(r'\begin{document}')
-    lines.append(_net_eqns_to_TeX(net))
+    lines.append(_net_eqns_to_TeX(net, simpleTeX))
     lines.append(r'\end{document}')
 
     if filename is None:
@@ -61,10 +70,13 @@ def eqns_TeX_file(net, filename = None):
     f.write(os.linesep.join(lines))
     f.close()
 
-def _net_eqns_to_TeX(net):
+def _net_eqns_to_TeX(net, simpleTeX=False):
     """
     Return a string that contains the longtable-bound TeX'd equations for the
     network. Also includes events and current optimizable parameter values.
+
+    simpleTeX: If True, some TeX that causes problems in WYSIWYG editors such as
+               LyX will be omitted.
     """
     # Build up our name_dict. We wrap variables in a mathrm
     name_dict = dict([(id, r'\mathrm{%s}' % net.get_component_name(id, True))
@@ -84,23 +96,27 @@ def _net_eqns_to_TeX(net):
             lhs = '%s(%s)' % (func_id, r','.join(func.variables))
             func_KL.set(lhs, func.math)
         funcs_str = ExprManip.Py2TeX.dict2TeX(func_KL, name_dict, 
-                                              split_terms=False)
+                                              split_terms=False,
+                                              simpleTeX=simpleTeX)
         outputs.extend([r'\section*{Function Definitions}', funcs_str])
 
     if net.assignmentRules:
         assigns_str = ExprManip.Py2TeX.dict2TeX(net.assignmentRules, name_dict, 
-                                                split_terms=True)
+                                                split_terms=True,
+                                                simpleTeX=simpleTeX)
         outputs.extend([r'\section*{Assignment Rules}', assigns_str])
 
     if net.diff_eq_rhs:
         eqns_str = ExprManip.Py2TeX.dict2TeX(net.diff_eq_rhs, name_dict, 
                                              r'\frac{d\,%s}{dt}', 
-                                             split_terms=True)
+                                             split_terms=True,
+                                             simpleTeX=simpleTeX)
         outputs.extend([r'\section*{Differential Equations}', eqns_str])
 
     if net.algebraicRules:
         eqns_str = ExprManip.Py2TeX.dict2TeX(net.algebraicRules, name_dict, 
-                                             lhs_form='0', split_terms=True)
+                                             lhs_form='0', split_terms=True,
+                                             simpleTeX=simpleTeX)
         outputs.extend([r'\section*{Algebraic Equations}', eqns_str])
 
     if net.events:
