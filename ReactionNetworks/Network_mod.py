@@ -202,6 +202,7 @@ class Network:
         self._dynamic_funcs_c = KeyedList()
         self._func_defs_c = KeyedList()
 
+        self.deriv_funcs_enabled = True
         self.compiled = False
         
     add_int_times, add_tail_times = True, True
@@ -2680,6 +2681,44 @@ class Network:
                            if id in vars_in_alg_rules]
         self.algebraicVars = KeyedList(sorted_alg_vars)
 
+
+    def disable_deriv_funcs(self):
+        """
+        Disables the creation of derivative functions, which can speed up
+        integration.
+        """
+        
+        if self.deriv_funcs_enabled == True:
+            self.ddaskr_jac = None
+            self._dynamic_structure_methods = ['_make_res_function',
+                                          '_make_alg_deriv_func',
+                                          '_make_alg_res_func',
+                                          '_make_integrate_stochastic_tidbit'
+                                          ]
+            self.deriv_funcs_enabled = False
+
+    def enable_deriv_funcs(self):
+        """
+        Enables the creation of derivative functions, which allows
+        sensitivity integration and may speed up normal integration
+        as well.
+        """        
+
+        if self.deriv_funcs_enabled == False:
+            self._dynamic_structure_methods = ['_make_res_function',
+                                          '_make_alg_deriv_func',
+                                          '_make_alg_res_func',
+                                          '_make_dres_dc_function',
+                                          '_make_dres_dcdot_function',
+                                          '_make_ddaskr_jac',
+                                          '_make_dres_dsinglep',
+                                          '_make_sens_rhs',
+                                          '_make_log_funcs',
+                                          '_make_integrate_stochastic_tidbit'
+                                          ]
+            self.deriv_funcs_enabled = True
+    
+
     _last_structure = None
     # This is an option to disable compilation of C modules.
     disable_c = SloppyCell.disable_c
@@ -2736,7 +2775,7 @@ class Network:
                                  'Not enough  algebraic rules.') 
             self.make_func_defs()
             self._makeDiffEqRHS()
-            for method in self._dynamic_structure_methods: 
+            for method in self._dynamic_structure_methods:
                 getattr(self, method)()
             reexec = True
 
@@ -2794,7 +2833,9 @@ class Network:
     # This is an option to disable compilation of C modules.
     def exec_dynamic_functions(self, disable_c=False, del_c_files=True, 
                                curr_c_code=None):
-        curr_py_bodies = '\n'.join(self._dynamic_funcs_python.values())
+        # only get the bodies that were created.
+        curr_py_bodies = '\n'.join([body for body in self._dynamic_funcs_python.values()\
+                                    if body != None])
 
         key = (curr_py_bodies, tuple(self._func_strs.items()))
         # Search our cache of python functions.
@@ -2805,8 +2846,9 @@ class Network:
             py_func_dict = {}
             self._py_func_dict_cache[key] = py_func_dict
             for func_name, body in self._dynamic_funcs_python.items():
-                exec body in self.namespace, locals()
-                py_func_dict[func_name] = locals()[func_name]
+                if body != None:
+                    exec body in self.namespace, locals()
+                    py_func_dict[func_name] = locals()[func_name]
 
         # Add all the functions to our Network.
         for func_name, func in py_func_dict.items():
@@ -2884,7 +2926,7 @@ class Network:
             c_code.append(body)
             c_code.append('')
 
-        c_code = '\n'.join(c_code)
+        c_code = '\n'.join(code for code in c_code if code != None)
         return c_code
 
     def output_c(self, c_code, mod_name=None):
@@ -2903,9 +2945,16 @@ class Network:
         c_fd.close()
 
         # Read in the signatures that we'll fill in
-        pyf_base_filename = os.path.join(SloppyCell.__path__[0], 
-                                         'ReactionNetworks',
-                                         'f2py_signatures.pyf')
+        # use different sig file if derivs are disabled
+        if self.deriv_funcs_enabled != True:
+            pyf_base_filename = os.path.join(SloppyCell.__path__[0], 
+                                             'ReactionNetworks',
+                                             'f2py_signatures_no_derivs.pyf')
+        else:
+            pyf_base_filename = os.path.join(SloppyCell.__path__[0], 
+                                             'ReactionNetworks',
+                                             'f2py_signatures.pyf')
+
         pyf_base_fd = file(pyf_base_filename, 'r')
         pyf_base = pyf_base_fd.read()
         
@@ -2920,15 +2969,16 @@ class Network:
         # Since the number of optimizable parameters varies in each network,
         # we cannot include these functions in the f2p_signatres template.
         dres_dparams_code = ''
-        for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
-            func_name = 'dres_d' + wrt
-            dres_dparams_code += '    subroutine ' + func_name + '(time, dynamicVars, yprime, constants, pd)\n'
-            dres_dparams_code += '        double precision intent(in) :: time\n'
-            dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: dynamicVars\n'
-            dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: yprime\n'
-            dres_dparams_code += '        double precision intent(in), dimension(' + str(N_const) + ') :: constants\n'
-            dres_dparams_code += '        double precision intent(out), dimension(' + str(N_dyn) + ') :: pd\n'
-            dres_dparams_code += '    end subroutine ' + func_name + '\n'
+        if self.deriv_funcs_enabled == True:
+            for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
+                func_name = 'dres_d' + wrt
+                dres_dparams_code += '    subroutine ' + func_name + '(time, dynamicVars, yprime, constants, pd)\n'
+                dres_dparams_code += '        double precision intent(in) :: time\n'
+                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: dynamicVars\n'
+                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: yprime\n'
+                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_const) + ') :: constants\n'
+                dres_dparams_code += '        double precision intent(out), dimension(' + str(N_dyn) + ') :: pd\n'
+                dres_dparams_code += '    end subroutine ' + func_name + '\n'
 
         # Now update the template with the code we just generated and the other
         # names and dimensions
