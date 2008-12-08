@@ -233,7 +233,10 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     event_just_executed = False
 
     # This is the jacobian for use with ddaskr.
-    _ddaskr_jac = net.ddaskr_jac
+    try:
+        _ddaskr_jac = net.ddaskr_jac
+    except AttributeError:
+        _ddaskr_jac = None
 
     exception_raised = None
     while start < times[-1]:
