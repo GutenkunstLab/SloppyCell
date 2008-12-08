@@ -1,0 +1,50 @@
+python module %(mod_name)s
+interface
+    subroutine res_function(time, dynamicVars, yprime, cj, residual, ires, constants, ipar) 
+        double precision intent(in) :: time
+        double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
+        double precision intent(in), dimension(%(N_dyn)i) :: yprime
+        double precision intent(hide) :: cj
+        double precision intent(out), dimension(%(N_dyn)i) :: residual
+        integer intent(hide) :: ires
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        integer intent(hide), dimension(2) :: ipar
+    end subroutine res_function
+    subroutine root_func(neq,t,y,yp,nrt,root_devs,constants,ipar)
+        integer intent(hide) :: neq
+        double precision intent(in) :: t
+        double precision intent(in), dimension(%(N_dyn)i) :: y
+        double precision intent(in), dimension(%(N_dyn)i) :: yp
+        integer intent(hide) :: nrt
+        double precision intent(out), dimension(%(N_rt)i) :: root_devs
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        ! This has been set equal to (neq, len(rpar)) in the daskr call
+        integer dimension(2), intent(hide) :: ipar
+    end subroutine root_func
+    subroutine alg_deriv_func(alg_yp, dynamicVars, yp, time, constants, alg_derivs_res)
+        double precision intent(in), dimension(%(N_alg)i) :: alg_yp
+        double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
+        double precision intent(in), dimension(%(N_dyn)i) :: yp
+        double precision intent(in) :: time
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        double precision intent(out), dimension(%(N_alg)i) :: alg_derivs_res
+    end subroutine alg_deriv_func
+    subroutine alg_res_func(alg_vals, dynamicVars, time, constants, residual) 
+        double precision intent(in), dimension(%(N_alg)i) :: alg_vals
+        double precision intent(in), dimension(%(N_dyn)i) :: dynamicVars
+        double precision intent(in) :: time
+        double precision intent(in), dimension(%(N_const)i) :: constants
+        double precision intent(out), dimension(%(N_alg)i) :: residual
+    end subroutine alg_res_func  
+    subroutine integrate_stochastic_tidbit(seed_ptr, reseed, time_ptr, dv, cv, rmsd_ptr, stop_time_ptr, trajectory)
+	integer intent(in) :: seed_ptr
+	integer intent(in) :: reseed
+	double precision intent(in,out) :: time_ptr
+	integer intent(in,out), dimension(%(N_dyn)i) :: dv
+	double precision intent(in), dimension(%(N_const)i) :: cv
+	double precision intent(in) :: rmsd_ptr
+	double precision intent(in,out) :: stop_time_ptr
+	double precision intent(out), dimension(%(N_dyn)s) :: trajectory
+    end subroutine integrate_stochastic_tidbit
+end interface
+end module %(mod_name)s
