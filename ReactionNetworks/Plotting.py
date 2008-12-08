@@ -6,6 +6,9 @@ import SloppyCell.Plotting
 from SloppyCell.Plotting import *
 import Network_mod
 
+import logging
+logger = logging.getLogger('ReactionNetworks.Plotting')
+
 def PlotEigenvectors(eigVects, net = None, title = None):
     nEv = 3
     nOv = len(eigVects[:,0])
@@ -400,6 +403,39 @@ def plot_trajectory(traj, vars = None,
                          linewidth=3, label=label)
         lines.append(line)
         labels.append(label)
+
+    if show_legend:
+        legend(loc=loc)
+
+    return (lines, labels)
+
+def plot_deriv_trajectory(traj, vars = None,
+                    show_legend = True, loc = 'upper left',
+                    logx = False, logy = False):
+    if vars is None:
+        vars = traj.dynamicVarKeys
+
+    plot_funcs_dict = {(False, False): plot,
+                       (True, False): semilogx,
+                       (False, True): semilogy,
+                       (True, True): loglog}
+    plot_func = plot_funcs_dict[(logx, logy)]
+
+    cW = ColorWheel(symbols=None)
+    lines, labels = [], []
+    for id in vars:
+        try:
+            color, sym, dash = cW.next()
+            label = str(id)
+            line = plot_func(traj.timepoints, traj.get_var_traj((id, 'time')),
+                             color = color, mfc = color, marker=sym, linestyle=dash,
+                             linewidth=3, label=label)
+            lines.append(line)
+            labels.append(label)
+        except ValueError:
+            logger.warn('Derivative of variable %s not present in trajectory. Make sure '\
+                        'return_derivs is set to True in integrate function.'  % (id))
+            
 
     if show_legend:
         legend(loc=loc)
