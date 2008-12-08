@@ -13,16 +13,17 @@ import SloppyCell.ExprManip as ExprManip
 import Network_mod
 import Trajectory_mod
 
-def net_DOT_file(net, filename = None):
+def net_DOT_file(net, filename = None, size=(7.5,10)):
     lines = []
     lines.append('digraph "%s" {' % net.id)
-    lines.append('\tsize="7.5,10!"')
+    lines.append('\tsize="'+str(size)+'!"')
+    lines.append('\tratio=fill')
     for id in net.species.keys():
         lines.append('\t"%s"[color=black]' % net.get_component_name(id))
 
     lines.append('')
-    for rid, rxn in net.reactions.items():
-        rxn_name = net.get_component_name(rid)
+    for reac_id, rxn in net.reactions.items():
+        rxn_name = net.get_component_name(reac_id)
         lines.append('\t"%s"[shape=box][color=red]' % rxn_name)
         for rid, stoich in rxn.stoichiometry.items():
             rname = net.get_component_name(rid)
@@ -189,9 +190,10 @@ def output_dynamic_functions(obj, directory = SloppyCell._TEMP_DIR):
                 f.close()
     elif isinstance(obj, Network_mod.Network):
         for func, body in obj._dynamic_funcs_python.items():
-            f = file(os.path.join(directory, '%s.py' % func), 'w')
-            f.write(body)
-            f.close()
+            if body != None:
+                f = file(os.path.join(directory, '%s.py' % func), 'w')
+                f.write(body)
+                f.close()
         c_code = obj.get_c_code()
         f = file(os.path.join(directory, '%s.c' % obj.get_id()), 'w')
         f.write(c_code)
