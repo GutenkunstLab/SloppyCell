@@ -45,12 +45,12 @@ must first alter the error criterion to use positive values of ATOL \
 for those components corresponding to zero solution components, then \
 set INFO(1) = 1 and call the code again. (IDID=-3)",
          -5: "Your JAC routine failed with the Krylov method. Check for errors \
-in JAC and restart the integration. (IDID=-4)",
+in JAC and restart the integration. (IDID=-5)",
          -6: "Repeated error test failures occurred on the last attempted step \
 in DDASKR.  A singularity in thesolution may be present.  If you are \
 absolutely certain you want to continue, you should restart the \
 integration.  (Provide initial values of Y and YPRIME which are \
-consistent.) (IDID=-5)",
+consistent.) (IDID=-6)",
          -7: "Repeated convergence test failures occured on the last attempted \
 step in DASKR. An inaccurate or ill-conditioned Jacobian or \
 preconditioner may be the problem. If you are absolutely certain you \
