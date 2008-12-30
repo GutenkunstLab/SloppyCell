@@ -86,6 +86,17 @@ class test_Substitution(unittest.TestCase):
                                                func_expr)
             assert eval(answer) == eval(subbed)
 
+    def test_var_args_subs(self):
+        subbed = ExprManip.sub_for_func('or_func(x,y,z)', 'or_func', '*',
+                                        'a or b')
+        x,y,z = True,False,False
+        assert eval(subbed)
+        x,y,z = False,False,False
+        assert not eval(subbed)
+
+        self.assertRaises(ValueError, ExprManip.sub_for_func,
+                          'or_func(x,y,z)', 'or_func', '*', 'a + b')
+
 suite = unittest.makeSuite(test_Substitution)
 
 if __name__ == '__main__':

@@ -72,21 +72,23 @@ def _sub_subtrees_for_vars(ast, ast_mappings):
 
 def sub_for_func(expr, func_name, func_vars, func_expr):
     """
-    Return a string with the function func_name substituted for it's exploded 
+    Return a string with the function func_name substituted for its exploded 
     form.
     
     func_name: The name of the function.
     func_vars: A sequence variables used by the function expression
     func_expr: The expression for the function.
-
     For example:
         If f(x, y, z) = sqrt(z)*x*y-z
         func_name = 'f'
         func_vars = ['x', 'y', 'z']
         func_expr = 'sqrt(z)*x*y-z'
 
-    Maybe I don't really neeed this... I should check speed trade off of just
-    using lambdas in our code.
+    As a special case, functions that take a variable number of arguments can
+    use '*' for func_vars.
+    For example:
+        sub_for_func('or_func(or_func(A,D),B,C)', 'or_func', '*', 'x or y')
+        yields '(A or D) or B or C'
     """
     ast = strip_parse(expr)
     func_name_ast = strip_parse(func_name)
@@ -94,13 +96,22 @@ def sub_for_func(expr, func_name, func_vars, func_expr):
         raise ValueError, 'Function name is not a simple name.'
     func_name = func_name_ast.name
 
-    func_vars_ast = [strip_parse(var) for var in func_vars]
-    for var_ast in func_vars_ast:
-        if not isinstance(var_ast, Name):
-            raise ValueError, 'Function variable is not a simple name.'
-    func_var_names = [getattr(var_ast, 'name') for var_ast in func_vars_ast]
-
     func_expr_ast = strip_parse(func_expr)
+    # We can strip_parse  the '*', so we special case it here.
+    if func_vars == '*':
+        if not hasattr(func_expr_ast, 'nodes'):
+            raise ValueError("Top-level function in %s does not appear to "
+                             "accept variable number of arguments. (It has no "
+                             "'nodes' attribute.)" % func_expr)
+
+        func_var_names = '*'
+    else:
+        func_vars_ast = [strip_parse(var) for var in func_vars]
+        for var_ast in func_vars_ast:
+            if not isinstance(var_ast, Name):
+                raise ValueError, 'Function variable is not a simple name.'
+        func_var_names = [getattr(var_ast, 'name') for var_ast in func_vars_ast]
+
     ast = _sub_for_func_ast(ast, func_name, func_var_names, func_expr_ast)
     simple = Simplify._simplify_ast(ast)
     return ast2str(simple)
@@ -109,6 +120,14 @@ def _sub_for_func_ast(ast, func_name, func_vars, func_expr_ast):
     """
     Return an ast with the function func_name substituted out.
     """
+    if isinstance(ast, CallFunc) and ast2str(ast.node) == func_name\
+       and func_vars == '*':
+        working_ast = copy.deepcopy(func_expr_ast)
+        new_args = [_sub_for_func_ast(arg_ast, func_name, func_vars, 
+                                      func_expr_ast) for arg_ast in ast.args]
+        # This subs out the arguments of the original function.
+        working_ast.nodes = new_args
+        return working_ast
     if isinstance(ast, CallFunc) and ast2str(ast.node) == func_name\
        and len(ast.args) == len(func_vars):
         # If our ast is the function we're looking for, we take the ast

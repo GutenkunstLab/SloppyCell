@@ -103,10 +103,15 @@ class Network:
                                ('lt', ['x', 'y'],  'x < y'),
                                ('leq', ['x', 'y'],  'x <= y'),
                                ('eq', ['x', 'y'],  'y == x'),
-                               ('and_func', ['x', 'y'], 'x and y'),
-                               ('or_func', ['x', 'y'], 'x or y'),
                                ('not_func', ['x'], 'not x'),
+                               ('and_func', '*', 'x and y'),
+                               ('or_func', '*', 'x or y'),
                                ]
+    # Note that and_func and or_func are special-cased below, because they can
+    # take a variable number of arguments in SBML. This has to be done because
+    # the comp_func_defs list is used two ways. 1) It is used to substitute
+    # within expressions derived from libsbml. 2) It is used to generate lambda
+    # expressions for the functions.
                            
     # Add our common function definitions to a func_strs list.
     _common_func_strs = KeyedList()
@@ -148,8 +153,15 @@ class Network:
 
     # Also do the logical functions. These don't have derivatives.
     for id, vars, math in _logical_comp_func_defs:
-        var_str = ','.join(vars)
-        func = 'lambda %s: %s' % (var_str, math)
+        # and_func and or_func are special-cased, because the SBML versions can
+        # take multiple arguments.
+        if id == 'and_func':
+            func = 'lambda *x: reduce(operator.and_, x)'
+        elif id == 'or_func':
+            func = 'lambda *x: reduce(operator.or_, x)'
+        else:
+            var_str = ','.join(vars)
+            func = 'lambda %s: %s' % (var_str, math)
         _common_func_strs.set(id, func)
 
     # These are the strings we eval to create the extra functions our
