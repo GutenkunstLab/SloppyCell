@@ -10,6 +10,7 @@ import types
 import time
 import os
 import sys
+import operator
 
 import logging
 logger = logging.getLogger('ReactionNetworks.Network_mod')
@@ -81,6 +82,7 @@ class Network:
                          'exponentiale': math.e,
                          'pi': math.pi,
                          'scipy': scipy,
+                         'operator': operator,
                          }
     # These are functions we need to create but that should be used commonly
     _standard_func_defs = [('root', ['n', 'x'],  'x**(1./n)'),
