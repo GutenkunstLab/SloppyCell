@@ -135,7 +135,7 @@ def toSBMLString(net):
         m.addReaction(srxn)
     
     for id, e in net.events.items():
-        se = libsbml.Event()
+        se = libsbml.Event(id)
         se.setName(e.name)
         formula = e.trigger.replace('**', '^')
         ast = libsbml.parseFormula(formula)
@@ -158,7 +158,8 @@ def toSBMLString(net):
             sea = libsbml.EventAssignment()
             sea.setVariable(varId)
             formula = str(formula).replace('**', '^')
-            sea.setMath(libsbml.parseFormula(formula))
+            ast = libsbml.parseFormula(formula)
+            sea.setMath(ast)
             se.addEventAssignment(sea)
         m.addEvent(se)
     
