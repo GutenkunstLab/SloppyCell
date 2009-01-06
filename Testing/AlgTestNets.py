@@ -64,5 +64,17 @@ algebraic_net_multi.add_parameter('S4', initial_value = 0.2, is_constant = False
 algebraic_net_multi.add_algebraic_rule('S3-k1')
 algebraic_net_multi.add_algebraic_rule('S4-k2')
 
+# algebraic_net_andor_events has trigger and event assignments that make use
+# of and_ and or_funcs with multiple arguments
+
+algebraic_net_andor_events = algebraic_net.copy('algebraic_net_andor_events')
+eas = KeyedList()
+piecewise_X0 = 'piecewise(0, or_func(gt(X0, 100), gt(X1, 100), lt(T, 0)), 1)'
+piecewise_X1 = 'piecewise(1, or_func(gt(X0, 100), gt(X1, 100), lt(T, 0)), 0)'
+eas.set('X0', piecewise_X0)
+eas.set('X1', piecewise_X1)
+logical_trigger = 'and_func(gt(1, 0), lt(1, 0), eq(10, 11))'
+algebraic_net_andor_events.addEvent(id='logical_event', trigger=logical_trigger,
+                                    eventAssignments=eas)
 
 
