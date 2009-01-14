@@ -800,7 +800,12 @@ class Model:
                 jacobian = new_jacobian
             elif len(jacobian.shape) == 2: # Need to sum up the total jacobian
                 residuals = scipy.asarray(self.res(params))
-                jacobian = 2.0*residuals*jacobian
+                # Changed by rng7. I'm not sure what is meant by "sum up the
+                # total jacobian". The following line failed due to shape
+                # mismatch. From the context below, it seems that the dot
+                # product is appropriate.
+                #jacobian = 2.0*residuals*jacobian
+                jacobian = 2.0 * scipy.dot(residuals, jacobian)
 
             # If parameters are independent, then
             #  epsilon should be (sqrt(2)*J[i])^-1
