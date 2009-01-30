@@ -34,7 +34,7 @@ else:
                           'ReactionNetworks/mtrand.c')
     config.add_data_dir('Doc')
     config.add_data_dir('ddaskr')
-    config.add_data_dir('Examples')
+    config.add_data_dir('Example')
     data_files = config.todict()['data_files']
 
 # This is a kludge so that sdist works on AFS systems.
