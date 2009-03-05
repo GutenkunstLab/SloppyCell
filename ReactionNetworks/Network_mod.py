@@ -658,11 +658,13 @@ class Network:
         ev_inter_traj = self.trajectory.evaluate_interpolated_traj
         
         # Find the period between 1/2*tau0 and 3/2*tau0
-        s = lambda t: scipy.array([t] + \
+        # Without the squeeze, this failed on some versions of numpy when 
+        # t = array([0.2])
+        s = lambda t: scipy.array([scipy.squeeze(t)] + \
                                   [ev_inter_traj(name, t) for name in varNames])
         
         def __iter_cost(t):
-            t = abs(t)
+            t = scipy.squeeze(abs(t))
             res = scipy.array([t], scipy.float_)
             for lvl in range(1, self.periodic['level']+1):
                 res = scipy.concatenate((res, s(t*float(lvl))[1:]))
