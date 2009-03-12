@@ -50,9 +50,10 @@ class Species(Variable):
     def __init__(self, id, compartment, initial_conc, 
                  name, typical_value,
                  is_boundary_condition, 
-                 is_constant, is_optimizable):
+                 is_constant, is_optimizable, uniprot_ids=[]):
         self.compartment = compartment
         self.is_boundary_condition = is_boundary_condition
+        self.uniprot_ids = uniprot_ids
 
         Variable.__init__(self, id, initial_conc, 
                           name, typical_value,

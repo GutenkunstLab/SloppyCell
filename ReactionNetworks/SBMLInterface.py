@@ -266,17 +266,16 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         else:
             iC = 1
         isBC, isConstant = s.getBoundaryCondition(), s.getConstant()
+
+        xml_text = s.toSBML()
+        uniprot_ids = [entry[1:].split('"')[0] 
+                       for entry in xml_text.split('uniprot')[1:]]
 	
 	rn.addSpecies(id = id, compartment = compartment,
                       initialConcentration = iC,
                       isConstant = isConstant,
                       is_boundary_condition = isBC,
-                      name = name)
-        #rn.addSpecies(id = id, compartment = compartment,
-        #              initial_conc = iC,
-        #              is_constant = isConstant,
-        #              is_boundary_condition = isBC,
-        #              name = name)
+                      name = name, uniprot_ids = uniprot_ids)
 
     for p in m.getListOfParameters():
         parameter = createNetworkParameter(p)
