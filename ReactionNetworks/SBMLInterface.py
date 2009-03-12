@@ -268,8 +268,8 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         isBC, isConstant = s.getBoundaryCondition(), s.getConstant()
 
         xml_text = s.toSBML()
-        uniprot_ids = [entry[1:].split('"')[0] 
-                       for entry in xml_text.split('uniprot')[1:]]
+        uniprot_ids = set([entry[1:].split('"')[0] 
+                           for entry in xml_text.split('uniprot')[1:]])
 	
 	rn.addSpecies(id = id, compartment = compartment,
                       initialConcentration = iC,
