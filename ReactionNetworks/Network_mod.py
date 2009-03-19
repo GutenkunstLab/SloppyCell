@@ -2335,6 +2335,29 @@ class Network:
             else:
                 c_math = ExprManip.make_c_compatible(math)
                 body.append('double %s = %s;' % (variable, c_math))
+            if include_dts:
+                rhs_terms = []
+                # Which variables does assignment rule depend on?
+                dep_vars = ExprManip.extract_vars(math)
+
+                # Do the chain rule for dynamic variables.
+                for dynvar in dep_vars.intersection(self.dynamicVars.keys()):
+                    dmath_dvar = ExprManip.diff_expr(math, dynvar)
+                    rhs_terms.append('%s * %s_deriv_wrt_time'
+                                     % (dmath_dvar, dynvar))
+                # Add in explicit time dependence.
+                if 'time' in dep_vars:
+                    dmath_dtime = ExprManip.diff_expr(math, 'time')
+                    rhs_terms.append(dmath_dtime)
+
+                rhs = ' + '.join(rhs_terms)
+                rhs = ExprManip.simplify_expr(rhs)
+                if not in_c:
+                    body.append('%s_deriv_wrt_time = %s' % (variable, rhs))
+                else:
+                    c_rhs = ExprManip.make_c_compatible(rhs)
+                    body.append('double %s_deriv_wrt_time = %s;'
+                                % (variable, c_rhs))
 
         return body
 
