@@ -2319,12 +2319,12 @@ class Network:
             for ii, id in enumerate(var_names):
                 if not in_c:
                     body.append('%s = %s.item(%i)' % (id, arg, ii))
-                    if include_dts:
+                    if include_dts and arg != 'constants':
                         body.append('%s_deriv_wrt_time = yprime.item(%i)' 
                                     % (id,ii))
                 else:
                     body.append('double %s = %s[%i];' % (id, arg, ii))
-                    if include_dts:
+                    if include_dts and arg != 'constants':
                         body.append('double %s_deriv_wrt_time = yprime[%i];' 
                                     % (id,ii))
             body.append('')
