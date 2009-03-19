@@ -246,6 +246,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         # keep looping until the key has been deleted
         if pendingEvents and min(pendingEvents.keys()) < start:
             raise ValueError('Missed an event!')
+        event_buffer = 0
         while pendingEvents.has_key(start):
             execution_time = start
             # We need to backtrack to deal with this event...
@@ -284,6 +285,33 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                                     redirect_msgs=redirect_msgs)
                 holder.y_post_exec = copy.copy(IC)
                 holder.yp_post_exec = copy.copy(ypIC)
+                event_buffer = max(event_buffer, holder.event.buffer)
+
+            if event_buffer:
+                outputs = integrate_tidbit(net, res_func, _ddaskr_jac, 
+                                           root_func=None, 
+                                           IC=IC, yp0=ypIC, 
+                                           curTimes=[start, start+event_buffer],
+                                           rtol=rtol, atol=atol, 
+                                           fill_traj=fill_traj, 
+                                           return_derivs=True, 
+                                           redirect_msgs=redirect_msgs,
+                                           calculate_ic = False,
+                                           var_types=net._dynamic_var_algebraic)
+
+                exception_raised, yout_this, tout_this, youtdt_this,\
+                      t_root_this, y_root_this, i_root_this = outputs
+
+                yout = scipy.concatenate((yout, yout_this))
+                youtdt = scipy.concatenate((youtdt, youtdt_this))
+                tout.extend(tout_this)
+
+                if exception_raised:
+                    break
+
+                start = tout[-1]
+                IC = copy.copy(yout[-1])
+                ypIC = copy.copy(youtdt_this[-1])
 
             # Update the root state after all listed events have excecuted.
             root_after = root_func(start, IC, ypIC, constants)
@@ -350,9 +378,9 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         ypIC = copy.copy(youtdt_this[-1])
 
         # Check for events firing.
-        event_just_fired = fired_events(net, start, IC, ypIC, i_root_this, 
-                                        events_occurred, pendingEvents)
-
+        event_just_fired = fired_events(net, start, IC, ypIC, 
+                                                i_root_this, 
+                                                events_occurred, pendingEvents)
     # End of while loop for integration.
     if len(yout) and len(tout):
         net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
@@ -419,6 +447,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
     # crossings, so we can read this information from the integration
     # results.
     # Note that we might have more than one event firing at the same time.
+
     for event_index, dire_cross in zip(range(num_events), crossing_dirs):
         # dire_cross is the direction of the event crossing.  If it's
         # 1 that means Ri changed from negative to positive.  In that case

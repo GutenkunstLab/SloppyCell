@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger('ReactionNetworks.Components')
+
 import sets
 
 import SloppyCell.ExprManip as ExprManip
@@ -67,7 +70,8 @@ class Parameter(Variable):
                           is_constant, is_optimizable)
 
 class Event:
-    def __init__(self, id, trigger, event_assignments, delay, name):
+    def __init__(self, id, trigger, event_assignments, delay, name,
+                 buffer):
         self.id, self.name = id, name
         self.delay = delay 
         self.is_terminal = (len(event_assignments) > 0)
@@ -77,6 +81,12 @@ class Event:
 
         self.event_assignments = event_assignments
         self.new_values = {}
+
+        self.buffer=buffer
+        if (self.buffer > 0 and self.delay != 0):
+            logger.warn('Event %s has buffer > 0 and delay != 0. This case '
+                        'has not been tested.')
+                        
 
     def __eq__(self, other):
         # This is a little tricky, because Event objects get modified when their

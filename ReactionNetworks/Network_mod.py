@@ -287,7 +287,8 @@ class Network:
                               typical_value, is_optimizable)
         self._add_variable(parameter)
 
-    def add_event(self, id, trigger, event_assignments={}, delay=0, name=''):
+    def add_event(self, id, trigger, event_assignments={}, delay=0, name='',
+                  buffer=0):
         """
         Add an event to the Network.
 
@@ -307,7 +308,8 @@ class Network:
         name - A more detailed name for the event, not restricted to the id
             format
         """
-        event = Event(id, trigger, event_assignments, delay, name)
+        event = Event(id, trigger, event_assignments, delay, name,
+                      buffer)
         self._checkIdUniqueness(event.id)
         self.events.set(event.id, event)
 
