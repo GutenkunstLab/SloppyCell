@@ -1442,7 +1442,7 @@ class Network:
         #  just insert a placeholder line.
         py_body.append('root_devs = scipy.empty(NEED_TO_FIX, scipy.float_)')
         py_body.append('')
-        self._add_assignments_to_function_body(py_body)
+        self._add_assignments_to_function_body(py_body, include_dts=True)
         py_body.append('')
 
         c_body = []
@@ -1452,7 +1452,8 @@ class Network:
         c_body.append('void root_func_(%s){' % c_args)
         c_body.append('double time = *time_ptr;')
         c_body.append('')
-        self._add_assignments_to_function_body(c_body, in_c=True)
+        self._add_assignments_to_function_body(c_body, in_c=True, 
+                                               include_dts=True)
         self._prototypes_c.set('root_func', 
                                'void root_func_(%s);' % c_args)
         c_body.append('')
@@ -2301,7 +2302,8 @@ class Network:
         self._dynamic_funcs_c.set('integrate_stochastic_tidbit', c_body)
 
 
-    def _add_assignments_to_function_body(self, body, in_c = False):
+    def _add_assignments_to_function_body(self, body, in_c = False,
+                                          include_dts=False):
         """
         Adds the assignment rules for this Network to the list of lines that
         are in body.
@@ -2317,8 +2319,14 @@ class Network:
             for ii, id in enumerate(var_names):
                 if not in_c:
                     body.append('%s = %s.item(%i)' % (id, arg, ii))
+                    if include_dts:
+                        body.append('%s_deriv_wrt_time = yprime.item(%i)' 
+                                    % (id,ii))
                 else:
                     body.append('double %s = %s[%i];' % (id, arg, ii))
+                    if include_dts:
+                        body.append('double %s_deriv_wrt_time = yprime[%i];' 
+                                    % (id,ii))
             body.append('')
 
         for variable, math in self.assignmentRules.items():
