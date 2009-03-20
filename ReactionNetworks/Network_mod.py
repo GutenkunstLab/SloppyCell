@@ -846,7 +846,11 @@ class Network:
                 ret_full_traj = True
                 t.union_update(sets.Set(times))
             elif var.endswith('_maximum') or var.endswith('_minimum'):
-                pass
+                t1,t2 = times
+                if t1 is not None:
+                    t.add(t1)
+                if t2 is not None:
+                    t.add(t2)
             elif self.variables.has_key(var):
                 t.union_update(sets.Set(times))
             else:
