@@ -207,7 +207,6 @@ def plot_model_results(model, expts = None, style='errorbars',
         # We sort the calculation names for easier comparison across plots
         sortedCalcIds = dataByCalc.keys()
         sortedCalcIds.sort()
-        print dataByCalc
         for calcId in sortedCalcIds:
             # Pull the trajectory from that calculation, defaulting to None
             #  if it doesn't exist.
