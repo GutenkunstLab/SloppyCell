@@ -218,7 +218,7 @@ class Network:
 
         self.deriv_funcs_enabled = True
         self.compiled = False
-        
+
     add_int_times, add_tail_times = True, True
     def full_speed(cls):
         """
@@ -845,6 +845,8 @@ class Network:
             if var == 'full trajectory':
                 ret_full_traj = True
                 t.union_update(sets.Set(times))
+            elif var.endswith('_maximum') or var.endswith('_minimum'):
+                pass
             elif self.variables.has_key(var):
                 t.union_update(sets.Set(times))
             else:
@@ -897,6 +899,54 @@ class Network:
             if id == 'full trajectory':
                 self.trajectory.build_interpolated_traj()
                 result[id] = self.trajectory
+            if id.endswith('_maximum') or id.endswith('_minimum'):
+                # This is an extremum search.
+                # Which variable are we looking for?
+                var = '_'.join(id.split('_')[:-1])
+                minTime, maxTime = vars[id]
+
+                # First, check though the trajectory, to see if the extremum
+                # is in there.
+                t = self.trajectory.get_times()
+                # Restrict timespan in which to search.
+                if minTime is not None:
+                    min_t_ii = t.searchsorted(minTime)
+                else:
+                    min_t_ii = 0
+                if maxTime is not None:
+                    max_t_ii = t.searchsorted(maxTime)-1
+                else:
+                    max_t_ii = len(t) 
+                vartraj = self.trajectory.get_var_traj(var)
+                if id.endswith('_maximum'):
+                    var_val_ii = vartraj[min_t_ii:max_t_ii+1].argmax()\
+                            + min_t_ii
+                elif id.endswith('_minimum'):
+                    var_val_ii = vartraj[min_t_ii:max_t_ii+1].argmin()\
+                            + min_t_ii
+                var_val = vartraj[var_val_ii]
+                t_val = t[var_val_ii]
+
+                # Now check through the events. If we're running under 
+                # full_speed the trajectory can be very sparse. If the use has
+                # set up events to tag potential extrema, this will use those.
+                curr_vals = self.get_var_vals()
+                event_info = self.trajectory.event_info
+                for ii in range(len(event_info[0])):
+                    time,dynVarVals = event_info[0][ii], event_info[1][ii]
+                    self.updateVariablesFromDynamicVars(dynVarVals, time)
+                    eval = self.get_var_val(var)
+                    if id.endswith('_maximum') and eval > var_val\
+                       and time >= minTime and time <= maxTime:
+                        var_val = eval
+                        t_val = time
+                    elif id.endswith('_minimum') and eval < var_val\
+                       and time >= minTime and time <= maxTime:
+                        var_val = eval
+                        t_val = time
+                self.set_var_vals(curr_vals)
+
+                result[id] = {(minTime, maxTime):(t_val,var_val)}
             elif self.variables.has_key(id):
                 traj = self.trajectory.getVariableTrajectory(id)
                 result[id] = dict(zip(times, traj))

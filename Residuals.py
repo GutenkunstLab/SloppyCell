@@ -260,3 +260,40 @@ class IntegralDataResidual(Residual):
                                           limit = int(1e5))
         T = self.interval[1] - self.interval[0]
         return scipy.sqrt(val/T)
+
+class ScaledExtremum(Residual):
+    def __init__(self, key, var, calcKey, val,
+                 sigma, exptKey, minTime=None, maxTime=None, type=None):
+        Residual.__init__(self, key)
+        self.yKey = var
+        self.calcKey = calcKey
+        self.yMeas = val
+        self.ySigma = sigma
+        self.exptKey = exptKey
+        self.minTime,self.maxTime = minTime,maxTime
+        self.last_time_result = None
+        self.type = type
+
+    def GetRequiredVarsByCalc(self):
+        if self.type == 'max':
+            var = self.yKey + '_maximum'
+        elif self.type == 'min':
+            var = self.yKey + '_minimum'
+
+        return {self.calcKey: {var: [self.minTime, self.maxTime]}}
+
+    def GetValue(self, predictions, internalVars, params):
+        scale_factor = internalVars['scaleFactors'][self.exptKey][self.yKey]
+        # predictions entry is time,value
+        # We store the last time result for use in plotting.
+        if self.type == 'max':
+            var = self.yKey + '_maximum'
+        elif self.type == 'min':
+            var = self.yKey + '_minimum'
+
+        self.last_time_result, raw_pred_val = \
+                predictions[self.calcKey][var][self.minTime,self.maxTime]
+        return (scale_factor * raw_pred_val - self.yMeas)/self.ySigma
+
+    def dp(self, predictions, internalVars, params):
+        return {}

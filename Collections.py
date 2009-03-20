@@ -87,6 +87,15 @@ class ExperimentCollection(dict):
                 calc = data_set['calcKey']
                 varsByCalc.setdefault(data_set['calcKey'], {})
                 varsByCalc[calc][('full trajectory')] = data_set['interval']
+
+            for ds in expt.scaled_extrema_data:
+                calc = ds['calcKey']
+                varsByCalc.setdefault(ds['calcKey'], {})
+                if ds['type'] == 'max':
+                    called = ds['var'] + '_maximum'
+                elif ds['type'] == 'min': 
+                    called = ds['var'] + '_minimum'
+                varsByCalc[calc][called] = (ds['minTime'], ds['maxTime'])
                 
         # But I convert the sets back to sorted lists before returning
         for calc in varsByCalc:
@@ -125,6 +134,7 @@ class Experiment:
         self.amplitudeChecks=[]
         self.integral_data=[]
         self.sf_priors = {}
+        self.scaled_extrema_data = []
 
     def _hashable_group(self, group):
         """
@@ -336,7 +346,19 @@ class Experiment:
         self.integral_data.append({'calcKey': calcKey, 'trajectory': traj,
                                    'uncert_traj': uncert_traj, 'vars': vars,
                                    'interval': interval})
-        
+
+    def add_scaled_max(self, calcKey, var, maxval, sigma, 
+                           minTime=None, maxTime=None):
+        self.scaled_extrema_data.append({'calcKey': calcKey, 'var':var,
+                                         'val':maxval, 'sigma':sigma,
+                                         'minTime': minTime, 'maxTime':maxTime,
+                                         'type':'max'})
+    def add_scaled_min(self, calcKey, var, maxval, sigma, 
+                           minTime=None, maxTime=None):
+        self.scaled_extrema_data.append({'calcKey': calcKey, 'var':var,
+                                         'val':maxval, 'sigma':sigma,
+                                         'minTime': minTime, 'maxTime':maxTime,
+                                         'type':'min'})
 
 class CalculationCollection(KeyedList):
     """

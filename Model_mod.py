@@ -437,6 +437,19 @@ class Model:
                                                           interval)
                     theoryDotData += TheorDotD/T
 
+            # Now for the extrema data
+            for ds in expt.scaled_extrema_data:
+                calc = ds['calcKey']
+                if ds['type']  == 'max':
+                    var = ds['var'] + '_maximum'
+                elif ds['type'] == 'min':
+                    var = ds['var'] + '_minimum'
+                data, error = ds['val'], ds['sigma']
+                theory = self.calcVals[calc][var]\
+                        [ds['minTime'],ds['maxTime']][1]
+                theoryDotData += (theory * data) / error**2
+                theoryDotTheory += theory**2 / error**2
+
             for var in group:
                 if theoryDotTheory != 0:
                     scale_factors[var] = theoryDotData/theoryDotTheory
@@ -994,6 +1007,15 @@ class Model:
                                                           ds['uncert_traj'],
                                                           ds['interval'])
                     self.residuals.setByKey(resName, res)
+
+            for ds in expt.scaled_extrema_data:
+                ds['exptKey'] = expt.name
+                ds['key'] = '%s_%simum_%s_%s' % (ds['var'], ds['type'],
+                                                 str(ds['minTime']),
+                                                 str(ds['maxTime']))
+                res = Residuals.ScaledExtremum(**ds)
+                self.AddResidual(res)
+
                
     def get_expts(self):
         return self.exptColl
