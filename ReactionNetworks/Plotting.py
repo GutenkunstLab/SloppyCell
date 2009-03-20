@@ -251,6 +251,18 @@ def plot_model_results(model, expts = None, style='errorbars',
                                  linestyle=dash)
                         lines.append(l)
 
+                    # Plot the extra data points.
+                    for res in model.residuals:
+                        if isinstance(res, Residuals.ScaledExtremum)\
+                           and res.exptKey == exptId and res.calcKey == calcId:
+                            t = res.last_time_result
+                            val = res.yMeas
+                            sigma = res.ySigma
+                            errorbar([t], [val], [sigma], color=color,
+                                     linestyle='', marker=sym,
+                                     ecolor='k', capsize=6, mfc='w', 
+                                     mec= color, mew=2, ms=10)[0]
+
                 # Let's print the pretty name for our variable if we can.
                 lines.append(l)
                 name = net.get_component_name(dataId)
