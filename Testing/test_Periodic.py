@@ -341,7 +341,47 @@ class test_Periodic(unittest.TestCase):
         self.assertTrue(net.periodic['period']==0.0,
                         'Period (%s) is non-zero, possible oscillations.'%
                         net.periodic['period'])
-        
+
+    def test_deriv_event(self):
+        """Test event with derivatives"""
+        net = base_net.copy('test_deriv')
+
+        net.add_event('T_2_max', 'lt(T_2_deriv_wrt_time,0)', buffer=1e-3)
+        traj = Dynamics.integrate(net, [0, 100])
+        self.assertAlmostEqual(traj.event_info[0][0], 15.76, 2)
+        self.assertAlmostEqual(traj.event_info[0][1], 44.85, 2)
+
+    def test_maximum_cost(self):
+        """Test cost with maximum"""
+        net = base_net.copy('test_max')
+        net.add_event('T_2_max', 'lt(T_2_deriv_wrt_time,0)', buffer=1e-3)
+
+        expt = Experiment('Max expt')
+        expt.set_fixed_sf({'T_2':1})
+        # We need the maxTime here because, in the absence of other data. The
+        # trajectory won't get calculated otherwise.
+        expt.add_scaled_max('test_max', 'T_2', maxval=5, sigma=0.1, maxTime=50)
+
+        m = Model([expt], [net])
+        c = m.cost(m.get_params())
+
+        self.assertAlmostEqual(c, 82.03, 2)
+
+    def test_minimum_cost(self):
+        """Test cost with minimum"""
+        net = base_net.copy('test_min')
+        net.add_event('T_2_min', 'gt(T_2_deriv_wrt_time,0)', buffer=1e-3)
+
+        expt = Experiment('Min expt')
+        expt.set_fixed_sf({'T_2':1})
+        # This is also a test of restricting range for min/max calculation.
+        expt.add_scaled_min('test_min', 'T_2', minval=0.5, sigma=0.1, 
+                            minTime=70, maxTime=100)
+
+        m = Model([expt], [net])
+        c = m.cost(m.get_params())
+
+        self.assertAlmostEqual(c, 6.00, 2)
         
 suite = unittest.makeSuite(test_Periodic)
 if __name__ == '__main__':
