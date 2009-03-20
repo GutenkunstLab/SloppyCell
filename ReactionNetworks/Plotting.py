@@ -201,9 +201,13 @@ def plot_model_results(model, expts = None, style='errorbars',
     for exptId in expts:
         expt = exptColl[exptId]
         dataByCalc = expt.GetData()
+        for ds in expt.scaled_extrema_data:
+            dataByCalc.setdefault(ds['calcKey'], {})
+            dataByCalc[ds['calcKey']].setdefault(ds['var'], {})
         # We sort the calculation names for easier comparison across plots
         sortedCalcIds = dataByCalc.keys()
         sortedCalcIds.sort()
+        print dataByCalc
         for calcId in sortedCalcIds:
             # Pull the trajectory from that calculation, defaulting to None
             #  if it doesn't exist.
@@ -235,7 +239,7 @@ def plot_model_results(model, expts = None, style='errorbars',
                                    zorder = 10)
                 
 
-                if plot_data:
+                if plot_data and dataDict:
                     # Pull the data out of the dictionary and into an array
                     d = scipy.array([[t, v, e] for (t, (v, e))
                                      in dataDict.items()])
@@ -251,7 +255,8 @@ def plot_model_results(model, expts = None, style='errorbars',
                                  linestyle=dash)
                         lines.append(l)
 
-                    # Plot the extra data points.
+                # Plot the extra data points.
+                if plot_data:
                     for res in model.residuals:
                         if isinstance(res, Residuals.ScaledExtremum)\
                            and res.exptKey == exptId and res.calcKey == calcId:
