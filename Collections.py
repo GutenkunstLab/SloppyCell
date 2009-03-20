@@ -161,6 +161,8 @@ class Experiment:
             measuredVars.union_update(sets.Set(self.data[calcId].keys()))
         for dataset in self.integral_data:
             measuredVars.union_update(sets.Set(dataset['vars']))
+        for dataset in self.scaled_extrema_data:
+            measuredVars.add(dataset['var'])
 
         sf_groups = [self._hashable_group(group) for group 
                      in self.get_shared_sf()]
