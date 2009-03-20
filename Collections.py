@@ -353,10 +353,10 @@ class Experiment:
                                          'val':maxval, 'sigma':sigma,
                                          'minTime': minTime, 'maxTime':maxTime,
                                          'type':'max'})
-    def add_scaled_min(self, calcKey, var, maxval, sigma, 
+    def add_scaled_min(self, calcKey, var, minval, sigma, 
                            minTime=None, maxTime=None):
         self.scaled_extrema_data.append({'calcKey': calcKey, 'var':var,
-                                         'val':maxval, 'sigma':sigma,
+                                         'val':minval, 'sigma':sigma,
                                          'minTime': minTime, 'maxTime':maxTime,
                                          'type':'min'})
 
