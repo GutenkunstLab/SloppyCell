@@ -2392,7 +2392,10 @@ class Network:
                 c_math = ExprManip.make_c_compatible(math)
                 body.append('double %s = %s;' % (variable, c_math))
             if include_dts:
-                rhs_terms = []
+                # This zero is in case assigment doesn't depend on any
+                # dynamic variables. In that case, simply_expr could fail
+                # on an empty string.
+                rhs_terms = ['0']
                 # Which variables does assignment rule depend on?
                 dep_vars = ExprManip.extract_vars(math)
 
