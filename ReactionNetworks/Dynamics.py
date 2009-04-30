@@ -5,7 +5,7 @@ __docformat__ = "restructuredtext en"
 
 import copy
 import sets
-
+import sys 
 import scipy
 import scipy.optimize
 
@@ -150,7 +150,7 @@ def generate_tolerances(net, rtol, atol=None):
 def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
               return_events=False, return_derivs=False,
               redirect_msgs=True, calculate_ic = False,
-              include_extra_event_info = False):
+              include_extra_event_info = False, use_constraints=True):
     """
     Integrate a Network, returning a Trajectory.
 
@@ -179,6 +179,9 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     include_extra_event_info    If True, the returned trajectory will have more
                     detailed event information, inclusing pre- and post- execution
                     state, and assigned variable informtaion.
+    use_constraints    If True, and if the network has constraints, will raise
+                       an exception if a constraint's math function becomes True
+                       at any time.
     """
     logger.debug('Integrating network %s.' % net.get_id())
 
@@ -268,6 +271,15 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             chain_starter = event_list[-1]
             while len(event_list) > 0:
                 holder = event_list.pop()
+
+                # check whether the current event was a constraint
+                if holder.event_index >= len(net.events) and use_constraints == True:
+                    # a constraint was violated
+                    con_id = holder.event_id
+                    constraint = net.constraints.get(con_id)
+                    raise Utility.ConstraintViolatedException(start,
+                                                     constraint.trigger,
+                                                     constraint.message)
                 holder.time_exec = start
                 holder.y_pre_exec = copy.copy(IC)
                 holder.yp_pre_exec = copy.copy(ypIC)
@@ -316,7 +328,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             # Update the root state after all listed events have excecuted.
             root_after = root_func(start, IC, ypIC, constants)
 
-            # Check for chained events
+            # Check for chained events/constraints
             crossing_dirs = root_after - root_before
             event_just_fired = fired_events(net, start, IC, ypIC, 
                                             crossing_dirs,
@@ -378,9 +390,12 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         ypIC = copy.copy(youtdt_this[-1])
 
         # Check for events firing.
+        # If one of the fired events is a constraint, then we'll catch
+        # it at the top of the while loop for integration
         event_just_fired = fired_events(net, start, IC, ypIC, 
                                                 i_root_this, 
                                                 events_occurred, pendingEvents)
+
     # End of while loop for integration.
     if len(yout) and len(tout):
         net.updateVariablesFromDynamicVars(yout[-1], tout[-1])
@@ -440,7 +455,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 def fired_events(net, time, y, yp, crossing_dirs, 
                  events_occurred, pendingEvents,
                  chained_off_of=None):
-    num_events = len(net.events)
+    # checking for both normal events and constraint events
+    num_events = len(net.events)+len(net.constraints)
     event_just_fired = False
     # Check the directions of our root crossings to see whether events
     # actually fired.  DASKR automatically returns the direction of event
@@ -455,7 +471,11 @@ def fired_events(net, time, y, yp, crossing_dirs,
         # real events, not the sub-clauses which are also in root_func.
         if dire_cross > 0:
             event_just_fired = True
-            event = net.events[event_index]
+            if event_index < len(net.events):
+                event = net.events[event_index]
+            if event_index >= len(net.events):
+                event = net.constraints[event_index-len(net.events)]
+                
             logger.debug('Event %s fired at time=%g in network %s.'
                          % (event.id, time, net.id))
 
@@ -507,7 +527,6 @@ def fired_events(net, time, y, yp, crossing_dirs,
             pendingEvents[execution_time].append(holder)
 
     return event_just_fired
-
 
 def integrate_sens_subset(net, times, rtol=None,
                           fill_traj=False, opt_vars=None,

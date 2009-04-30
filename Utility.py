@@ -116,6 +116,19 @@ def enable_warnings():
 class SloppyCellException(Exception):
     pass
 
+class ConstraintViolatedException(Exception):
+    """
+    A ConstraintViolatedException is raised when a the value of a network constraint
+    becomes True.
+    """
+    def __init__(self, time, constraint, message):
+        self.constraint = constraint
+        self.message = message
+        self.time = time
+    def __str__(self):
+        return ('Violated constraint: %s at time %g.  Additional Information: %s.' \
+                %(self.constraint, self.time, self.message))
+
 import Redirector_mod
 Redirector = Redirector_mod.Redirector
 

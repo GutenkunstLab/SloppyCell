@@ -77,9 +77,24 @@ logical_trigger = 'and_func(gt(1, 0), lt(1, 0), eq(10, 11))'
 algebraic_net_andor_events.addEvent(id='logical_event', trigger=logical_trigger,
                                     eventAssignments=eas)
 
+# algebraic_net_under has an extra unconstrained variable that appears
+# in an algebraic rule, so SloppyCell should complain that the system
+# is underconstrained.
 
 algebraic_net_under = algebraic_net.copy('alg_net_underdetermined')
 algebraic_net_under.addParameter('P', value=5.0, isConstant=False)
 del algebraic_net_under.algebraicRules[0]
 algebraic_net_under.add_algebraic_rule('S2 + S1 - T*(P/P)')
 
+# algebraic_net_constraints implements a test of the Constraint
+# objects.  Also add some events to make sure constraints don't
+# interfere with events.
+
+algebraic_net_constraints = algebraic_net.copy('alg_net_constraints')
+
+eventAssignments=KeyedList()
+eventAssignments.set('X0',0.1)
+algebraic_net_constraints.addEvent('event1', 'and(gt(time,18),gt(X1,0.4))',eventAssignments)
+algebraic_net_constraints.addEvent('event2', 'and(gt(time,10),gt(X1,0.4))',eventAssignments)
+algebraic_net_constraints.addConstraint('X1toobig',trigger='gt(X1,0.5)',
+                                        message='X1 is big!')

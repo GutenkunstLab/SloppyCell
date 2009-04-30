@@ -162,6 +162,25 @@ def toSBMLString(net):
             sea.setMath(ast)
             se.addEventAssignment(sea)
         m.addEvent(se)
+
+    for id, con in net.constraints.items():
+        scon = libsbml.Constraint()
+        scon.setId(con.id)
+        scon.setName(con.name)
+        formula = con.trigger.replace('**', '^')
+        ast = libsbml.parseFormula(formula)
+        if ast is None:
+            raise ValueError('Problem parsing constraint math: %s. Problem may '
+                             'be use of relational operators (< and >) rather '
+                             'than libsbml-friendly functions lt and gt.'
+                             % formula)
+        #try:
+        scon.setMath(ast)
+        #except TypeError:
+        #    scon.setMath(libsbml.Trigger(ast))
+
+        m.addConstraint(scon)
+        
     
     d = libsbml.SBMLDocument()
     d.setModel(m)
@@ -407,6 +426,24 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
 
         rn.addEvent(id = id, trigger = trigger, eventAssignments = eaDict, 
                     delay = delay, name = name)
+
+
+    for ii, con in enumerate(m.getListOfConstraints()):
+        id, name = con.getId(), con.getName()
+        if id == '':
+            id = 'constraint%i' % ii
+
+        trigger_math = con.getMath()
+
+        trigger = libsbml.formulaToString(trigger_math)
+
+        if con.isSetMessage():
+            message = con.getMessage()
+        else:
+            message = None
+
+        rn.addConstraint(id = id, trigger = trigger, message = message, 
+                    name = name)
 
     return rn
 

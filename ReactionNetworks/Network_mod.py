@@ -181,6 +181,7 @@ class Network:
         self.rateRules = KeyedList()
         self.algebraicRules = KeyedList()
         self.events = KeyedList()
+        self.constraints = KeyedList()        
 
         # Variables is primary storage for all compartments, species, and 
         #  parameters. We build up 'cross reference' lists for convenience.
@@ -313,6 +314,23 @@ class Network:
         self._checkIdUniqueness(event.id)
         self.events.set(event.id, event)
 
+    def add_constraint(self, id, trigger, message=None, name=''):
+        """
+        Add a constraint to the Network.
+
+        id - id for this constraint
+        trigger - We treat constraints as events that correspond to an
+            invalid solution whenever the trigger is True.
+            Example: To have an invalid solution when species A is > 5.0:
+                       trigger = 'gt('A', 5.0)'
+        name - A more detailed name for the constraint, not restricted to the id
+            format
+        """
+        constraint = ConstraintEvent(id, trigger, message, name)
+        self._checkIdUniqueness(constraint.id)
+        self.constraints.set(constraint.id, constraint)
+        
+
     def add_func_def(self, id, variables, math, name=''):
         """
         Add a function definition to the Network.
@@ -426,10 +444,10 @@ class Network:
         Remove the component with the given id from the Network.
 
         Components that can be removed are variables, reactions, events,
-        function definitions, assignment rules, and rate rules.
+        function definitions, assignment rules, rate rules, and constraints.
         """
         complists = [self.variables, self.reactions, self.functionDefinitions,
-                     self.events, self.assignmentRules, self.rateRules,
+                     self.events, self.constraints, self.assignmentRules, self.rateRules,
                      self.algebraicRules]
         for complist in complists:
             # If the id is in a list and has a non-empty name
@@ -455,6 +473,7 @@ class Network:
            or id in self.reactions.keys()\
            or id in self.functionDefinitions.keys()\
            or id in self.events.keys()\
+           or id in self.constraints.keys()\
            or id == self.id:
             raise ValueError, ('The id %s is already in use!' % id)
 
@@ -1515,7 +1534,7 @@ class Network:
         c_body.append('')
 
         self.event_clauses = []
-        for ii, event in enumerate(self.events.values()):
+        for ii, event in enumerate(self.events.values()+self.constraints.values()):
             trigger = event.trigger
             for func_name, func_vars, func_expr in self._logical_comp_func_defs:
                 trigger = ExprManip.sub_for_func(trigger, func_name, func_vars,
@@ -1529,7 +1548,7 @@ class Network:
             self.event_clauses.append(trigger)
             len_root_func += 1
 
-        for ii, event in enumerate(self.events.values()):
+        for ii, event in enumerate(self.events.values()+self.constraints.values()):
             event.sub_clause_indices = []
             trigger = event.trigger
             for func_name, func_vars, func_expr in self._logical_comp_func_defs:
@@ -3236,7 +3255,7 @@ class Network:
         """
         # These are all the things that have names (except the network itself)
         complists = [self.variables, self.reactions, self.functionDefinitions,
-                     self.events]
+                     self.events, self.constraints]
         # If we don't find a name, we'll just use the id
         name = id
         for complist in complists:
@@ -3274,6 +3293,7 @@ class Network:
         out['assignments'] = dict(self.assignmentRules.items())
         out['events'] = dict([(event.trigger, event.event_assignments)
                               for event in self.events])
+        out['constraints'] = dict([constraint.trigger for constraint in self.constraints])
 
         return out
 
@@ -3323,6 +3343,11 @@ class Network:
         self.add_event(id = id, trigger = trigger, 
                        event_assignments = eventAssignments, name = name,
                        delay = delay)
+
+    def addConstraint(self, id, trigger, message=None, name=''):
+        self.add_constraint(id = id, trigger = trigger, message = message,
+                            name = name)
+
 
     addFunctionDefinition = add_func_def
     addAssignmentRule = add_assignment_rule

@@ -130,6 +130,22 @@ class Event:
             else:
                 raise 'Problem in time triggered events'
 
+class ConstraintEvent(Event):
+    def __init__(self, id, trigger, message, name):
+        self.id, self.name = id, name
+        self.delay = 0.0
+        self.is_terminal = True
+        self.event_assignments = {}
+        self.message = message
+
+        self.timeTriggered = False
+        self.parseTrigger(trigger)
+        self.buffer=0.0
+
+
+
+
+
 # This is a placeholder object that will be used to store information about
 #  events during integrations.
 class event_info(object):
