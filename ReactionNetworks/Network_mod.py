@@ -2879,7 +2879,10 @@ class Network:
             # Check whether system appears well-determined.
             if len(self.algebraicVars) > len(self.algebraicRules):
                 raise ValueError('System appears under-determined. '
-                                 'Not enough  algebraic rules.') 
+                                 'Not enough  algebraic rules. '
+                                 '\n algebraicVars (%i) = \n%s '
+                                 '\n algebraicRules (%i) = \n%s '%(len(self.algebraicVars), self.algebraicVars,
+                                                                   len(self.algebraicRules), self.algebraicRules)) 
             self.make_func_defs()
             self._makeDiffEqRHS()
             for method in self._dynamic_structure_methods:
@@ -2898,8 +2901,11 @@ class Network:
         # after compile, check that there are not more algebraic variables than
         # algebraic rules.
         if len(self.algebraicVars) > len(self.algebraicRules):
-            raise ValueError('System appears under-determined. Not enough '
-                             'algebraic rules.') 
+            raise ValueError('System appears under-determined. '
+                             'Not enough  algebraic rules. '
+                             '\n algebraicVars (%i) = \n%s '
+                             '\n algebraicRules (%i) = \n%s '%(len(self.algebraicVars), self.algebraicVars,
+                                                               len(self.algebraicRules), self.algebraicRules)) 
 
         if self._last_disabled_c != disable_c:
             self._last_disabled_c = disable_c
