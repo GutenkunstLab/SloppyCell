@@ -10,7 +10,8 @@ from SloppyCell.daskr import daeint
 
 # Load the fast reaction example from the SBML semantic test suite.
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
-from AlgTestNets import algebraic_net, algebraic_net_assignment, algebraic_net_multi
+from AlgTestNets import algebraic_net, algebraic_net_assignment, \
+                         algebraic_net_multi, algebraic_net_under
 tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
 
 class test_AlgebraicRules(unittest.TestCase):
@@ -140,6 +141,16 @@ class test_AlgebraicRules(unittest.TestCase):
                                0.018207409, 8)
         self.assertAlmostEqual(log_traj.get_var_val('S2', 16.8-t0),
                                0.210750878, 8)
+
+    def test_underdetermined(self):
+        """ Test that an underdetermined system raises a ValueError """
+        
+        # algebraic_net_under is underdetermined (no rule for determining parameter P)
+        # check that system raises ValueError in compilation
+        self.assertRaises((ValueError), Dynamics.integrate,
+                          algebraic_net_under, tlist_algebraic_net)
+
+
 
 ################################################################################
         

@@ -78,3 +78,8 @@ algebraic_net_andor_events.addEvent(id='logical_event', trigger=logical_trigger,
                                     eventAssignments=eas)
 
 
+algebraic_net_under = algebraic_net.copy('alg_net_underdetermined')
+algebraic_net_under.addParameter('P', value=5.0, isConstant=False)
+del algebraic_net_under.algebraicRules[0]
+algebraic_net_under.add_algebraic_rule('S2 + S1 - T*(P/P)')
+
