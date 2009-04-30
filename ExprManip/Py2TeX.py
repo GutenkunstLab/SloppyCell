@@ -45,7 +45,7 @@ def dict2TeX(d, name_dict, lhs_form='%s', split_terms=False, simpleTeX=False):
         lines = [r'\providecommand{\tabfrac}[2]{%',
                  r'   \setlength{\fboxrule}{0pt}%',
                  r'   \fbox{$\frac{#1}{#2}$}}',
-                 r'\begin{longtable}{rcl}'] + [all] + [r'\end{longtable}']
+                 r'\begin{longtable}{lll}'] + [all] + [r'\end{longtable}']
         all = os.linesep.join(lines)
 
     return all
@@ -118,7 +118,9 @@ def _ast2TeX(ast, outer=AST._FARTHEST_OUT, name_dict={},
             out = r'\sqrt{%s}' % args[0]
         else:
             out = r'\operatorname{%s}\left(%s\right)' % (name, r',\,'.join(args))
-
+    elif isinstance(ast, Or) or isinstance(ast, And):
+        out = r'\operatorname{%s}' % (str(ast))
+        
     if AST._need_parens(outer, ast, adjust):
         return out
     else:
