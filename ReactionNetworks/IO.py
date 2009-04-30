@@ -1,4 +1,5 @@
 import os
+import sets
 
 try:
     import SBMLInterface as SBML
@@ -44,7 +45,7 @@ def net_DOT_file(net, filename = None, size=(7.5,10)):
     f.close()
 
 
-def eqns_TeX_file(net, filename=None, simpleTeX=False):
+def eqns_TeX_file(net, filename=None, simpleTeX=False, landscape=False):
     """
     Output a TeX file containing the network equations and other information.
 
@@ -61,6 +62,8 @@ def eqns_TeX_file(net, filename=None, simpleTeX=False):
     lines.append(r'\usepackage{amsmath}')
     lines.append(r'\usepackage{fullpage}')
     lines.append(r'\usepackage{longtable}')
+    if landscape == True:
+        lines.append(r'\usepackage[a4paper,landscape]{geometry}')
     lines.append(r'\begin{document}')
     lines.append(_net_eqns_to_TeX(net, simpleTeX))
     lines.append(r'\end{document}')
@@ -122,18 +125,23 @@ def _net_eqns_to_TeX(net, simpleTeX=False):
 
     if net.events:
         outputs.append(r'\section*{Events}')
-        outputs.append(r'\begin{description}')
+
         for e in net.events:
-            outputs.append(r'\item[$%s$]' % (e.name))
+            e_name = net.get_component_name(e.id, TeX_form=True)
+            outputs.append(r'$%s$' % (e_name))
             trigger_str = ExprManip.Py2TeX.expr2TeX(e.trigger, name_dict)
             outputs.append(r'Trigger: $%s$' % trigger_str)
-            outputs.append(r'\begin{itemize}')
+            
             for id, result in e.event_assignments.items():
+                outputs.append(r'\begin{itemize}')
                 id_str = ExprManip.Py2TeX.expr2TeX(id, name_dict)
                 rule_str = ExprManip.Py2TeX.expr2TeX(str(result), name_dict)
-                outputs.append(r'\item[] $%s = %s$' % (id_str, rule_str))
-            outputs.append(r'\end{itemize}')
-        outputs.append(r'\end{description}')
+                outputs.append(r'\item $%s = %s$' % (id_str, rule_str))
+                outputs.append(r'\end{itemize}')
+
+
+
+
 
     if net.optimizableVars:
         outputs.append(r'\section*{Optimizable Parameters}')
@@ -147,7 +155,14 @@ def _net_eqns_to_TeX(net, simpleTeX=False):
             outputs.append(r'\hline')
         outputs.append(r'\end{longtable}')
 
-    return os.linesep.join(outputs)
+    outputs_copy = []
+    for line in outputs:
+        # fix and_func and or_func
+        line = line.replace('and_func','and\_func')
+        line = line.replace('or_func','or\_func')
+        outputs_copy.append(line)
+
+    return os.linesep.join(outputs_copy)
                             
 
 def dynamic_function_from_file(obj, filename):
