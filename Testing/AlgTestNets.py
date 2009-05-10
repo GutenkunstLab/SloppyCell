@@ -96,5 +96,5 @@ eventAssignments=KeyedList()
 eventAssignments.set('X0',0.1)
 algebraic_net_constraints.addEvent('event1', 'and(gt(time,18),gt(X1,0.4))',eventAssignments)
 algebraic_net_constraints.addEvent('event2', 'and(gt(time,10),gt(X1,0.4))',eventAssignments)
-algebraic_net_constraints.addConstraint('X1toobig',trigger='gt(X1,0.5)',
+algebraic_net_constraints.addConstraint('X1toobig',trigger='leq(X1,0.5)',
                                         message='X1 is big!')

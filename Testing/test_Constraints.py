@@ -39,7 +39,7 @@ class test_Constraints(unittest.TestCase):
         """          
         net = base_net.copy('test')
 
-        net.addConstraint('TimeTooLarge','geq(time,1.0)','Time got too large')
+        net.addConstraint('TimeTooLarge','lt(time,1.0)','Time got too large')
 
         self.assertRaises((Utility.ConstraintViolatedException),
                           Dynamics.integrate, net, tlist_algebraic_net,
@@ -56,17 +56,18 @@ class test_Constraints(unittest.TestCase):
         """
         net = base_net.copy('test')
 
-        net.addConstraint('TimeTooLarge','geq(time,1.0)','Time got too large')
+        net.addConstraint('TimeTooLarge','lt(time,1.0)','Time got too large')
 
         traj = Dynamics.integrate(net, tlist_algebraic_net, use_constraints=False)
 
         event_indeces = [net.events.index_by_key('event1'),net.events.index_by_key('event2')]
 
         (te,ye,ie) = traj.event_info
+
         for e_ind in event_indeces:
             self.assertEqual(True, e_ind in ie)
-        for t1, t2 in zip(te, [1.0, 13.301313182,
-                              16.436799258, 18.0]):
+        for t1, t2 in zip(te, [13.30131485,
+                              18.0]):
             self.assertAlmostEqual(t1, t2)
 
     def test_constraint_chaining(self):
@@ -89,6 +90,23 @@ class test_Constraints(unittest.TestCase):
         except Utility.ConstraintViolatedException, cve:
             self.assertAlmostEqual(cve.time, 2.0)
 
+    def test_constraints_time_zero(self):
+        """
+        If checking for constraint violations at time zero.
+        """
+        net = base_net.copy('test')
+
+        # set X1 to be too big for the constraint
+        net.set_var_ic('X1', 0.6)
+
+        self.assertRaises((Utility.ConstraintViolatedException),
+                          Dynamics.integrate, net, tlist_algebraic_net,
+                          fill_traj=True, redirect_msgs=True)
+
+        try:
+            traj = Dynamics.integrate(net, tlist_algebraic_net)
+        except Utility.ConstraintViolatedException, cve:
+            self.assertAlmostEqual(cve.time, 0.0)
 
         
 suite = unittest.makeSuite(test_Constraints)
