@@ -213,6 +213,28 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                         net._dynamic_var_algebraic, rtol, atol,
                         net.constantVarValues, net, 
                         redirect_msgs=redirect_msgs)
+
+    """
+
+1) After the initial conditions have been calculated, use
+net.updateVariablesFromDynamicVars to make sure the Network object has
+the proper variable values.
+2) Then loop through the constraint events.
+    a) For each constraint, result = net.evaluate_expr(constraint.trigger).
+    b) If result is a violation (I don't know whether that means True
+or False), raise the exception.
+    """
+    # check that constraints are not violated at t=0
+    if use_constraints == True:
+        net.updateVariablesFromDynamicVars(values=IC, time=start)
+        for con_id, constraint in net.constraints.items():
+            result = net.evaluate_expr(constraint.trigger)
+            if result == False:
+                raise Utility.ConstraintViolatedException(start,
+                                                 constraint.trigger,
+                                                 constraint.message)
+                
+            
     
     # start variables for output storage 
     yout = scipy.zeros((0, len(IC)), scipy.float_)
@@ -273,6 +295,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                 holder = event_list.pop()
 
                 # check whether the current event was a constraint
+                # technically this should be caught in fired_events, so the
+                # if statement below is deprecated and can be removed.
                 if holder.event_index >= len(net.events) and use_constraints == True:
                     # a constraint was violated
                     con_id = holder.event_id
@@ -333,7 +357,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
             event_just_fired = fired_events(net, start, IC, ypIC, 
                                             crossing_dirs,
                                             events_occurred, pendingEvents,
-                                            chained_off_of = chain_starter)
+                                            chained_off_of = chain_starter,
+                                            use_constraints=use_constraints)
             event_just_executed = True
 
             # If there are no more events to excecute at this time, then
@@ -394,7 +419,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         # it at the top of the while loop for integration
         event_just_fired = fired_events(net, start, IC, ypIC, 
                                                 i_root_this, 
-                                                events_occurred, pendingEvents)
+                                                events_occurred, pendingEvents,
+                                                use_constraints=use_constraints)
 
     # End of while loop for integration.
     if len(yout) and len(tout):
@@ -454,7 +480,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
 
 def fired_events(net, time, y, yp, crossing_dirs, 
                  events_occurred, pendingEvents,
-                 chained_off_of=None):
+                 chained_off_of=None, use_constraints=False):
     # checking for both normal events and constraint events
     num_events = len(net.events)+len(net.constraints)
     event_just_fired = False
@@ -469,12 +495,10 @@ def fired_events(net, time, y, yp, crossing_dirs,
         # 1 that means Ri changed from negative to positive.  In that case
         # we need to record the event. Note that num_events runs over the
         # real events, not the sub-clauses which are also in root_func.
-        if dire_cross > 0:
+        if dire_cross > 0 and event_index < len(net.events):
             event_just_fired = True
             if event_index < len(net.events):
                 event = net.events[event_index]
-            if event_index >= len(net.events):
-                event = net.constraints[event_index-len(net.events)]
                 
             logger.debug('Event %s fired at time=%g in network %s.'
                          % (event.id, time, net.id))
@@ -525,6 +549,18 @@ def fired_events(net, time, y, yp, crossing_dirs,
             if not pendingEvents.has_key(execution_time):
                 pendingEvents[execution_time] = []
             pendingEvents[execution_time].append(holder)
+
+        if dire_cross < 0 and event_index >= len(net.events) \
+           and event_index <= len(net.events) + len(net.constraints):
+            event_just_fired = True
+            event = net.constraints[event_index-len(net.events)]
+            con_id = event.id
+            constraint = net.constraints.get(con_id)
+            if use_constraints == True:
+                raise Utility.ConstraintViolatedException(time,
+                                                 constraint.trigger,
+                                                 constraint.message)
+
 
     return event_just_fired
 
