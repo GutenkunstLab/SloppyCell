@@ -2530,6 +2530,15 @@ class Network:
         yp_post_exec = holder.yp_post_exec
         holder.ysens_pre_exec = ysens_pre_exec
 
+        if not event.event_assignments:
+            # Event does nothing, so it can't affect parameter senstivities
+            # Note that we don't get derivatives of time of firing and execution
+            #  if we skip this. However, it is very useful for when we have
+            #  events monitoring derivatives of variables, because then we
+            #  can't calculate those event time derivatives.
+            holder.ysens_post_exec = ysens_pre_exec
+            return holder.ysens_post_exec
+
         # This is subtle... If this event is the result of a chain, then the
         #  firing time for the event is determined not by its trigger, but
         #  by the execution time of the event that caused it to fire.
