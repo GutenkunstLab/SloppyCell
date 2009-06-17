@@ -11,7 +11,12 @@ import SloppyCell.Utility as Utility
 KeyedList = KeyedList_mod.KeyedList
 
 def fmin_powell_log_params(m, params, *args, **kwargs):
-    func = m.cost_log_params
+    def func(log_params):
+        try:
+            return m.cost_log_params(log_params)
+        except Utility.SloppyCellException:
+            logger.warn('Exception in cost evaluation. Cost set to inf.')
+            return scipy.inf
 
     pmin = scipy.optimize.fmin_powell(func, scipy.log(params), 
                                       *args, **kwargs)
