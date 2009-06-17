@@ -2528,6 +2528,7 @@ class Network:
         yp_pre_exec = holder.yp_pre_exec
         y_post_exec = holder.y_post_exec
         yp_post_exec = holder.yp_post_exec
+        holder.ysens_pre_exec = ysens_pre_exec
 
         # This is subtle... If this event is the result of a chain, then the
         #  firing time for the event is determined not by its trigger, but
@@ -2730,6 +2731,7 @@ class Network:
                     index_in_y = y_ii + N_dv
                     ysens_post_exec[index_in_y] = dy_dp_post_exec
 
+        holder.ysens_post_exec = ysens_post_exec
         return ysens_post_exec
 
     #
