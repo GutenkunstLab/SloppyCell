@@ -895,7 +895,17 @@ class Network:
         t = sets.Set([0])
 
         for var,times in vars.items():
-            t.union_update(sets.Set(times))
+            if var.endswith('_maximum') or var.endswith('_minimum'):
+                t1,t2 = times
+                if t1 is not None:
+                    t.add(t1)
+                if t2 is not None:
+                    t.add(t2)
+            elif self.variables.has_key(var):
+                t.union_update(sets.Set(times))
+            else:
+                raise ValueError('Unknown variable %s requested from network %s'
+                                 % (var, self.get_id()))
 
         t = list(t)
         t.sort()
