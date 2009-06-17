@@ -926,20 +926,20 @@ class Network:
                 # This is an extremum search.
                 # Which variable are we looking for?
                 var = '_'.join(id.split('_')[:-1])
-                minTime, maxTime = vars[id]
 
                 # First, check though the trajectory, to see if the extremum
                 # is in there.
                 t = self.trajectory.get_times()
+                minTime, maxTime = vars[id]
+                minSearchTime, maxSearchTime = vars[id]
+                if minSearchTime is None:
+                    minSearchTime = t[0]
+                if maxSearchTime is None:
+                    maxSearchTime = t[-1]
                 # Restrict timespan in which to search.
-                if minTime is not None:
-                    min_t_ii = t.searchsorted(minTime)
-                else:
-                    min_t_ii = 0
-                if maxTime is not None:
-                    max_t_ii = t.searchsorted(maxTime)-1
-                else:
-                    max_t_ii = len(t) 
+                min_t_ii = t.searchsorted(minSearchTime)
+                max_t_ii = t.searchsorted(maxSearchTime)-1
+
                 vartraj = self.trajectory.get_var_traj(var)
                 if id.endswith('_maximum'):
                     var_val_ii = vartraj[min_t_ii:max_t_ii+1].argmax()\
@@ -954,19 +954,24 @@ class Network:
                 # full_speed the trajectory can be very sparse. If the use has
                 # set up events to tag potential extrema, this will use those.
                 curr_vals = self.get_var_vals()
-                event_info = self.trajectory.event_info
-                for ii in range(len(event_info[0])):
-                    time,dynVarVals = event_info[0][ii], event_info[1][ii]
-                    self.updateVariablesFromDynamicVars(dynVarVals, time)
-                    eval = self.get_var_val(var)
-                    if id.endswith('_maximum') and eval > var_val\
-                       and time >= minTime and time <= maxTime:
-                        var_val = eval
-                        t_val = time
-                    elif id.endswith('_minimum') and eval < var_val\
-                       and time >= minTime and time <= maxTime:
-                        var_val = eval
-                        t_val = time
+                for holder in self.trajectory.events_occurred:
+                    possibilities = [(holder.time_fired, holder.y_fired),
+                                     (holder.time_exec, holder.y_pre_exec),
+                                     (holder.time_exec, holder.y_post_exec)]
+                    # There are three possible event-related times. When the
+                    # event fired, when it executed, and values pre- and post-
+                    # execution.
+                    for time, dynVarVals in possibilities:
+                        self.updateVariablesFromDynamicVars(dynVarVals, time)
+                        eval = self.get_var_val(var)
+                        if id.endswith('_maximum') and eval > var_val\
+                           and time >= minSearchTime and time <= maxSearchTime:
+                            var_val = eval
+                            t_val = time
+                        elif id.endswith('_minimum') and eval < var_val\
+                           and time >= minSearchTime and time <= maxSearchTime:
+                            var_val = eval
+                            t_val = time
                 self.set_var_vals(curr_vals)
 
                 result[id] = {(minTime, maxTime):(t_val,var_val)}
