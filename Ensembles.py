@@ -62,7 +62,8 @@ def ensemble_log_params(m, params, hess=None,
                         sing_val_cutoff=0, seeds=None,
                         recalc_hess_alg = False, recalc_func=None,
                         save_hours=scipy.inf, save_to=None,
-                        skip_elems = 0, log_params=True):
+                        skip_elems = 0, log_params=True,
+                        save_scalefactors=False):
     """
     Generate a Bayesian ensemble of parameter sets consistent with the data in
     the model. The sampling is done in terms of the logarithm of the parameters.
@@ -95,12 +96,16 @@ def ensemble_log_params(m, params, hess=None,
                     step in the returned ensemble. For example, skip_elems=1
                     will return every other member. Using this option can
                     reduce memory consumption.
+     save_scalefactors --- If True, scale factors will be saved during 
+                          integration.
 
     Outputs:
-     ens, ens_fes, ratio
+     ens, ens_fes, ratio, [scale_factors]
      ens -- List of KeyedList parameter sets in the ensemble
      ens_fes -- List of free energies for each parameter set
      ratio -- Fraction of attempted moves that were accepted
+     scale_factors -- List of scale factors throughout ensemble, only returned
+                      if save_scalefactors is True.
 
     The sampling is done by Markov Chain Monte Carlo, with a Metropolis-Hasting
     update scheme. The canidate-generating density is a gaussian centered on the
@@ -124,6 +129,8 @@ def ensemble_log_params(m, params, hess=None,
     curr_params = copy.deepcopy(params)
     curr_F = m.free_energy(curr_params, temperature)
     ens, ens_Fs = [curr_params], [curr_F]
+    curr_sf = m.internalVars['scaleFactors'].copy()
+    ens_scale_factors = [curr_sf]
 
     # We work with arrays of params through the rest of the code
     curr_params = scipy.array(curr_params)
@@ -190,6 +197,7 @@ def ensemble_log_params(m, params, hess=None,
         if accepted:
             accepted_moves += 1.
             curr_params = next_params
+            curr_sf = m.internalVars['scaleFactors'].copy()
             curr_F = next_F
             if recalc_hess_alg:
                 hess = next_hess
@@ -197,6 +205,8 @@ def ensemble_log_params(m, params, hess=None,
 
         if steps_attempted % (skip_elems + 1) == 0:
             ens_Fs.append(curr_F)
+            if save_scalefactors:
+                ens_scale_factors.append(curr_sf)
             if isinstance(params, KeyedList):
                 ens.append(KeyedList(zip(param_keys, curr_params)))
             else:
@@ -207,18 +217,27 @@ def ensemble_log_params(m, params, hess=None,
         if save_to is not None\
            and time.time() >= last_save_time + save_hours * 3600:
             _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions,
-                      steps_attempted)
+                      steps_attempted, ens_scale_factors, 
+                      save_sf=save_scalefactors)
             last_save_time = time.time()
 
     if save_to is not None:
         _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions, 
-                  steps_attempted)
+                  steps_attempted, ens_scale_factors,
+                  save_sf=save_scalefactors)
 
-    return ens, ens_Fs, ratio
+    if save_scalefactors:
+        return ens, ens_Fs, ratio, ens_scale_factors
+    else:
+        return ens, ens_Fs, ratio
 
-def _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions, steps_attempted):
+def _save_ens(ens, ens_Fs, ratio, save_to, attempt_exceptions, steps_attempted,
+              ens_scale_factors, save_sf=False):
     temp_name = save_to + '_temporary_SloppyCellFile'
-    Utility.save((ens, ens_Fs, ratio), temp_name)
+    if not save_sf:
+        Utility.save((ens, ens_Fs, ratio), temp_name)
+    else:
+        Utility.save((ens, ens_Fs, ratio, ens_scale_factors), temp_name)
     shutil.move(temp_name, save_to)
     logger.debug('Ensemble of length %i saved to %s.' % (len(ens), save_to))
     logger.debug('Acceptance ratio so far is %f.' % ratio)
