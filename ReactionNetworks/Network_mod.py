@@ -999,11 +999,77 @@ class Network:
        times = self.ddv_dpTrajectory.get_times()
        for id in vars.keys():
            result[id] = {}
+           if id.endswith('_maximum') or id.endswith('_minimum'):
+               # Sensitivity of extremum:
+               # d/dp y(tmax) = dy/dp + dy/dt*dtmax/dp, but dy/dt should be zero
+               # at a max, so it's just dy/dp...
+               # This is an extremum search.
+               # Which variable are we looking for?
+               var = '_'.join(id.split('_')[:-1])
+
+               # First, check though the trajectory, to see if the extremum
+               # is in there.
+               t = self.trajectory.get_times()
+               minTime, maxTime = vars[id]
+               minSearchTime, maxSearchTime = vars[id]
+               if minSearchTime is None:
+                   minSearchTime = t[0]
+               if maxSearchTime is None:
+                   maxSearchTime = t[-1]
+               # Restrict timespan in which to search.
+               min_t_ii = t.searchsorted(minSearchTime)
+               max_t_ii = t.searchsorted(maxSearchTime)-1
+
+               vartraj = self.trajectory.get_var_traj(var)
+               if id.endswith('_maximum'):
+                   var_val_ii = vartraj[min_t_ii:max_t_ii+1].argmax()\
+                           + min_t_ii
+               elif id.endswith('_minimum'):
+                   var_val_ii = vartraj[min_t_ii:max_t_ii+1].argmin()\
+                           + min_t_ii
+               var_val = vartraj[var_val_ii]
+               t_val = t[var_val_ii]
+               var_val_sens = dict((optvar, self.ddv_dpTrajectory.get_var_val_index((var,optvar), var_val_ii)) for optvar in self.optimizableVars.keys())
+
+               # Now check through the events. If we're running under 
+               # full_speed the trajectory can be very sparse. If the user has
+               # set up events to tag potential extrema, this will use those.
+               curr_vals = self.get_var_vals()
+               Ndynvars = len(self.dynamicVars)
+               try:
+                   var_index = self.dynamicVars.keys().index(var)
+               except ValueError:
+                   logger.warn("Can't check events for %s because %s is not a "
+                               "dynamic variable. (It is probably assigned.)"
+                               % (id, var))
+                   result[id][(minTime, maxTime)] = var_val_sens
+                   continue
+               for holder in self.trajectory.events_occurred:
+                   possibilities = [(holder.time_fired, holder.ysens_fired),
+                                    (holder.time_exec, holder.ysens_pre_exec),
+                                    (holder.time_exec, holder.ysens_post_exec)]
+                   # There are three possible event-related times. When the
+                   # event fired, when it executed, and values pre- and post-
+                   # execution.
+                   for time, ysens in possibilities:
+                       self.updateVariablesFromDynamicVars(ysens[:Ndynvars], 
+                                                           time)
+                       eval = self.get_var_val(var)
+                       if (time >= minSearchTime and time <= maxSearchTime)\
+                          and ((id.endswith('_maximum') and eval > var_val)
+                               or (id.endswith('_minimum') and eval < var_val)):
+                           var_val = eval
+                           t_val = time
+                           var_val_sens = dict(zip(self.optimizableVars.keys(),
+                                                   ysens[Ndynvars:][var_index::Ndynvars]))
+               self.set_var_vals(curr_vals)
+
+               result[id][(minTime, maxTime)] = var_val_sens
            for tIndex, t in enumerate(times):
                result[id][t] = {}
                for optparam in self.optimizableVars.keys():
                    result[id][t][optparam] = \
-                       self.ddv_dpTrajectory.get_var_traj((id,optparam))[tIndex]
+                       self.ddv_dpTrajectory.get_var_val_index((id,optparam), tIndex)
        return result
 
     def integrate(self, times, params=None, returnEvents=False, addTimes=True,

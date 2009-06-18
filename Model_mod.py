@@ -503,6 +503,9 @@ class Model:
             exptDepVars = sets.Set()
             for calc in exptData:
                 exptDepVars.union_update(sets.Set(expt.GetData()[calc].keys()))
+            # Now for the extrema data
+            for ds in expt.scaled_extrema_data:
+                exptDepVars.add(ds['var'])
 
             for depVar in exptDepVars:
 		self.internalVarsDerivs['scaleFactors'][exptName][depVar] = {}
@@ -521,6 +524,17 @@ class Model:
                             theoryDotData += (theory * data) / error**2
                             theoryDotTheory += theory**2 / error**2
 
+                for ds in expt.scaled_extrema_data:
+                    if ds['type'] == 'max':
+                        var = ds['var'] + '_maximum'
+                    elif ds['type'] == 'min':
+                        var = ds['var'] + '_minimum'
+                    data, error = ds['val'], ds['sigma']
+                    theory = self.calcVals[ds['calcKey']][var]\
+                            [ds['minTime'],ds['maxTime']][1]
+                    theoryDotData += (theory * data) / error**2
+                    theoryDotTheory += theory**2 / error**2
+
                 # now get derivative of the scalefactor
                 for pname in p.keys():
                     theorysensDotData, theorysensDotTheory = 0, 0
@@ -538,6 +552,17 @@ class Model:
                                 theorysens = self.calcSensitivityVals[calc][depVar][indVar].get(pname, 0.0)
                                 theorysensDotData += (theorysens * data) / error**2
                                 theorysensDotTheory += (theorysens * theory) / error**2
+                    for ds in expt.scaled_extrema_data:
+                        if ds['type'] == 'max':
+                            var = ds['var'] + '_maximum'
+                        elif ds['type'] == 'min':
+                            var = ds['var'] + '_minimum'
+                        theory = self.calcVals[ds['calcKey']][var]\
+                                [ds['minTime'],ds['maxTime']][1]
+                        data, error = ds['val'], ds['sigma']
+                        theorysens = self.calcSensitivityVals[ds['calcKey']][var][ds['minTime'],ds['maxTime']].get(pname, 0.0)
+                        theorysensDotData += (theorysens * data) / error**2
+                        theorysensDotTheory += (theorysens * theory) / error**2
 
                     deriv_dict = self.internalVarsDerivs['scaleFactors'][exptName][depVar]
                     try:
