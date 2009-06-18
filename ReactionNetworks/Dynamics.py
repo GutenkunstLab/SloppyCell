@@ -599,10 +599,20 @@ def integrate_sens_subset(net, times, rtol=None,
         start_col = (ii+1) * N_dyn_vars
         end_col = (ii+2) * N_dyn_vars
         if not return_derivs:
-            all_yout[:, start_col:end_col] = single_out
+            all_yout[:, start_col:end_col] = single_out[0]
         else:
             all_yout[:, start_col:end_col] = single_out[0]
             all_youtdt[:, start_col:end_col] = single_out[1]
+        # Concatenate the various 'events_occurred'
+        for eii,e in enumerate(traj.events_occurred):
+            if not hasattr(e, 'ysens_fired'):
+                e.ysens_fired = single_out[-1][eii].ysens_fired
+                e.ysens_post_exec = single_out[-1][eii].ysens_post_exec
+                e.ysens_pre_exec = single_out[-1][eii].ysens_pre_exec
+            else:
+                e.ysens_fired = scipy.concatenate((e.ysens_fired, single_out[-1][eii].ysens_fired[N_dyn_vars:]))
+                e.ysens_post_exec = scipy.concatenate((e.ysens_post_exec, single_out[-1][eii].ysens_post_exec[N_dyn_vars:]))
+                e.ysens_pre_exec = scipy.concatenate((e.ysens_pre_exec, single_out[-1][eii].ysens_pre_exec[N_dyn_vars:]))
 
     if not return_derivs:
         return traj.get_times(), all_yout, traj.event_info, traj.events_occurred
@@ -635,7 +645,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     #  and what events will happen.
     times = traj.get_times()
     times = scipy.asarray(times)
-    events_occurred = copy.copy(traj.events_occurred)
+    events_occurred = copy.deepcopy(traj.events_occurred)
 
     current_time = times[0]
 
@@ -775,12 +785,12 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
 
     sens_out = _reduce_times(sens_out, tout, times)
     if not return_derivs:
-        return sens_out
+        return sens_out, events_occurred
     else:
         sensdt_out = _reduce_times(sensdt_out, tout, times)
-        return sens_out, sensdt_out
+        return sens_out, sensdt_out, events_occurred
 
-def _parse_sens_result(result, net, opt_vars, yout, youtdt=None):
+def _parse_sens_result(result, net, opt_vars, yout, youtdt=None, events_occurred=None):
     """
     Utility function for parsing the return from integrate_sens_subset
     """
@@ -797,6 +807,11 @@ def _parse_sens_result(result, net, opt_vars, yout, youtdt=None):
         if youtdt is not None:
             youtdt[:, net_start: net_end] =\
                     result[2][:, work_start:work_end]
+        if events_occurred is not None:
+            for eii,e in enumerate(events_occurred):
+                e.ysens_fired = scipy.concatenate((e.ysens_fired, result[-1][eii].ysens_fired[N_dyn_vars:]))
+                e.ysens_post_exec = scipy.concatenate((e.ysens_post_exec, result[-1][eii].ysens_post_exec[N_dyn_vars:]))
+                e.ysens_pre_exec = scipy.concatenate((e.ysens_pre_exec, result[-1][eii].ysens_pre_exec[N_dyn_vars:]))
 
 def integrate_sensitivity(net, times, params=None, rtol=None, 
                           fill_traj=False, return_derivs=False,
@@ -858,6 +873,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
     events_occurred = result[-1]
 
     # Copy the sensitivity results into yout and (if necessary) youtdt
+    # We don't need events_occurred here, because we already have it.
     _parse_sens_result(result, net, vars_assigned[0], yout, youtdt)
 
     # Now when we listen to the worker's replies, we store any exception they
@@ -870,7 +886,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         if isinstance(result, Utility.SloppyCellException):
             exception_raised = result
             continue
-        _parse_sens_result(result, net, vars_assigned[worker], yout, youtdt)
+        _parse_sens_result(result, net, vars_assigned[worker], yout, youtdt, events_occurred)
 
     if exception_raised:
         raise exception_raised
