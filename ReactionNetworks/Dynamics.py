@@ -180,8 +180,8 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                     detailed event information, inclusing pre- and post- execution
                     state, and assigned variable informtaion.
     use_constraints    If True, and if the network has constraints, will raise
-                       an exception if a constraint's math function becomes True
-                       at any time.
+                       an exception if a constraint's math function becomes 
+                       False at any time.
     """
     logger.debug('Integrating network %s.' % net.get_id())
 
