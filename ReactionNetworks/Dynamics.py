@@ -854,7 +854,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         youtdt = None
 
     # We use the master's result for events that occurred
-    events_info = result[-2]
+    event_info = result[-2]
     events_occurred = result[-1]
 
     # Copy the sensitivity results into yout and (if necessary) youtdt
@@ -881,7 +881,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         yout = scipy.concatenate((yout, youtdt), axis=1)
     ddv_dpTrajectory.appendSensFromODEINT(tout, yout, holds_dt = return_derivs)
     ddv_dpTrajectory.events_occurred = events_occurred
-    ddv_dpTrajectory.events_info = events_info
+    ddv_dpTrajectory.event_info = event_info
 
     net.trajectory = ddv_dpTrajectory
 
