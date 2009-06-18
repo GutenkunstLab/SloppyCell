@@ -605,9 +605,9 @@ def integrate_sens_subset(net, times, rtol=None,
             all_youtdt[:, start_col:end_col] = single_out[1]
 
     if not return_derivs:
-        return traj.get_times(), all_yout
+        return traj.get_times(), all_yout, traj.events_occurred
     else:
-        return traj.get_times(), all_yout, all_youtdt
+        return traj.get_times(), all_yout, all_youtdt, traj.events_occurred
 
 def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                           redirect_msgs):
@@ -853,6 +853,9 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
     else:
         youtdt = None
 
+    # We use the master's result for events that occurred
+    events_occurred = result[-1]
+
     # Copy the sensitivity results into yout and (if necessary) youtdt
     _parse_sens_result(result, net, vars_assigned[0], yout, youtdt)
 
@@ -876,6 +879,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
     if return_derivs:
         yout = scipy.concatenate((yout, youtdt), axis=1)
     ddv_dpTrajectory.appendSensFromODEINT(tout, yout, holds_dt = return_derivs)
+    ddv_dpTrajectory.events_occurred = events_occurred
 
     net.trajectory = ddv_dpTrajectory
 
