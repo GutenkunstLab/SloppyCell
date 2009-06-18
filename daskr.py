@@ -433,13 +433,16 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
                 else:
                     rwork[0] = twanted
 
-            # continue the integration
-            treached, y, yp, idid, jroot = \
-                    _daskr.ddaskr(res, tcurrent, y, yp, twanted,
-                                  info, rtol, atol,
-                                  rwork, iwork,
-                                  rpar, ipar,
-                                  jac, psol, rt, nrt)
+            # daskr fails if tcurrent == twanted, but it's perfectly sensible
+            # to just duplicate that point...
+            if not tcurrent == twanted:
+                # continue the integration
+                treached, y, yp, idid, jroot = \
+                        _daskr.ddaskr(res, tcurrent, y, yp, twanted,
+                                      info, rtol, atol,
+                                      rwork, iwork,
+                                      rpar, ipar,
+                                      jac, psol, rt, nrt)
 
             # check for a negative value of idid so we know if there was a
             # problem
