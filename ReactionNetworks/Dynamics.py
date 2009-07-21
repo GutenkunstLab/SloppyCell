@@ -349,6 +349,10 @@ or False), raise the exception.
                 start = tout[-1]
                 IC = copy.copy(yout[-1])
                 ypIC = copy.copy(youtdt_this[-1])
+            # We need to break several times to get to the proper level to deal
+            # with an exception.
+            if exception_raised:
+                break
 
             # Update the root state after all listed events have excecuted.
             root_after = root_func(start, IC, ypIC, constants)
@@ -368,6 +372,10 @@ or False), raise the exception.
             #  next event, check for firing events, etc.
             if len(pendingEvents[execution_time]) == 0:
                 del pendingEvents[execution_time]
+        # We need to break several times to get to the proper level to deal
+        # with an exception.
+        if exception_raised:
+            break
 
         # We remove 'double timepoints' that we would otherwise have when
         #  an event fired, but didn't execute due to a delay.
