@@ -40,7 +40,8 @@ def ensemble(m, params, hess=None,
              temperature=1.0, step_scale=1.0,
              sing_val_cutoff=0, seeds=None,
              recalc_hess_alg=False, recalc_func=None,
-             save_hours=scipy.inf, skip_elems=0, save_to=None):
+             save_hours=scipy.inf, skip_elems=0, save_to=None,
+             save_scalefactors=False):
     """
     Generate a Bayesian ensemble of parameter sets consistent with the data in
     the model. The sampling is done in terms of the bare parameters.
@@ -54,7 +55,8 @@ def ensemble(m, params, hess=None,
     return ensemble_log_params(m, params, hess, steps, max_run_hours,
                                temperature, step_scale, sing_val_cutoff, seeds,
                                recalc_hess_alg, recalc_func, save_hours, 
-                               save_to, skip_elems, log_params=False)
+                               save_to, skip_elems, log_params=False,
+                               save_scalefactors=save_scalefactors)
 
 def ensemble_log_params(m, params, hess=None, 
                         steps=scipy.inf, max_run_hours=scipy.inf,
