@@ -62,7 +62,8 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
 
         res_func = net.res_function_logdv
         Dfun = None
-        root_func = net.root_func_logdv
+        if root_func is not None:
+            root_func = net.root_func_logdv
 
         atol = rtol
         rtol = [0]*len(rtol)
