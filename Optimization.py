@@ -120,6 +120,10 @@ fmin_lm_log_params.__doc__ = fmin_lm_log_params.__doc__ + lmopt.fmin_lm.__doc__
 
 def leastsq_log_params(m, params, *args, **kwargs):
     # Dfun = m.jacobian_log_params_sens
+    if len(m.residuals) < len(params):
+        raise ValueError('leastsq cannot be used when number of residuals '
+                         '(roughly number of data points) is less than number '
+                         'of optimizable parameters.')
     func = m.res_log_params
 
     pmin, msg = scipy.optimize.leastsq(func, scipy.log(params), *args, **kwargs)
