@@ -68,9 +68,6 @@ class Model:
     def copy(self):
         return copy.deepcopy(self)
 
-    def __repr__(self):
-        return 'CalculationCollection(%s)' % repr(self.items())
-        
     def get_params(self):
         """
         Return a copy of the current model parameters
