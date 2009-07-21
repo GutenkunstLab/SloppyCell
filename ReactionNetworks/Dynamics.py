@@ -325,10 +325,28 @@ or False), raise the exception.
                 event_buffer = max(event_buffer, holder.event.buffer)
 
             if event_buffer:
+                # Ensure that we don't event_buffer past any
+                # requested timepoints.
+                nextEventTime = scipy.inf
+                pendingEventTimes = pendingEvents.keys()
+                pendingEventTimes.remove(execution_time)
+                if pendingEventTimes:
+                    nextEventTime = min(pendingEventTimes)
+                else:
+                    nextEventTime = scipy.inf
+                nextEventTime = min([nextEventTime, start+event_buffer])
+                if nextEventTime < times[-1]:
+                    curTimes = scipy.compress((times > start) 
+                                              & (times < nextEventTime), times)
+                    curTimes = scipy.concatenate(([start], curTimes, 
+                                                  [nextEventTime]))
+                else:
+                    curTimes = scipy.compress(times > start, times)
+                    curTimes = scipy.concatenate(([start], curTimes))
                 outputs = integrate_tidbit(net, res_func, _ddaskr_jac, 
                                            root_func=None, 
                                            IC=IC, yp0=ypIC, 
-                                           curTimes=[start, start+event_buffer],
+                                           curTimes=curTimes,
                                            rtol=rtol, atol=atol, 
                                            fill_traj=fill_traj, 
                                            return_derivs=True, 
