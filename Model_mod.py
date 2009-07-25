@@ -57,6 +57,7 @@ class Model:
         self.SetCalculationCollection(calcs)
 
         self.observers = KeyedList()
+        self.parameter_bounds = {}
 
     def compile(self):
         """
@@ -113,6 +114,7 @@ class Model:
          arrangment makes notification of observers much simpler.)
         """
         self.params.update(params)
+        self.check_parameter_bounds(params)
         self.CalculateForAllDataPoints(params)
         self.ComputeInternalVariables(T)
 
@@ -1072,3 +1074,18 @@ class Model:
 
     def GetInternalVariables(self):
         return self.internalVars
+
+    def add_parameter_bounds(self, param_id, pmin, pmax):
+        """
+        Add bounds on a specific parameter.
+        
+        Cost evaluations will raise an exception if these bounds are violated.
+        """
+        self.parameter_bounds[param_id] = pmin, pmax
+
+    def check_parameter_bounds(self, params):
+        self.params.update(params)
+        for id, (pmin, pmax) in self.parameter_bounds.items():
+            if not pmin <= self.params.get(id) <= pmax:
+                err = 'Parameter %s has value %f, which is outside of given bounds %f to %f.' % (id, self.params.get(id), pmin, pmax))
+                raise Utility.SloppyCellException(err)
