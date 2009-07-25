@@ -1087,5 +1087,5 @@ class Model:
         self.params.update(params)
         for id, (pmin, pmax) in self.parameter_bounds.items():
             if not pmin <= self.params.get(id) <= pmax:
-                err = 'Parameter %s has value %f, which is outside of given bounds %f to %f.' % (id, self.params.get(id), pmin, pmax))
+                err = 'Parameter %s has value %f, which is outside of given bounds %f to %f.' % (id, self.params.get(id), pmin, pmax)
                 raise Utility.SloppyCellException(err)
