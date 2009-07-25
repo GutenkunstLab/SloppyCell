@@ -322,7 +322,7 @@ class Network:
         trigger - We treat constraints as events that correspond to an
             invalid solution whenever the trigger is True.
             Example: To have an invalid solution when species A is > 5.0:
-                       trigger = 'gt('A', 5.0)'
+                       trigger = 'lt(A, 5.0)'
         name - A more detailed name for the constraint, not restricted to the id
             format
         """
