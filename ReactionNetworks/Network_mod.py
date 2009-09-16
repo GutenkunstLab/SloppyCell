@@ -1600,7 +1600,7 @@ class Network:
         #  just insert a placeholder line.
         py_body.append('root_devs = scipy.empty(NEED_TO_FIX, scipy.float_)')
         py_body.append('')
-        self._add_assignments_to_function_body(py_body, include_dts=True)
+        self._add_assignments_to_function_body(py_body, include_dts=self.deriv_funcs_enabled)
         py_body.append('')
 
         c_body = []
@@ -1610,8 +1610,7 @@ class Network:
         c_body.append('void root_func_(%s){' % c_args)
         c_body.append('double time = *time_ptr;')
         c_body.append('')
-        self._add_assignments_to_function_body(c_body, in_c=True, 
-                                               include_dts=True)
+        self._add_assignments_to_function_body(c_body, in_c=True, include_dts=self.deriv_funcs_enabled)
         self._prototypes_c.set('root_func', 
                                'void root_func_(%s);' % c_args)
         c_body.append('')
