@@ -40,6 +40,8 @@ class Trajectory:
                          'sqrt': scipy.sqrt,
                          'exponentiale': scipy.e,
                          'pi': scipy.pi,
+                         'min': scipy.minimum,
+                         'max': scipy.maximum
                          }
 
     def __init__(self, net, key_column=None, is_sens=False, holds_dt=False,

@@ -83,6 +83,8 @@ class Network:
                          'pi': math.pi,
                          'scipy': scipy,
                          'operator': operator,
+                         'min': scipy.minimum,
+                         'max': scipy.maximum
                          }
     # These are functions we need to create but that should be used commonly
     _standard_func_defs = [('root', ['n', 'x'],  'x**(1./n)'),
@@ -3132,6 +3134,8 @@ class Network:
         c_code.append('#define pi M_PI')
         c_code.append('double max(double a, double b){')
         c_code.append('return a > b ? a : b;}')
+        c_code.append('double min(double a, double b){')
+        c_code.append('return a < b ? a : b;}')
         
         # Function prototypes
         for func_name, proto in self._prototypes_c.items():
