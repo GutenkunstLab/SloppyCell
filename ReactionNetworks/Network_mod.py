@@ -269,7 +269,7 @@ class Network:
     def add_species(self, id, compartment, initial_conc=0, 
                     name='', typical_value=None,
                     is_boundary_condition=False, is_constant=False, 
-                    is_optimizable=False, uniprot_ids=set()):
+                    is_optimizable=False, uniprot_ids=None):
         """
         Add a species to the Network.
         """
@@ -3402,7 +3402,7 @@ class Network:
     
     def addSpecies(self, id, compartment, initialConcentration=None,
                    name='', typicalValue=None, is_boundary_condition=False,
-                   isConstant=False, isOptimizable=False, uniprot_ids=set()):
+                   isConstant=False, isOptimizable=False, uniprot_ids=None):
         self.add_species(id = id, compartment = compartment, 
                          initial_conc = initialConcentration, 
                          name = name,
