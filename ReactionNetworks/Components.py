@@ -53,10 +53,12 @@ class Species(Variable):
     def __init__(self, id, compartment, initial_conc, 
                  name, typical_value,
                  is_boundary_condition, 
-                 is_constant, is_optimizable, uniprot_ids=set()):
+                 is_constant, is_optimizable, uniprot_ids=None):
         self.compartment = compartment
         self.is_boundary_condition = is_boundary_condition
         self.uniprot_ids = uniprot_ids
+        if uniprot_ids == None:
+            self.uniprot_ids = set()
 
         Variable.__init__(self, id, initial_conc, 
                           name, typical_value,
