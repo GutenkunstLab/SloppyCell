@@ -18,6 +18,7 @@ if hasattr(scipy, 'Numeric'):
     import scipy_distutils.core as core
     data_files = [('SloppyCell/ReactionNetworks', 
                    ['ReactionNetworks/f2py_signatures.pyf',
+                    'ReactionNetworks/f2py_signatures_no_derivs.pyf',
                     'ReactionNetworks/mtrand.h',
                     'ReactionNetworks/mtrand.c'])]
 else:
@@ -30,6 +31,7 @@ else:
     # to do the recursion for us.
     config = Configuration('SloppyCell')
     config.add_data_files('ReactionNetworks/f2py_signatures.pyf',
+                          'ReactionNetworks/f2py_signatures_no_derivs.pyf',
                           'ReactionNetworks/mtrand.h',
                           'ReactionNetworks/mtrand.c')
     config.add_data_dir('Doc')
