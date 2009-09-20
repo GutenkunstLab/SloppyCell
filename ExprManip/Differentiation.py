@@ -13,12 +13,28 @@ import Substitution
 _ZERO = Const(0)
 _ONE = Const(1)
 
+# Record the version of the Differentiation.py file we loaded.
+__version_loaded = os.path.getmtime(__file__)
+
 __deriv_saved = {}
 def load_derivs(filename):
     """
     Load up a pickled dictionary of saved derivatives.
     """
     global __deriv_saved
+    # If the cache file is older than the this Derivatives.py file, we don't
+    # want to load it, because it may contain incorrect results.
+    if os.path.getmtime(filename) < __version_loaded:
+        logger.warn('Derivative cache file %s appears outdated. Trying to '
+                    'delete it to avoid future problems.' % filename)
+        try:
+            # Let's try to remove it...
+            os.remove(filename)
+        except:
+            logger.warn('File removal failed. Please delete %s manually.'
+                        % filename)
+        return
+
     try:
         f = file(filename, 'rb')
     except IOError:
@@ -39,6 +55,11 @@ def load_derivs(filename):
             logger.warn('File removal failed. Please delete %s manually.' % filename)
 
 def save_derivs(filename):
+    if os.path.getmtime(__file__) > __version_loaded:
+        logger.warn('Differentiation.py appears to have been modified during '
+                    'this Python session (and not reloaded). Not saving '
+                    'current, potentially, outdated derivatives cache.')
+        return
     f = file(filename, 'wb')
     cPickle.dump(__deriv_saved, f, 2)
     f.close()
