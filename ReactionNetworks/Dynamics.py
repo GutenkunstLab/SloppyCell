@@ -480,10 +480,14 @@ or False), raise the exception.
     # Fill in the historical te, ye, ie lists
     te, ye, ie, ye_post = [],[],[],[]
     for holder in events_occurred:
-        te.append(holder.time_exec)
-        ye.append(holder.y_pre_exec)
-        ye_post.append(holder.y_post_exec)
-        ie.append(holder.event_index)
+        # Here we only record those events that executed. It is possible to fire
+        # during a simulation (so be in events_occurred), but not execute due
+        # to a delay or to being at the very end of the integration.
+        if hasattr(holder, 'time_exec'):
+            te.append(holder.time_exec)
+            ye.append(holder.y_pre_exec)
+            ye_post.append(holder.y_post_exec)
+            ie.append(holder.event_index)
 
     # We only include y_post_exec and assignned vars if requested
     if include_extra_event_info == False:
@@ -632,6 +636,10 @@ def integrate_sens_subset(net, times, rtol=None,
             all_youtdt[:, start_col:end_col] = single_out[1]
         # Concatenate the various 'events_occurred'
         for eii,e in enumerate(traj.events_occurred):
+            if not hasattr(e, 'time_exec'):
+                # This is an event that fired but never executed. We can ignore
+                # it since it doesn't affect the dynamics.
+                continue
             if not hasattr(e, 'ysens_fired'):
                 e.ysens_fired = single_out[-1][eii].ysens_fired
                 e.ysens_post_exec = single_out[-1][eii].ysens_post_exec
@@ -704,13 +712,15 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     fired_events = {}
     executed_events = {}
     for holder in events_occurred:
-        firing_time = holder.time_fired
-        fired_events.setdefault(firing_time, [])
-        fired_events[firing_time].append(holder)
+        # We only care about events that actually executed.
+        if hasattr(holder, 'time_exec'):
+            firing_time = holder.time_fired
+            fired_events.setdefault(firing_time, [])
+            fired_events[firing_time].append(holder)
 
-        execution_time = holder.time_exec
-        executed_events.setdefault(execution_time, [])
-        executed_events[execution_time].append(holder)
+            execution_time = holder.time_exec
+            executed_events.setdefault(execution_time, [])
+            executed_events[execution_time].append(holder)
 
     event_just_executed = False
     while current_time < times[-1]:
