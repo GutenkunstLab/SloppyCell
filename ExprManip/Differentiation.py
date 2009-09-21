@@ -22,6 +22,10 @@ def load_derivs(filename):
     Load up a pickled dictionary of saved derivatives.
     """
     global __deriv_saved
+    # First ensure that the file exists.
+    if not os.path.exists(filename):
+        return
+
     # If the cache file is older than the this Derivatives.py file, we don't
     # want to load it, because it may contain incorrect results.
     if os.path.getmtime(filename) < __version_loaded:
@@ -42,6 +46,7 @@ def load_derivs(filename):
         return
     try:
         __deriv_saved = cPickle.load(f)
+        logger.debug('Loaded chached derivatives from %s.' % filename)
         return
     except:
         # For some reason, pulling the data from the file failed.
