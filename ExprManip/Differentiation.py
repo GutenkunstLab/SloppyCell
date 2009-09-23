@@ -28,8 +28,6 @@ def load_derivs(filename):
 
     # If the cache file is older than the this Derivatives.py file, we don't
     # want to load it, because it may contain incorrect results.
-    if not os.path.exists(filename):
-        return
     if os.path.getmtime(filename) < __version_loaded:
         logger.warn('Derivative cache file %s appears outdated. Trying to '
                     'delete it to avoid future problems.' % filename)
