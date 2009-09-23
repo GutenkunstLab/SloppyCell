@@ -28,6 +28,8 @@ def load_derivs(filename):
 
     # If the cache file is older than the this Derivatives.py file, we don't
     # want to load it, because it may contain incorrect results.
+    if not os.path.exists(filename):
+        return
     if os.path.getmtime(filename) < __version_loaded:
         logger.warn('Derivative cache file %s appears outdated. Trying to '
                     'delete it to avoid future problems.' % filename)
@@ -109,7 +111,9 @@ _KNOWN_FUNCS = {('acos', 1): ('1/sqrt(1-arg0**2)',),
                 ('tan', 1): ('1/cos(arg0)**2',),
                 ('tanh', 1): ('1/cosh(arg0)**2',),
                 ('pow', 2): ('arg1 * arg0**(arg1-1)', 
-                             'log(arg0) * arg0**arg1')
+                             'log(arg0) * arg0**arg1'),
+                ('min', 2): ('arg0<=arg1', 'arg0>arg1'),
+                ('max', 2): ('arg0>=arg1', 'arg0<arg1')
                 }
 for key, terms in _KNOWN_FUNCS.items():
     _KNOWN_FUNCS[key] = [strip_parse(term) for term in terms]
