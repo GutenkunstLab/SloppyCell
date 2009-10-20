@@ -963,9 +963,14 @@ class Network:
                 t_val = t[var_val_ii]
 
                 # Now check through the events. If we're running under 
-                # full_speed the trajectory can be very sparse. If the use has
+                # full_speed the trajectory can be very sparse. If the user has
                 # set up events to tag potential extrema, this will use those.
                 curr_vals = self.get_var_vals()
+
+                isDynamicVar = self.dynamicVars.has_key(var)
+                if isDynamicVar:
+                    dynVarIndex = self.dynamicVars.index_by_key(var)
+
                 for holder in self.trajectory.events_occurred:
                     possibilities = [(holder.time_fired, holder.y_fired),
                                      (holder.time_exec, holder.y_pre_exec),
@@ -973,9 +978,20 @@ class Network:
                     # There are three possible event-related times. When the
                     # event fired, when it executed, and values pre- and post-
                     # execution.
-                    for time, dynVarVals in possibilities:
-                        self.updateVariablesFromDynamicVars(dynVarVals, time)
-                        eval = self.get_var_val(var)
+                    for poss_ii, (time, dynVarVals) in enumerate(possibilities):
+                        if isDynamicVar:
+                            eval = dynVarVals[dynVarIndex]
+                        elif hasattr(holder, 'all_var_vals')\
+                                and len(holder.all_var_vals) >= poss_ii + 1:
+                            eval = holder.all_var_vals[poss_ii].get(var)
+                        else:
+                            if not hasattr(holder, 'all_var_vals'):
+                                holder.all_var_vals = []
+                            self.updateVariablesFromDynamicVars(dynVarVals, 
+                                                                time)
+                            holder.all_var_vals.append(self.get_var_vals())
+                            eval = self.get_var_val(var)
+
                         if id.endswith('_maximum') and eval > var_val\
                            and time >= minSearchTime and time <= maxSearchTime:
                             var_val = eval
