@@ -225,7 +225,6 @@ def plot_model_results(model, expts = None, style='errorbars',
                         print 'The cost must be evaluated before the results',
                         print 'can be plotted.'
                         return
-
                     scaleFactor = model.GetScaleFactors()[exptId][dataId]
                     result = scaleFactor*traj.getVariableTrajectory(dataId)
                     l = plot(traj.timepoints, result, color=color, 
@@ -258,14 +257,15 @@ def plot_model_results(model, expts = None, style='errorbars',
                 if plot_data:
                     for res in model.residuals:
                         if isinstance(res, Residuals.ScaledExtremum)\
-                           and res.exptKey == exptId and res.calcKey == calcId:
+                           and res.exptKey == exptId and res.calcKey == calcId\
+                           and res.var == dataId:
                             t = res.last_time_result
                             val = res.yMeas
                             sigma = res.ySigma
                             errorbar([t], [val], [sigma], color=color,
                                      linestyle='', marker=sym,
-                                     ecolor='k', capsize=6, mfc='w', 
-                                     mec= color, mew=2, ms=10)[0]
+                                     ecolor=color, capsize=6, mfc='w', 
+                                     mec=color, mew=2, ms=10)
 
                 # Let's print the pretty name for our variable if we can.
                 lines.append(l)
