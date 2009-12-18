@@ -208,6 +208,9 @@ class Trajectory:
                     self.const_var_values.get(id)
         elif id == 'time':
             return self.get_times()
+        elif len(id) == 2 and id[0] in self.const_var_values.keys():
+            # Requesting sensitivity of a constant variable.
+            return 0*self.get_times()
         else:
             raise ValueError, 'Variable %s not found in trajectory.' % str(id)
 
@@ -266,6 +269,9 @@ class Trajectory:
             return self.const_var_values.get(var_id)
         elif var_id == 'time':
             return self.timepoints[index]
+        elif len(var_id) == 2 and var_id[1] in self.const_var_values.keys():
+            # Requesting sensitivity of a constant variable
+            return 0
 
     def get_dynvar_vals_index(self, index):
         """
