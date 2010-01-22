@@ -1911,11 +1911,11 @@ class Network:
         py_body.append('yprime = scipy.asarray(yprime)')
         py_body.append('constants = scipy.asarray(constants)')
         py_body.append('')
-        py_body.append('dres_dc = dres_dc_function(time, dynamicVars, yprime, '
-                       'constants)')
-        py_body.append('dres_dcdot = dres_dcdot_function(time, dynamicVars, '
+        py_body.append('local_dres_dc = dres_dc_function(time, dynamicVars, '
                        'yprime, constants)')
-        py_body.append('return dres_dc + cj * dres_dcdot')
+        py_body.append('local_dres_dcdot = dres_dcdot_function(time, '
+                       'dynamicVars, yprime, constants)')
+        py_body.append('return local_dres_dc + cj * local_dres_dcdot')
         py_body = '\n    '.join(py_body)
 
         N_dyn = len(self.dynamicVars)
@@ -1931,13 +1931,13 @@ class Network:
                       'constants, pd);')
         c_body.append('')
         # Like magic, this will initialize *all* elements to zero
-        c_body.append('double dres_dcdot[%i*%i] = {0};' % (N_dyn, N_dyn))
+        c_body.append('double local_dres_dcdot[%i*%i] = {0};' % (N_dyn, N_dyn))
         c_body.append('dres_dcdot_function_(time_ptr, dynamicVars, yprime, '
-                      'constants, dres_dcdot);')
+                      'constants, local_dres_dcdot);')
         c_body.append('')
         c_body.append('int ii;')
         c_body.append('for(ii=0; ii < %i; ii++){' % N_dyn**2)
-        c_body.append('  pd[ii] += cj*dres_dcdot[ii];}')
+        c_body.append('  pd[ii] += cj*local_dres_dcdot[ii];}')
         c_body.append('}')
         c_body = os.linesep.join(c_body)
 
@@ -2054,18 +2054,18 @@ class Network:
         
         py_body.append('dc_dp = sens_y[%i:]' % N_dyn)
         py_body.append('dcdot_dp = sens_yp[%i:]' % N_dyn)
-        py_body.append('dres_dp = dres_dp_func(time, sens_y, sens_yp, constants)'
-                       % {'N_dyn': N_dyn, 'N_const': N_const})
+        py_body.append('local_dres_dp = dres_dp_func(time, sens_y, sens_yp, '
+                       'constants)' % {'N_dyn': N_dyn, 'N_const': N_const})
 
-        py_body.append('dres_dc = dres_dc_function(time, '
+        py_body.append('local_dres_dc = dres_dc_function(time, '
                        'sens_y, sens_yp, constants)' 
                        % {'N_dyn': N_dyn, 'N_const': N_const})
-        py_body.append('dres_dcdot = dres_dcdot_function(time, '
+        py_body.append('local_dres_dcdot = dres_dcdot_function(time, '
                        'sens_y, sens_yp, constants)' 
                        % {'N_dyn': N_dyn, 'N_const': N_const})
-        py_body.append('sens_res[%i:] = dres_dp '
-                       '+ scipy.dot(dres_dc, dc_dp) '
-                       '+ scipy.dot(dres_dcdot, dcdot_dp)' % N_dyn)
+        py_body.append('sens_res[%i:] = local_dres_dp '
+                       '+ scipy.dot(local_dres_dc, dc_dp) '
+                       '+ scipy.dot(local_dres_dcdot, dcdot_dp)' % N_dyn)
 
         # This fills in the first half of our sens_res
         c_body.append('res_function_(time_ptr, sens_y, sens_yp, cj_ptr, '
@@ -2082,38 +2082,36 @@ class Network:
         c_body.append('double *dc_dp = &sens_y[%i];' % N_dyn)
         c_body.append('double *dcdot_dp = &sens_yp[%i];' % N_dyn)
         # We'll directly fill dres_dp into the appropriate place in sens_res
-        c_body.append('double *dres_dp = &sens_res[%i];' % N_dyn)
+        c_body.append('double *local_dres_dp = &sens_res[%i];' % N_dyn)
         c_body.append('int ii;')
         # sens_res isn't necessarily all zeros when passed in using the
         # cpointer.
         c_body.append('for(ii = 0; ii < %s; ii++){' % N_dyn)
-        c_body.append('dres_dp[ii] = 0;}')
+        c_body.append('local_dres_dp[ii] = 0;}')
 
         # we add a switch-case statement to choose the proper dres_dparam
         # function based on the passed in parameted index
         c_body.append('switch(p_index)')
         c_body.append('{')
         for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
-            c_body.append('case ' + str(wrt_ii) + ' : dres_d' + wrt + '_(time_ptr, sens_y, sens_yp, constants_only, '
-                      'dres_dp);')
+            c_body.append('case ' + str(wrt_ii) + ' : dres_d' + wrt + '_(time_ptr, sens_y, sens_yp, constants_only, local_dres_dp);')
             c_body.append('break;'), 
         c_body.append('}')
         # Fill in dres_dc
-        c_body.append('double dres_dc[%i] = {0};' % N_dyn**2)
+        c_body.append('double local_dres_dc[%i] = {0};' % N_dyn**2)
         c_body.append('dres_dc_function_(time_ptr, sens_y, sens_yp, constants, '
-                      'dres_dc);')
+                      'local_dres_dc);')
         c_body.append('int row, col;')
         c_body.append('for(row = 0; row < %i; row++){' % N_dyn)
         c_body.append('for(col = 0; col < %i; col++){' % N_dyn)
-        c_body.append('sens_res[row+%i] += dres_dc[row + col*%i]*dc_dp[col];}}'
-                      % (N_dyn, N_dyn))
+        c_body.append('sens_res[row+%i] += local_dres_dc[row + col*%i]*dc_dp[col];}}' % (N_dyn, N_dyn))
 
-        c_body.append('double dres_dcdot[%i] = {0};' % N_dyn**2)
+        c_body.append('double local_dres_dcdot[%i] = {0};' % N_dyn**2)
         c_body.append('dres_dcdot_function_(time_ptr, sens_y, sens_yp, '
-                      'constants, dres_dcdot);')
+                      'constants, local_dres_dcdot);')
         c_body.append('for(row = 0; row < %i; row++){' % N_dyn)
         c_body.append('for(col = 0; col < %i; col++){' % N_dyn)
-        c_body.append('sens_res[row+%i] += dres_dcdot[row + col*%i]'
+        c_body.append('sens_res[row+%i] += local_dres_dcdot[row + col*%i]'
                       '*dcdot_dp[col];}}' % (N_dyn, N_dyn))
 
         py_body.append('')
