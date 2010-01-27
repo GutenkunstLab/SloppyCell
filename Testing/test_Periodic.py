@@ -1,4 +1,5 @@
 import unittest
+import numpy
 
 from SloppyCell.ReactionNetworks import *
 
@@ -346,10 +347,22 @@ class test_Periodic(unittest.TestCase):
         """Test event with derivatives"""
         net = base_net.copy('test_deriv')
 
+        # We're trying to catch an event that would indicate a local maximum
+        # of T_2. A known problem is that numerical errors can cause such events
+        # to fire near local minima as well.
         net.add_event('T_2_max', 'lt(T_2_deriv_wrt_time,0)', buffer=1e-3)
         traj = Dynamics.integrate(net, [0, 100])
-        self.assertAlmostEqual(traj.event_info[0][0], 15.76, 2)
-        self.assertAlmostEqual(traj.event_info[0][1], 44.85, 2)
+
+        # Given that events may also fire at local minima, we want to check
+        # only that the maxima are found, not necessarily that they are the only
+        # events in the trajectory.
+        event_times = numpy.array(traj.event_info[0])
+        self.assertTrue(numpy.any(abs(event_times - 15.76) < 0.01),
+                        'Failed to find maximum at t=15.76, event_times were: '
+                        '%s ' % event_times)
+        self.assertTrue(numpy.any(abs(event_times - 44.85) < 0.01),
+                        'Failed to find maximum at t=44.85, event_times were: '
+                        '%s ' % event_times)
 
     def test_maximum_cost(self):
         """Test cost with maximum"""
