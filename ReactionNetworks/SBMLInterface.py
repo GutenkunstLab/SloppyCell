@@ -17,6 +17,11 @@ KeyedList = SloppyCell.KeyedList_mod.KeyedList
 
 import SloppyCell.ExprManip as ExprManip
 
+# sbml_level and sbml_version are default parameters to pass to
+# constructors for libsbml 4.0
+sbml_level = 2
+sbml_version = 3
+
 def toSBMLFile(net, fileName):
     sbmlStr = toSBMLString(net)
     f = file(fileName, 'w')
@@ -27,37 +32,57 @@ def SBMLtoDOT(sbmlFileName, dotFileName):
     raise DeprecationWarning, 'SBMLtoDOT has been deprecated. Instead, use IO.net_DOT_file(net, filename)'
 
 def rxn_add_stoich(srxn, rid, stoich, is_product=True):
-    sr = libsbml.SpeciesReference(rid)
+
     try:
         stoich = float(stoich)
         if stoich < 0:
+            sr = srxn.createReactant()
             sr.setStoichiometry(-stoich)
-            srxn.addReactant(sr)
-        if stoich > 0:
+        elif stoich > 0:
+            sr = srxn.createProduct()
             sr.setStoichiometry(stoich)
-            srxn.addProduct(sr)
-        if stoich == 0:
-            sr = libsbml.ModifierSpeciesReference(rid)
-            srxn.addModifier(sr)
+        elif stoich == 0:
+            sr = srxn.createModifier()
+        sr.setSpecies(rid)
+
     except ValueError:
         formula = stoich.replace('**', '^')
         math_ast = libsbml.parseFormula(formula)
-        smath = libsbml.StoichiometryMath(math_ast)
-        sr.setStoichiometryMath(smath)
-        if is_product == True:
-            srxn.addProduct(sr)
-        else:
-            srxn.addReactant(sr)
+        #try:
+        #    smath = libsbml.StoichiometryMath(math_ast)
+        #except:
+        # normally this is in an except block but the try above doesn't throw erro
+        # I am expecting in libSBML 4.0
+        try:
+            smath = libsbml.StoichiometryMath(math_ast)
+        except NotImplementedError:
+            smath = libsbml.StoichiometryMath(sbml_level, sbml_version)
+            smath.setMath(math_ast)
 
+        if is_product == True:
+            sr = srxn.createProduct()
+        else:
+            sr = srxn.createReactant()
+
+        sr.setSpecies(rid)
+        sr.setStoichiometryMath(smath)
 
     
 
 def toSBMLString(net):
-    m = libsbml.Model(net.id)
+    try:
+        m = libsbml.Model(net.id)
+    except NotImplementedError:
+        m = libsbml.Model(sbml_level, sbml_version)
+        m.setId(net.id)
     m.setName(net.name)
     
     for id, fd in net.functionDefinitions.items():
-        sfd = libsbml.FunctionDefinition(id)
+        try:
+            sfd = libsbml.FunctionDefinition(id)
+        except:
+            sfd = libsbml.FunctionDefinition(sbml_level, sbml_version)
+            sfd.setId(id)
         sfd.setName(fd.name)
         formula = fd.math
         formula = formula.replace('**', '^')
@@ -66,14 +91,22 @@ def toSBMLString(net):
         m.addFunctionDefinition(sfd)
     
     for id, c in net.compartments.items():
-        sc = libsbml.Compartment(id)
+        try:
+            sc = libsbml.Compartment(id)
+        except NotImplementedError:
+            sc = libsbml.Compartment(sbml_level, sbml_version)
+            sc.setId(id)
         sc.setName(c.name)
         sc.setConstant(c.is_constant)
         sc.setSize(c.initialValue)
         m.addCompartment(sc)
     
     for id, s in net.species.items():
-        ss = libsbml.Species(id)
+        try:
+            ss = libsbml.Species(id)
+        except NotImplementedError:
+            ss = libsbml.Species(sbml_level, sbml_version)
+            ss.setId(id)
         ss.setName(s.name)
         ss.setCompartment(s.compartment)
         if s.initialValue is not None and not isinstance(s.initialValue, str):
@@ -82,7 +115,11 @@ def toSBMLString(net):
         m.addSpecies(ss)
     
     for id, p in net.parameters.items():
-        sp = libsbml.Parameter(id)
+        try:
+            sp = libsbml.Parameter(id)
+        except NotImplementedError:
+            sp = libsbml.Parameter(sbml_level, sbml_version)
+            sp.setId(id)
         sp.setName(p.name)
         if p.initialValue is not None:
             sp.setValue(p.initialValue)
@@ -90,27 +127,40 @@ def toSBMLString(net):
         m.addParameter(sp)
 
     for id, r in net.rateRules.items():
-        sr = libsbml.RateRule()
+        try:
+            sr = libsbml.RateRule()
+        except NotImplementedError:
+            sr = libsbml.RateRule(sbml_level, sbml_version)
         sr.setVariable(id)
         formula = r.replace('**', '^')
         sr.setMath(libsbml.parseFormula(formula))
         m.addRule(sr)
 
     for id, r in net.assignmentRules.items():
-        sr = libsbml.AssignmentRule()
+        try:
+            sr = libsbml.AssignmentRule()
+        except NotImplementedError:
+            sr = libsbml.AssignmentRule(sbml_level, sbml_version)
         sr.setVariable(id)
         formula = r.replace('**', '^')
         sr.setMath(libsbml.parseFormula(formula))
         m.addRule(sr)
 
     for r, r in net.algebraicRules.items():
-        sr = libsbml.AlgebraicRule()
+        try:
+            sr = libsbml.AlgebraicRule()
+        except NotImplementedError:
+            sr = libsbml.AlgebraicRule(sbml_level, sbml_version)
         formula = r.replace('**', '^')
         sr.setMath(libsbml.parseFormula(formula))
         m.addRule(sr)
         
     for id, rxn in net.reactions.items():
-        srxn = libsbml.Reaction(id)
+        try:
+            srxn = libsbml.Reaction(id)
+        except NotImplementedError:
+            srxn = libsbml.Reaction(sbml_level, sbml_version)
+            srxn.setId(id)
         srxn.setName(rxn.name)
         # Handle the case where the model was originally read in from an
         # SBML file, so that the reactants and products of the Reaction
@@ -129,13 +179,22 @@ def toSBMLString(net):
         else:
             for rid, stoich in rxn.stoichiometry.items():
                 rxn_add_stoich(srxn, rid, stoich)
+
         formula = rxn.kineticLaw.replace('**', '^')
-        kl = libsbml.KineticLaw(formula)
+        try:
+            kl = libsbml.KineticLaw(formula)
+        except NotImplementedError:
+            kl = libsbml.KineticLaw(sbml_level, sbml_version)
+            kl.setFormula(formula)
         srxn.setKineticLaw(kl)
         m.addReaction(srxn)
     
     for id, e in net.events.items():
-        se = libsbml.Event(id)
+        try:
+            se = libsbml.Event(id)
+        except NotImplementedError:
+            se = libsbml.Event(sbml_level, sbml_version)
+            se.setId(id)
         se.setName(e.name)
         formula = e.trigger.replace('**', '^')
         ast = libsbml.parseFormula(formula)
@@ -147,15 +206,27 @@ def toSBMLString(net):
         try:
             se.setTrigger(ast)
         except TypeError:
-            se.setTrigger(libsbml.Trigger(ast))
-
+            try:
+                trigger = libsbml.Trigger(ast)
+            except NotImplementedError:
+                trigger = libsbml.Trigger(sbml_level, sbml_version)
+                trigger.setMath(ast)
+            se.setTrigger(trigger)
         formula = str(e.delay).replace('**', '^')
         try:
             se.setDelay(libsbml.parseFormula(formula))
         except TypeError:
-            se.setDelay(libsbml.Delay(libsbml.parseFormula(formula)))
+            try:
+                se.setDelay(libsbml.Delay(libsbml.parseFormula(formula)))
+            except NotImplementedError:
+                delay = libsbml.Delay(sbml_level, sbml_version)
+                delay.setMath(libsbml.parseFormula(formula))
+                se.setDelay(delay)
         for varId, formula in e.event_assignments.items():
-            sea = libsbml.EventAssignment()
+            try:
+                sea = libsbml.EventAssignment()
+            except NotImplementedError:
+                sea = libsbml.EventAssignment(sbml_level, sbml_version)
             sea.setVariable(varId)
             formula = str(formula).replace('**', '^')
             ast = libsbml.parseFormula(formula)
@@ -164,7 +235,10 @@ def toSBMLString(net):
         m.addEvent(se)
 
     for id, con in net.constraints.items():
-        scon = libsbml.Constraint()
+        try:
+            scon = libsbml.Constraint()
+        except NotImplementedError:
+            scon = libsbml.Constraint(sbml_level, sbml_version)
         scon.setId(con.id)
         scon.setName(con.name)
         formula = con.trigger.replace('**', '^')
@@ -181,8 +255,7 @@ def toSBMLString(net):
 
         m.addConstraint(scon)
         
-    
-    d = libsbml.SBMLDocument()
+    d = libsbml.SBMLDocument(sbml_level, sbml_version)
     d.setModel(m)
     sbmlStr = libsbml.writeSBMLToString(d)
 
@@ -397,6 +470,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
 
     for ii, e in enumerate(m.getListOfEvents()):
         id, name = e.getId(), e.getName()
+
         if id == '':
             id = 'event%i' % ii
 
