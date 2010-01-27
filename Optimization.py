@@ -107,8 +107,16 @@ def fmin_lm_log_params(m, params, *args, **kwargs):
     function is appended below:
 
     """
+    Nres = len(m.residuals)
+    def func(log_params):
+        try:
+            return m.res_log_params(log_params)
+        except Utility.SloppyCellException:
+            logger.warn('Exception in cost evaluation. Cost set to inf.')
+            return [scipy.inf] * Nres
+
     jac = lambda lp: scipy.asarray(m.jacobian_log_params_sens(lp))
-    sln = lmopt.fmin_lm(f=m.res_log_params, x0=scipy.log(params), fprime=jac,
+    sln = lmopt.fmin_lm(f=func, x0=scipy.log(params), fprime=jac,
                         *args, **kwargs)
     if isinstance(params, KeyedList):
         pout = params.copy()
@@ -124,7 +132,14 @@ def leastsq_log_params(m, params, *args, **kwargs):
         raise ValueError('leastsq cannot be used when number of residuals '
                          '(roughly number of data points) is less than number '
                          'of optimizable parameters.')
-    func = m.res_log_params
+
+    Nres = len(m.residuals)
+    def func(log_params):
+        try:
+            return m.res_log_params(log_params)
+        except Utility.SloppyCellException:
+            logger.warn('Exception in cost evaluation. Cost set to inf.')
+            return [scipy.inf] * Nres
 
     pmin, msg = scipy.optimize.leastsq(func, scipy.log(params), *args, **kwargs)
 
