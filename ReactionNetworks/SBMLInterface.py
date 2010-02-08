@@ -16,9 +16,8 @@ import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
 
 import SloppyCell.ExprManip as ExprManip
+import pdb
 
-# sbml_level and sbml_version are default parameters to pass to
-# constructors for libsbml 4.0
 sbml_level = 2
 sbml_version = 3
 
@@ -33,6 +32,14 @@ def SBMLtoDOT(sbmlFileName, dotFileName):
 
 def rxn_add_stoich(srxn, rid, stoich, is_product=True):
 
+    """
+    try:  
+        sr = libsbml.SpeciesReference(rid)
+    except NotImplementedError:
+        print 'in not imp block'
+        sr = srxn.create(sbml_level, sbml_version)
+        sr.setId(rid)
+    """ 
     try:
         stoich = float(stoich)
         if stoich < 0:
@@ -531,4 +538,3 @@ def createNetworkParameter(p):
 				  # optimizable by default
 
     return parameter
-
