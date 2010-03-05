@@ -75,13 +75,16 @@ class test_SBMLInterface(unittest.TestCase):
         self.assertEqual(out_rxn.stoichiometry['X1'], '2 / 2')
 
     def test_andor_funcs_toSBML(self):
-        """ Test that events with complicatin and_ and or_funcs are output to SBML correctly. """
+        """ Test that events with complicated and_func and or_funcs are
+        output to SBML correctly. """
 
         outfile = 'algebraic_net_andor_events.xml'
 
         piecewise_X0 = 'piecewise(0, or_func(gt(X0, 100), gt(X1, 100), lt(T, 0)), 1)'
         piecewise_X1 = 'piecewise(1, or_func(gt(X0, 100), gt(X1, 100), lt(T, 0)), 0)'
         logical_trigger = 'and_func(gt(1, 0), lt(1, 0), eq(10, 11))'
+
+        
 
         if os.path.exists(outfile) == True:
             os.remove(outfile)        
