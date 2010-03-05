@@ -16,8 +16,9 @@ import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
 
 import SloppyCell.ExprManip as ExprManip
-import pdb
 
+# sbml_level and sbml_version are default parameters to pass to
+# constructors for libsbml 4.0
 sbml_level = 2
 sbml_version = 3
 
@@ -32,14 +33,6 @@ def SBMLtoDOT(sbmlFileName, dotFileName):
 
 def rxn_add_stoich(srxn, rid, stoich, is_product=True):
 
-    """
-    try:  
-        sr = libsbml.SpeciesReference(rid)
-    except NotImplementedError:
-        print 'in not imp block'
-        sr = srxn.create(sbml_level, sbml_version)
-        sr.setId(rid)
-    """ 
     try:
         stoich = float(stoich)
         if stoich < 0:
@@ -74,7 +67,21 @@ def rxn_add_stoich(srxn, rid, stoich, is_product=True):
         sr.setSpecies(rid)
         sr.setStoichiometryMath(smath)
 
-    
+def replaceTime(ast):
+    """
+    Takes an ast and recurively checks for any variables with id
+    't' or 'time'.  Then, changes the type of those ast nodes with
+    AST_NAME_TIME so that they get output in SBML with the proper
+    MathML designation.
+
+    Based on code proposed by Darren Wilkinson on the libsbml
+    forum (http://bit.ly/8Yl5sx) .
+    """
+    if (ast.getType()==libsbml.AST_NAME):
+        if ((ast.getName()=='t') or (ast.getName()=='time')):
+            ast.setType(libsbml.AST_NAME_TIME)
+    for node in range(ast.getNumChildren()):
+        replaceTime(ast.getChild(node))    
 
 def toSBMLString(net):
     try:
@@ -204,6 +211,9 @@ def toSBMLString(net):
             se.setId(id)
         se.setName(e.name)
         formula = e.trigger.replace('**', '^')
+        formula = formula.replace('and_func(', 'and(')        
+        formula = formula.replace('or_func(', 'or(')
+
         ast = libsbml.parseFormula(formula)
         if ast is None:
             raise ValueError('Problem parsing event trigger: %s. Problem may '
@@ -236,7 +246,10 @@ def toSBMLString(net):
                 sea = libsbml.EventAssignment(sbml_level, sbml_version)
             sea.setVariable(varId)
             formula = str(formula).replace('**', '^')
+            formula = formula.replace('and_func(', 'and(')
+            formula = formula.replace('or_func(', 'or(')
             ast = libsbml.parseFormula(formula)
+            replaceTime(ast)
             sea.setMath(ast)
             se.addEventAssignment(sea)
         m.addEvent(se)
@@ -488,7 +501,9 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             # For older versions
             trigger_math = e.getTrigger()
         trigger = libsbml.formulaToString(trigger_math)
-
+        trigger = trigger.replace('or(','or_func(')
+        trigger = trigger.replace('and(','and_func(')
+        
         if e.getDelay() is not None:
             try:
                 # For libSBML 3.0
@@ -503,7 +518,10 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         timeUnits = e.getTimeUnits()
         eaDict = KeyedList()
         for ea in e.getListOfEventAssignments():
-            eaDict.set(ea.getVariable(), libsbml.formulaToString(ea.getMath()))
+            ea_formula = libsbml.formulaToString(ea.getMath())
+            ea_formula = ea_formula.replace('or(','or_func(')
+            ea_formula = ea_formula.replace('and(','and_func(')
+            eaDict.set(ea.getVariable(), ea_formula)
 
         rn.addEvent(id = id, trigger = trigger, eventAssignments = eaDict, 
                     delay = delay, name = name)
@@ -538,3 +556,4 @@ def createNetworkParameter(p):
 				  # optimizable by default
 
     return parameter
+
