@@ -3,6 +3,7 @@ import os
 import copy
 
 import scipy
+import libsbml
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks import *
 # Check whether we actually have the SBML methods.
@@ -35,6 +36,23 @@ class test_SBMLInterface(unittest.TestCase):
         fastReaction_net = SBMLInterface.fromSBMLFile(sbml_file)
         
         self.assertEqual(fastReaction_net.id, 'algebraicRules_fastReactionExample')
+
+    def test_sbml_with_time(self):
+        """ Test of SBML output/input using time in an event assignment """
+
+        # First remove the output file in case it was produced in a
+        # previous test
+        if os.path.exists('algebraic_net_time.xml') == True:
+            os.remove('algebraic_net_time.xml')
+
+        # Now output the SBML and make sure it got created        
+        SBMLInterface.toSBMLFile(algebraic_net_andor_events, 'algebraic_net_time.xml')
+
+        self.assertEqual(os.path.exists('algebraic_net_time.xml'), True)
+
+        r = libsbml.SBMLReader()
+        d = r.readSBMLFromString('algebraic_net_time.xml')
+
 
     def test_stoichiometryPreservation(self):
         """ Test that products with stoichiometryMath set are output correctly. """
