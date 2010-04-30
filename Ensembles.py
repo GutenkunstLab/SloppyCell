@@ -176,6 +176,12 @@ def ensemble_log_params(m, params, hess=None,
             logger.warn('Parameters tried: %s.' % str(next_params))
             attempt_exceptions += 1
             next_F = scipy.inf
+        except Utility.ConstraintViolatedException, X:
+            logger.warn('ConstraintViolatedException in free energy evaluation '
+                        'at step %i, free energy set to infinity.' % len(ens))
+            logger.warn('Parameters tried: %s.' % str(next_params))
+            attempt_exceptions += 1
+            next_F = scipy.inf
 
         if recalc_hess_alg and not scipy.isinf(next_F):
             try:
