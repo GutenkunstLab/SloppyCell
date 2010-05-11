@@ -101,3 +101,41 @@ algebraic_net_constraints.addEvent('event1', 'and(gt(time,18),gt(X1,0.4))',event
 algebraic_net_constraints.addEvent('event2', 'and(gt(time,10),gt(X1,0.4))',eventAssignments)
 algebraic_net_constraints.addConstraint('X1toobig',trigger='leq(X1,0.5)',
                                         message='X1 is big!')
+
+# algebraic_net_manual is the same as algebraic net, except we make the cross
+# referencing manual before creating the network. _makeCrossReferences(...) must
+# be called before the network is integrated.
+
+algebraic_net_manual = Network('algebraic_net_manual')
+algebraic_net_manual._manualCrossReferences(flag=True)
+
+algebraic_net_manual.add_compartment('cell')
+algebraic_net_manual.add_species('X0', 'cell')
+algebraic_net_manual.add_species('X1', 'cell')
+algebraic_net_manual.add_species('T', 'cell')
+algebraic_net_manual.add_species('S1', 'cell')
+algebraic_net_manual.add_species('S2', 'cell')
+
+algebraic_net_manual.add_parameter('Keq')
+algebraic_net_manual.add_parameter('k1')
+algebraic_net_manual.add_parameter('k2')
+
+algebraic_net_manual.add_algebraic_rule('S2 + S1 - T')
+algebraic_net_manual.add_assignment_rule('S2', 'Keq * S1')
+
+algebraic_net_manual.addReaction('in', kineticLaw = 'k1 * X0',
+                          stoichiometry = {'X0': -1, 'T': 1})
+# The reaction 'out' has the stoichiometryMath expression 1/1
+# for X1 to test the stoichiometry math compatibility of SloppyCell
+algebraic_net_manual.addReaction('out', kineticLaw = 'k2 * S2',
+                          stoichiometry = {'X1': '1/1', 'T': -1,'S2':0.0})
+
+algebraic_net_manual.set_var_ics({'X0': 1.0,
+                           'X1': 0.0,
+                           'T': 0.0,
+                           'S1': 0.0,
+                           'S2': 0.0,
+                           'Keq': 2.5,
+                           'k1': 0.1,
+                           'k2': 0.15})
+
