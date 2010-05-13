@@ -222,6 +222,8 @@ class Network:
         self.deriv_funcs_enabled = True
         self.compiled = False
 
+        self._manualCrossReferences_flag = False
+
     add_int_times, add_tail_times = True, True
     def full_speed(cls):
         """
@@ -254,7 +256,8 @@ class Network:
     def _add_variable(self, var):
         self._checkIdUniqueness(var.id)
         self.variables.set(var.id, var)
-        self._makeCrossReferences()
+        if not self._manualCrossReferences_flag:
+            self._makeCrossReferences()
 
     def add_compartment(self, id, initial_size=1.0, name='', 
                         typical_value=None,
@@ -416,11 +419,15 @@ class Network:
         """
         self.set_var_constant(var_id, False)
         self.assignmentRules.set(var_id, rhs)
-        self._makeCrossReferences()
+        if not self._manualCrossReferences_flag:
+            self._makeCrossReferences()
         # Put this assignment into effect...
         # The time=0 is somewhat arbitrary, reflecting the fact that we usually
         #  start integrations from time=0.
-        self.updateAssignedVars(time=0)
+        # updateAssignedVars needs cross-references made, so we delay evaluation
+        # if we're doing _manualCrossReferences
+        if not self._manualCrossReferences_flag:
+            self.updateAssignedVars(time=0)
 
     def add_rate_rule(self, var_id, rhs):
         """
@@ -430,7 +437,8 @@ class Network:
         """
         self.set_var_constant(var_id, False)
         self.rateRules.set(var_id, rhs)
-        self._makeCrossReferences()
+        if not self._manualCrossReferences_flag:
+            self._makeCrossReferences()
 
     def add_algebraic_rule(self, rhs):
         """
@@ -439,7 +447,8 @@ class Network:
         An algebraic rule specifies that 0 = rhs.
         """
         self.algebraicRules.set(rhs, rhs)
-        self._makeCrossReferences()
+        if not self._manualCrossReferences_flag:
+            self._makeCrossReferences()
 
     def remove_component(self, id):
         """
@@ -456,7 +465,8 @@ class Network:
             if complist.has_key(id):
                 complist.remove_by_key(id)
 
-        self._makeCrossReferences()
+        if not self._manualCrossReferences_flag:
+            self._makeCrossReferences()
 
     def _checkIdUniqueness(self, id):
         """
@@ -1479,11 +1489,13 @@ class Network:
 
     def set_var_optimizable(self, id, is_optimizable):
         self.get_variable(id).is_optimizable = is_optimizable
-        self._makeCrossReferences()
+        if not self._manualCrossReferences_flag:
+            self._makeCrossReferences()
 
     def set_var_constant(self, id, is_constant):
         self.get_variable(id).is_constant = is_constant
-        self._makeCrossReferences()
+        if not self._manualCrossReferences_flag:
+            self._makeCrossReferences()
 
     def get_var_constant(self, id):
         return self.get_variable(id).is_constant
@@ -2824,6 +2836,22 @@ class Network:
         holder.ysens_post_exec = ysens_post_exec
         return ysens_post_exec
 
+    def _manualCrossReferences(self, flag=True):
+        """
+        Disable or enable automatic evaluation of cross-reference lists.
+
+        Delaying cross reference creation can dramatically speed up creation
+        of complex Networks. Once all Network components have been added,
+        net._makeCrossReferences must be called manually. You may also need
+        to call updateAssignedVars.
+
+        _makeCrossReferences must also be called if the constancy or
+        optimizability of a variable is changed.
+
+        This is an advanced option, be careful!
+        """
+        self._manualCrossReferences_flag=flag
+
     #
     # Internally useful things
     #
@@ -2831,6 +2859,11 @@ class Network:
         """
         Create the cross-reference lists for the Network.
         """
+
+        # Once makeCrossReferences is explicitly called, we assume that it
+        # should be automatically called
+        self._manualCrossReferences(flag=False)
+        
         self.assignedVars = KeyedList()
         self.constantVars = KeyedList()
         self.optimizableVars = KeyedList()
@@ -3356,7 +3389,8 @@ class Network:
         for func_id, func_str in self._func_strs.items():
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
-        self._makeCrossReferences()
+        if not self._manualCrossReferences_flag:
+            self._makeCrossReferences()
         if self.compiled:
             self.exec_dynamic_functions(self._last_disabled_c)
 
