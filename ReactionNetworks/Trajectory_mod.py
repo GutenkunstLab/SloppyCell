@@ -650,6 +650,32 @@ class Trajectory:
                                  keep_open=True)
         f.close()
 
+    def merge(self, traj):
+        """
+        Merge one trajectory with another.
+        """
+
+        # Verify that both trajectories had the same keys in the same order
+        for traj_key, traj_index in traj.key_column.items():
+            if self.key_column.get(traj_key) != traj_index:
+                raise ValueError('Trajectories are not mergeable')
+
+        self.values = scipy.array(list(self.values)+list(traj.values))
+        last_time = self.timepoints[-1]
+        updated_times = traj.timepoints
+        self.timepoints = scipy.array(list(self.timepoints)+list(updated_times))
+        
+        (te,ye,ie) = traj.event_info
+        updated_event_times = te
+        (self_te,self_ye,self_ie) = traj.event_info        
+
+        self.event_info = (scipy.array(list(self_te)+list(updated_event_times)),
+                           scipy.array(list(self_ye)+list(ye)),
+                           scipy.array(list(self_ie)+list(ie)))
+
+        self.const_var_values = traj.const_var_values
+
+
 
     # Deprecated
     def last_dynamic_var_values(self):
