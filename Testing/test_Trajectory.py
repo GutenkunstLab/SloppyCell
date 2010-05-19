@@ -5,7 +5,7 @@ import scipy
 
 from SloppyCell.ReactionNetworks import *
 
-from AlgTestNets import algebraic_net_assignment
+from AlgTestNets import algebraic_net_assignment, algebraic_net
 base_net = algebraic_net_assignment.copy()
 base_net.remove_component('event0')
 base_net.set_var_constant('k1', False)
@@ -67,6 +67,36 @@ class test_Trajectory(unittest.TestCase):
 
         self.assertEqual(len(traj2.event_info), 5)
         self.assertAlmostEqual(s_sum, 0.29791465091325, 7)
+
+    def test_trajectory_merge(self):
+        """ Test basic trajectory merging """
+        net = base_net.copy('test')
+        times1 = scipy.linspace(0, 15, 100)
+        times2 = scipy.linspace(15, 25, 100)        
+        traj1 = Dynamics.integrate(net, times1, fill_traj=False)
+        traj2 = Dynamics.integrate(net, times2, fill_traj=False)
+
+        traj1.merge(traj2)
+
+        times = traj1.get_times()
+        self.assertEqual(len(times), 200)
+        self.assertEqual(list(times), sorted(times))
+        
+    def test_merge_incompartible_trajs(self):
+        """ Test the incompatible trajectories cause an exception to be raised """
+
+        net1 = algebraic_net.copy()
+        net2 = algebraic_net_assignment.copy()
+        
+        times1 = scipy.linspace(0, 15, 100)
+        times2 = scipy.linspace(15, 25, 100)
+        
+        traj1 = Dynamics.integrate(net1, times1, fill_traj=False)
+        traj2 = Dynamics.integrate(net2, times2, fill_traj=False)
+
+        self.assertRaises(ValueError, traj1.merge, traj2)
+
+
         
 
 suite = unittest.makeSuite(test_Trajectory)
