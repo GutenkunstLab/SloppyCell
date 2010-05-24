@@ -1,17 +1,15 @@
 from SloppyCell.ReactionNetworks import *
 
 net = Network('test')
-net.add_compartment('globabl')
+net.add_compartment('basic')
 
-net.add_species('x', 'global', 1.0)
+net.add_species('x', 'basic', 1.0)
 net.add_parameter('A')
 net.add_rate_rule('x', '-A*x')
 
-net.add_species('y', 'global', 2.0)
+net.add_species('y', 'basic', 2.0)
 net.add_parameter('B')
 net.add_rate_rule('y', '-B*y')
-
-net.compile()
 
 params = [1.0, 2.0]
     
@@ -30,7 +28,7 @@ m = Model([expt1], [net])
 
 # Making a model with > 1 network so we can test parallel code
 net2 = net.copy('test2')
-net2.add_species('z', 'global')
+net2.add_species('z', 'basic')
 net2.add_assignment_rule('z', 'y**x + sqrt(time)')
 
 # Make another experiment
