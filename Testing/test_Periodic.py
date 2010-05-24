@@ -132,6 +132,8 @@ net.add_assignment_rule('T_t', 'T_0+T_1+T_2+C+C_N')
 
 base_net = net.copy('test_Periodic')
 
+base_net.compile()
+
 DDic = {'M_P': 0.339861640394,  'P_0': 0.084951960872,
         'P_1': 0.0761208617382, 'P_2': 0.0379109639304,
         'M_T': 1.00941245929,   'T_0': 0.282665734452,
