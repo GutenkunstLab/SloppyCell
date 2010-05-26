@@ -5,7 +5,6 @@ import scipy
 
 from TestNetwork import net
 net = copy.deepcopy(net)
-net.compile()
 net.setInitialVariableValue('A', 1.0)
 net.setInitialVariableValue('B', 2.0)
 
