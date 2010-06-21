@@ -411,14 +411,22 @@ class Network:
         self._checkIdUniqueness(rxn.id)
         self.reactions.set(rxn.id, rxn)
 
-    def add_assignment_rule(self, var_id, rhs):
+    def add_assignment_rule(self, var_id, rhs, index=None):
         """
         Add an assignment rule to the Network.
 
         A rate rules species that <var_id> = rhs.
+
+        index: Optionally specify which index in the list of rules should be
+               used for the new rule. This is important because assignment
+               rules must be evaluated in order. The default is to add to the
+               end of the list.
         """
         self.set_var_constant(var_id, False)
-        self.assignmentRules.set(var_id, rhs)
+        if index is None:
+            self.assignmentRules.set(var_id, rhs)
+        else:
+            self.assignmentRules.insert_item(index, var_id, rhs)
         if not self._manualCrossReferences_flag:
             self._makeCrossReferences()
         # Put this assignment into effect...
