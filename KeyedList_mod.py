@@ -177,7 +177,7 @@ class KeyedList(list):
         list.insert(self, index, value)
         self.storedKeys.insert(index, key)
         for k, ii in self.keyToIndex.items():
-            if ii > index:
+            if ii >= index:
                 self.keyToIndex[k] += 1
         self.keyToIndex[key] = index
 
