@@ -3,7 +3,6 @@ import os
 import copy
 
 import scipy
-import libsbml
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks import *
 # Check whether we actually have the SBML methods.
@@ -50,6 +49,7 @@ class test_SBMLInterface(unittest.TestCase):
 
         self.assertEqual(os.path.exists('algebraic_net_time.xml'), True)
 
+        import libsbml
         r = libsbml.SBMLReader()
         d = r.readSBMLFromString('algebraic_net_time.xml')
 
