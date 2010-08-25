@@ -32,18 +32,6 @@ class test_Events(unittest.TestCase):
         net.Calculate({'x':times}, params)
         trajSt = net.trajectory.time_slice(0.,10.)
         
-        import pylab
-        pylab.figure()
-        pylab.plot(trajSt.get_times(), trajSt.get_var_traj('x'), 'b-',\
-                   label='Stochastic')
-        pylab.plot(trajDt.get_times(), trajDt.get_var_traj('x'), 'b--',\
-                   label='Deterministic')
-        
-        pylab.xlabel('Time')
-        pylab.ylabel('Number of Molecules')
-        pylab.title('Stochastic Test - Do the trajectories look similar?')
-        pylab.legend(loc=0)
-        
     def test_RngSeed(self):
         """Test that the reseeding the same RNG seed produces identical results"""
         net = base_net.copy('test_RngSeed')
