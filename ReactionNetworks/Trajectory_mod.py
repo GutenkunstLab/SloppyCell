@@ -8,7 +8,6 @@ import copy
 import types
 
 import scipy
-import scipy.io
 import scipy.interpolate
 
 import SloppyCell.KeyedList_mod
@@ -646,6 +645,7 @@ class Trajectory:
             out_array.append(self.get_var_traj(var))
     
         out_array = scipy.transpose(out_array)
+        import scipy.io
         f = scipy.io.write_array(f, out_array, separator=separator, 
                                  keep_open=True)
         f.close()
