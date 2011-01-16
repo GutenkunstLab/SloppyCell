@@ -6,6 +6,7 @@ try:
     to_SBML_file = SBML.toSBMLFile
     from_SBML_file = SBML.fromSBMLFile
 except ImportError:
+    print 'Failed to import libsbml.'
     print 'SBML import and export not available.'
 
 import SloppyCell
