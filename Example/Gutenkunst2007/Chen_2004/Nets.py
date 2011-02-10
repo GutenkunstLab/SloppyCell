@@ -1,0 +1,73 @@
+from SloppyCell.ReactionNetworks import *
+
+net = IO.from_SBML_file('BIOMD0000000056.xml', 'Chen2004')
+net.set_var_ic('PE_45', 0.698687)
+net.set_var_ic('CDC15_10', 0.6565)
+net.set_var_ic('CDC15i_11', 0.3435)
+net.compile()
+
+mutant_1 = net.copy('mutant_1')
+mutant_1.set_initial_var_value('ksn_203', 0.0)
+mutant_1.set_initial_var_value('ksn_204', 0.0)
+mutant_1.set_initial_var_value('Dn3_80', 0.0)
+
+mutant_2 = net.copy('mutant_2')
+mutant_2.set_initial_var_value('ksn_203', 0.0)
+mutant_2.set_initial_var_value('ksn_204', 0.0)
+mutant_2.set_initial_var_value('Dn3_80', 0.0)
+mutant_2.set_initial_var_value('ksc_197', 0.0)
+mutant_2.set_initial_var_value('ksc_198', 0.0)
+
+mutant_3 = net.copy('mutant_3')
+mutant_3.set_initial_var_value('ksn_203', 0.0)
+mutant_3.set_initial_var_value('ksn_204', 0.0)
+mutant_3.set_initial_var_value('Dn3_80', 0.0)
+mutant_3.set_initial_var_value('kscdh_199', 0.0)
+mutant_3.set_initial_var_value('CDH1_17', 0.0)
+mutant_3.set_initial_var_value('CDH1i_18', 0.0)
+
+mutant_4 = net.copy('mutant_4')
+mutant_4.set_initial_var_value('ks_189', 0.0)
+mutant_4.set_initial_var_value('ks_190', 0.0)
+mutant_4.set_initial_var_value('kspds_188', 0.0)
+mutant_4.set_initial_var_value('kspds_191', 0.0)
+
+mutant_5 = net.copy('mutant_5')
+mutant_5.set_initial_var_value('ks_189', 0.0)
+mutant_5.set_initial_var_value('ks_190', 0.0)
+mutant_5.set_initial_var_value('ksb_194', 0.0)
+mutant_5.set_initial_var_value('ksb_195', 0.0)
+
+mutant_6 = net.copy('mutant_6')
+mutant_6.set_initial_var_value('ks_189', 0.0)
+mutant_6.set_initial_var_value('ks_190', 0.0)
+mutant_6.set_initial_var_value('ksb_194', 0.0)
+mutant_6.set_initial_var_value('ksb_195', 0.0)
+mutant_6.set_initial_var_value('kspds_188', 0.0)
+mutant_6.set_initial_var_value('kspds_191', 0.0)
+
+mutant_7 = net.copy('mutant_7')
+mutant_7.set_initial_var_value('ksc_197', 0.0)
+mutant_7.set_initial_var_value('ksc_198', 0.0)
+mutant_7.set_initial_var_value('ksf_200', 0.0)
+mutant_7.set_initial_var_value('ksf_201', 0.0)
+mutant_7.set_initial_var_value('ksf_202', 0.0)
+mutant_7.set_initial_var_value('kscdh_199', 0.0)
+mutant_7.set_initial_var_value('CDH1_17', 0.0)
+mutant_7.set_initial_var_value('CDH1i_18', 0.0)
+
+mutant_8 = net.copy('mutant_8')
+mutant_8.set_initial_var_value('ksc_197', 0.0)
+mutant_8.set_initial_var_value('ksc_198', 0.0)
+mutant_8.set_initial_var_value('ksf_200', 0.0)
+mutant_8.set_initial_var_value('ksf_201', 0.0)
+mutant_8.set_initial_var_value('ksf_202', 0.0)
+mutant_8.set_initial_var_value('kscdh_199', 0.0)
+mutant_8.set_initial_var_value('ks_189', 4.0)
+mutant_8.set_initial_var_value('mdt_216', 150)
+mutant_8.set_initial_var_value('CDH1_17', 0.0)
+mutant_8.set_initial_var_value('CDH1i_18', 0.0)
+
+networks = (net, mutant_1, mutant_2, mutant_3, mutant_4, mutant_5, mutant_6, 
+            mutant_7, mutant_8)
+int_times = [(0,255)] * 8 + [(0, 350)]

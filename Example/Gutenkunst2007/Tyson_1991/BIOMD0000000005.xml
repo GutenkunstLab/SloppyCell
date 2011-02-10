@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml level="2" metaid="_000000" version="1" xmlns="http://www.sbml.org/sbml/level2">
+  <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_000000">
+<dc:contributor rdf:parseType="Resource">
+<vCard:N rdf:parseType="Resource">
+<vCard:Family>Le Novère</vCard:Family>
+<vCard:Given>Nicolas</vCard:Given>
+</vCard:N>
+<vCard:EMAIL>lenov@ebi.ac.uk</vCard:EMAIL>
+<vCard:ORG>
+<vCard:Orgname>EMBL-EBI</vCard:Orgname>
+</vCard:ORG>
+</dc:contributor>
+<dcterms:created rdf:parseType="Resource">
+<dcterms:W3CDTF>2005-02-08T18:28:27</dcterms:W3CDTF>
+</dcterms:created>
+<dcterms:modified rdf:parseType="Resource">
+<dcterms:W3CDTF>2005-04-01T21:31:09</dcterms:W3CDTF>
+</dcterms:modified>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<model id="Tyson1991CellModel_6" metaid="_000001" name="Tyson1991_CellCycle_6var">
+    <notes>
+      <body xmlns="http://www.w3.org/1999/xhtml">
+        <h1>Cell Cycle Model; Tyson (1991, 6 variables)</h1>
+	<table border="0" cellpadding="2" cellspacing="0">
+          <thead>
+            <tr>
+              <th align="left" bgcolor="#eeeeee" valign="middle">Citation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tyson JJ, (1991). Modeling the cell division cycle: cdc2 and cyclin interactions.  PNAS, 88: 7328-7332. <a href="http://www.pnas.org/cgi/content/abstract/88/16/7328">http://www.pnas.org/cgi/content/abstract/88/16/7328</a>
+</td>
+            </tr>
+          </tbody>
+        </table>
+        <table border="0" cellpadding="2" cellspacing="0">
+          <thead>
+            <tr>
+              <th align="left" bgcolor="#eeeeee" valign="middle">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                A model of the cell cycle based on the interactions between cdc2 and cyclin. The model has six dynamic variables: C2 (cdc2); CP (cdc2-P complex); pM (P-cyclin-cdc2-P complex); M (active MPF, P-cyclin-cdc2 complex); Y (cyclin); and YP (cyclin-P). Total cyclin concentration (YT) is the sum YT=Y+YP+pM+M4 
+              </td>
+            </tr>
+          </tbody>
+        </table>
+	<table border="0" cellpadding="2" cellspacing="0">
+          <thead>
+            <tr>
+              <th align="left" bgcolor="#eeeeee" valign="middle">Rate constant      </th>
+              <th align="left" bgcolor="#eeeeee" valign="middle">Reaction</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>k1aa = 0.015</td>
+              <td>EmptySet -&gt; Y</td>
+            </tr>
+            <tr>
+              <td>k2 = 0</td>
+              <td>Y -&gt; EmptySet</td>
+            </tr>
+            <tr>
+              <td>k3 = 200</td>
+              <td>CP + Y -&gt; pM</td>
+            </tr>
+            <tr>
+              <td>k4prime + k4*M[t]^2</td>
+              <td>pM -&gt; M</td>
+            </tr>
+            <tr>
+              <td>k5notP = 0</td>
+              <td>M -&gt; pM</td>
+            </tr>
+            <tr>
+              <td>k6 = 1</td>
+              <td>M -&gt; C2 + YP</td>
+            </tr>
+            <tr>
+              <td>k7 = 0.6</td>
+              <td>YP -&gt; EmptySet</td>
+            </tr>
+            <tr>
+              <td>k8notP = 1000000</td>
+              <td>C2 -&gt; CP</td>
+            </tr>
+            <tr>
+              <td>k9 = 1000</td>
+              <td>CP -&gt; C2</td>
+            </tr>
+          </tbody>
+        </table>
+        <table border="0" cellpadding="2" cellspacing="0">
+          <thead>
+            <tr>
+              <th align="left" bgcolor="#eeeeee" valign="middle">Variable</th>
+              <th align="left" bgcolor="#eeeeee" valign="middle">IC  </th>
+              <th align="left" bgcolor="#eeeeee" valign="middle">ODE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>C2</td>
+              <td>0</td>
+              <td>C2'[t] == -(k8notP*C2[t]) + k9*CP[t] + k6*M[t]</td>
+            </tr>
+            <tr>
+              <td>CP</td>
+              <td>1</td>
+              <td>CP'[t] == k8notP*C2[t] - k9*CP[t] - k3*CP[t]*Y[t]</td>
+            </tr>
+            <tr>
+              <td>M</td>
+              <td>0</td>
+              <td>M'[t] == -(k5notP*M[t]) - k6*M[t] + (k4prime + k4*M[t]^2)*pM[t]</td>
+            </tr>
+            <tr>
+              <td>pM</td>
+              <td>0.3</td>
+              <td>pM'[t] == k5notP*M[t] - (k4prime + k4*M[t]^2)*pM[t] + k3*CP[t]*Y[t]</td>
+            </tr>
+            <tr>
+              <td>Y</td>
+              <td>0</td>
+              <td>Y'[t] == k1aa - k2*Y[t] - k3*CP[t]*Y[t]</td>
+            </tr>
+            <tr>
+              <td>YP</td>
+              <td>0</td>
+              <td>YP'[t] == k6*M[t] - k7*YP[t]</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Generated by Cellerator Version 1.0 update 2.1125 using Mathematica 4.2 for 
+				Mac OS X (June 4, 2002), November 27, 2002 12:12:10, using (PowerMac,PowerPC,
+				Mac OS X,MacOSX,Darwin)</p>
+        <p>author=B.E.Shapiro</p>
+      </body>	
+    </notes>
+    <annotation>
+      <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+        <rdf:Description rdf:about="#_000001">
+          
+          <dc:relation>
+            <rdf:Bag>
+              <rdf:li rdf:resource="http://www.geneontology.org/#GO:0007049"/>
+              <rdf:li rdf:resource="http://www.geneontology.org/#GO:0000278"/>
+              <rdf:li rdf:resource="http://www.reactome.org/#69278"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/biomodels/#BIOMD0000000005"/>
+<rdf:li rdf:resource="http://www.ncbi.nlm.nih.gov/PubMed/#1831270"/>
+<rdf:li rdf:resource="http://www.ncbi.nlm.nih.gov/Taxonomy/#33154"/>
+<rdf:li rdf:resource="http://www.genome.jp/kegg/pathway/#sce04110"/>
+</rdf:Bag>
+          </dc:relation>
+        <dc:creator rdf:parseType="Resource">
+<rdf:Bag>
+<rdf:li rdf:parseType="Resource">
+<vCard:N rdf:parseType="Resource">
+<vCard:Family>Shapiro</vCard:Family>
+<vCard:Given>Bruce</vCard:Given>
+</vCard:N>
+<vCard:EMAIL>bshapiro@jpl.nasa.gov</vCard:EMAIL>
+<vCard:ORG>
+<vCard:Orgname>NASA Jet Propulsion Laboratory</vCard:Orgname>
+</vCard:ORG>
+</rdf:li>
+</rdf:Bag>
+</dc:creator>
+</rdf:Description>
+      </rdf:RDF>   
+    </annotation>
+    <listOfCompartments>
+      <compartment id="cell" metaid="_000002">
+        <annotation>
+          <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+            <rdf:Description rdf:about="#_000002">
+              <dc:relation>
+                <rdf:Bag>
+                  <rdf:li rdf:resource="http://www.geneontology.org/#GO:0005623"/>
+                </rdf:Bag>
+              </dc:relation>
+            </rdf:Description>
+          </rdf:RDF>  
+        </annotation> 
+      </compartment>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species boundaryCondition="true" compartment="cell" id="EmptySet" initialAmount="0" metaid="_000003"/>
+      <species compartment="cell" id="C2" initialAmount="0" metaid="_000004" name="cdc2k">
+<annotation>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_000004">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.uniprot.org/#P04551"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+      <species compartment="cell" id="CP" initialAmount="1" metaid="_000005" name="cdc2k-P">
+<annotation>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_000005">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.uniprot.org/#P04551"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+      <species compartment="cell" id="M" initialAmount="0" metaid="_000006" name="p-cyclin_cdc2">
+<annotation>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_000006">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.uniprot.org/#P04551"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+      <species compartment="cell" id="pM" initialAmount="0.3" metaid="_000007" name="p-cyclin_cdc2-p">
+<annotation>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_000007">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.uniprot.org/#P04551"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+      <species compartment="cell" id="Y" initialAmount="0" metaid="_000008" name="cyclin">
+<annotation>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_000008">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR006670"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+      <species compartment="cell" id="YP" initialAmount="0" metaid="_000009" name="p-cyclin">
+<annotation>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_000009">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR006670"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+    </listOfSpecies>
+    <listOfReactions>
+      <reaction id="Reaction1" metaid="_000010" name="cyclin_cdc2k dissociation" reversible="false">
+        <annotation>
+          <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+            <rdf:Description rdf:about="#_000010">
+              <dc:relation>
+                <rdf:Bag>
+                  <rdf:li rdf:resource="http://www.geneontology.org/#GO:0000079"/>
+                </rdf:Bag>
+              </dc:relation>
+            </rdf:Description>
+          </rdf:RDF>  
+        </annotation> 
+        <listOfReactants>
+          <speciesReference species="M"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C2"/>
+          <speciesReference species="YP"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>k6</ci>
+              <ci>M</ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="k6" value="1"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="Reaction2" metaid="_000011" name="cdc2k phosphorylation" reversible="false">
+        <listOfReactants>
+          <speciesReference species="C2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="CP"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> C2 </ci>
+              <ci> k8notP </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="k8notP" value="1e+06"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="Reaction3" metaid="_000012" name="cdc2k dephosphorylation" reversible="false">
+        <listOfReactants>
+          <speciesReference species="CP"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> CP </ci>
+              <ci> k9 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="k9" value="1000"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="Reaction4" metaid="_000013" name="cyclin cdc2k-p association" reversible="false">
+        <annotation>
+          <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+            <rdf:Description rdf:about="#_000013">
+              <dc:relation>
+                <rdf:Bag>
+                  <rdf:li rdf:resource="http://www.reactome.org/#68910"/>
+                <rdf:li rdf:resource="http://www.reactome.org/#69282"/>
+</rdf:Bag>
+              </dc:relation>
+            </rdf:Description>
+          </rdf:RDF>  
+        </annotation> 
+        <listOfReactants>
+          <speciesReference species="CP"/>
+          <speciesReference species="Y"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="pM"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> CP </ci>
+              <ci> k3 </ci>
+              <ci> Y </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="k3" value="200"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="Reaction5" metaid="_000014" name="deactivation of cdc2 kinase" reversible="false">
+        <annotation>
+          <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+            <rdf:Description rdf:about="#_000014">
+              <dc:relation>
+                <rdf:Bag>
+                  <rdf:li rdf:resource="http://www.reactome.org/#69260"/>
+                <rdf:li rdf:resource="http://www.geneontology.org/#GO:0045736"/>
+</rdf:Bag>
+              </dc:relation>
+            </rdf:Description>
+          </rdf:RDF>  
+        </annotation> 
+        <listOfReactants>
+          <speciesReference species="M"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="pM"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k5notP </ci>
+              <ci> M </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="k5notP" value="0"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="Reaction6" metaid="_000015" name="cyclin biosynthesis" reversible="false">
+        <listOfReactants>
+          <speciesReference species="EmptySet"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Y"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci> k1aa </ci>
+          </math>
+          <listOfParameters>
+            <parameter id="k1aa" value="0.015"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="Reaction7" metaid="_000016" name="default degradation of cyclin" reversible="false">
+        <listOfReactants>
+          <speciesReference species="Y"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="EmptySet"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k2 </ci>
+              <ci> Y </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="k2" value="0"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="Reaction8" metaid="_000017" name="cdc2 kinase triggered degration of cyclin" reversible="false">
+        <annotation>
+          <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+            <rdf:Description rdf:about="#_000017">
+              <dc:relation>
+                <rdf:Bag>
+                  <rdf:li rdf:resource="http://www.reactome.org/#69271"/>
+                <rdf:li rdf:resource="http://www.reactome.org/#69766"/>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0008054"/>
+</rdf:Bag>
+              </dc:relation>
+            </rdf:Description>
+          </rdf:RDF>  
+        </annotation> 
+        <listOfReactants>
+          <speciesReference species="YP"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="EmptySet"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k7 </ci>
+              <ci> YP </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="k7" value="0.6"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="Reaction9" metaid="_000018" name="activation of cdc2 kinase" reversible="false">
+        <annotation>
+          <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+            <rdf:Description rdf:about="#_000017">
+              <dc:relation>
+                <rdf:Bag>
+                  <rdf:li rdf:resource="http://www.reactome.org/#69263"/>
+                </rdf:Bag>
+              </dc:relation>
+            </rdf:Description>
+          <rdf:Description rdf:about="#_000018">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.reactome.org/#69263"/>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0045737"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>  
+        </annotation> 
+        <listOfReactants>
+          <speciesReference species="pM"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="M"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> pM </ci>
+              <apply>
+                <plus/>
+                <ci> k4prime </ci>
+                <apply>
+                  <times/>
+                  <ci> k4 </ci>
+                  <apply>
+                    <power/>
+                    <ci> M </ci>
+                    <cn type="integer"> 2 </cn>
+                  </apply>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="k4" value="180"/>
+            <parameter id="k4prime" value="0.018"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>
