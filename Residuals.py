@@ -150,6 +150,25 @@ class PriorInLog(Residual):
     def dintVars(self, predictions, internalVars, params):
         return {}
 
+class Prior(Residual):
+    def __init__(self, key, pKey, pVal, sigmaPVal):
+        Residual.__init__(self, key)
+        self.pKey = pKey
+        self.pVal = pVal
+        self.sigmaPVal = sigmaPVal
+
+    def GetValue(self, predictions, internalVars, params):
+        return (params.get(self.pKey) - self.pVal) / self.sigmaPVal
+
+    def dp(self, predictions, internalVars, params):
+        return {self.pKey: 1./self.sigmaPVal}
+
+    def dy(self, predictions, internalVars, params):
+        return {}
+
+    def dintVars(self, predictions, internalVars, params):
+        return {}
+
 class PeriodCheckResidual(Residual):
     def __init__(self, key, calcKey, depVarKey, indVarValue,  depVarMeasurement,
                  depVarSigma):
