@@ -27,6 +27,23 @@ def fmin_powell_log_params(m, params, *args, **kwargs):
     else:
         return scipy.exp(pmin)
 
+def fmin_powell(m, params, *args, **kwargs):
+    def func(params):
+        try:
+            return m.cost(params)
+        except Utility.SloppyCellException:
+            logger.warn('Exception in cost evaluation. Cost set to inf.')
+            return scipy.inf
+
+    pmin = scipy.optimize.fmin_powell(func, scipy.log(params), 
+                                      *args, **kwargs)
+    if isinstance(params, KeyedList):
+        pout = params.copy()
+        pout.update(pmin)
+        return pout
+    else:
+        return pmin
+
 def fmin_log_params(m, params, *args, **kwargs):
     def func(log_params):
         try:
