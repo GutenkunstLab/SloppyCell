@@ -3444,7 +3444,8 @@ class Network:
         out['parameters'] = dict([(id, var.value) for (id, var) 
                                   in self.constantVars.items()])
         out['assignments'] = dict(self.assignmentRules.items())
-        out['events'] = dict([(event.trigger, event.event_assignments)
+        out['events'] = dict([(event.trigger, 
+                               dict(event.event_assignments.items()))
                               for event in self.events])
         out['constraints'] = dict([constraint.trigger for constraint in self.constraints])
 
