@@ -2250,7 +2250,7 @@ class Network:
         c_body = os.linesep.join(c_body)
         self._dynamic_funcs_c.set('sens_rhs_logdv', c_body)
 
-
+    _bypass_integrate_stochastic_tidbit = False
     def _make_integrate_stochastic_tidbit(self):
         # Function definitions
         py_body = []
@@ -2262,6 +2262,22 @@ class Network:
                  'double* rmsd_ptr, double* stop_time_ptr, double* trajectory'
         c_body = []
         c_body.append('void integrate_stochastic_tidbit_(%s) {'%c_args)
+
+        if self._bypass_integrate_stochastic_tidbit:
+            py_body.append('pass')
+            py_body = '\n    '.join(py_body)
+
+            c_body.append('}')
+            c_body = os.linesep.join(c_body)
+
+            self._prototypes_c.set('integrate_stochastic_tidbit', 
+                                   'void integrate_stochatic_tidbit_(%s);' 
+                                   % c_args)
+
+            self._dynamic_funcs_python.set('integrate_stochastic_tidbit', 
+                                           py_body)
+            self._dynamic_funcs_c.set('integrate_stochastic_tidbit', c_body)
+            return 
 
         # Test for conditions under which we cannot make these functions
         err_body = []
@@ -3093,7 +3109,7 @@ class Network:
         var_struct = {}
         structure = (self.functionDefinitions, self.reactions, 
                      self.assignmentRules, self.rateRules, var_struct,
-                     self.algebraicRules)
+                     self.algebraicRules, self.deriv_funcs_enabled)
         for id, var in self.variables.items():
             # If a constant variable is set equal to a function of other
             #  variables, we should include that function, otherwise
