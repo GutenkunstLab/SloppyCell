@@ -183,10 +183,10 @@ def toSBMLString(net):
             rxn.product_stoichiometry != None:
             for rid, stoich_list in rxn.reactant_stoichiometry.items():
                 for stoich in stoich_list:
-                    rxn_add_stoich(rxn, rid, stoich, is_product=False)
+                    rxn_add_stoich(srxn, rid, -stoich, is_product=False)
             for rid, stoich_list in rxn.product_stoichiometry.items():
                 for stoich in stoich_list:
-                    rxn_add_stoich(rxn, rid, stoich, is_product=True)
+                    rxn_add_stoich(srxn, rid, stoich, is_product=True)
         # Handle the case where the model was created using the SloppyCell
         # API, in which case reactants and products are inferred from their
         # stoichiometries
