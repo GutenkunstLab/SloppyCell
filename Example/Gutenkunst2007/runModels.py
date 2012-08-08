@@ -80,7 +80,7 @@ def run_for_model(model):
     h, tot_keys = Utility.combine_hessians(hessians, key_sets)
 
     # Write hessian to file.
-    scipy.io.write_array('hessian.dat', h)
+    scipy.savetxt('hessian.dat', h)
     f = file('hessian_keys.dat', 'w')
     f.write(os.linesep.join(tot_keys))
     f.close()

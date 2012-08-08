@@ -645,9 +645,7 @@ class Trajectory:
             out_array.append(self.get_var_traj(var))
     
         out_array = scipy.transpose(out_array)
-        import scipy.io
-        f = scipy.io.write_array(f, out_array, separator=separator, 
-                                 keep_open=True)
+        scipy.savetxt(f, out_array, delimiter=separator)
         f.close()
 
     def merge(self, traj):
