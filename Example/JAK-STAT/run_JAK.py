@@ -11,9 +11,9 @@ m = Model([JAK_expt.expt], [net])
 params = KeyedList([('r1', 0.5), ('r3', 2), ('tao', 6.0),                      # (@\label{code:params} @)
                     ('r4_0', 1.35), ('v1_0', 1.19)])
 
-res = Residuals.PriorInLog('r3_prior', 'r3', 0, sqrt(log(1e4)))                # (@\label{code:prior_start}@)
+res = Residuals.PriorInLog('r3_prior', 'r3', 0, log(sqrt(1e4)))                # (@\label{code:prior_start}@)
 m.AddResidual(res)
-res = Residuals.PriorInLog('tao_prior', 'tao', log(4), sqrt(log(4)))
+res = Residuals.PriorInLog('tao_prior', 'tao', log(4), log(sqrt(4)))
 m.AddResidual(res)                                                             # (@\label{code:prior_end}@)
 
 print 'Initial cost:', m.cost(params)                                          # (@\label{code:initial_cost}@)
