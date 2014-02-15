@@ -28,6 +28,9 @@ _double_tiny_ = scipy.finfo(scipy.float_).tiny
 # This specifies the maximum number of steps daeint will take between timepoints
 MAX_STEPS = 1e5
 
+# The maximum number of timepoints daeint is allowed to return.
+MAX_TIMEPOINTS = 1e5
+
 # global_rtol is the default relative tolerance to use if none is specied in
 # calls.
 global_rtol = 1e-6
@@ -94,6 +97,8 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
                 'calculate_ic' : calculate_ic,
                 'var_types' : var_types,
                 'hmax' : global_hmax,
+        
+                'max_timepoints': MAX_TIMEPOINTS
                 }
 
     exception_raised = False
@@ -788,7 +793,8 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                                  var_types = var_types,
                                  calculate_ic = True,
                                  redir_output = redirect_msgs,
-                                 hmax = global_hmax)
+                                 hmax = global_hmax,
+                                 max_timepoints = MAX_TIMEPOINTS)
         except Utility.SloppyCellException, X:
             logger.warn('Sensitivity integration failed for network %s on '
                         'node %i during optimizable variable %s.'

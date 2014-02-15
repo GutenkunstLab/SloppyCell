@@ -95,7 +95,7 @@ class daeintException(Utility.SloppyCellException):
 def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None, 
             tstop=None, intermediate_output=False, ineq_constr=False,
             calculate_ic=False, var_types=None, redir_output=True,
-            max_steps=500, rpar=None, hmax=None):
+            max_steps=500, rpar=None, hmax=None, max_timepoints=scipy.inf):
     """Integrate a system of ordinary differential algebraic equations with or
     without events.
 
@@ -533,6 +533,20 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
                     # include the following break if we want all events to be
                     # terminating
                     break
+
+                # Terminate if maximum number of timepoints has been reached.
+                if len(tout_l) > max_timepoints:
+                    messages = redir.stop()
+                    # report the error message
+                    if messages is not None:
+                        logger.warn(messages)
+                    errMessage = "DASKR Error: max_timepoints ("+               \
+                        str(int(max_timepoints))+") exceeded."
+                    logger.warn(errMessage)
+                    outputs = (scipy.array(yout_l), scipy.array(tout_l),
+                               scipy.array(ypout_l),
+                               t_root, y_root, i_root)
+                    raise daeintException(errMessage, outputs)
 
                     
         # format the output
