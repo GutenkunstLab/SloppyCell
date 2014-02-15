@@ -3307,7 +3307,7 @@ class Network:
             win_options = '--compiler=mingw32 --fcompiler=gnu'
         try:
             if hide_f2py_output:
-                redir = Utility.Redirector()
+                redir = Utility.Redirector_mod.hideStdout()
                 redir.start()
             sc_path = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
             command = '-c %(win_options)s %(mod_name)s.pyf '\

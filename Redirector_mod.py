@@ -48,3 +48,19 @@ class Redirector(object):
         else:
             return None
 
+# Adapted from http://stackoverflow.com/questions/6796492/python-temporarily-redirect-stdout-stderr
+# Added since the above redirector doesn't seem to
+# work in ipython notebook for Network.fun_f2py.
+class hideStdout(object):
+    def __init__(self):
+        self.devnull = open(os.devnull, 'w')
+        self._stdout = self.devnull
+    
+    def start(self):
+        self.old_stdout = sys.stdout
+        self.old_stdout.flush()
+        sys.stdout = self._stdout
+    
+    def stop(self):
+        self._stdout.flush()
+        sys.stdout = self.old_stdout
