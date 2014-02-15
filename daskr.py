@@ -436,13 +436,26 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
             # daskr fails if tcurrent == twanted, but it's perfectly sensible
             # to just duplicate that point...
             if not tcurrent == twanted:
-                # continue the integration
-                treached, y, yp, idid, jroot = \
-                        _daskr.ddaskr(res, tcurrent, y, yp, twanted,
-                                      info, rtol, atol,
-                                      rwork, iwork,
-                                      rpar, ipar,
-                                      jac, psol, rt, nrt)
+                try:
+                    # continue the integration
+                    treached, y, yp, idid, jroot = \
+                            _daskr.ddaskr(res, tcurrent, y, yp, twanted,
+                                          info, rtol, atol,
+                                          rwork, iwork,
+                                          rpar, ipar,
+                                          jac, psol, rt, nrt)
+                except (ValueError,OverflowError,TypeError,AttributeError,
+                    AssertionError,FloatingPointError,ZeroDivisionError), e:
+                    messages = redir.stop()
+                    # report the error message
+                    if messages is not None:
+                        logger.warn(messages)
+                    errMessage = "DASKR Error: Unrecoverable error: " + str(e)
+                    logger.warn(errMessage)
+                    outputs = (scipy.array(yout_l), scipy.array(tout_l),
+                         scipy.array(ypout_l),
+                         t_root, y_root, i_root)
+                    raise daeintException(errMessage, outputs)
 
             # check for a negative value of idid so we know if there was a
             # problem
