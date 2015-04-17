@@ -850,11 +850,11 @@ def _parse_sens_result(result, net, opt_vars, yout, youtdt=None, events_occurred
         if youtdt is not None:
             youtdt[:, net_start: net_end] =\
                     result[2][:, work_start:work_end]
-        if events_occurred is not None:
-            for eii,e in enumerate(events_occurred):
-                e.ysens_fired = scipy.concatenate((e.ysens_fired, result[-1][eii].ysens_fired[N_dyn_vars:]))
-                e.ysens_post_exec = scipy.concatenate((e.ysens_post_exec, result[-1][eii].ysens_post_exec[N_dyn_vars:]))
-                e.ysens_pre_exec = scipy.concatenate((e.ysens_pre_exec, result[-1][eii].ysens_pre_exec[N_dyn_vars:]))
+    if events_occurred is not None:
+        for eii,e in enumerate(events_occurred):
+            e.ysens_fired = scipy.concatenate((e.ysens_fired, result[-1][eii].ysens_fired[n_dyn:]))
+            e.ysens_post_exec = scipy.concatenate((e.ysens_post_exec, result[-1][eii].ysens_post_exec[n_dyn:]))
+            e.ysens_pre_exec = scipy.concatenate((e.ysens_pre_exec, result[-1][eii].ysens_pre_exec[n_dyn:]))
 
 def integrate_sensitivity(net, times, params=None, rtol=None, 
                           fill_traj=False, return_derivs=False,
