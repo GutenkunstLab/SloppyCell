@@ -8,6 +8,7 @@ if SloppyCell.my_rank != 0:
 
 try:
     from pylab import *
+    rc('lines', linewidth=2)
 except RuntimeError:
     # When running in parallel we found that this import could raise a
     # 'RuntimeError: could not open display' rather than an ImportError, so
@@ -15,8 +16,6 @@ except RuntimeError:
     raise ImportError
 
 import Residuals
-
-rc('lines', linewidth=2)
 
 basic_colors = ('b', 'g', 'r', 'c', 'm', 'k')
 basic_symbols = ('o', 's', '^', 'v', '<', ">", 'x', 'D', 'h', 'p')
