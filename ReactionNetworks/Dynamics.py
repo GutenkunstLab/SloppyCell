@@ -929,7 +929,9 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         if isinstance(result, Utility.SloppyCellException):
             exception_raised = result
             continue
-        _parse_sens_result(result, net, vars_assigned[worker], yout, youtdt, events_occurred)
+        if vars_assigned[worker]:
+            _parse_sens_result(result, net, vars_assigned[worker], yout, youtdt, 
+                               events_occurred)
 
     if exception_raised:
         raise exception_raised
