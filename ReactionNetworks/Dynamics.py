@@ -137,7 +137,7 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
             t_root_this, y_root_this, i_root_this
 
 def generate_tolerances(net, rtol, atol=None):
-    if rtol == None:
+    if rtol is None:
         rtol = global_rtol
     if scipy.isscalar(rtol):
         rtol = scipy.ones(len(net.dynamicVars)) * rtol
@@ -204,7 +204,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         net.resetDynamicVariables()
     net.compile()
 
-    if (rtol == None or atol == None):
+    if (rtol is None or atol is None):
         rtol, atol = generate_tolerances(net, rtol, atol)
 
     # get the initial state, time, and derivative.
