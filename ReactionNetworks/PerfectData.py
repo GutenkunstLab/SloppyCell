@@ -102,7 +102,7 @@ def discrete_data(net, params, pts, interval, vars=None, random=False,
                 either as a scalar or a list the same length as the trajectory.
     """
     # Default for vars
-    if vars == None:
+    if vars is None:
         vars = net.species.keys()
 
     # Assign observed times to each variable

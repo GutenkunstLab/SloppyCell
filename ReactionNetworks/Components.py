@@ -57,7 +57,7 @@ class Species(Variable):
         self.compartment = compartment
         self.is_boundary_condition = is_boundary_condition
         self.uniprot_ids = uniprot_ids
-        if uniprot_ids == None:
+        if uniprot_ids is None:
             self.uniprot_ids = set()
 
         Variable.__init__(self, id, initial_conc, 

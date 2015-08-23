@@ -343,7 +343,7 @@ class Experiment:
         """
         traj.build_interpolated_traj()
         uncert_traj.build_interpolated_traj()
-        if interval == None:
+        if interval is None:
             interval = (traj.get_times()[0], traj.get_times()[-1])
         self.integral_data.append({'calcKey': calcKey, 'trajectory': traj,
                                    'uncert_traj': uncert_traj, 'vars': vars,

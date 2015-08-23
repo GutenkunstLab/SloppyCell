@@ -425,7 +425,7 @@ class Trajectory:
 
         If keys is None, all variables are included.
         """
-        if keys == None:
+        if keys is None:
             keys = self.key_column.keys()
 
         state = self.__getstate__()

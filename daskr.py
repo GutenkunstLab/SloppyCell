@@ -275,7 +275,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
 
     # Can the integration be carried out without any restrictions on the
     # independent variable t?  
-    if tstop == None:
+    if tstop is None:
         info[3] = 0
     else:
         # check to make sure that tstop is greater than or equal to the final
@@ -295,7 +295,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
 
     # Do you want the code to evaluate the partial derivatives automatically by
     # numerical differences?
-    if jac == None:
+    if jac is None:
         info[4] = 0
         jac = dummy_func
     else:
@@ -338,7 +338,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
     elif calculate_ic == True:
         info[10] = 1
         # check the var_types parameter
-        if var_types == None:
+        if var_types is None:
             raise ValueError('if calculate_ic = 1, the var_types array '
                              'must be passed.')
         elif len(var_types) != len(y0):
@@ -380,7 +380,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
     #info[18] is not used.
 
     # if no root function was passed in, we should assign the dummy function
-    if rt == None:
+    if rt is None:
         rt = dummy_func
         
     # assign the dummy function to psol since we don't use it

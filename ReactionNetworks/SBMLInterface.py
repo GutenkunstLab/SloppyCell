@@ -341,7 +341,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
     m = d.getModel()
 
     modelId = m.getId()
-    if (id == None) and (modelId == ''):
+    if (id is None) and (modelId == ''):
         raise ValueError('Network id not specified in SBML or passed in.')
     elif id is not None:
         modelId = id
