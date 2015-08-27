@@ -82,6 +82,27 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
     f1 = apply(fprime,(x0,)+args)
     return (f2 - f1)/epsilon
 
+def safe_fprime(fprime,x,args):
+    """
+    Applies fprime to x.  
+    Returns j and exit code.  For nonzero exit codes, j is returned as None.
+    
+    Exit code 0: No errors.
+    Exit code 3: Jacobian contains NaN or inf.
+    Exit code 4: Exception in Jacobian calculation.
+    """
+    try:
+        j = asarray(apply(fprime,(x,)+args))
+        err = 0
+    except SloppyCell.Utility.SloppyCellException:
+        j = None
+        err = 4
+    if j is not None:
+      if ( scipy.isnan(j).any() or scipy.isinf(j).any() ):
+        j = None
+        err = 3
+    return j, err
+
 def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0, lambdainit = None, 
               jinit = None, trustradius = 1.0):
@@ -157,7 +178,10 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             j = asarray(apply(approx_fprime2,(x,f,epsilon)+args))
             func_calls = func_calls + 2*len(x)
         else :
-            j = asarray(apply(fprime,(x,)+args))
+            j,err = safe_fprime(fprime,x,args)
+            if err:
+                currentcost = sum(asarray(apply(f,(x,)+args))**2)
+                finish = err
             grad_calls+=1
 
     res = asarray(apply(f,(x,)+args))
@@ -167,7 +191,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
     # However the equations defining the optimization move, dp, 
     # are  2.0*J^tJ dp = -2.0*J^t r, where r is the residual
     # vector; therefore, the twos cancel both sides 
-    grad = mat(res)*mat(j)
+    if j is not None: grad = mat(res)*mat(j)
 
     while (niters<maxiter) and (finish == 0):
     # note: grad, res and j will be available from the end of the
@@ -253,6 +277,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         oldjac = j
 
         if costlambdasmaller <= currentcost :
+            xprev = x[:]
             Lambda = Lambda/Mult
             x = x2[:]
             if retall:
@@ -262,12 +287,16 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                 j = asarray(apply(approx_fprime2,(x2,f,epsilon)+args))
                 func_calls = func_calls + 2*len(x2)
             else :
-                j = asarray(apply(fprime,(x2,)+args))
+                j,err = safe_fprime(fprime,x2,args)
+                if err:
+                    x = xprev[:]
+                    finish = err
                 grad_calls+=1
-            grad = mat(res2)*mat(j)
+            if j is not None: grad = mat(res2)*mat(j)
             if sum(abs(2.0*grad), axis=None) < gtol :
                 finish = 2
         elif costlambda <= currentcost :
+            xprev = x[:]
             currentcost = costlambda
             x = x1[:]
             move = moveold[:]
@@ -277,10 +306,12 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                 j = asarray(apply(approx_fprime2,(x1,f,epsilon)+args))
                 func_calls = func_calls + 2*len(x1)
             else :
-                j = asarray(apply(fprime,(x1,)+args))
+                j,err = safe_fprime(fprime,x1,args)
+                if err:
+                    x = xprev[:]
+                    finish = err
                 grad_calls+=1
-
-            grad = mat(res1)*mat(j)
+            if j is not None: grad = mat(res1)*mat(j)
             if sum(abs(2.0*grad), axis=None) < gtol :
                 finish = 2
         else :
@@ -330,6 +361,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                     print " Failed to converge"
                 finish = 1
             else :
+                xprev = x[:]
                 x = x1[:]
                 if retall:
                     allvecs.append(x)
@@ -338,10 +370,13 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                     j = asarray(apply(approx_fprime2,(x,f,epsilon)+args))
                     func_calls = func_calls + 2*len(x)
                 else :
-                    j = asarray(apply(fprime,(x,)+args))
+                    j,err = safe_fprime(fprime,x,args)
+                    if err:
+                        x = xprev[:]
+                        finish = err
                     grad_calls+=1
 
-                grad = mat(res1)*mat(j)
+                if j is not None: grad = mat(res1)*mat(j)
                 currentcost = costmult
                 if sum(abs(2.0*grad), axis=None) < gtol :
                     finish = 2
@@ -372,6 +407,18 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             print " Maximum number of iterations exceeded with no convergence "
         if (finish == 2) :
             print " Optimization terminated successfully."
+            print " Current function value: %f" % currentcost
+            print " Iterations: %d" % niters
+            print " Function evaluations: %d" % func_calls
+            print " Gradient evaluations: %d" % grad_calls
+        if (finish == 3) :
+            print " Optimization aborted: Jacobian contains nan or inf."
+            print " Current function value: %f" % currentcost
+            print " Iterations: %d" % niters
+            print " Function evaluations: %d" % func_calls
+            print " Gradient evaluations: %d" % grad_calls
+        if (finish == 4) :
+            print " Optimization aborted: Exception in Jacobian calculation."
             print " Current function value: %f" % currentcost
             print " Iterations: %d" % niters
             print " Function evaluations: %d" % func_calls
