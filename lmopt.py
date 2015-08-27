@@ -82,6 +82,23 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
     f1 = apply(fprime,(x0,)+args)
     return (f2 - f1)/epsilon
 
+def safe_res(f,x,args):
+    """
+    Applies f to x.
+    Returns f(x) and cost = sum(f(x)**2).
+    
+    In the case that cost = NaN, returns cost = inf.
+    In the case of an exception, returns res = None, cost = inf.
+    """
+    try:
+        res = asarray(apply(f,(x,)+args))
+        cost = sum(res**2)
+    except (SloppyCell.Utility.SloppyCellException,OverflowError):
+        res = None
+        cost = scipy.inf
+    if scipy.isnan(cost): cost = scipy.inf
+    return res, cost
+
 def safe_fprime(fprime,x,args):
     """
     Applies fprime to x.  
@@ -155,7 +172,8 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
     n = len(x0)
     func_calls = 0
     grad_calls = 0
-    res = asarray(apply(f,(x0,)+args))
+    res,currentcost = safe_res(f,x0,args)
+    func_calls+=1
     m = res.shape[0]
     if maxiter is None :
         maxiter = 200*n
@@ -180,12 +198,9 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         else :
             j,err = safe_fprime(fprime,x,args)
             if err:
-                currentcost = sum(asarray(apply(f,(x,)+args))**2)
                 finish = err
             grad_calls+=1
 
-    res = asarray(apply(f,(x,)+args))
-    func_calls+=1
     # NOTE: Below is actually *half* the gradient (because
     # we define the cost as the sum of squares of residuals)
     # However the equations defining the optimization move, dp, 
@@ -246,19 +261,11 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         move = asarray(mat(transpose(vt))*mat(transpose(mat(move))))[:,0]
 
         x2 = x + asarray(move)
-        currentcost = sum(asarray(apply(f,(x,)+args))**2)
+        _,currentcost = safe_res(f,x,args)
         func_calls+=1
-        try:
-            res2 = asarray(apply(f,(x2,)+args))
-            costlambdasmaller = sum(res2**2)
-        except SloppyCell.Utility.SloppyCellException:
-            costlambdasmaller = scipy.inf
+        res2,costlambdasmaller = safe_res(f,x2,args)
         func_calls+=1
-        try:
-            res1 = asarray(apply(f,(x1,)+args))
-            costlambda = sum(res1**2)
-        except SloppyCell.Utility.SloppyCellException:
-            costlambda = scipy.inf
+        res1,costlambda = safe_res(f,x1,args)
         func_calls+=1
         if disp :
             print 'Iteration number', niters
@@ -340,10 +347,9 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                         move[i] = d[i]*rhsvect[i]
                     move = asarray(mat(transpose(vt))*mat(transpose(mat(move))))[:,0]
                     x1 = x + move
-                    res1 = asarray(apply(f,(x1,)+args))
+                    res1,costmult = safe_res(f,x1,args)
                     func_calls+=1
-                    costmult = sum(res1**2)
-
+                    
                 else :
                     NTrials2 = 0
                     while (costmult > currentcost) and (NTrials2 < 10) :
@@ -352,9 +358,8 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                             print " Decreasing stepsize "
                         move = (.5)**NTrials2*moveold
                         x1 = x + asarray(move)
-                        res1 = asarray(apply(f,(x1,)+args))
+                        res1,costmult = safe_res(f,x1,args)
                         func_calls+=1
-                        costmult = sum(res1**2)
 
             if (NTrials==10) or (NTrials2==10) :
                 if disp == 1:
