@@ -183,7 +183,7 @@ def toSBMLString(net):
             rxn.product_stoichiometry != None:
             for rid, stoich_list in rxn.reactant_stoichiometry.items():
                 for stoich in stoich_list:
-                    rxn_add_stoich(srxn, rid, -stoich, is_product=False)
+                    rxn_add_stoich(srxn, rid, -float(stoich), is_product=False)
             for rid, stoich_list in rxn.product_stoichiometry.items():
                 for stoich in stoich_list:
                     rxn_add_stoich(srxn, rid, stoich, is_product=True)
@@ -341,7 +341,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
     m = d.getModel()
 
     modelId = m.getId()
-    if (id == None) and (modelId == ''):
+    if (id is None) and (modelId == ''):
         raise ValueError('Network id not specified in SBML or passed in.')
     elif id is not None:
         modelId = id
