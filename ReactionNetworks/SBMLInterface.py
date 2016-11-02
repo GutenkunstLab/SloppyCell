@@ -32,7 +32,6 @@ def SBMLtoDOT(sbmlFileName, dotFileName):
     raise DeprecationWarning, 'SBMLtoDOT has been deprecated. Instead, use IO.net_DOT_file(net, filename)'
 
 def rxn_add_stoich(srxn, rid, stoich, is_product=True):
-
     try:
         stoich = float(stoich)
         if stoich < 0:
@@ -81,16 +80,19 @@ def replaceTime(ast):
         if ((ast.getName()=='t') or (ast.getName()=='time')):
             ast.setType(libsbml.AST_NAME_TIME)
     for node in range(ast.getNumChildren()):
-        replaceTime(ast.getChild(node))    
+        replaceTime(ast.getChild(node))
 
 def toSBMLString(net):
+    metaId = 0
     try:
         m = libsbml.Model(net.id)
     except NotImplementedError:
         m = libsbml.Model(sbml_level, sbml_version)
         m.setId(net.id)
     m.setName(net.name)
-    
+    m.setMetaId('SloppyCell_{0:05d}'.format(metaId))
+    metaId += 1
+
     for id, fd in net.functionDefinitions.items():
         try:
             sfd = libsbml.FunctionDefinition(id)
@@ -102,8 +104,10 @@ def toSBMLString(net):
         formula = formula.replace('**', '^')
         formula = 'lambda(%s, %s)' % (','.join(fd.variables), formula)
         sfd.setMath(libsbml.parseFormula(formula))
+        sfd.setMetaId('SloppyCell_{0:05d}'.format(metaId))
+        metaId += 1
         m.addFunctionDefinition(sfd)
-    
+
     for id, c in net.compartments.items():
         try:
             sc = libsbml.Compartment(id)
@@ -113,8 +117,10 @@ def toSBMLString(net):
         sc.setName(c.name)
         sc.setConstant(c.is_constant)
         sc.setSize(c.initialValue)
+        sc.setMetaId('SloppyCell_{0:05d}'.format(metaId))
+        metaId += 1
         m.addCompartment(sc)
-    
+
     for id, s in net.species.items():
         try:
             ss = libsbml.Species(id)
@@ -126,8 +132,10 @@ def toSBMLString(net):
         if s.initialValue is not None and not isinstance(s.initialValue, str):
             ss.setInitialConcentration(s.initialValue)
         ss.setBoundaryCondition(s.is_boundary_condition)
+        ss.setMetaId('SloppyCell_{0:05d}'.format(metaId))
+        metaId += 1
         m.addSpecies(ss)
-    
+
     for id, p in net.parameters.items():
         try:
             sp = libsbml.Parameter(id)
@@ -138,6 +146,8 @@ def toSBMLString(net):
         if p.initialValue is not None:
             sp.setValue(p.initialValue)
         sp.setConstant(p.is_constant)
+        sp.setMetaId('SloppyCell_{0:05d}'.format(metaId))
+        metaId += 1
         m.addParameter(sp)
 
     for id, r in net.rateRules.items():
@@ -148,6 +158,8 @@ def toSBMLString(net):
         sr.setVariable(id)
         formula = r.replace('**', '^')
         sr.setMath(libsbml.parseFormula(formula))
+        sr.setMetaId('SloppyCell_{0:05d}'.format(metaId))
+        metaId += 1
         m.addRule(sr)
 
     for id, r in net.assignmentRules.items():
@@ -158,6 +170,8 @@ def toSBMLString(net):
         sr.setVariable(id)
         formula = r.replace('**', '^')
         sr.setMath(libsbml.parseFormula(formula))
+        sr.setMetaId('SloppyCell_{0:05d}'.format(metaId))
+        metaId += 1
         m.addRule(sr)
 
     for r, r in net.algebraicRules.items():
@@ -167,8 +181,10 @@ def toSBMLString(net):
             sr = libsbml.AlgebraicRule(sbml_level, sbml_version)
         formula = r.replace('**', '^')
         sr.setMath(libsbml.parseFormula(formula))
+        sr.setMetaId('SloppyCell_{0:05d}'.format(metaId))
+        metaId += 1
         m.addRule(sr)
-        
+
     for id, rxn in net.reactions.items():
         try:
             srxn = libsbml.Reaction(id)
@@ -201,8 +217,10 @@ def toSBMLString(net):
             kl = libsbml.KineticLaw(sbml_level, sbml_version)
             kl.setFormula(formula)
         srxn.setKineticLaw(kl)
+        srxn.setMetaId('SloppyCell_{0:05d}'.format(metaId))
+        metaId += 1
         m.addReaction(srxn)
-    
+
     for id, e in net.events.items():
         try:
             se = libsbml.Event(id)
@@ -211,7 +229,7 @@ def toSBMLString(net):
             se.setId(id)
         se.setName(e.name)
         formula = e.trigger.replace('**', '^')
-        formula = formula.replace('and_func(', 'and(')        
+        formula = formula.replace('and_func(', 'and(')
         formula = formula.replace('or_func(', 'or(')
 
         ast = libsbml.parseFormula(formula)
@@ -252,6 +270,8 @@ def toSBMLString(net):
             replaceTime(ast)
             sea.setMath(ast)
             se.addEventAssignment(sea)
+        se.setMetaId('SloppyCell_{0:05d}'.format(metaId))
+        metaId += 1
         m.addEvent(se)
 
     for id, con in net.constraints.items():
@@ -268,13 +288,12 @@ def toSBMLString(net):
                              'be use of relational operators (< and >) rather '
                              'than libsbml-friendly functions lt and gt.'
                              % formula)
-        #try:
         scon.setMath(ast)
-        #except TypeError:
-        #    scon.setMath(libsbml.Trigger(ast))
+        se.setcon('SloppyCell_{0:05d}'.format(metaId))
+        metaId += 1
 
         m.addConstraint(scon)
-        
+
     d = libsbml.SBMLDocument(sbml_level, sbml_version)
     d.setModel(m)
     sbmlStr = libsbml.writeSBMLToString(d)
@@ -321,8 +340,8 @@ def stoichToString(species, stoich):
     elif hasattr(stoich, 'getMath'): # libsbml > 3.0
         stoich = libsbml.formulaToString(stoich.getMath())
     else: # libsbml 2.3.4
-        stoich = libsbml.formulaToString(stoich) 
-    return stoich    
+        stoich = libsbml.formulaToString(stoich)
+    return stoich
 
 def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
     r = libsbml.SBMLReader()
@@ -345,7 +364,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         raise ValueError('Network id not specified in SBML or passed in.')
     elif id is not None:
         modelId = id
-        
+
     rn = Network_mod.Network(id = modelId, name = m.getName())
 
     for f in m.getListOfFunctionDefinitions():
@@ -364,8 +383,8 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         size = c.getSize()
         isConstant = c.getConstant()
 
-        rn.addCompartment(id = id, size = size, 
-                          isConstant = isConstant, 
+        rn.addCompartment(id = id, size = size,
+                          isConstant = isConstant,
                           name = name)
 
     for s in m.getListOfSpecies():
@@ -380,9 +399,9 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         isBC, isConstant = s.getBoundaryCondition(), s.getConstant()
 
         xml_text = s.toSBML()
-        uniprot_ids = set([entry[1:].split('"')[0] 
+        uniprot_ids = set([entry[1:].split('"')[0]
                            for entry in xml_text.split('uniprot')[1:]])
-	
+
 	rn.addSpecies(id = id, compartment = compartment,
                       initialConcentration = iC,
                       isConstant = isConstant,
@@ -425,8 +444,8 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
 
             if parameter.id not in rn.variables.keys():
                 rn.addVariable(parameter)
-        kLFormula = ExprManip.sub_for_vars(kLFormula, substitution_dict) 
-    
+        kLFormula = ExprManip.sub_for_vars(kLFormula, substitution_dict)
+
         # Assemble the stoichiometry. SBML has the annoying trait that 
         #  species can appear as both products and reactants and 'cancel out'
         # For each species appearing in the reaction, we build up a string
@@ -445,7 +464,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
                 reactant_stoichiometry[species].append(stoich)
             else:
                 reactant_stoichiometry[species] = [stoich]
-    
+
         for product in rxn.getListOfProducts():
             species = product.getSpecies()
             stoichiometry.setdefault(species, '0')
@@ -503,7 +522,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         trigger = libsbml.formulaToString(trigger_math)
         trigger = trigger.replace('or(','or_func(')
         trigger = trigger.replace('and(','and_func(')
-        
+
         if e.getDelay() is not None:
             try:
                 # For libSBML 3.0
@@ -523,7 +542,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             ea_formula = ea_formula.replace('and(','and_func(')
             eaDict.set(ea.getVariable(), ea_formula)
 
-        rn.addEvent(id = id, trigger = trigger, eventAssignments = eaDict, 
+        rn.addEvent(id = id, trigger = trigger, eventAssignments = eaDict,
                     delay = delay, name = name)
 
 
@@ -541,7 +560,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         else:
             message = None
 
-        rn.addConstraint(id = id, trigger = trigger, message = message, 
+        rn.addConstraint(id = id, trigger = trigger, message = message,
                     name = name)
 
     return rn
@@ -552,8 +571,9 @@ def createNetworkParameter(p):
     isConstant = p.getConstant()
 
     parameter = Network_mod.Parameter(id = id, value = v, is_constant = isConstant,
-                                      name = name, typical_value = None, is_optimizable = True)
-				  # optimizable by default
+                                      name = name, typical_value = None,
+                                      is_optimizable = True)
+                                      # optimizable by default
 
     return parameter
 
