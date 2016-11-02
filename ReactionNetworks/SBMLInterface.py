@@ -15,8 +15,6 @@ import SloppyCell.ExprManip as ExprManip
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
 
-import SloppyCell.ExprManip as ExprManip
-
 # sbml_level and sbml_version are default parameters to pass to
 # constructors for libsbml 4.0
 sbml_level = 2
@@ -186,6 +184,14 @@ def toSBMLString(net):
         m.addRule(sr)
 
     for id, rxn in net.reactions.items():
+        # Need to identify modifiers in kinetic law and add them to
+        # stoichiometry
+        kl_vars = ExprManip.extract_vars(rxn.kineticLaw)
+        species_in_kl = kl_vars.intersection(net.species.keys())
+        for s in species_in_kl:
+            if not rxn.stoichiometry.has_key(s):
+                rxn.stoichiometry[s] = 0
+
         try:
             srxn = libsbml.Reaction(id)
         except NotImplementedError:
