@@ -31,7 +31,6 @@ Doc/user/architecture.pstex_t
 Doc/user/autocorr.eps
 Doc/user/expt_data.py
 Doc/user/user.tex
-Example/.DS_Store
 Example/Gutenkunst2007/Common.py
 Example/Gutenkunst2007/Fig1B_spectra_plot.py
 Example/Gutenkunst2007/Fig1C_alignment_plot.py
