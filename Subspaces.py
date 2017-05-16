@@ -1,5 +1,7 @@
 import scipy
-
+"""
+Added a comment here to check pushing from eclipse.
+"""
 def subspace_angles(A, B):
     """
     Return the principle angles and vectors between two subspaces. 
