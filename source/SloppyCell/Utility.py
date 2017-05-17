@@ -7,7 +7,7 @@ from email.MIMEText import MIMEText
 import scipy
 
 from scipy import linspace, logspace
-
+import scipy.linalg
 import random
 import copy
 

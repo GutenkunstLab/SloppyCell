@@ -377,7 +377,7 @@ or False), raise the exception.
             if exception_raised:
                 break
 
-            # Update the root state after all listed events have excecuted.
+            # Update the SloppyCell state after all listed events have excecuted.
             root_after = root_func(start, IC, ypIC, constants)
 
             # Check for chained events/constraints
@@ -520,7 +520,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
     # checking for both normal events and constraint events
     num_events = len(net.events)+len(net.constraints)
     event_just_fired = False
-    # Check the directions of our root crossings to see whether events
+    # Check the directions of our SloppyCell crossings to see whether events
     # actually fired.  DASKR automatically returns the direction of event
     # crossings, so we can read this information from the integration
     # results.

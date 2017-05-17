@@ -1,7 +1,12 @@
 import scipy
-"""
-Added a comment here to check pushing from eclipse.
-"""
+import scipy.round_
+import scipy.complex_
+import scipy.linalg
+import scipy.float_
+
+
+#Added a comment here to check pushing from eclipse.
+
 def subspace_angles(A, B):
     """
     Return the principle angles and vectors between two subspaces. 
@@ -19,32 +24,33 @@ def subspace_angles(A, B):
     # Get orthogonal bases for our two subspaces.
     QA, QB = scipy.linalg.orth(A), scipy.linalg.orth(B)
 
-    M = scipy.matrixmultiply(scipy.transpose(scipy.conjugate(QA)), QB)
+    M = scipy.matmul(scipy.transpose(scipy.conjugate(QA)), QB)
     Y, C, Zh = scipy.linalg.svd(M)
 
-    U = scipy.matrixmultiply(QA, Y)
-    V = scipy.matrixmultiply(QB, scipy.transpose(scipy.conjugate(Zh)))
+    U = scipy.matmul(QA, Y)
+    V = scipy.matmul(QB, scipy.transpose(scipy.conjugate(Zh)))
     return scipy.arccos(C), U, V
 
 def test():
     # This is the example from Bjorck and Golub (1973)
     m, p = 26, 13
 
-    A = scipy.zeros((m, p), scipy.Float)
+    #updated scipy.Float
+    A = scipy.zeros((m, p), scipy.float_)
     for col in range(p):
         A[col*(m/p):(col+1)*(m/p), col:col+1] = scipy.ones((m/p, 1))
     A *= 1/scipy.sqrt(m/p)
-
-    B = scipy.zeros((m, p), scipy.Complex)
+    #updated scipy.Complex
+    B = scipy.zeros((m, p), scipy.complex_)
     for col in range(0, p):
         B[:, col:col+1] = scipy.transpose(scipy.mat((-1 + 2j*scipy.arange(m)/(m+1))**col))
 
     theta, U, V = subspace_angles(A, B)
-    assert scipy.round(scipy.cos(theta), 4) == \
+    assert scipy.round_(scipy.cos(theta), 4) == \
             scipy.array([ 1.    ,  0.9982,  0.9981,  0.9903,  0.9899,  0.9765,
                          0.9628,  0.9415, 0.9176,  0.8701,  0.7637,  0.0608,  
                          0.0156]) 
-    assert scipy.round(scipy.sin(theta), 4) == \
+    assert scipy.round_(scipy.sin(theta), 4) == \
             scipy.array([ 0.    ,  0.0594,  0.0609,  0.1388,  0.1418,  0.2157,
                          0.2701,  0.337 , 0.3975,  0.4928,  0.6456,  0.9982,  
                          0.9999])
@@ -54,7 +60,8 @@ def test():
     A = [[1,2],[3,4],[5,6]]
     B = [[1,5],[3,7],[5,-1]]
     theta, U, V = subspace_angles(A, B)
-    assert scipy.round(scipy.cos(scipy.real(theta)), 3) ==\
+    #updated scipy.Round
+    assert scipy.round_(scipy.cos(scipy.real(theta)), 3) ==\
             scipy.array([1.000, 0.856])
     
 def plot_test():

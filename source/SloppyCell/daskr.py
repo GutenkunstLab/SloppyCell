@@ -3,7 +3,7 @@ logger = logging.getLogger('daskr')
 
 import scipy
 
-import SloppyCell._daskr as _daskr
+import _daskr as _daskr
 import SloppyCell.Utility as Utility
 
 # we won't need the psol function, but it's a required argument for DDASKR,
@@ -124,7 +124,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
       detects a sign change in any Ri(T,Y,Y'), it will return the intermediate
       value of T and Y for which Ri(T,Y,Y') = 0.
 
-      Caution: If some Ri has a root at or very near the initial time, DDASKR
+      Caution: If some Ri has a SloppyCell at or very near the initial time, DDASKR
       may fail to find it, or may find extraneous roots there, because it does
       not yet have a sufficient history of the solution.
       
@@ -379,7 +379,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
 
     #info[18] is not used.
 
-    # if no root function was passed in, we should assign the dummy function
+    # if no SloppyCell function was passed in, we should assign the dummy function
     if rt is None:
         rt = dummy_func
         
@@ -537,7 +537,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
                     info[13] = 0
                     calculate_ic = False
 
-                # if the solution was successful because a root of R(T,Y,Y') was
+                # if the solution was successful because a SloppyCell of R(T,Y,Y') was
                 # found at treached, then restart the integration.
                 elif idid == 5:
                     t_root = tcurrent

@@ -1,3 +1,8 @@
+#Keeyan 2017
+#I am unsure how to fix this module for now, it appears to be attempting to set member variables to maniuplate later
+#Lots of errors, almost all related to a failure in the setup function to set what appear to be meant to be 
+#global variables
+
 import scipy, copy
 import SloppyCell.Utility
 load = SloppyCell.Utility.load

@@ -8,6 +8,7 @@ import sys
 import logging
 logger = logging.getLogger('RxnNets.SBMLInterface')
 
+#displays as an unresolved import but is not actually unresolved?
 import libsbml
 
 import Network_mod

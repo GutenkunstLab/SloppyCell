@@ -18,7 +18,7 @@ from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
 if HAVE_PYPAR:
     import pypar
 
-def apply_func_to_traj(traj, func, only_nonderivs=False):
+def apply_func_to_traj(self, traj, func, only_nonderivs=False):
     """
     Return a trajectory with func applied to each variable stored in the
     trajectory

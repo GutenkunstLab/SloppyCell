@@ -98,7 +98,8 @@ def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=
     calcVals = model.GetCalculationCollection().GetResults(varsByCalc)
     cW = ColorWheel()
     for exptName in experiments:
-        expt = exptColl[exptName]
+        #Error, used to be expt = exptColl[exptName]
+        expt = model.exptColl[exptName]
         dataByCalc = expt.GetData()
         for calc in dataByCalc:
             for chem in dataByCalc[calc]:

@@ -6,6 +6,7 @@ See also addAssignmentRulesToFunctionBody in ReactionNetworks/Network_mod.py
 """
 import scipy
 
+
 if int(scipy.__version__.split('.')[1]) < 4:
     # Type names have changed
     scipy.float_ = scipy.Float

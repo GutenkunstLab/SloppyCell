@@ -9,6 +9,8 @@ import copy
 import sets
 
 import scipy
+import scipy.integrate
+import scipy.linalg
 
 import SloppyCell
 import SloppyCell.Residuals as Residuals

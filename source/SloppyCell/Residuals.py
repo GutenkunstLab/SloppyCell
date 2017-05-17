@@ -1,4 +1,6 @@
 import scipy
+import scipy.linalg
+import scipy.integrate
 
 class Residual:
     def __init__(self, key):
@@ -8,7 +10,7 @@ class Residual:
         """
         A unique (and hashable) identifier for this residual.
         """
-        return key
+        return self.key
 
     def GetValue(self, predictions, internalVars, params):
         """

@@ -1,5 +1,6 @@
 Collections.py
 Ensembles.py
+KeeyanTests.py
 KeyedList_mod.py
 MANIFEST.in
 Model_mod.py

@@ -51,8 +51,12 @@ while my_rank != 0:
                 pypar.send(X, 0)
     except:
         # Assemble and print a nice traceback
-        tb = traceback.format_exception(sys.exc_type, sys.exc_value, 
-                                        sys.exc_traceback)
+        
+        #Using sys.info() to make a tuple
+        sysinf = sys.exc_info()
+        
+        tb = traceback.format_exception(sysinf[0], sysinf[1], 
+                                        sysinf[2])
         logger.critical(('node %i:'%my_rank).join(tb))
         save_to = '.SloppyCell/node_%i_crash.bp' % my_rank
         logger.critical("node %i: Command being run was: %s."

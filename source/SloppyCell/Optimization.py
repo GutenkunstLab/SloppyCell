@@ -5,6 +5,7 @@ import logging
 logger = logging.getLogger('Optimization')
 
 import scipy
+import scipy.optimize
 
 import SloppyCell.KeyedList_mod as KeyedList_mod
 import SloppyCell.Utility as Utility

@@ -299,7 +299,7 @@ def _sampling_matrix(hessian, cutoff=0, temperature=1, step_scale=1):
 
     D = 1.0/scipy.maximum(sing_vals, cutoff_sing_val)
 
-    ## now fill in the sampling matrix ("square root" of the Hessian)
+    ## now fill in the sampling matrix ("square SloppyCell" of the Hessian)
     ## note that sqrt(D[i]) is taken here whereas Kevin took sqrt(D[j])
     ## this is because vh is the transpose of his PT -JJW
     samp_mat = scipy.transpose(vh) * scipy.sqrt(D)

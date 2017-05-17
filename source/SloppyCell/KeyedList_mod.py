@@ -195,7 +195,8 @@ class KeyedList(list):
     def pop_item(self, index=-1):
         item = (self.storedKeys[index], self[index])
         del self[index]
-        return key
+        #return key
+        return item
 
     def remove_by_value(self, other):
         index = self.index(other)

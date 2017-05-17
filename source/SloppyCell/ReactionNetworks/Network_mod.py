@@ -87,7 +87,7 @@ class Network:
                          'max': scipy.maximum
                          }
     # These are functions we need to create but that should be used commonly
-    _standard_func_defs = [('root', ['n', 'x'],  'x**(1./n)'),
+    _standard_func_defs = [('SloppyCell', ['n', 'x'],  'x**(1./n)'),
                            ('cot', ['x'],  '1./tan(x)'),
                            ('arccot', ['x'],  'atan(1/x)'),
                            ('coth', ['x'],  '1./tanh(x)'),
@@ -563,7 +563,7 @@ class Network:
                 system time and os.urandom (if available).
         fill_dt -- Fill in the trajectory at the requested time interval. This
                    is the simplest way to fill in a trajectory.
-        rmsd -- Maximum root mean squared distance in the dynamic variable
+        rmsd -- Maximum SloppyCell mean squared distance in the dynamic variable
                 space before taking a data point (a better trajectory filler).
 
         Outputs: None
@@ -655,7 +655,7 @@ class Network:
     def _iter_limit_cycle(self, params, varNames, s0):
         """
         Internal function used to integrate a trajectory and find the point
-        nearest the initial point (defined as the root sum squared distance)
+        nearest the initial point (defined as the SloppyCell sum squared distance)
         in the period range of [0.475*tau, 1.5*tau]. The point found and period
         (tau) is returned.
 
@@ -2337,13 +2337,17 @@ class Network:
             mapping[name] = 'av[%i]'%index
         
         class Parse(ExprManip.AST.compiler.visitor.ASTVisitor):
-            def __call__(slf,s,c=True):
+            #Unsure as to why 'slf' was being used instead of 'self'
+            #Error being thrown, so 'slf' changed to 'self'
+            #slf was being passed as argument to compiler.walk()
+            #Replaced with 'self' for now, should be changed accordingly if issue arises
+            def __call__(self,s,c=True):
                 if c: s = ExprManip.make_c_compatible(s)
                 ast = ExprManip.strip_parse(s)
-                ExprManip.AST.compiler.walk(ast, slf)
+                ExprManip.AST.compiler.walk(ast, self)
                 return ExprManip.ast2str(ast)
-
-            def visitName(slf,node,*args):
+            #same issue with 'slf' vs 'self' here, was giving error so changed for now
+            def visitName(self,node,*args):
                 if mapping.has_key(node.name): node.name=mapping[node.name]
         parse = Parse()
         

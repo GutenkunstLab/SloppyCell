@@ -4,7 +4,7 @@ logger = logging.getLogger('Collections')
 import sets, copy
 
 import scipy
-
+import scipy.integrate
 import SloppyCell
 import SloppyCell.Utility as Utility
 import SloppyCell.KeyedList_mod as KeyedList_mod

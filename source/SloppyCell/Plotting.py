@@ -1,4 +1,5 @@
 import scipy
+import scipy.linalg
 import SloppyCell
 # We've had yet more trouble running in parallel, but these errors were actually
 #  killing the job without raising any error. So let's just only even try
@@ -15,7 +16,7 @@ except RuntimeError:
     # we catch and raise an error we know how to handle
     raise ImportError
 
-import Residuals
+import SloppyCell.Residuals as Residuals
 
 basic_colors = ('b', 'g', 'r', 'c', 'm', 'k')
 basic_symbols = ('o', 's', '^', 'v', '<', ">", 'x', 'D', 'h', 'p')
