@@ -8,6 +8,7 @@ import sets
 import sys 
 import scipy
 import scipy.optimize
+import scipy.linalg
 
 import logging
 logger = logging.getLogger('ReactionNetworks.Dynamics')

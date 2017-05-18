@@ -2,7 +2,6 @@ import logging
 logger = logging.getLogger('daskr')
 
 import scipy
-
 import _daskr as _daskr
 import SloppyCell.Utility as Utility
 
@@ -13,7 +12,7 @@ def dummy_func():
     pass
 
 # These messages correspond to the values of IDID on lines 992-1069 of ddaskr.f
-_msgs = {0: "Unexepected status code. (IDID=0)",
+_msgs = {0: "Unexpected status code. (IDID=0)",
          1: "Integration successful. Call the code again to continue the \
 integration another step in the direction of TOUT. (IDID=1)",
          2: "Integration successful. Define a new TOUT and call the code \
