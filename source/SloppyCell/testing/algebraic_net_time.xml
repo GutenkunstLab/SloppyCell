@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <model metaid="SloppyCell_00000" id="algebraic_net_andor_events">
+    <listOfCompartments>
+      <compartment metaid="SloppyCell_00001" id="cell" size="1" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species metaid="SloppyCell_00002" id="X0" compartment="cell" initialConcentration="1" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00003" id="X1" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00004" id="T" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00005" id="S1" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00006" id="S2" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter metaid="SloppyCell_00007" id="Keq" value="2.5" constant="true"/>
+      <parameter metaid="SloppyCell_00008" id="k1" value="0.1" constant="true"/>
+      <parameter metaid="SloppyCell_00009" id="k2" value="0.15" constant="true"/>
+      <parameter metaid="SloppyCell_00010" id="timevar" value="1" constant="false"/>
+    </listOfParameters>
+    <listOfRules>
+      <assignmentRule metaid="SloppyCell_00011" variable="S2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> Keq </ci>
+            <ci> S1 </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <algebraicRule metaid="SloppyCell_00012">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <minus/>
+            <apply>
+              <plus/>
+              <ci> S2 </ci>
+              <ci> S1 </ci>
+            </apply>
+            <ci> T </ci>
+          </apply>
+        </math>
+      </algebraicRule>
+    </listOfRules>
+    <listOfReactions>
+      <reaction metaid="SloppyCell_00013" id="in">
+        <listOfReactants>
+          <speciesReference species="X0" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="T" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k1 </ci>
+              <ci> X0 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00014" id="out">
+        <listOfReactants>
+          <speciesReference species="T" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X1">
+            <stoichiometryMath>
+              <math xmlns="http://www.w3.org/1998/Math/MathML">
+                <apply>
+                  <divide/>
+                  <cn type="integer"> 1 </cn>
+                  <cn type="integer"> 1 </cn>
+                </apply>
+              </math>
+            </stoichiometryMath>
+          </speciesReference>
+        </listOfProducts>
+        <listOfModifiers>
+          <modifierSpeciesReference species="S2"/>
+        </listOfModifiers>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k2 </ci>
+              <ci> S2 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <listOfEvents>
+      <event metaid="SloppyCell_00015" id="logical_event">
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <and/>
+              <apply>
+                <gt/>
+                <cn type="integer"> 1 </cn>
+                <cn type="integer"> 0 </cn>
+              </apply>
+              <apply>
+                <lt/>
+                <cn type="integer"> 1 </cn>
+                <cn type="integer"> 0 </cn>
+              </apply>
+              <apply>
+                <eq/>
+                <cn type="integer"> 10 </cn>
+                <cn type="integer"> 11 </cn>
+              </apply>
+            </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="integer"> 0 </cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="X0">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <piecewise>
+                <piece>
+                  <cn type="integer"> 0 </cn>
+                  <apply>
+                    <or/>
+                    <apply>
+                      <gt/>
+                      <ci> X0 </ci>
+                      <cn type="integer"> 100 </cn>
+                    </apply>
+                    <apply>
+                      <gt/>
+                      <ci> X1 </ci>
+                      <cn type="integer"> 100 </cn>
+                    </apply>
+                    <apply>
+                      <lt/>
+                      <ci> T </ci>
+                      <cn type="integer"> 0 </cn>
+                    </apply>
+                  </apply>
+                </piece>
+                <otherwise>
+                  <cn type="integer"> 1 </cn>
+                </otherwise>
+              </piecewise>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="X1">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <piecewise>
+                <piece>
+                  <cn type="integer"> 1 </cn>
+                  <apply>
+                    <or/>
+                    <apply>
+                      <gt/>
+                      <ci> X0 </ci>
+                      <cn type="integer"> 100 </cn>
+                    </apply>
+                    <apply>
+                      <gt/>
+                      <ci> X1 </ci>
+                      <cn type="integer"> 100 </cn>
+                    </apply>
+                    <apply>
+                      <lt/>
+                      <ci> T </ci>
+                      <cn type="integer"> 0 </cn>
+                    </apply>
+                  </apply>
+                </piece>
+                <otherwise>
+                  <cn type="integer"> 0 </cn>
+                </otherwise>
+              </piecewise>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="timevar">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+    </listOfEvents>
+  </model>
+</sbml>
