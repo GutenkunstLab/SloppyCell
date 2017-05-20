@@ -1,7 +1,12 @@
 import compiler
 from compiler.ast import *
-
+from ast import *
 TINY = 1e-12
+
+
+def hello():
+    print("hello")
+
 
 def _node_equal(self, other):
     """
@@ -30,7 +35,7 @@ def strip_parse(expr):
     """
     # The .strip() ignores leading and trailing whitespace, which would 
     #  otherwise give syntax errors.
-    ast = compiler.parse(str(expr).strip())
+    ast = parse(str(expr).strip())
     return ast.node.nodes[0].expr
 
 # This defines the order of operations for the various node types, to determine
