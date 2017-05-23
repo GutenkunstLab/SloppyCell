@@ -93,7 +93,7 @@ def safe_res(f,x,args):
     try:
         res = asarray(apply(f,(x,)+args))
         cost = sum(res**2)
-    except (SloppyCell.Utility.SloppyCellException,OverflowError):
+    except (source.SloppyCell.Utility.SloppyCellException, OverflowError):
         res = None
         cost = scipy.inf
     if scipy.isnan(cost): cost = scipy.inf
@@ -111,7 +111,7 @@ def safe_fprime(fprime,x,args):
     try:
         j = asarray(apply(fprime,(x,)+args))
         err = 0
-    except SloppyCell.Utility.SloppyCellException:
+    except source.SloppyCell.Utility.SloppyCellException:
         j = None
         err = 4
     if j is not None:
@@ -568,13 +568,13 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
 
         try:
             costlambdasmaller = apply(fcost,(x2,))
-        except SloppyCell.Utility.SloppyCellException:
+        except source.SloppyCell.Utility.SloppyCellException:
             costlambdasmaller = scipy.inf
         func_calls+=1
 
         try:
             costlambda = apply(fcost,(x1,))
-        except SloppyCell.Utility.SloppyCellException:
+        except source.SloppyCell.Utility.SloppyCellException:
             costlambda = scipy.inf
         func_calls+=1
         if disp :
@@ -847,13 +847,13 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         try:
             res2 = asarray(apply(f,(x2,)))
             costlambdasmaller = sum(res2**2)
-        except SloppyCell.Utility.SloppyCellException:
+        except source.SloppyCell.Utility.SloppyCellException:
             costlambdasmaller = scipy.inf
         func_calls+=1
         try:
             res1 = asarray(apply(f,(x1,)))
             costlambda = sum(res1**2)
-        except SloppyCell.Utility.SloppyCellException:
+        except source.SloppyCell.Utility.SloppyCellException:
             costlambda = scipy.inf
         func_calls+=1
         if disp :    

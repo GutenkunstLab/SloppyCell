@@ -1,6 +1,7 @@
 Collections.py
 Ensembles.py
 KeeyanTests.py
+KeeyanTests2.py
 KeyedList_mod.py
 MANIFEST.in
 Model_mod.py
@@ -188,6 +189,7 @@ ReactionNetworks/Trajectory_mod.py
 ReactionNetworks/__init__.py
 ReactionNetworks/f2py_signatures.pyf
 ReactionNetworks/f2py_signatures_no_derivs.pyf
+ReactionNetworks/hotDog.py
 SloppyCell.egg-info/PKG-INFO
 SloppyCell.egg-info/SOURCES.txt
 SloppyCell.egg-info/dependency_links.txt

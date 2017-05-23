@@ -1,0 +1,22 @@
+Each directory corresponds to a model. 
+
+hessian.dat is the the \Chi^2-hessian. hessian_keys.dat lists the parameters in the order they enter the hessian.
+
+The .py files in the directories are:
+Nets.py: Creates the Networks (conditions) that we'll consider for the model.
+reproduction.py: When run, produces graphs for the various conditions that can
+                 be compared with the original publication to help confirm that
+                 we've successfully implemented their model.
+
+To generate the \Chi^2-Hessians for a specific model, use
+python runModels.py <model directory name>
+
+When finished, the model directory will contain a number of hess_dict.*.bp files, one for each condition. These correspond to the individual terms in the sum for H^{\chi^2}. It will also regenerate hessian.dat and hessian_keys.dat.
+
+Fig1B_spectra_plot.py, Fig1C_alignment_plot.py and Fig3_plot.py create Figures 1B,C and 3, respectively.
+
+Brown_2004/prediction.py recreates Figure 4B and those in Text S2.
+
+S4_rescaled_Brown_plot.py and S5_plot.py recreate the figures in Text S4 and S5.
+
+The scripts were all run with SloppyCell version 0.81. Updated versions to adjust to changes in SloppyCell are available from the authors.

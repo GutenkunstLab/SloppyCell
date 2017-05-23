@@ -12,7 +12,6 @@ import scipy
 import scipy.integrate
 import scipy.linalg
 
-import SloppyCell
 import SloppyCell.Residuals as Residuals
 import SloppyCell.Collections as Collections
 import SloppyCell.Utility as Utility

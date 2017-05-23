@@ -230,8 +230,8 @@ class Experiment:
             #  that u = 0 corresponds to B_best. This ensures that the
             #  integration doesn't miss the (possibly sharp) peak there.
             try:
-                import SloppyCell.misc_c
-                integrand = SloppyCell.misc_c.log_gaussian_prior_integrand
+                import source.SloppyCell.misc_c
+                integrand = source.SloppyCell.misc_c.log_gaussian_prior_integrand
             except ImportError:
                 logger.warn('Falling back to python integrand on log gaussian '
                             'prior integration.')

@@ -29,7 +29,7 @@ else:
     # Annoyingly, distutils doesn't have an option to recursively include
     # a data directory. We can use numpy's Configuration class, however,
     # to do the recursion for us.
-    config = Configuration('SloppyCell_V2')
+    config = Configuration('SloppyCell')
     config.add_data_files('ReactionNetworks/f2py_signatures.pyf',
                           'ReactionNetworks/f2py_signatures_no_derivs.pyf',
                           'ReactionNetworks/mtrand.h',
@@ -61,7 +61,7 @@ daskr = core.Extension(name = 'SloppyCell._daskr',
 misc_c = core.Extension(name = 'SloppyCell.misc_c',
                         sources = ['misc_c.c', 'misc_c.pyf'])
 
-core.setup(name='SloppyCell_V2',
+core.setup(name='SloppyCell',
            version='CVS',
            author='Ryan Gutenkunst',
            author_email='rng7@cornell.edu',

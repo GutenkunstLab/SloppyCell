@@ -1,0 +1,1158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml level="2" metaid="_000000" version="1" xmlns="http://www.sbml.org/sbml/level2">
+    <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_000000">
+<dc:contributor rdf:parseType="Resource">
+<vCard:N rdf:parseType="Resource">
+<vCard:Family>Le Novère</vCard:Family>
+<vCard:Given>Nicolas</vCard:Given>
+</vCard:N>
+<vCard:EMAIL>lenov@ebi.ac.uk</vCard:EMAIL>
+<vCard:ORG>
+<vCard:Orgname>EMBL-EBI</vCard:Orgname>
+</vCard:ORG>
+</dc:contributor>
+<dcterms:created rdf:parseType="Resource">
+<dcterms:W3CDTF>2005-02-02T14:41:42</dcterms:W3CDTF>
+</dcterms:created>
+<dcterms:modified rdf:parseType="Resource">
+<dcterms:W3CDTF>2005-04-01T20:56:33</dcterms:W3CDTF>
+</dcterms:modified>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<model id="mod" metaid="_000001" name="Edelstein1996_EPSP_AChSpecies">
+        <annotation xmlns:stsim="http://www.sbml.org/2001/ns/stochsim">
+            <stsim:disclaimer>model definition generated on Wed Sep  1 09:45:07 2004 GMT by TkStochSim. (c) Nicolas Le Novere 2000-2003</stsim:disclaimer>
+            <stsim:listcpnts>BLL:B,L,L;IL:I,L;AL:A,L;A:A;BL:B,L;B:B;DLL:D,L,L;D:D;ILL:I,L,L;DL:D,L;I:I;ALL:A,L,L;L:L</stsim:listcpnts>
+            <stsim:StoreInterval>0.001</stsim:StoreInterval>
+            <stsim:TimeIncrement>0</stsim:TimeIncrement>
+            <stsim:SimulationDuration>1</stsim:SimulationDuration>
+            <stsim:MaximumNumberComplexes>15000</stsim:MaximumNumberComplexes>
+            <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+                <rdf:Description rdf:about="#_000001">
+                  
+                  <dc:relation>
+                    <rdf:Bag>
+                      <rdf:li rdf:resource="http://www.ncbi.nlm.nih.gov/Taxonomy/#7787"/>
+                      <rdf:li rdf:resource="http://www.geneontology.org/#GO:0015464"/>
+                      <rdf:li rdf:resource="http://www.geneontology.org/#GO:0007274"/>
+                      <rdf:li rdf:resource="http://www.geneontology.org/#GO:0007268"/>
+
+
+
+<rdf:li rdf:resource="http://www.ebi.ac.uk/biomodels/#BIOMD0000000002"/>
+
+<rdf:li rdf:resource="http://www.ncbi.nlm.nih.gov/PubMed/#8983160"/>
+<rdf:li rdf:resource="http://www.genome.jp/kegg/pathway/#hsa04080"/>
+</rdf:Bag>
+                  </dc:relation>
+                
+<dc:creator rdf:parseType="Resource">
+<rdf:Bag>
+<rdf:li rdf:parseType="Resource">
+<vCard:N rdf:parseType="Resource">
+<vCard:Family>Le Novere</vCard:Family>
+<vCard:Given>Nicolas</vCard:Given>
+</vCard:N>
+<vCard:EMAIL>lenov@ebi.ac.uk</vCard:EMAIL>
+<vCard:ORG>
+<vCard:Orgname>EMBL-EBI</vCard:Orgname>
+</vCard:ORG>
+</rdf:li>
+</rdf:Bag>
+</dc:creator>
+</rdf:Description>
+            </rdf:RDF>   
+        </annotation>
+        <listOfUnitDefinitions>
+            <unitDefinition id="unimolRate">
+                <listOfUnits>
+                    <unit exponent="-1" kind="second"/>
+                </listOfUnits>
+            </unitDefinition>
+            <unitDefinition id="bimolRate">
+                <listOfUnits>
+                    <unit exponent="-1" kind="mole"/>
+                    <unit exponent="-1" kind="litre"/>
+                    <unit exponent="-1" kind="second"/>
+                </listOfUnits>
+            </unitDefinition>
+        </listOfUnitDefinitions>
+        <listOfCompartments>
+            <compartment id="comp1" metaid="_986127" name="compartment1" size="1e-16" spatialDimensions="3" units="litre">
+<annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0045202"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+<rdf:Description rdf:about="#_986127">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0045202"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</compartment>
+        </listOfCompartments>
+        <listOfSpecies>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="BLL" initialAmount="0" metaid="_986142" name="BasalACh2" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>biliganded basal state</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986142">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="IL" initialAmount="0" metaid="_986162" name="IntermediateACh" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>monoliganded intermediate</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986162">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="AL" initialAmount="0" metaid="_986182" name="ActiveACh" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>monoliganded active state</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986182">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="A" initialAmount="0" metaid="_986202" name="Active" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>unkiganded active state</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986202">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="BL" initialAmount="0" metaid="_986222" name="BasalACh" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>monoliganded basal state</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986222">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="B" initialAmount="1.66057788110262e-21" metaid="_986242" name="Basal" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>unliganded basal state</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986242">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="DLL" initialAmount="0" metaid="_986262" name="DesensitisedACh2" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>biliganded desensitised state</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986262">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="D" initialAmount="0" metaid="_986282" name="Desensitised" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>fully desensitised state</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986282">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="ILL" initialAmount="0" metaid="_986302" name="IntermediateACh2" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>biliganded intermediate</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986302">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="DL" initialAmount="0" metaid="_986322" name="DesensitisedACh" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>monoliganded desensitised state</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986322">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="I" initialAmount="0" metaid="_986342" name="Intermediate" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>unliganted intermediate</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986342">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="ALL" initialAmount="0" metaid="_986362" name="ActiveACh2" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>biliganted active state</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986362">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0005892"/>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/interpro/#IPR002394"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+            <species compartment="comp1" hasOnlySubstanceUnits="true" id="L" initialAmount="1.66057788110262e-20" metaid="_986382" name="acetylcholine" substanceUnits="mole">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>ligand</p>
+                    </body>
+                </notes>
+            <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986382">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.ebi.ac.uk/chebi/#CHEBI:15355"/>
+<rdf:li rdf:resource="http://www.genome.jp/kegg/compound/#C01996"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+</species>
+        </listOfSpecies>
+        <listOfParameters>
+            <parameter constant="true" id="kf_0" units="bimolRate" value="3e8"/>
+            <parameter constant="true" id="kr_0" units="unimolRate" value="8000"/>
+            <parameter constant="true" id="kf_1" units="bimolRate" value="1.5e8"/>
+            <parameter constant="true" id="kr_1" units="unimolRate" value="16000"/>
+            <parameter constant="true" id="kf_2" units="unimolRate" value="3e4"/>
+            <parameter constant="true" id="kr_2" units="unimolRate" value="7e2"/>
+            <parameter constant="true" id="kf_3" units="bimolRate" value="3e8"/>
+            <parameter constant="true" id="kr_3" units="unimolRate" value="8.64"/>
+            <parameter constant="true" id="kf_4" units="bimolRate" value="1.5e8"/>
+            <parameter constant="true" id="kr_4" units="unimolRate" value="17.28"/>
+            <parameter constant="true" id="kf_5" units="unimolRate" value="0.54"/>
+            <parameter constant="true" id="kr_5" units="unimolRate" value="1.08e4"/>
+            <parameter constant="true" id="kf_6" units="unimolRate" value="1.3e2"/>
+            <parameter constant="true" id="kr_6" units="unimolRate" value="2.74e3"/>
+            <parameter constant="true" id="kf_7" units="bimolRate" value="3e8"/>
+            <parameter constant="true" id="kr_7" units="unimolRate" value="4"/>
+            <parameter constant="true" id="kf_8" units="bimolRate" value="1.5e8"/>
+            <parameter constant="true" id="kr_8" units="unimolRate" value="8"/>
+            <parameter constant="true" id="kf_9" units="unimolRate" value="19.7"/>
+            <parameter constant="true" id="kr_9" units="unimolRate" value="3.74"/>
+            <parameter constant="true" id="kf_10" units="unimolRate" value="19.85"/>
+            <parameter constant="true" id="kr_10" units="unimolRate" value="1.74"/>
+            <parameter constant="true" id="kf_11" units="unimolRate" value="20"/>
+            <parameter constant="true" id="kr_11" units="unimolRate" value="0.81"/>
+            <parameter constant="true" id="kf_12" units="bimolRate" value="3e8"/>
+            <parameter constant="true" id="kr_12" units="unimolRate" value="4"/>
+            <parameter constant="true" id="kf_13" units="bimolRate" value="1.5e8"/>
+            <parameter constant="true" id="kr_13" units="unimolRate" value="8"/>
+            <parameter constant="true" id="kf_14" units="unimolRate" value="0.05"/>
+            <parameter constant="true" id="kr_14" units="unimolRate" value="0.0012"/>
+            <parameter constant="true" id="kf_15" units="unimolRate" value="0.05"/>
+            <parameter constant="true" id="kr_15" units="unimolRate" value="0.0012"/>
+            <parameter constant="true" id="kf_16" units="unimolRate" value="0.05"/>
+            <parameter constant="true" id="kr_16" units="unimolRate" value="0.0012"/>
+        </listOfParameters>
+        <listOfReactions>
+            <reaction id="React0" metaid="_986402" name="React0">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>first ligand on basal</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986402">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0042166"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="B"/>
+                    <speciesReference species="L"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="BL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_0 * B * L - kr_0 * BL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_0</ci>
+                                <ci>B</ci>
+                                <ci>L</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_0</ci>
+                                <ci>BL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React1" metaid="_986423" name="React1">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>second ligand on basal</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986423">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0042166"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="BL"/>
+                    <speciesReference species="L"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="BLL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_1 * BL * L - kr_1 * BLL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_1</ci>
+                                <ci>BL</ci>
+                                <ci>L</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_1</ci>
+                                <ci>BLL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React2" metaid="_986443" name="React2">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>opening of biliganded</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986443">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0004889"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="BLL"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="ALL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_2 * BLL - kr_2 * ALL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_2</ci>
+                                <ci>BLL</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_2</ci>
+                                <ci>ALL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React3" metaid="_986462" name="React3">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>first ligand on active</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986462">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0042166"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="A"/>
+                    <speciesReference species="L"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="AL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_3 * A * L - kr_3 * AL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_3</ci>
+                                <ci>A</ci>
+                                <ci>L</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_3</ci>
+                                <ci>AL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React4" metaid="_986485" name="React4">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>second ligand on active</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986485">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0042166"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="AL"/>
+                    <speciesReference species="L"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="ALL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_4 * AL * L - kr_4 * ALL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_4</ci>
+                                <ci>AL</ci>
+                                <ci>L</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_4</ci>
+                                <ci>ALL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React5" metaid="_986503" name="React5">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>opening of unliganded</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986503">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0004889"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="B"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="A"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_5 * B - kr_5 * A) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_5</ci>
+                                <ci>B</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_5</ci>
+                                <ci>A</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React6" metaid="_986522" name="React6">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>opening of monoliganded</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986522">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0004889"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="BL"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="AL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_6 * BL - kr_6 * AL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_6</ci>
+                                <ci>BL</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_6</ci>
+                                <ci>AL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React7" metaid="_986542" name="React7">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>first ligand on intermediate</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986542">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0042166"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="I"/>
+                    <speciesReference species="L"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="IL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_7 * I * L - kr_7 * IL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_7</ci>
+                                <ci>I</ci>
+                                <ci>L</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_7</ci>
+                                <ci>IL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React8" metaid="_986563" name="React8">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>second ligand on intermediate</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986563">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0042166"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="IL"/>
+                    <speciesReference species="L"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="ILL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_8 * IL * L - kr_8 * ILL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_8</ci>
+                                <ci>IL</ci>
+                                <ci>L</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_8</ci>
+                                <ci>ILL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React9" metaid="_986583" name="React9">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>unlig act &lt;=&gt; unlig interm</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986583">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0004889"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="A"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="I"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_9 * A - kr_9 * I) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_9</ci>
+                                <ci>A</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_9</ci>
+                                <ci>I</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React10" metaid="_986602" name="React10">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>monolig act &lt;=&gt; monolig interm</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986602">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0004889"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="AL"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="IL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_10 * AL - kr_10 * IL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_10</ci>
+                                <ci>AL</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_10</ci>
+                                <ci>IL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React11" metaid="_986623" name="React11">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>bilig act &lt;=&gt; bilig interm</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986623">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0004889"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="ALL"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="ILL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_11 * ALL - kr_11 * ILL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_11</ci>
+                                <ci>ALL</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_11</ci>
+                                <ci>ILL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React12" metaid="_986643" name="React12">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>first ligand on desensitised</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986643">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0042166"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="D"/>
+                    <speciesReference species="L"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="DL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_12 * D * L - kr_12 * DL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_12</ci>
+                                <ci>D</ci>
+                                <ci>L</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_12</ci>
+                                <ci>DL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React13" metaid="_986663" name="React13">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>second ligand on desensitised</p>
+                    </body>
+                </notes>
+                <annotation>
+<rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<rdf:Description rdf:about="#_986663">
+<dc:relation>
+<rdf:Bag>
+<rdf:li rdf:resource="http://www.geneontology.org/#GO:0042166"/>
+</rdf:Bag>
+</dc:relation>
+</rdf:Description>
+</rdf:RDF>
+</annotation>
+<listOfReactants>
+                    <speciesReference species="DL"/>
+                    <speciesReference species="L"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="DLL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_13 * DL * L - kr_13 * DLL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_13</ci>
+                                <ci>DL</ci>
+                                <ci>L</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_13</ci>
+                                <ci>DLL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React14" metaid="_986683" name="React14">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>unlig interm &lt;=&gt; unlig desen</p>
+                    </body>
+                </notes>
+                <listOfReactants>
+                    <speciesReference species="I"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="D"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_14 * I - kr_14 * D) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_14</ci>
+                                <ci>I</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_14</ci>
+                                <ci>D</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React15" metaid="_986702" name="React15">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>monolig interm &lt;=&gt; monolig desen</p>
+                    </body>
+                </notes>
+                <listOfReactants>
+                    <speciesReference species="IL"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="DL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_15 * IL - kr_15 * DL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_15</ci>
+                                <ci>IL</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_15</ci>
+                                <ci>DL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+            <reaction id="React16" metaid="_986722" name="React16">
+                <notes>
+                    <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p>bilig interm &lt;=&gt; bilig desen</p>
+                    </body>
+                </notes>
+                <listOfReactants>
+                    <speciesReference species="ILL"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="DLL"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <notes>
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                            <p>(kf_16 * ILL - kr_16 * DLL) * comp1</p>
+                        </body>
+                    </notes>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <minus/>
+                            <apply>
+                                <times/>
+                                <ci>kf_16</ci>
+                                <ci>ILL</ci>
+                            </apply>
+                            <apply>
+                                <times/>
+                                <ci>kr_16</ci>
+                                <ci>DLL</ci>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+        </listOfReactions>
+    </model>
+</sbml>

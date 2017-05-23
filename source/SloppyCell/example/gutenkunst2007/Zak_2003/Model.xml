@@ -1,0 +1,2355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by XMLPrettyPrinter on 12/12/2002 -->
+<!-- Modified by DEZ 10/12/2003 -->
+<sbml xmlns = "http://www.sbml.org/sbml/level1" level = "1" version = "1" xmlns:jd = "http://www.sys-bio.org/sbml">
+   <!--                     -->
+   <!--  Model Starts Here  -->
+   <!--                     -->
+   <model name = "untitled">
+      <listOfCompartments>
+         <compartment name = "uVol" volume = "1"/>
+      </listOfCompartments>
+      <listOfSpecies>
+         <specie name = "MA" boundaryCondition = "false" initialAmount = "46" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "A" boundaryCondition = "false" initialAmount = "16131" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "PAA" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "APAA" boundaryCondition = "false" initialAmount = "2" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "PBAF" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "APBAF" boundaryCondition = "false" initialAmount = "2" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "F2PBAF" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "AF2PBAF" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "MB" boundaryCondition = "false" initialAmount = "6" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "B" boundaryCondition = "false" initialAmount = "46" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "AB" boundaryCondition = "false" initialAmount = "1152" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "time_source" boundaryCondition = "false" initialAmount = "1" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "time" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "S_t" boundaryCondition = "false" initialAmount = "1" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "Q" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "EQ" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "E" boundaryCondition = "false" initialAmount = "145280" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "EQPFEQ" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "PFEQ" boundaryCondition = "false" initialAmount = "2" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "MF" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "F" boundaryCondition = "false" initialAmount = "17" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "F2" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "ME" boundaryCondition = "false" initialAmount = "6" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "PED" boundaryCondition = "false" initialAmount = "2" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "D2PED" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "PDCF" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "F2PDCF" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "C2PDCF" boundaryCondition = "false" initialAmount = "2" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "C2F2PDCF" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "D2PCAD" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "PCAD" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "AD2PCAD" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "APCAD" boundaryCondition = "false" initialAmount = "2" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "MD" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "D" boundaryCondition = "false" initialAmount = "16" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "D2" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "MC" boundaryCondition = "false" initialAmount = "46" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "C" boundaryCondition = "false" initialAmount = "2205" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "C2" boundaryCondition = "false" initialAmount = "7534" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "PGC" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "C2PGC" boundaryCondition = "false" initialAmount = "2" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "PKC" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "C2PKC" boundaryCondition = "false" initialAmount = "2" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "MG" boundaryCondition = "false" initialAmount = "3" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "G" boundaryCondition = "false" initialAmount = "474" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "G2" boundaryCondition = "false" initialAmount = "348" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "MK" boundaryCondition = "false" initialAmount = "3" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "K" boundaryCondition = "false" initialAmount = "474" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "K2" boundaryCondition = "false" initialAmount = "348" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "G2PHG" boundaryCondition = "false" initialAmount = "1" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "PHG" boundaryCondition = "false" initialAmount = "1" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "MH" boundaryCondition = "false" initialAmount = "10" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "H" boundaryCondition = "false" initialAmount = "1201335" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "K2PJK" boundaryCondition = "false" initialAmount = "1" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "PJK" boundaryCondition = "false" initialAmount = "1" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "MJ" boundaryCondition = "false" initialAmount = "60" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "J" boundaryCondition = "false" initialAmount = "192135" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+
+         <specie name = "X" boundaryCondition = "false" initialAmount = "0" compartment = "uVol">
+            <annotations>
+              </annotations>
+         </specie>
+      </listOfSpecies>
+
+      <listOfReactions>
+
+         <reaction name = "RTA" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MA" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "A" stoichiometry = "1"/>
+               <specieReference specie = "MA" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kTA*MA">
+               <listOfParameters>
+                  <parameter name = "kTA" value = "2.5"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+
+         <reaction name = "RTB" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MB" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "B" stoichiometry = "1"/>
+               <specieReference specie = "MB" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kTB*MB">
+               <listOfParameters>
+                  <parameter name = "kTB" value = "1.2"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDMA" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MA" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDMA*MA">
+               <listOfParameters>
+                  <parameter name = "kDMA" value = "0.031"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDA" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "A" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDA*A">
+               <listOfParameters>
+                  <parameter name = "kDA" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDMB" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MB" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDMB*MB">
+               <listOfParameters>
+                  <parameter name = "kDMB" value = "0.011"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDB" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "B" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDB*B">
+               <listOfParameters>
+                  <parameter name = "kDB" value = "0.0029"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDAB" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "AB" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDAB*AB">
+               <listOfParameters>
+                  <parameter name = "kDAB" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RAB" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "A" stoichiometry = "1"/>
+               <specieReference specie = "B" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "AB" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kAB*A*B">
+               <listOfParameters>
+                  <parameter name = "kAB" value = "0.0059"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+
+         <reaction name = "RUAB" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "AB" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "A" stoichiometry = "1"/>
+               <specieReference specie = "B" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kUAB*AB">
+               <listOfParameters>
+                  <parameter name = "kUAB" value = "3.8"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+
+         <reaction name = "RA_B_PAA" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "A" stoichiometry = "1"/>
+               <specieReference specie = "PAA" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "APAA" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kPAA*A*PAA">
+               <listOfParameters>
+                  <parameter name = "kPAA" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RA_B_PBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "A" stoichiometry = "1"/>
+               <specieReference specie = "PBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "APBAF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kPBAF*A*PBAF">
+               <listOfParameters>
+                  <parameter name = "kPBAF" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RA_B_F2PBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "A" stoichiometry = "1"/>
+               <specieReference specie = "F2PBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "AF2PBAF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kPBAF*A*F2PBAF">
+               <listOfParameters>
+                  <parameter name = "kPBAF" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRPAA" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "PAA" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MA" stoichiometry = "1"/>
+               <specieReference specie = "PAA" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kRPAA*PAA">
+               <listOfParameters>
+                  <parameter name = "kRPAA" value = "0.00073"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRAPAA" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "APAA" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MA" stoichiometry = "1"/>
+               <specieReference specie = "APAA" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kRAPAA*APAA">
+               <listOfParameters>
+                  <parameter name = "kRAPAA" value = "0.73"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRAPBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "APBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MB" stoichiometry = "1"/>
+               <specieReference specie = "APBAF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kRAPBAF*APBAF">
+               <listOfParameters>
+                  <parameter name = "kRAPBAF" value = "0.036"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRPBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "PBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MB" stoichiometry = "1"/>
+               <specieReference specie = "PBAF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kRPBAF*PBAF">
+               <listOfParameters>
+                  <parameter name = "kRPBAF" value = "0.00036"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRF2PBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F2PBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MB" stoichiometry = "1"/>
+               <specieReference specie = "F2PBAF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kRF2PBAF*F2PBAF">
+               <listOfParameters>
+                  <parameter name = "kRF2PBAF" value = "0.36"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRAF2PBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "AF2PBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MB" stoichiometry = "1"/>
+               <specieReference specie = "AF2PBAF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kRAF2PBAF*AF2PBAF">
+               <listOfParameters>
+                  <parameter name = "kRAF2PBAF" value = "0.72"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RA_U_APAA" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "APAA" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "A" stoichiometry = "1"/>
+               <specieReference specie = "PAA" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kUPAA*APAA">
+               <listOfParameters>
+                  <parameter name = "kUPAA" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RA_U_APBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "APBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "A" stoichiometry = "1"/>
+               <specieReference specie = "PBAF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kUPBAF*APBAF">
+               <listOfParameters>
+                  <parameter name = "kUPBAF" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RA_U_AF2PBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "AF2PBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "A" stoichiometry = "1"/>
+               <specieReference specie = "F2PBAF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kUPBAF*AF2PBAF">
+               <listOfParameters>
+                  <parameter name = "kUPBAF" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "Rtime" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "time_source" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "time" stoichiometry = "1"/>
+               <specieReference specie = "time_source" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "time_source">
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RQ_source" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "S_t" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "Q" stoichiometry = "1"/>
+               <specieReference specie = "S_t" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "CQ*S_t">
+               <listOfParameters>
+                  <parameter name = "CQ" value = "752.5"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "REQ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "Q" stoichiometry = "1"/>
+               <specieReference specie = "E" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "EQ" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kEQ*Q*E">
+               <listOfParameters>
+                  <parameter name = "kEQ" value = "0.0024"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RUEQ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "EQ" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "Q" stoichiometry = "1"/>
+               <specieReference specie = "E" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kUEQ*EQ">
+               <listOfParameters>
+                  <parameter name = "kUEQ" value = "3.6"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "REQ_U_PFEQ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "EQPFEQ" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "PFEQ" stoichiometry = "1"/>
+               <specieReference specie = "EQ" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kUPFEQ*EQPFEQ">
+               <listOfParameters>
+                  <parameter name = "kUPFEQ" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "REQ_B_PFEQ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "EQ" stoichiometry = "1"/>
+               <specieReference specie = "PFEQ" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "EQPFEQ" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kPFEQ*EQ*PFEQ">
+               <listOfParameters>
+                  <parameter name = "kPFEQ" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRPFEQ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "PFEQ" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MF" stoichiometry = "1"/>
+               <specieReference specie = "PFEQ" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kRPFEQ*PFEQ">
+               <listOfParameters>
+                  <parameter name = "kRPFEQ" value = "0.00073"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RREQPFEQ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "EQPFEQ" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MF" stoichiometry = "1"/>
+               <specieReference specie = "EQPFEQ" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kREQPFEQ*EQPFEQ">
+               <listOfParameters>
+                  <parameter name = "kREQPFEQ" value = "0.73"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDF*F">
+               <listOfParameters>
+                  <parameter name = "kDF" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDQ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "Q" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDQ*Q">
+               <listOfParameters>
+                  <parameter name = "kDQ" value = "1"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDMF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDMF*MF">
+               <listOfParameters>
+                  <parameter name = "kDMF" value = "0.031"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDF2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDF2*F2">
+               <listOfParameters>
+                  <parameter name = "kDF2" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDEQ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "EQ" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDEQ*EQ">
+               <listOfParameters>
+                  <parameter name = "kDEQ" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDE" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "E" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kDE*E">
+               <listOfParameters>
+                  <parameter name = "kDE" value = "0.00078"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RTF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "F" stoichiometry = "1"/>
+               <specieReference specie = "MF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kTF*MF">
+               <listOfParameters>
+                  <parameter name = "kTF" value = "2.5"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RUF2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "F" stoichiometry = "2"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kUF2*F2">
+               <listOfParameters>
+                  <parameter name = "kUF2" value = "3.8"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RF2_U_F2PBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F2PBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "PBAF" stoichiometry = "1"/>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kUPBAF*F2PBAF">
+               <listOfParameters>
+                  <parameter name = "kUPBAF" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RF2_U_AF2PBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "AF2PBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "APBAF" stoichiometry = "1"/>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kUPBAF*AF2PBAF">
+               <listOfParameters>
+                  <parameter name = "kUPBAF" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RF2_B_PBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+               <specieReference specie = "PBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "F2PBAF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+              </annotations>
+            <kineticLaw formula = "kPBAF*F2*PBAF">
+               <listOfParameters>
+                  <parameter name = "kPBAF" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RF2_B_APBAF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+               <specieReference specie = "APBAF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "AF2PBAF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPBAF*F2*APBAF">
+               <listOfParameters>
+                  <parameter name = "kPBAF" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RTE" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "ME" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "E" stoichiometry = "1"/>
+               <specieReference specie = "ME" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kTE*ME">
+               <listOfParameters>
+                  <parameter name = "kTE" value = "18.9"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDME" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "ME" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDME*ME">
+               <listOfParameters>
+                  <parameter name = "kDME" value = "0.0014"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRPED" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "PED" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "ME" stoichiometry = "1"/>
+               <specieReference specie = "PED" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRPED*PED">
+               <listOfParameters>
+                  <parameter name = "kRPED" value = "0.0042"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRD2PED" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D2PED" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "ME" stoichiometry = "1"/>
+               <specieReference specie = "D2PED" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRD2PED*D2PED">
+               <listOfParameters>
+                  <parameter name = "kRD2PED" value = "0.00000042"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRPDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MD" stoichiometry = "1"/>
+               <specieReference specie = "PDCF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRPDCF*PDCF">
+               <listOfParameters>
+                  <parameter name = "kRPDCF" value = "0.00073"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRF2PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F2PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MD" stoichiometry = "1"/>
+               <specieReference specie = "F2PDCF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRF2PDCF*F2PDCF">
+               <listOfParameters>
+                  <parameter name = "kRF2PDCF" value = "0.73"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRC2F2PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2F2PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MD" stoichiometry = "1"/>
+               <specieReference specie = "C2F2PDCF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRC2F2PDCF*C2F2PDCF">
+               <listOfParameters>
+                  <parameter name = "kRC2F2PDCF" value = "0.73"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRC2PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MD" stoichiometry = "1"/>
+               <specieReference specie = "C2PDCF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRC2PDCF*C2PDCF">
+               <listOfParameters>
+                  <parameter name = "kRC2PDCF" value = "0.0"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RTD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "D" stoichiometry = "1"/>
+               <specieReference specie = "MD" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kTD*MD">
+               <listOfParameters>
+                  <parameter name = "kTD" value = "2.5"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDMD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDMD*MD">
+               <listOfParameters>
+                  <parameter name = "kDMD" value = "0.031"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDEGD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDEGD*D">
+               <listOfParameters>
+                  <parameter name = "kDEGD" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDD2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D2" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDD2*D2">
+               <listOfParameters>
+                  <parameter name = "kDD2" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RUD2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D2" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "D" stoichiometry = "2"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUD2*D2">
+               <listOfParameters>
+                  <parameter name = "kUD2" value = "3.8"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RD2_B_PED" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D2" stoichiometry = "1"/>
+               <specieReference specie = "PED" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "D2PED" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPED*D2*PED">
+               <listOfParameters>
+                  <parameter name = "kPED" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RD2_U_D2PED" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D2PED" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "PED" stoichiometry = "1"/>
+               <specieReference specie = "D2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPED*D2PED">
+               <listOfParameters>
+                  <parameter name = "kUPED" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDMC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MC" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDMC*MC">
+               <listOfParameters>
+                  <parameter name = "kDMC" value = "0.031"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDC*C">
+               <listOfParameters>
+                  <parameter name = "kDC" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDC2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDC2*C2">
+               <listOfParameters>
+                  <parameter name = "kDC2" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RTC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MC" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "C" stoichiometry = "1"/>
+               <specieReference specie = "MC" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kTC*MC">
+               <listOfParameters>
+                  <parameter name = "kTC" value = "2.5"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RUC2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "C" stoichiometry = "2"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUC2*C2">
+               <listOfParameters>
+                  <parameter name = "kUC2" value = "3.8"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RF2_B_PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+               <specieReference specie = "PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "F2PDCF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPDCF*F2*PDCF">
+               <listOfParameters>
+                  <parameter name = "kPDCF" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RF2_B_C2PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+               <specieReference specie = "C2PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "C2F2PDCF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPDCF*F2*C2PDCF">
+               <listOfParameters>
+                  <parameter name = "kPDCF" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RF2_U_F2PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F2PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "PDCF" stoichiometry = "1"/>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPDCF*F2PDCF">
+               <listOfParameters>
+                  <parameter name = "kUPDCF" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RF2_U_C2F2PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2F2PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "C2PDCF" stoichiometry = "1"/>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPDCF*C2F2PDCF">
+               <listOfParameters>
+                  <parameter name = "kUPDCF" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRD2PCAD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D2PCAD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MC" stoichiometry = "1"/>
+               <specieReference specie = "D2PCAD" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRD2PCAD*D2PCAD">
+               <listOfParameters>
+                  <parameter name = "kRD2PCAD" value = "0.0"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRPCAD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "PCAD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MC" stoichiometry = "1"/>
+               <specieReference specie = "PCAD" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRPCAD*PCAD">
+               <listOfParameters>
+                  <parameter name = "kRPCAD" value = "0.00073"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRAD2PCAD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "AD2PCAD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MC" stoichiometry = "1"/>
+               <specieReference specie = "AD2PCAD" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRAD2PCAD*AD2PCAD">
+               <listOfParameters>
+                  <parameter name = "kRAD2PCAD" value = "0.073"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRAPCAD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "APCAD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MC" stoichiometry = "1"/>
+               <specieReference specie = "APCAD" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRAPCAD*APCAD">
+               <listOfParameters>
+                  <parameter name = "kRAPCAD" value = "0.73"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RC2_B_PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+               <specieReference specie = "PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "C2PDCF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPDCF*C2*PDCF">
+               <listOfParameters>
+                  <parameter name = "kPDCF" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RC2_B_F2PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+               <specieReference specie = "F2PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "C2F2PDCF" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPDCF*C2*F2PDCF">
+               <listOfParameters>
+                  <parameter name = "kPDCF" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RC2_U_C2PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "PDCF" stoichiometry = "1"/>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPDCF*C2PDCF">
+               <listOfParameters>
+                  <parameter name = "kUPDCF" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RC2_U_C2F2PDCF" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2F2PDCF" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "F2PDCF" stoichiometry = "1"/>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPDCF*C2F2PDCF">
+               <listOfParameters>
+                  <parameter name = "kUPDCF" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RD2_B_PCAD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D2" stoichiometry = "1"/>
+               <specieReference specie = "PCAD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "D2PCAD" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPCAD*D2*PCAD">
+               <listOfParameters>
+                  <parameter name = "kPCAD" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RD2_B_APCAD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D2" stoichiometry = "1"/>
+               <specieReference specie = "APCAD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "AD2PCAD" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPCAD*D2*APCAD">
+               <listOfParameters>
+                  <parameter name = "kPCAD" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RD2_U_D2PCAD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D2PCAD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "D2" stoichiometry = "1"/>
+               <specieReference specie = "PCAD" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPCAD*D2PCAD">
+               <listOfParameters>
+                  <parameter name = "kUPCAD" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RD2_U_AD2PCAD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "AD2PCAD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "D2" stoichiometry = "1"/>
+               <specieReference specie = "APCAD" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPCAD*AD2PCAD">
+               <listOfParameters>
+                  <parameter name = "kUPCAD" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RA_B_PCAD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "A" stoichiometry = "1"/>
+               <specieReference specie = "PCAD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "APCAD" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPCAD*A*PCAD">
+               <listOfParameters>
+                  <parameter name = "kPCAD" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RA_U_APCAD" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "APCAD" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "PCAD" stoichiometry = "1"/>
+               <specieReference specie = "A" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPCAD*APCAD">
+               <listOfParameters>
+                  <parameter name = "kUPCAD" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDMG" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MG" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDMG*MG">
+               <listOfParameters>
+                  <parameter name = "kDMG" value = "0.031"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDG" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "G" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDG*G">
+               <listOfParameters>
+                  <parameter name = "kDG" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDG2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "G2" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDG2*G2">
+               <listOfParameters>
+                  <parameter name = "kDG2" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDMH" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MH" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDMH*MH">
+               <listOfParameters>
+                  <parameter name = "kDMH" value = "0.00048"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDH" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "H" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDH*H">
+               <listOfParameters>
+                  <parameter name = "kDH" value = "0.00016"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDK2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "K2" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDK2*K2">
+               <listOfParameters>
+                  <parameter name = "kDK2" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDK" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "K" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDK*K">
+               <listOfParameters>
+                  <parameter name = "kDK" value = "0.0066"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDMK" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MK" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDMK*MK">
+               <listOfParameters>
+                  <parameter name = "kDMK" value = "0.031"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDMJ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MJ" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDMJ*MJ">
+               <listOfParameters>
+                  <parameter name = "kDMJ" value = "0.0097"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RDJ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "J" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "X" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kDJ*J">
+               <listOfParameters>
+                  <parameter name = "kDJ" value = "0.0077"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRPGC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "PGC" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MG" stoichiometry = "1"/>
+               <specieReference specie = "PGC" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRPGC*PGC">
+               <listOfParameters>
+                  <parameter name = "kRPGC" value = "0.73"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRC2PGC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2PGC" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MG" stoichiometry = "1"/>
+               <specieReference specie = "C2PGC" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRC2PGC*C2PGC">
+               <listOfParameters>
+                  <parameter name = "kRC2PGC" value = "0.00073"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRG2PHG" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "G2PHG" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MH" stoichiometry = "1"/>
+               <specieReference specie = "G2PHG" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRG2PHG*G2PHG">
+               <listOfParameters>
+                  <parameter name = "kRG2PHG" value = "0.0000042"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRPHG" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "PHG" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MH" stoichiometry = "1"/>
+               <specieReference specie = "PHG" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRPHG*PHG">
+               <listOfParameters>
+                  <parameter name = "kRPHG" value = "0.0042"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRK2PJK" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "K2PJK" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MJ" stoichiometry = "1"/>
+               <specieReference specie = "K2PJK" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRK2PJK*K2PJK">
+               <listOfParameters>
+                  <parameter name = "kRK2PJK" value = "0.73"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRPJK" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "PJK" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MJ" stoichiometry = "1"/>
+               <specieReference specie = "PJK" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRPJK*PJK">
+               <listOfParameters>
+                  <parameter name = "kRPJK" value = "0.00073"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRPKC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "PKC" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MK" stoichiometry = "1"/>
+               <specieReference specie = "PKC" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRPKC*PKC">
+               <listOfParameters>
+                  <parameter name = "kRPKC" value = "0.73"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RRC2PKC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2PKC" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "MK" stoichiometry = "1"/>
+               <specieReference specie = "C2PKC" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kRC2PKC*C2PKC">
+               <listOfParameters>
+                  <parameter name = "kRC2PKC" value = "0.00073"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RTG" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MG" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "G" stoichiometry = "1"/>
+               <specieReference specie = "MG" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kTG*MG">
+               <listOfParameters>
+                  <parameter name = "kTG" value = "2.5"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RTH" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MH" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "H" stoichiometry = "1"/>
+               <specieReference specie = "MH" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kTH*MH">
+               <listOfParameters>
+                  <parameter name = "kTH" value = "18.9"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RTJ" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MJ" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "J" stoichiometry = "1"/>
+               <specieReference specie = "MJ" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kTJ*MJ">
+               <listOfParameters>
+                  <parameter name = "kTJ" value = "24.5"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RTK" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "MK" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "K" stoichiometry = "1"/>
+               <specieReference specie = "MK" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kTK*MK">
+               <listOfParameters>
+                  <parameter name = "kTK" value = "2.5"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RUG2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "G2" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "G" stoichiometry = "2"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUG2*G2">
+               <listOfParameters>
+                  <parameter name = "kUG2" value = "3.8"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RUK2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "K2" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "K" stoichiometry = "2"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUK2*K2">
+               <listOfParameters>
+                  <parameter name = "kUK2" value = "3.8"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RC2_B_PGC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+               <specieReference specie = "PGC" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "C2PGC" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPGC*C2*PGC">
+               <listOfParameters>
+                  <parameter name = "kPGC" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RC2_B_PKC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+               <specieReference specie = "PKC" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "C2PKC" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPKC*C2*PKC">
+               <listOfParameters>
+                  <parameter name = "kPKC" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RC2_U_C2PGC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2PGC" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "PGC" stoichiometry = "1"/>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPGC*C2PGC">
+               <listOfParameters>
+                  <parameter name = "kUPGC" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RC2_U_C2PKC" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C2PKC" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "PKC" stoichiometry = "1"/>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPKC*C2PKC">
+               <listOfParameters>
+                  <parameter name = "kUPKC" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RG2_B_PHG" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "G2" stoichiometry = "1"/>
+               <specieReference specie = "PHG" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "G2PHG" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPHG*G2*PHG">
+               <listOfParameters>
+                  <parameter name = "kPHG" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RK2_B_PJK" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "K2" stoichiometry = "1"/>
+               <specieReference specie = "PJK" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "K2PJK" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kPJK*K2*PJK">
+               <listOfParameters>
+                  <parameter name = "kPJK" value = "0.00075"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RG2_U_G2PHG" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "G2PHG" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "PHG" stoichiometry = "1"/>
+               <specieReference specie = "G2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPHG*G2PHG">
+               <listOfParameters>
+                  <parameter name = "kUPHG" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RK2_U_K2PJK" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "K2PJK" stoichiometry = "1"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "PJK" stoichiometry = "1"/>
+               <specieReference specie = "K2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kUPJK*K2PJK">
+               <listOfParameters>
+                  <parameter name = "kUPJK" value = "0.39"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RF2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "F" stoichiometry = "2"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "F2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kF2*F^2">
+               <listOfParameters>
+                  <parameter name = "kF2" value = "0.0059"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RD2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "D" stoichiometry = "2"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "D2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kD2*D*D">
+               <listOfParameters>
+                  <parameter name = "kD2" value = "0.0059"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RC2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "C" stoichiometry = "2"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "C2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kC2*C*C">
+               <listOfParameters>
+                  <parameter name = "kC2" value = "0.0059"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RG2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "G" stoichiometry = "2"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "G2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kG2*G">
+               <listOfParameters>
+                  <parameter name = "kG2" value = "0.0059"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+         <reaction name = "RK2" reversible = "false">
+            <listOfReactants>
+               <specieReference specie = "K" stoichiometry = "2"/>
+            </listOfReactants>
+            <listOfProducts>
+               <specieReference specie = "K2" stoichiometry = "1"/>
+            </listOfProducts>
+            <annotations>
+            </annotations>
+            <kineticLaw formula = "kK2*K*K">
+               <listOfParameters>
+                  <parameter name = "kK2" value = "0.0059"/>
+               </listOfParameters>
+            </kineticLaw>
+         </reaction>
+
+ 
+      </listOfReactions>
+   </model>
+</sbml>

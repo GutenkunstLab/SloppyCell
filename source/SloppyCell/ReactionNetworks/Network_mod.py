@@ -3170,7 +3170,7 @@ class Network:
             try:
                 # Run f2py on the C. This may raise an exception if the command
                 # fails.
-                self.run_f2py(module_name, hide_f2py_output=True)
+                self.run_f2py(module_name, hide_f2py_output=False)
                 c_module = __import__(module_name)
                 if del_c_files:
                     os.unlink('%s.pyf' % module_name)
@@ -3301,36 +3301,46 @@ class Network:
         return mod_name
 
     def run_f2py(self, mod_name, hide_f2py_output=True):
+
         logger.debug('Running f2py for network %s.' % self.get_id())
         from numpy.distutils.exec_command import exec_command
         # Run f2py. The 'try... finally...' structure ensures that we stop
-        #  redirecting output if there's an exection in running f2py
+        #  redirecting output if there's an exception in running f2py
         # These options assume we're working with mingw.
         win_options = ''
         if sys.platform == 'win32':
             win_options = '--compiler=mingw32 --fcompiler=gnu'
         try:
             if hide_f2py_output:
+
                 redir = Utility.Redirector_mod.hideStdout()
+
                 redir.start()
+
+            print '\n continue'
             sc_path = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
-            command = '-c %(win_options)s %(mod_name)s.pyf '\
+            command = '-c -LC:\TDM-GCC-64\\x86_64-w64-mingw32\lib -IC:\Users\Keeyan\AppData\Local\Temp %(win_options)s %(mod_name)s.pyf '\
                     '%(mod_name)s.c %(sc_path)s/mtrand.c -I%(sc_path)s'\
                     % {'win_options': win_options, 'mod_name': mod_name, 
                        'sc_path': sc_path}
 
             prev_cflags = os.getenv('CFLAGS', '')
-            os.putenv('CFLAGS', prev_cflags + ' -Wno-unused-variable')
+            os.environ['CFLAGS']= prev_cflags + '-Wno-unused-variable -Wl,--allow-multiple-definition'
+            os.environ['LDFLAGS'] = '-Wl,--allow-multiple-definition'
+
+            current_flags = os.getenv('CFLAGS', '')
+            print 'currentflags:' + current_flags
             # f2py wants an extra argument at the front here. It's not actually
             # used though...
             oldargv = sys.argv
-            sys.argv =  ['f2py'] + command.split()
+            sys.argv =['f2py'] + command.split()
+            print sys.argv
             import numpy.f2py.f2py2e
             output = numpy.f2py.f2py2e.run_compile()
             sys.argv = sys.argv
             os.putenv('CFLAGS', prev_cflags)
         except SystemExit, X:
-            logger.warn('Call to f2py failed for network %s.' % self.get_id())
+            logger.warn('Call to f2py failed for network %s.  (Warning from ReactionNetworks.Network_mod)' % self.get_id())
             logger.warn(X)
         finally:
             if hide_f2py_output:

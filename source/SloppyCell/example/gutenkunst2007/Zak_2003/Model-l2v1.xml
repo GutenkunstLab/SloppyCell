@@ -1,0 +1,2894 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2" xmlns:jd="http://www.sys-bio.org/sbml" level="2" version="1">
+  <model id="untitled">
+    <listOfCompartments>
+      <compartment id="uVol" size="1"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="MA" compartment="uVol" initialAmount="46">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="A" compartment="uVol" initialAmount="16131">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="PAA" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="APAA" compartment="uVol" initialAmount="2">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="PBAF" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="APBAF" compartment="uVol" initialAmount="2">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="F2PBAF" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="AF2PBAF" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="MB" compartment="uVol" initialAmount="6">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="B" compartment="uVol" initialAmount="46">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="AB" compartment="uVol" initialAmount="1152">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="time_source" compartment="uVol" initialAmount="1">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="time" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="S_t" compartment="uVol" initialAmount="1">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="Q" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="EQ" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="E" compartment="uVol" initialAmount="145280">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="EQPFEQ" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="PFEQ" compartment="uVol" initialAmount="2">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="MF" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="F" compartment="uVol" initialAmount="17">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="F2" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="ME" compartment="uVol" initialAmount="6">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="PED" compartment="uVol" initialAmount="2">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="D2PED" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="PDCF" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="F2PDCF" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="C2PDCF" compartment="uVol" initialAmount="2">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="C2F2PDCF" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="D2PCAD" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="PCAD" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="AD2PCAD" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="APCAD" compartment="uVol" initialAmount="2">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="MD" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="D" compartment="uVol" initialAmount="16">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="D2" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="MC" compartment="uVol" initialAmount="46">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="C" compartment="uVol" initialAmount="2205">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="C2" compartment="uVol" initialAmount="7534">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="PGC" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="C2PGC" compartment="uVol" initialAmount="2">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="PKC" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="C2PKC" compartment="uVol" initialAmount="2">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="MG" compartment="uVol" initialAmount="3">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="G" compartment="uVol" initialAmount="474">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="G2" compartment="uVol" initialAmount="348">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="MK" compartment="uVol" initialAmount="3">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="K" compartment="uVol" initialAmount="474">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="K2" compartment="uVol" initialAmount="348">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="G2PHG" compartment="uVol" initialAmount="1">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="PHG" compartment="uVol" initialAmount="1">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="MH" compartment="uVol" initialAmount="10">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="H" compartment="uVol" initialAmount="1201335">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="K2PJK" compartment="uVol" initialAmount="1">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="PJK" compartment="uVol" initialAmount="1">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="MJ" compartment="uVol" initialAmount="60">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="J" compartment="uVol" initialAmount="192135">
+        <annotation>
+              </annotation>
+      </species>
+      <species id="X" compartment="uVol" initialAmount="0">
+        <annotation>
+              </annotation>
+      </species>
+    </listOfSpecies>
+    <listOfReactions>
+      <reaction id="RTA" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="MA"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="A"/>
+          <speciesReference species="MA"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kTA </ci>
+              <ci> MA </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kTA" value="2.5"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RTB" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="MB"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="B"/>
+          <speciesReference species="MB"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kTB </ci>
+              <ci> MB </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kTB" value="1.2"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDMA" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="MA"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDMA </ci>
+              <ci> MA </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDMA" value="0.031"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDA" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="A"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDA </ci>
+              <ci> A </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDA" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDMB" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="MB"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDMB </ci>
+              <ci> MB </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDMB" value="0.011"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDB" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="B"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDB </ci>
+              <ci> B </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDB" value="0.0029"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDAB" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="AB"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDAB </ci>
+              <ci> AB </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDAB" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RAB" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="A"/>
+          <speciesReference species="B"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="AB"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kAB </ci>
+              <ci> A </ci>
+              <ci> B </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kAB" value="0.0059"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RUAB" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="AB"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="A"/>
+          <speciesReference species="B"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUAB </ci>
+              <ci> AB </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUAB" value="3.8"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RA_B_PAA" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="A"/>
+          <speciesReference species="PAA"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="APAA"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPAA </ci>
+              <ci> A </ci>
+              <ci> PAA </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPAA" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RA_B_PBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="A"/>
+          <speciesReference species="PBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="APBAF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPBAF </ci>
+              <ci> A </ci>
+              <ci> PBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPBAF" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RA_B_F2PBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="A"/>
+          <speciesReference species="F2PBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="AF2PBAF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPBAF </ci>
+              <ci> A </ci>
+              <ci> F2PBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPBAF" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRPAA" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="PAA"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MA"/>
+          <speciesReference species="PAA"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRPAA </ci>
+              <ci> PAA </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRPAA" value="0.00073"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRAPAA" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="APAA"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MA"/>
+          <speciesReference species="APAA"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRAPAA </ci>
+              <ci> APAA </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRAPAA" value="0.73"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRAPBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="APBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MB"/>
+          <speciesReference species="APBAF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRAPBAF </ci>
+              <ci> APBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRAPBAF" value="0.036"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRPBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="PBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MB"/>
+          <speciesReference species="PBAF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRPBAF </ci>
+              <ci> PBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRPBAF" value="0.00036"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRF2PBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="F2PBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MB"/>
+          <speciesReference species="F2PBAF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRF2PBAF </ci>
+              <ci> F2PBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRF2PBAF" value="0.36"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRAF2PBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="AF2PBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MB"/>
+          <speciesReference species="AF2PBAF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRAF2PBAF </ci>
+              <ci> AF2PBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRAF2PBAF" value="0.72"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RA_U_APAA" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="APAA"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="A"/>
+          <speciesReference species="PAA"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPAA </ci>
+              <ci> APAA </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPAA" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RA_U_APBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="APBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="A"/>
+          <speciesReference species="PBAF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPBAF </ci>
+              <ci> APBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPBAF" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RA_U_AF2PBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="AF2PBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="A"/>
+          <speciesReference species="F2PBAF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPBAF </ci>
+              <ci> AF2PBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPBAF" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="Rtime" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="time_source"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="time"/>
+          <speciesReference species="time_source"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci> time_source </ci>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RQ_source" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="S_t"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Q"/>
+          <speciesReference species="S_t"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> CQ </ci>
+              <ci> S_t </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="CQ" value="752.5"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="REQ" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="Q"/>
+          <speciesReference species="E"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="EQ"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kEQ </ci>
+              <ci> Q </ci>
+              <ci> E </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kEQ" value="0.0024"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RUEQ" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="EQ"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Q"/>
+          <speciesReference species="E"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUEQ </ci>
+              <ci> EQ </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUEQ" value="3.6"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="REQ_U_PFEQ" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="EQPFEQ"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PFEQ"/>
+          <speciesReference species="EQ"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPFEQ </ci>
+              <ci> EQPFEQ </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPFEQ" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="REQ_B_PFEQ" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="EQ"/>
+          <speciesReference species="PFEQ"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="EQPFEQ"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPFEQ </ci>
+              <ci> EQ </ci>
+              <ci> PFEQ </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPFEQ" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRPFEQ" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="PFEQ"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MF"/>
+          <speciesReference species="PFEQ"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRPFEQ </ci>
+              <ci> PFEQ </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRPFEQ" value="0.00073"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RREQPFEQ" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="EQPFEQ"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MF"/>
+          <speciesReference species="EQPFEQ"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kREQPFEQ </ci>
+              <ci> EQPFEQ </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kREQPFEQ" value="0.73"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="F"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDF </ci>
+              <ci> F </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDF" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDQ" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="Q"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDQ </ci>
+              <ci> Q </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDQ" value="1"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDMF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="MF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDMF </ci>
+              <ci> MF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDMF" value="0.031"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDF2" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="F2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDF2 </ci>
+              <ci> F2 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDF2" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDEQ" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="EQ"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDEQ </ci>
+              <ci> EQ </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDEQ" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDE" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="E"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDE </ci>
+              <ci> E </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDE" value="0.00078"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RTF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="MF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="F"/>
+          <speciesReference species="MF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kTF </ci>
+              <ci> MF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kTF" value="2.5"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RUF2" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="F2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="F" stoichiometry="2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUF2 </ci>
+              <ci> F2 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUF2" value="3.8"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RF2_U_F2PBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="F2PBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PBAF"/>
+          <speciesReference species="F2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPBAF </ci>
+              <ci> F2PBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPBAF" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RF2_U_AF2PBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="AF2PBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="APBAF"/>
+          <speciesReference species="F2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPBAF </ci>
+              <ci> AF2PBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPBAF" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RF2_B_PBAF" reversible="false">
+        <annotation>
+              </annotation>
+        <listOfReactants>
+          <speciesReference species="F2"/>
+          <speciesReference species="PBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="F2PBAF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPBAF </ci>
+              <ci> F2 </ci>
+              <ci> PBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPBAF" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RF2_B_APBAF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="F2"/>
+          <speciesReference species="APBAF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="AF2PBAF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPBAF </ci>
+              <ci> F2 </ci>
+              <ci> APBAF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPBAF" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RTE" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="ME"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="E"/>
+          <speciesReference species="ME"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kTE </ci>
+              <ci> ME </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kTE" value="18.9"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDME" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="ME"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDME </ci>
+              <ci> ME </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDME" value="0.0014"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRPED" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="PED"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="ME"/>
+          <speciesReference species="PED"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRPED </ci>
+              <ci> PED </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRPED" value="0.0042"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRD2PED" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D2PED"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="ME"/>
+          <speciesReference species="D2PED"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRD2PED </ci>
+              <ci> D2PED </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRD2PED" value="4.2e-07"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRPDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MD"/>
+          <speciesReference species="PDCF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRPDCF </ci>
+              <ci> PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRPDCF" value="0.00073"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRF2PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="F2PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MD"/>
+          <speciesReference species="F2PDCF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRF2PDCF </ci>
+              <ci> F2PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRF2PDCF" value="0.73"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRC2F2PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2F2PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MD"/>
+          <speciesReference species="C2F2PDCF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRC2F2PDCF </ci>
+              <ci> C2F2PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRC2F2PDCF" value="0.73"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRC2PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MD"/>
+          <speciesReference species="C2PDCF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRC2PDCF </ci>
+              <ci> C2PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRC2PDCF" value="0"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RTD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="D"/>
+          <speciesReference species="MD"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kTD </ci>
+              <ci> MD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kTD" value="2.5"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDMD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDMD </ci>
+              <ci> MD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDMD" value="0.031"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDEGD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDEGD </ci>
+              <ci> D </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDEGD" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDD2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDD2 </ci>
+              <ci> D2 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDD2" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RUD2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="D" stoichiometry="2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUD2 </ci>
+              <ci> D2 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUD2" value="3.8"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RD2_B_PED" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D2"/>
+          <speciesReference species="PED"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="D2PED"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPED </ci>
+              <ci> D2 </ci>
+              <ci> PED </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPED" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RD2_U_D2PED" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D2PED"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PED"/>
+          <speciesReference species="D2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPED </ci>
+              <ci> D2PED </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPED" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDMC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MC"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDMC </ci>
+              <ci> MC </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDMC" value="0.031"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDC </ci>
+              <ci> C </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDC" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDC2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDC2 </ci>
+              <ci> C2 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDC2" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RTC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MC"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C"/>
+          <speciesReference species="MC"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kTC </ci>
+              <ci> MC </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kTC" value="2.5"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RUC2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C" stoichiometry="2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUC2 </ci>
+              <ci> C2 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUC2" value="3.8"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RF2_B_PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="F2"/>
+          <speciesReference species="PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="F2PDCF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPDCF </ci>
+              <ci> F2 </ci>
+              <ci> PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPDCF" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RF2_B_C2PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="F2"/>
+          <speciesReference species="C2PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C2F2PDCF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPDCF </ci>
+              <ci> F2 </ci>
+              <ci> C2PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPDCF" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RF2_U_F2PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="F2PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PDCF"/>
+          <speciesReference species="F2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPDCF </ci>
+              <ci> F2PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPDCF" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RF2_U_C2F2PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2F2PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C2PDCF"/>
+          <speciesReference species="F2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPDCF </ci>
+              <ci> C2F2PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPDCF" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRD2PCAD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D2PCAD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MC"/>
+          <speciesReference species="D2PCAD"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRD2PCAD </ci>
+              <ci> D2PCAD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRD2PCAD" value="0"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRPCAD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="PCAD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MC"/>
+          <speciesReference species="PCAD"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRPCAD </ci>
+              <ci> PCAD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRPCAD" value="0.00073"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRAD2PCAD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="AD2PCAD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MC"/>
+          <speciesReference species="AD2PCAD"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRAD2PCAD </ci>
+              <ci> AD2PCAD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRAD2PCAD" value="0.073"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRAPCAD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="APCAD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MC"/>
+          <speciesReference species="APCAD"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRAPCAD </ci>
+              <ci> APCAD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRAPCAD" value="0.73"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RC2_B_PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2"/>
+          <speciesReference species="PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C2PDCF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPDCF </ci>
+              <ci> C2 </ci>
+              <ci> PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPDCF" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RC2_B_F2PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2"/>
+          <speciesReference species="F2PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C2F2PDCF"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPDCF </ci>
+              <ci> C2 </ci>
+              <ci> F2PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPDCF" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RC2_U_C2PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PDCF"/>
+          <speciesReference species="C2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPDCF </ci>
+              <ci> C2PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPDCF" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RC2_U_C2F2PDCF" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2F2PDCF"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="F2PDCF"/>
+          <speciesReference species="C2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPDCF </ci>
+              <ci> C2F2PDCF </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPDCF" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RD2_B_PCAD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D2"/>
+          <speciesReference species="PCAD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="D2PCAD"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPCAD </ci>
+              <ci> D2 </ci>
+              <ci> PCAD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPCAD" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RD2_B_APCAD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D2"/>
+          <speciesReference species="APCAD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="AD2PCAD"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPCAD </ci>
+              <ci> D2 </ci>
+              <ci> APCAD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPCAD" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RD2_U_D2PCAD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D2PCAD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="D2"/>
+          <speciesReference species="PCAD"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPCAD </ci>
+              <ci> D2PCAD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPCAD" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RD2_U_AD2PCAD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="AD2PCAD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="D2"/>
+          <speciesReference species="APCAD"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPCAD </ci>
+              <ci> AD2PCAD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPCAD" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RA_B_PCAD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="A"/>
+          <speciesReference species="PCAD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="APCAD"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPCAD </ci>
+              <ci> A </ci>
+              <ci> PCAD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPCAD" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RA_U_APCAD" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="APCAD"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PCAD"/>
+          <speciesReference species="A"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPCAD </ci>
+              <ci> APCAD </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPCAD" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDMG" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MG"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDMG </ci>
+              <ci> MG </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDMG" value="0.031"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDG" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="G"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDG </ci>
+              <ci> G </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDG" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDG2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="G2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDG2 </ci>
+              <ci> G2 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDG2" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDMH" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MH"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDMH </ci>
+              <ci> MH </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDMH" value="0.00048"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDH" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="H"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDH </ci>
+              <ci> H </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDH" value="0.00016"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDK2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="K2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDK2 </ci>
+              <ci> K2 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDK2" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDK" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="K"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDK </ci>
+              <ci> K </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDK" value="0.0066"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDMK" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MK"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDMK </ci>
+              <ci> MK </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDMK" value="0.031"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDMJ" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MJ"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDMJ </ci>
+              <ci> MJ </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDMJ" value="0.0097"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RDJ" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="J"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="X"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kDJ </ci>
+              <ci> J </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kDJ" value="0.0077"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRPGC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="PGC"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MG"/>
+          <speciesReference species="PGC"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRPGC </ci>
+              <ci> PGC </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRPGC" value="0.73"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRC2PGC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2PGC"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MG"/>
+          <speciesReference species="C2PGC"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRC2PGC </ci>
+              <ci> C2PGC </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRC2PGC" value="0.00073"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRG2PHG" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="G2PHG"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MH"/>
+          <speciesReference species="G2PHG"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRG2PHG </ci>
+              <ci> G2PHG </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRG2PHG" value="4.2e-06"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRPHG" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="PHG"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MH"/>
+          <speciesReference species="PHG"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRPHG </ci>
+              <ci> PHG </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRPHG" value="0.0042"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRK2PJK" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="K2PJK"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MJ"/>
+          <speciesReference species="K2PJK"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRK2PJK </ci>
+              <ci> K2PJK </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRK2PJK" value="0.73"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRPJK" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="PJK"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MJ"/>
+          <speciesReference species="PJK"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRPJK </ci>
+              <ci> PJK </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRPJK" value="0.00073"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRPKC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="PKC"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MK"/>
+          <speciesReference species="PKC"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRPKC </ci>
+              <ci> PKC </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRPKC" value="0.73"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RRC2PKC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2PKC"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MK"/>
+          <speciesReference species="C2PKC"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kRC2PKC </ci>
+              <ci> C2PKC </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kRC2PKC" value="0.00073"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RTG" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MG"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="G"/>
+          <speciesReference species="MG"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kTG </ci>
+              <ci> MG </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kTG" value="2.5"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RTH" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MH"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="H"/>
+          <speciesReference species="MH"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kTH </ci>
+              <ci> MH </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kTH" value="18.9"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RTJ" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MJ"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="J"/>
+          <speciesReference species="MJ"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kTJ </ci>
+              <ci> MJ </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kTJ" value="24.5"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RTK" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="MK"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="K"/>
+          <speciesReference species="MK"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kTK </ci>
+              <ci> MK </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kTK" value="2.5"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RUG2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="G2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="G" stoichiometry="2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUG2 </ci>
+              <ci> G2 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUG2" value="3.8"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RUK2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="K2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="K" stoichiometry="2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUK2 </ci>
+              <ci> K2 </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUK2" value="3.8"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RC2_B_PGC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2"/>
+          <speciesReference species="PGC"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C2PGC"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPGC </ci>
+              <ci> C2 </ci>
+              <ci> PGC </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPGC" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RC2_B_PKC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2"/>
+          <speciesReference species="PKC"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C2PKC"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPKC </ci>
+              <ci> C2 </ci>
+              <ci> PKC </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPKC" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RC2_U_C2PGC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2PGC"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PGC"/>
+          <speciesReference species="C2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPGC </ci>
+              <ci> C2PGC </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPGC" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RC2_U_C2PKC" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C2PKC"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PKC"/>
+          <speciesReference species="C2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPKC </ci>
+              <ci> C2PKC </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPKC" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RG2_B_PHG" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="G2"/>
+          <speciesReference species="PHG"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="G2PHG"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPHG </ci>
+              <ci> G2 </ci>
+              <ci> PHG </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPHG" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RK2_B_PJK" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="K2"/>
+          <speciesReference species="PJK"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="K2PJK"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kPJK </ci>
+              <ci> K2 </ci>
+              <ci> PJK </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kPJK" value="0.00075"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RG2_U_G2PHG" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="G2PHG"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PHG"/>
+          <speciesReference species="G2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPHG </ci>
+              <ci> G2PHG </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPHG" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RK2_U_K2PJK" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="K2PJK"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PJK"/>
+          <speciesReference species="K2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kUPJK </ci>
+              <ci> K2PJK </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kUPJK" value="0.39"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RF2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="F" stoichiometry="2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="F2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kF2 </ci>
+              <apply>
+                <power/>
+                <ci> F </ci>
+                <cn type="integer"> 2 </cn>
+              </apply>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kF2" value="0.0059"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RD2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="D" stoichiometry="2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="D2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kD2 </ci>
+              <ci> D </ci>
+              <ci> D </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kD2" value="0.0059"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RC2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="C" stoichiometry="2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kC2 </ci>
+              <ci> C </ci>
+              <ci> C </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kC2" value="0.0059"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RG2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="G" stoichiometry="2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="G2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kG2 </ci>
+              <ci> G </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kG2" value="0.0059"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="RK2" reversible="false">
+        <annotation>
+            </annotation>
+        <listOfReactants>
+          <speciesReference species="K" stoichiometry="2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="K2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kK2 </ci>
+              <ci> K </ci>
+              <ci> K </ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="kK2" value="0.0059"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>

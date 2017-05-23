@@ -119,7 +119,7 @@ class Event:
 
         self.trigger = trigger
 
-        if ExprManip.extract_vars(trigger) == sets.Set(['time']):
+        if ExprManip.extract_vars(trigger) ==set(['time']):  # sets is deprecated, use built-in set instead
             self.timeTriggered = True
             ast = ExprManip.AST.strip_parse(trigger)
             firstArg = ExprManip.AST.ast2str(ast.args[0])

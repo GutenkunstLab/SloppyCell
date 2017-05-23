@@ -1,0 +1,313 @@
+&Model
+
+// The contents of this file are the work of G. von Dassow, E. Meir, E. M. Munro,
+// and G. M. Odell, 1997-2000.  The model encoded in this file should be treated
+// like any other piece of original scientific data, and must not be used in the
+// production of any publication without the express permission of its creators.
+
+&width		4
+&height		1
+&numsides	6
+&extent		100
+
+&Network	spnet
+
+&Genes
+
+	&en
+		&Location	cyto
+		&Color		cyan
+		&Show		on
+		&Scale		1
+		&Type		rna
+	&enden
+	
+	&EN
+		&Location	cyto
+		&Color		cyan
+		&Show		on
+		&Scale		1
+		&Type		protein
+	&endEN
+	
+	&wg
+		&Location	cyto
+		&Color		green
+		&Show		on
+		&Scale		1
+		&Type		rna
+	&endwg
+	
+	&IWG
+		&Location	cyto
+		&Color		green
+		&Show		off
+		&Scale		1
+		&Type		protein
+	&endIWG
+
+	&EWG
+		&Location	membrane
+		&Color		green
+		&Show		off
+		&Scale		1
+		&Type		protein
+	&endEWG
+	
+	&ptc
+		&Location	cyto
+		&Color		magenta
+		&Show		off
+		&Scale		1
+		&Type		rna
+	&endptc
+	
+	&PTC
+		&Location	membrane
+		&Color		magenta
+		&Show		off
+		&Scale		1
+		&Type		protein
+	&endPTC
+	
+	&cid
+		&Location	cyto
+		&Color		pink
+		&Show		off
+		&Scale		1
+		&Type		rna
+	&endcid
+	
+	&CID	
+		&Location	cyto
+		&Color		pink
+		&Show		on
+		&Scale		1
+		&Type		protein
+	&endCID
+	
+	&CN
+		&Location	cyto
+		&Color		pink
+		&Show		on
+		&Scale		1
+		&Type		protein
+	&endCN
+	
+	&hh
+		&Location	cyto
+		&Color		red
+		&Show		on
+		&Scale		1
+		&Type		rna
+	&endhh
+	
+	&HH
+		&Location	membrane
+		&Color		red
+		&Show		off
+		&Scale		1
+		&Type		protein
+	&endHH
+	
+	&PH
+		&Location	membrane
+		&Color		magenta
+		&Show		off
+		&Scale		1
+		&Type		complex
+	&endPH
+	
+	&B
+		&Location	cyto
+		&Color		white
+		&Show		off
+		&Scale		1
+		&Type		protein
+	&endB
+	
+&endGenes
+
+&Interactions
+	&en
+		&Txn2bAff CN EWG K_WGen nu_WGen H_en K_CNen nu_CNen
+		&DecayAff en H_en
+	&enden
+	
+	&EN
+		&TlnAff en H_EN
+		&DecayAff EN H_EN
+	&endEN
+
+	&wg
+		&Txn4Aff CN IWG CID H_wg K_WGwg nu_WGwg alpha_wg K_CIDwg nu_CIDwg beta_wg K_CNwg nu_CNwg
+		&DecayAff wg H_wg 
+	&endwg
+			
+	&IWG
+		&TlnAff wg H_IWG
+		&EndoIAff IWG EWG Endo_WG
+		&ExoIAff IWG EWG Exo_WG
+		&DecayAff IWG H_IWG
+	&endIWG
+
+	&EWG
+		&ExoEAff IWG EWG Exo_WG
+		&EndoEAff IWG EWG Endo_WG
+		&MxferOutAff EWG Mxfer_WG
+		&MxferInAff EWG Mxfer_WG
+		&LMxferEAff EWG LMxfer_WG
+		&LMxferIAff EWG LMxfer_WG
+		&DecayAff EWG H_EWG
+	&endEWG
+
+	&ptc
+		&Txn2aAff CN CID K_CIDptc nu_CIDptc H_ptc K_CNptc nu_CNptc
+		&DecayAff ptc H_ptc 
+	&endptc
+
+	&PTC
+		&HeterodimerizeA_ECAff	PTC	HH	K_PTC_HH	maxHH
+		&TlnAff ptc H_PTC 
+		&LMxferEAff PTC LMxfer_PTC
+		&LMxferIAff PTC LMxfer_PTC
+		&DecayAff PTC H_PTC 
+	&endPTC
+			
+	&cid
+		&Txn2aAff EN B K_Bcid nu_Bcid H_cid K_ENcid nu_ENcid 
+		&DecayAff cid H_cid 
+	&endcid
+			
+	&CID
+		&CleavageA_ICAff CID PTC K_PTCCID nu_PTCCID C_CID
+		&TlnAff cid H_CID 
+		&DecayAff CID H_CID 
+	&endCID
+			
+	&CN
+		&CleavageB_ICAff CID PTC K_PTCCID nu_PTCCID C_CID
+		&DecayAff CN H_CN 
+	&endCN
+			
+	&hh
+		&Txn2aAff CN EN K_ENhh nu_ENhh H_hh K_CNhh nu_CNhh
+		&DecayAff hh H_hh 
+	&endhh
+			
+	&HH
+		&HeterodimerizeA_ECAff	HH	PTC	K_PTC_HH	maxPTC
+		&TlnAff hh H_HH 
+		&LMxferEAff HH LMxfer_HH
+		&LMxferIAff HH LMxfer_HH
+		&DecayAff HH H_HH 
+	&endHH
+			
+	&PH
+		&HeterodimerizeB_ECAff	PTC	HH	K_PTC_HH	maxHH 
+		&DecayAff PH H_PH 
+	&endPH
+			
+	&B
+		&Formula1Aff B
+	&endB
+&endInteractions
+
+&ParameterValues
+
+		&K_WGen		0.1	0.001	1.0	Logarithmic
+		&K_CNen		0.1	0.001	1.0	Logarithmic
+		&K_WGwg		0.1	0.001	1.0	Logarithmic
+		&K_CIDwg	0.1	0.001	1.0	Logarithmic
+		&K_CNwg		0.1	0.001	1.0	Logarithmic
+		&K_CIDptc	0.1	0.001	1.0	Logarithmic
+		&K_CNptc	0.1	0.001	1.0	Logarithmic
+		&K_Bcid		0.1	0.001	1.0	Logarithmic
+		&K_ENcid	0.1	0.001	1.0	Logarithmic
+		&K_PTCCID	0.1	0.001	1.0	Logarithmic
+		&K_ENhh		0.1	0.001	1.0	Logarithmic
+		&K_CNhh		0.1	0.001	1.0	Logarithmic
+
+		&K_PTC_HH	0.0001	0.00001	0.001	Logarithmic
+		&maxPTC		1000	1000	1000000	Logarithmic
+		&maxHH		1000	1000	1000000	Logarithmic
+
+		&C_CID		0.1	0.01	1.0	Logarithmic
+
+		&nu_WGen	1.0	1.0	10.0	Linear
+		&nu_CNen	1.0	1.0	10.0	Linear
+		&nu_WGwg	1.0	1.0	10.0	Linear
+		&nu_CIDwg	1.0	1.0	10.0	Linear
+		&nu_CNwg	1.0	1.0	10.0	Linear
+		&nu_CIDptc	1.0	1.0	10.0	Linear
+		&nu_CNptc	1.0	1.0	10.0	Linear
+		&nu_Bcid	1.0	1.0	1.0		Linear
+		&nu_ENcid	1.0	1.0	10.0	Linear
+		&nu_PTCCID	1.0	1.0	10.0	Linear
+		&nu_ENhh	1.0	1.0	10.0	Linear
+		&nu_CNhh	1.0	1.0	10.0	Linear
+
+		&H_en	7.0	5.0	100.0	Linear
+		&H_EN	15.0	5.0	100.0	Linear
+		&H_wg	7.0	5.0	100.0	Linear
+		&H_IWG	15.0	5.0	100.0	Linear
+		&H_EWG	15.0	5.0	100.0	Linear
+		&H_ptc	7.0	5.0	100.0	Linear
+		&H_PTC	15.0	5.0	100.0	Linear
+		&H_cid	7.0	5.0	100.0	Linear
+		&H_CID	15.0	5.0	100.0	Linear
+		&H_CN	15.0	5.0	100.0	Linear
+		&H_hh	7.0	5.0	100.0	Linear
+		&H_HH	15.0	5.0	100.0	Linear
+		&H_PH	15.0	5.0	100.0	Linear
+
+		&alpha_wg	1.0	1.0	10.0	Logarithmic
+		&beta_wg	1.0	1.0	10.0	Logarithmic
+
+		&Endo_WG	0.001	0.001	1.0		Logarithmic
+		&Exo_WG		0.1		0.01	10.0	Logarithmic
+		&Mxfer_WG	0.001	0.001	1.0		Logarithmic
+		&LMxfer_WG	0.1		0.001	1.0		Logarithmic
+		&LMxfer_PTC	0.1		0.001	1.0		Logarithmic
+		&LMxfer_HH	0.1		0.001	1.0		Logarithmic
+
+&endParameterValues
+
+&InitLevels
+	&BackgroundLevel	en		0.0
+	&BackgroundLevel	EN		0.0
+	&BackgroundLevel	wg 		0.0
+	&BackgroundLevel	IWG		0.0
+	&BackgroundLevel	EWG		0.0
+	&BackgroundLevel	ptc		0.0
+	&BackgroundLevel	PTC		0.0
+	&BackgroundLevel	cid		0.0
+	&BackgroundLevel	CID		0.0
+	&BackgroundLevel	CN		0.0
+	&BackgroundLevel	hh		0.0
+	&BackgroundLevel	HH		0.0
+	&BackgroundLevel	PH		0.0
+	&BackgroundLevel	B		0.4
+	&ColumnIC
+		&Node	en
+		&Value	1.0
+		&Column	2
+	&endIC
+	&ColumnIC
+		&Node	EN
+		&Value	1.0
+		&Column	2
+	&endIC
+	&ColumnIC
+		&Node	wg
+		&Value	1.0
+		&Column	1
+	&endIC
+	&ColumnIC
+		&Node	IWG
+		&Value	1.0
+		&Column	1
+	&endIC
+&endInitLevels
+
+&endNetwork

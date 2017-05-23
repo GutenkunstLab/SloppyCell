@@ -1,15 +1,14 @@
 import cPickle
+import copy
 import logging
-import smtplib
+import random
 import sets
-from email.MIMEText import MIMEText
+import smtplib
 
 import scipy
-
-from scipy import linspace, logspace
 import scipy.linalg
-import random
-import copy
+from email.MIMEText import MIMEText
+
 
 def send_email(to_addr, from_addr=None, subject='', message=''):
     """
