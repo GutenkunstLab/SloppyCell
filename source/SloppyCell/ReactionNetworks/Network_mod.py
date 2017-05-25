@@ -11,6 +11,7 @@ import time
 import os
 import sys
 import operator
+import importlib
 
 import logging
 logger = logging.getLogger('ReactionNetworks.Network_mod')
@@ -22,7 +23,7 @@ import SloppyCell
 import SloppyCell.Utility as Utility
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
-
+import numpy.f2py.f2py2e
 import SloppyCell.ExprManip as ExprManip
 # We load a dictionary of previously-taken derivatives for efficiency
 ExprManip.load_derivs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
@@ -3131,7 +3132,7 @@ class Network:
     _py_func_dict_cache = {}
     _c_module_cache = {}
     # This is an option to disable compilation of C modules.
-    def exec_dynamic_functions(self, disable_c=False, del_c_files=True, 
+    def exec_dynamic_functions(self, disable_c=False, del_c_files=True,
                                curr_c_code=None):
         # only get the bodies that were created.
         curr_py_bodies = '\n'.join([body for body in self._dynamic_funcs_python.values()\
@@ -3171,9 +3172,11 @@ class Network:
                 # Run f2py on the C. This may raise an exception if the command
                 # fails.
                 self.run_f2py(module_name, hide_f2py_output=False)
-                c_module = __import__(module_name)
+                c_module = importlib.import_module(module_name)
                 if del_c_files:
+
                     os.unlink('%s.pyf' % module_name)
+
                     os.unlink('%s.c' % module_name)
                     try:
                         os.unlink('%s.so' % module_name)
@@ -3184,6 +3187,7 @@ class Network:
                     except OSError:
                         pass
             except ImportError, X:
+
                 # Compiling C failed.
                 logger.warn('Failed to import dynamically compiled C module %s '
                             'for network %s.' % (module_name, self.get_id()))
@@ -3204,6 +3208,8 @@ class Network:
         c_code.append('#include <stdio.h>')
         c_code.append('#include <float.h>')
         c_code.append('#include "mtrand.h"')
+        #c_code.append('#include <Python.h>') #keeyan
+        #c_code.append('STUFF = "HI"') #keeyan
         c_code.append('#define exponentiale M_E')
         c_code.append('#define pi M_PI')
         c_code.append('double max(double a, double b){')
@@ -3317,9 +3323,8 @@ class Network:
 
                 redir.start()
 
-            print '\n continue'
             sc_path = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
-            command = '-c -LC:\TDM-GCC-64\\x86_64-w64-mingw32\lib -IC:\Users\Keeyan\AppData\Local\Temp %(win_options)s %(mod_name)s.pyf '\
+            command = '-c -IC:\Users\Keeyan\AppData\Local\Temp -IC:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\jak-stat -LC:\TDM-GCC-64\\x86_64-w64-mingw32\lib %(win_options)s %(mod_name)s.pyf '\
                     '%(mod_name)s.c %(sc_path)s/mtrand.c -I%(sc_path)s'\
                     % {'win_options': win_options, 'mod_name': mod_name, 
                        'sc_path': sc_path}
@@ -3334,10 +3339,10 @@ class Network:
             # used though...
             oldargv = sys.argv
             sys.argv =['f2py'] + command.split()
-            print sys.argv
-            import numpy.f2py.f2py2e
-            output = numpy.f2py.f2py2e.run_compile()
-            sys.argv = sys.argv
+
+
+            numpy.f2py.f2py2e.run_compile()
+            #sys.argv = sys.argv
             os.putenv('CFLAGS', prev_cflags)
         except SystemExit, X:
             logger.warn('Call to f2py failed for network %s.  (Warning from ReactionNetworks.Network_mod)' % self.get_id())

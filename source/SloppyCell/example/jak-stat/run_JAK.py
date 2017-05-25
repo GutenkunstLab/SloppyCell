@@ -1,6 +1,5 @@
 from pylab import *                                                            # (@\label{whatever is inside these special 'at-parens comments' is visible to LaTeX}\label{code:import_start}@)
 from scipy import *
-
 from SloppyCell.ReactionNetworks import *                                      # (@\label{code:import_end}@)
 net = IO.from_SBML_file('JAK-STAT_SC.xml', 'net1')                             # (@\label{code:SBML_import}@)
 net.set_var_ic('v1', 'v1_0') # Won't need given initial assignments.           # (@\label{code:SBML_fix}@)
