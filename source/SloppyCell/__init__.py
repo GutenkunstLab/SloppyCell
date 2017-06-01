@@ -14,7 +14,7 @@ args_to_remove = []
 for arg in sys.argv:
     if arg.startswith('--debugSC'):
         words = arg.split('=')
-        from source.SloppyCell import Utility
+        from SloppyCell import Utility
 
         if len(words) == 2:
             Utility.enable_debugging_msgs(words[1])
@@ -35,6 +35,7 @@ try:
     os.chdir(currdir)
     HAVE_PYPAR = True
     num_procs = pypar.size()
+    print num_procs
     my_rank = pypar.rank()
     my_host = pypar.get_processor_name()
     import atexit

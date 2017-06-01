@@ -2,7 +2,7 @@ import os
 
 import scipy
 import scipy.io
-
+import scipy.misc
 from SloppyCell.ReactionNetworks import *
 from SloppyCell.ReactionNetworks.RunInParallel import *
 

@@ -2,6 +2,7 @@ import os
 
 import scipy
 import scipy.io
+import scipy.linalg
 
 from SloppyCell.ReactionNetworks import *
 
@@ -11,8 +12,10 @@ Plotting.figure(figsize=(3.1,4))
 
 for model_ii, (model, temp, temp) in enumerate(Common.model_list):
     # Load the hessian
-    h = scipy.io.read_array(os.path.join(model, 'hessian.dat'))
-
+    print model
+    h = scipy.loadtxt(os.path.join(model, 'hessian.dat'))
+    print h
+    print h[0]
     e, v = Utility.eig(h)
     e = scipy.real(e)
 

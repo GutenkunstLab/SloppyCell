@@ -13,7 +13,7 @@ import scipy.fftpack
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 import SloppyCell.Utility as Utility
-
+import ReactionNetworks.Dynamics as Dynamics
 from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
 if HAVE_PYPAR:
     import pypar
@@ -355,7 +355,7 @@ def traj_ensemble_stats(traj_set):
     return mean_traj, std_traj
 
 def few_ensemble_trajs(net, times, elements):
-    import SloppyCell.ReactionNetworks.Dynamics as Dynamics
+    # import SloppyCell.ReactionNetworks.Dynamics as Dynamics
     traj_set = []
     for params in elements:
         try:

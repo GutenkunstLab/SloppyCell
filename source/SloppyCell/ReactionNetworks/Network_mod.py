@@ -3171,7 +3171,7 @@ class Network:
             try:
                 # Run f2py on the C. This may raise an exception if the command
                 # fails.
-                self.run_f2py(module_name, hide_f2py_output=False)
+                self.run_f2py(module_name, hide_f2py_output=True)
                 c_module = importlib.import_module(module_name)
                 if del_c_files:
 
@@ -3334,7 +3334,6 @@ class Network:
             os.environ['LDFLAGS'] = '-Wl,--allow-multiple-definition'
 
             current_flags = os.getenv('CFLAGS', '')
-            print 'currentflags:' + current_flags
             # f2py wants an extra argument at the front here. It's not actually
             # used though...
             oldargv = sys.argv
