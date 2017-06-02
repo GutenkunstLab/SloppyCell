@@ -3,11 +3,10 @@ Created 5/30/2017
 
 Author @Keeyan
 
-Runs appropriate function to test input data and model
+Runs appropriate functions to test input data and model
 """
 
-import os
-import sys
+
 import re
 from pylab import *
 from scipy import *
@@ -21,7 +20,6 @@ step_factor = 300
 
 
 def chop(word, character):
-    # TODO: Maybe change from index chopping to simply removing, in case symbols get stacked
     if isinstance(character, str):
         if word.lower().find(character) > 0:
             return word.replace(character, '')
@@ -30,7 +28,7 @@ def chop(word, character):
     else:
         if isinstance(character, list):
             for chara in character:
-                if word.lower().find(chara)>0:
+                if word.lower().find(chara) > 0:
                     return word.replace(chara, '')
                 else:
                     pass
@@ -40,14 +38,14 @@ def chop(word, character):
 def prior_drier(dictop):
     """
     Finds the appropriate values to put into a PriorInLog function to constrain the function.  
-    Simple algebra tells us that 'val' is equal to the square root of the upper bound multiplied
+    Simple algebra tells us that 'val_p' is equal to the square root of the upper bound multiplied
     by the lower bound, and that 'x' is equal to the square root of the upper bound divided by 
-    'val', or the square root of the 'val' divided by the lower bound.  
-    The log of 'val' and 'x' become the parameters necessary for the PriorInLog function to bound
-    the parameters correctly
+    'val_p', or the square root of the 'val_p' divided by the lower bound.  
+    The log of 'val_p' and 'x' become the parameters necessary for the PriorInLog function to bound
+    the parameters correctly (the p value and sigma p value, respectively)
     
     :param dictop: Full dictionary output from ScellParser, contains the prior dictionary
-    :return: A dictionary mapping each parameter to its respective (val,x) pair.  The (val,x) pair is 
+    :return: A dictionary mapping each parameter to its respective (val_p,x) pair.  The (val_p,x) pair is 
       contained in a dictionary for convenience 
     """
     # TODO: Maybe don't use regex?  Allow for log and other functions to be used in prior definition
@@ -63,26 +61,30 @@ def prior_drier(dictop):
     entries = re.findall('[^,].*?:\(.*?\)', priors)
     # An entry has the format 'parameter_name:(lower_bound,upper_bound)'
     prior_dictionary = {}
+    val_p = 0
+    x = 0
     for entry in entries:
+        parameter = entry.split(':')[0]
         try:
             constraint_list = []
             # The regex expression basically chops off the leading and trailing parentheses by matching for everything
             # except a leading and trailing parentheses, using '[^(]' and '[^)]'.  Regex was probably not needed.
+            # Chopping off the first and last character by index seemed too barbaric.
             boundaries = re.findall('[^(].*[^)]', entry.split(':')[1])[0].split(',')
-            parameter = entry.split(':')[0]
+
             for bound in boundaries:
                 constraint_list.append(float(bound))
             lower = min(constraint_list)  # just in case the bounds are in the wrong order for whatever reason
             upper = max(constraint_list)
-            val = sqrt(lower*upper)
-            x = sqrt(upper/val)
-            assert(x == sqrt(val/lower))  # Just in case something goes wrong but doesn't cause any syntactical errors
+            val_p = sqrt(lower*upper)
+            x = sqrt(upper/val_p)
+            assert(x == sqrt(val_p/lower))  # Just in case something goes wrong but doesn't cause any syntactical errors
         except Exception as a:
             logger.warn('Prior Calculation malfunction: ensure prior bounds are numbers, and do not include things like'
                         '"log(x)", "sin(x)", "sqrt()"')
             logger.warn(a)
         # Don't necessarily have to make a dictionary, but it makes things easier to read.
-        prior_dictionary[parameter] = {'val':val,'x':x}
+        prior_dictionary[parameter] = {'val': val_p, 'x': x}
     return prior_dictionary
 
 
@@ -107,20 +109,32 @@ def find_vars(param_list, characters):
     return prior_list
 
 
-def construct_ensemble(params, m, net, num_steps=750, time=65, start=0, points=100):
+def construct_ensemble(params, m, num_steps=750, only_pruned=True):
     j = m.jacobian_log_params_sens(log(params))  # use JtJ approximation to Hessian
     jtj = dot(transpose(j), j)
     print 'Beginning ensemble calculation.'
     ens, gs, r = Ensembles.ensemble_log_params(m, asarray(params), jtj, steps=num_steps)
     print 'Finished ensemble calculation.'
     pruned_ens = asarray(ens[::len(params)*5])
+    if only_pruned:
+        return pruned_ens
+    else:
+        return ens, pruned_ens
+
     # print pruned_ens[:, 1]  # finds all values related to r3, goes by index
-    # TODO: make plots show up based on file input.
+
+
+
+def plot_histograms(pruned_ens, param_index):
     figure()
-    hist(log(pruned_ens[:, 1]), normed=True)
+    hist(log(pruned_ens[:, param_index]), normed=True)
+    pass
+
+
+def plot_variables(pruned_ens, net, time=65, start=0, points=100):
+    # TODO: make plots show up based on file input.
     times = linspace(start, time, points)
-    traj_set = Ensembles.ensemble_trajs \
-        (net, times, pruned_ens)
+    traj_set = Ensembles.ensemble_trajs(net, times, pruned_ens)
     lower, upper = Ensembles.traj_ensemble_quantiles(traj_set, (0.025, 0.975))
 
     figure()
@@ -149,9 +163,9 @@ def time_extract(untagged_dict):
     Goes through the experiment provided and figures out how long 
     """
     time_array = []
-    for key in untagged_dict['experiment'].data.keys():
-        for species_key in untagged_dict['experiment'].data[key].keys():
-            times = untagged_dict['experiment'].data[key][species_key].keys()
+    for key_t in untagged_dict['experiment'].data.keys():
+        for species_key in untagged_dict['experiment'].data[key_t].keys():
+            times = untagged_dict['experiment'].data[key_t][species_key].keys()
             time_array.append(max(times))
     return max(time_array) + len(untagged_dict['parameters_to_fit'])
 
@@ -172,4 +186,3 @@ def make_happen(untagged_dict):
 
     optimized_params = cost_lm(params, model)
     construct_ensemble(optimized_params, model, net, time=time)
-

@@ -7,10 +7,14 @@ Parses .scell filetypes
 """
 import os
 import TestConstruct
+import TestConstruct_XML
 import logging
 import re
 import csv
+
 from SloppyCell.ReactionNetworks import *
+from xml.etree import ElementTree as ET
+
 
 logger = logging.getLogger('ScellParser')
 logging.basicConfig()
@@ -18,6 +22,7 @@ logging.basicConfig()
 tag_string = '<>'  # change things here to reformat Scell files
 data_tag_string = '[]'
 accepted_data_file_type = ('.csv', 'tsv', '.xlsx', '.txt')
+accepted_input_file_type = ('.xml', '.txt')
 
 
 def tag(category, data):
@@ -49,11 +54,11 @@ def retuple(prelim_dict):
     Finds 'parameter' lists and makes them their own dictionary
     """
 
-    # TODO: Use a keyedList to maintain consistency, also avoid directly modifying the dictionary object
     # Python is pass-by-object-reference, so modifying the object will work for references
     # elsewhere in the program, but reassignment will not register.
     # This could be a problem for maintenance/updates later, even if it works right now
     matching = [s for s in prelim_dict.keys() if "parameter" in s]
+    beta = ''
     for key in matching:
         params = prelim_dict[key]
         param_list = re.split(',', params)
@@ -63,14 +68,10 @@ def retuple(prelim_dict):
             # But it works.
             try:
                 alpha = float(param)
-                placeholder.append((beta,alpha))
+                placeholder.append((beta, alpha))
             except ValueError:
                 beta = param
         prelim_dict[key] = KeyedList(placeholder)
-
-
-
-
 
 
 def untag(file_string):
@@ -82,7 +83,7 @@ def untag(file_string):
     
     """
 
-    # TODO: make regex function update dynamically with the globally defined tags (re.escape() could be helpful)
+    # TODO: get rid of regex functions
     return_dictionary = {}
     all_items = re.findall('<.*>\[.*\]', file_string)  # Makes a list of every item in the file
     # .* denotes any character, and any amount.  Essentially the regex expression checks for characters enclosed by
@@ -100,14 +101,14 @@ def experiment_constructor(data_file):
     Extracts data and formats it to create an 'Experiment' object
     Returns the experiment object to be utilized in the main function
     """
-    # expt = Experiment(os.path.splitext(os.path.basename(data_file))[0])  # Experiment named after data file
-    expt = Experiment('expt1')
-    if(data_file.lower().endswith(accepted_data_file_type)):
+    expt = Experiment(os.path.splitext(os.path.basename(data_file))[0])  # Experiment named after data file
+    # expt = Experiment('expt1')
+    if data_file.lower().endswith(accepted_data_file_type):
         with open(data_file) as csv_file:
             reader_v = csv.DictReader(csv_file)
             firstline = reader_v.next()
             keys = firstline.keys()
-            # Apologies in advance.
+            # Read each line, categorize data by header into a dictionary
             model_dict = {}
             for key in keys:
                 model_dict[key] = []
@@ -119,7 +120,7 @@ def experiment_constructor(data_file):
             for row in reader_v:
                 for key in keys:
                     model_dict[key].append(row[key])
-            timeKey = keys[len(keys)-1]  # Assumes that the TIME column is first, and a column
+            time_key = keys[len(keys)-1]  # Assumes that the TIME column is first, and a column
             keys.remove(keys[len(keys)-1])
             final_dict = {}
             time_array = []
@@ -132,7 +133,7 @@ def experiment_constructor(data_file):
                     for data_point in data:
                         # TODO: Hopefully find a way to avoid hard-coding in sigma-value (Technically done already)
                         sigma_list = data_point.split(',')
-                        temp_dict[float(model_dict[timeKey][index])] = (float(sigma_list[0]), float(sigma_list[1]))
+                        temp_dict[float(model_dict[time_key][index])] = (float(sigma_list[0]), float(sigma_list[1]))
                         index += 1
                     final_dict[key] = temp_dict
                     time_array = temp_dict.keys()
@@ -140,14 +141,13 @@ def experiment_constructor(data_file):
                 except Exception as e:
                     print e
                     print 'This exception was brought to you by bad csv parsing'
-        return_dict = {}
+        return_dict = dict()
         # TODO: Switch from hard-coded model inclusion to SBML file reading
         return_dict['net1'] = final_dict
         expt.set_data(return_dict)
         return expt, time_array
     else:
         logger.warn('Selected data file type not supported.')
-
 
 
 def write_to_file(package):
@@ -163,25 +163,31 @@ def write_to_file(package):
     target.close()
 
 
+def read_from_file(file_name):
+    # try:
+        if file_name.lower().endswith('.xml'):
+            xml_file = ET.parse(file_name)
+            root = xml_file.getroot()
+            data_reference = root.find("References").find("Data").attrib["path"]
+            experiment, time_array = experiment_constructor(data_reference)
+            TestConstruct_XML.make_happen(root, experiment)
+        else:
+            scell_file = open(file_name, 'r')
+            text = scell_file.read()
+            untagged_dict = untag(text)
+            experiment, time_array = experiment_constructor(untagged_dict['Data_Reference'])
+            untagged_dict['experiment'] = experiment
+            TestConstruct.make_happen(untagged_dict)
+            scell_file.close()
+    # except Exception as e:
+    #     logger.warn('Invalid file path')
+    #     logger.warn(e)
+    #     text = None
+    #     scell_file = None
 
 
 
-def read_from_file(file):
-    try:
-        scell_file = open(file, 'r')
-        text = scell_file.read()
-    except Exception as e:
-        logger.warn('Invalid file path')
-        logger.warn(e)
-
-    untagged_dict = untag(text)
-    experiment, time_array = experiment_constructor(untagged_dict['Data_Reference'])
-    untagged_dict['experiment'] = experiment
-    print untagged_dict
-
-    TestConstruct.make_happen(untagged_dict)
-    scell_file.close()
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
-    read_from_file(r'C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\testFile')
+    read_from_file(r'C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\temp\testFile.xml')
