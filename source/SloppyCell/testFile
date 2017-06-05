@@ -1,0 +1,5 @@
+<SBML_Reference>[C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/SloppyCell/example/jak-stat/JAK-STAT_SC.xml]
+<Data_Reference>[C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/temp/jak_data.csv]
+<parameters_to_skip>[]
+<parameters_to_fit>[r1,0.5,r3,2,tao,6.0,r4_0,1.35,v1_0*,1.19]
+<priors>[r3:(1e-4,1e4),tao:(1,16)]

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scell>
+	<References>
+		<Data path = "C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/temp/jak_data.csv" />
+		<SBML path = "C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/SloppyCell/example/jak-stat/JAK-STAT_SC.xml" />
+	</References>
+	<Parameters>
+		<Fit>
+            <parameter id = "r1" value = "0.5">
+
+            </parameter>
+			<parameter id = "r3" value = "2">
+                <prior upper = "1e4" lower = "1e-4"/>
+            </parameter>
+            <parameter id = "tao" value = "6">
+                <prior upper = "16" lower = "1"/>
+            </parameter>
+            <parameter id = "r4_0" value = "1.35">
+
+            </parameter>
+            <parameter id = "v1_0" value = "1.19">
+                <ic id = "v1"/>
+
+            </parameter>
+		</Fit>
+		<Skip>
+
+
+        </Skip>
+	</Parameters>
+
+</Scell>

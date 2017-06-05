@@ -28,12 +28,15 @@ j = m.jacobian_log_params_sens(log(params))                                    #
 jtj = dot(transpose(j), j)                                                     # (@\label{code:jtj}@)
 
 print 'Beginning ensemble calculation.'
-ens, gs, r = Ensembles.ensemble_log_params(m, asarray(params), jtj, steps=100)# (@\label{code:ens_gen}@)
+ens, gs, r = Ensembles.ensemble_log_params(m, asarray(params), jtj, steps=750)# (@\label{code:ens_gen}@)
 print 'Finished ensemble calculation.'
 pruned_ens = asarray(ens[::25])                                                # (@\label{code:prune}@)
 
 figure()
-hist(log(pruned_ens[:,1]), normed=True)                                        # (@\label{code:hist}@)
+hist(log(pruned_ens[:, 1]), normed=True)                                        # (@\label{code:hist}@)
+
+figure()
+hist(log(pruned_ens[:, 2]), normed=True)
 times = linspace(0, 65, 100)
 traj_set = Ensembles.ensemble_trajs\
     (net, times, pruned_ens)                    # (@\label{code:ens_trajs}@)

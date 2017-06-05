@@ -124,7 +124,6 @@ def plot_histograms(pruned_ens, params, keyed_list):
         hist(log(param_array), normed=True)
 
 
-
 def plot_variables(pruned_ens, net, time=65, start=0, points=100):
     # TODO: make plots show up based on file input.
     times = linspace(start, time, points)
@@ -154,7 +153,7 @@ def cost_lm(params, m, optimize=True, plotter=True):
 
 def time_extract(experiment):
     """
-    Goes through the experiment provided and figures out how long 
+    Goes through the experiment provided and finds the times
     """
     time_array = []
     for key_t in experiment.data.keys():
@@ -165,6 +164,12 @@ def time_extract(experiment):
 
 
 def key_parameters(fit_root, tag="parameter"):
+    """
+    Makes a keyed_list of the parameters to be fit.
+    :param fit_root: XML root of parameters that need to be fit
+    :param tag: The tag of what's being searched for, in this case the parameter tag almost always
+    :return: Returns a keyed_list to be used for ensemble construction
+    """
     param_list = []
     for child in fit_root.iter(tag):
         param_list.append((child.attrib['id'], float(child.attrib['value'])))

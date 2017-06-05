@@ -168,9 +168,15 @@ def read_from_file(file_name):
         if file_name.lower().endswith('.xml'):
             xml_file = ET.parse(file_name)
             root = xml_file.getroot()
-            data_reference = root.find("References").find("Data").attrib["path"]
-            experiment, time_array = experiment_constructor(data_reference)
-            TestConstruct_XML.make_happen(root, experiment)
+            try:
+                data_reference = root.find("References").find("Data").attrib["path"]
+                experiment, time_array = experiment_constructor(data_reference)
+            except Exception as e:
+                logger.warn('No data reference established, experiment cannot be constructed')
+                logger.warn(e)
+                experiment = None
+            if experiment is not None:
+                TestConstruct_XML.make_happen(root, experiment)
         else:
             scell_file = open(file_name, 'r')
             text = scell_file.read()
@@ -184,8 +190,6 @@ def read_from_file(file_name):
     #     logger.warn(e)
     #     text = None
     #     scell_file = None
-
-
 
 
 # for debugging purposes.  This module shouldn't do anything when run.
