@@ -6,7 +6,10 @@ Author @Keeyan
 Runs appropriate functions to test input data and model (XML edition
 """
 
-import re
+import Utility
+import time
+import os
+import sys
 from pylab import *
 from scipy import *
 from SloppyCell.ReactionNetworks import *
@@ -15,10 +18,9 @@ import logging
 
 logger = logging.getLogger('TestConstruct_XML')
 logging.basicConfig()
-
+this_module = sys.modules[__name__]
 # Globally defined variables.  Should eventually be done away with.
 step_factor = 300
-
 
 def chop(word, character):
     if isinstance(character, str):
@@ -98,7 +100,8 @@ def construct_ensemble(params, m, num_steps=750, only_pruned=True):
     print 'Beginning ensemble calculation.'
     ens, gs, r = Ensembles.ensemble_log_params(m, asarray(params), jtj, steps=num_steps)
     print 'Finished ensemble calculation.'
-    pruned_ens = asarray(ens[::len(params) * 5])
+
+    pruned_ens = asarray(ens[::int(math.ceil(num_steps/float(250)))])
     if only_pruned:
         return pruned_ens
     else:
@@ -107,7 +110,7 @@ def construct_ensemble(params, m, num_steps=750, only_pruned=True):
         # print pruned_ens[:, 1]  # finds all values related to r3, goes by index
 
 
-def plot_histograms(pruned_ens, params, keyed_list):
+def plot_histograms(pruned_ens, params, keyed_list, bins=10):
     if isinstance(params, list):
         for param in params:
             if param in keyed_list.keys():
@@ -115,13 +118,13 @@ def plot_histograms(pruned_ens, params, keyed_list):
                 fig = figure()
                 fig.suptitle(param, fontweight='bold')
                 param_array = pruned_ens[:, param_index]
-                hist(log(param_array), normed=True)
+                hist(log(param_array), normed=True, bins=bins)
     else:
         param_index = keyed_list.index_by_key(params)
         fig = figure()
         fig.suptitle(params , fontweight='bold')
         param_array = pruned_ens[:, param_index]
-        hist(log(param_array), normed=True)
+        hist(log(param_array), normed=True, bins=bins)
 
 
 def plot_variables(pruned_ens, net, time=65, start=0, points=100):
@@ -139,13 +142,20 @@ def plot_variables(pruned_ens, net, time=65, start=0, points=100):
     show()
 
 
-def cost_lm(params, m, optimize=True, plotter=True):
-    print 'Initial Cost:', m.cost(params)
+def cost_lm(params, m, optimize=True, plotter=False):
+
     if optimize:
+        initial_cost = m.cost(params)
+        print 'Initial Cost:', initial_cost
         params = Optimization.fmin_lm_log_params(m, params, maxiter=20, disp=False)
-        print 'Optimized cost:', m.cost(params)
+        optimized_cost = m.cost(params)
+        print 'Optimized cost:', optimized_cost
         print 'Optimized parameters:', params
     if plotter:
+        if not optimize:
+            optimized_cost = m.cost(params)
+            print 'Optimized cost:', optimized_cost
+            print 'Optimized parameters:', params
         figure()
         Plotting.plot_model_results(m)
     return params
@@ -177,7 +187,148 @@ def key_parameters(fit_root, tag="parameter"):
     return params
 
 
-def make_happen(root, experiment):
+def find_by_tag(root, tag, attr=True, return_node = False):
+    found = False
+    for child in root:
+        if child.tag == tag:
+            found = True
+            if attr:
+                if return_node:
+                    return found, child, child.attrib
+                else:
+                    return found, child.attrib
+    return found, None, None
+
+
+def save_to_temp(obj, file_name, xml_file, node, routine="temp_file"):
+    print "Saving " + routine + " to file"
+    filename = '..\\temp\\' + routine + "_" + str(int(math.ceil(time.time()))) + ".bp"
+    Utility.save(obj, filename)
+    node.set('path', filename)
+    xml_file.write(file_name)
+
+
+def check_to_save(routine_function):
+    """
+    Decorator for save functionality of action routines
+    """
+    def wrapper(root=None, routine=None, **kwargs):
+        """
+        Handles the common "path", "save", and "use_path" attributes of most action routines
+        
+        :param root: (XMLTree) The root of the XML tree
+        :param routine: (String) Name of the action routine to be done
+        :param kwargs: Extra arguments that will be passed through the decorator function mostly unused
+        :return: the result of the associated routine function is returned
+        """
+        routine_dict = root.find(routine).attrib
+        use_file = False
+        save_file = False
+
+        try:
+            if routine_dict['use_path'].lower() == 'true':
+                use_file = True
+        except KeyError as X:
+            logger.info("Path use not specified")
+            logger.debug(X)
+        try:
+            if routine_dict['save'].lower() == 'true':
+                save_file = True
+        except KeyError as X:
+            logger.info("Save attribute not specified, will only save if no path currently exists.")
+            logger.debug(X)
+        if 'path' in routine_dict:
+            if os.path.isfile(routine_dict['path']):
+                # A file path is specified
+                if use_file:
+                    # User wants to load the object
+                    print 'Successfully loaded %s objects from file' % routine
+                    loaded_object = Utility.load(routine_dict['path'])
+                    # Now we call the routine function and pass in the loaded object
+                    # We can just return it because we don't have to save anything
+                    # and we don't need to do anything else in this decorator
+                    return routine_function(loaded_object=loaded_object, routine_dict=routine_dict, **kwargs)
+                else:
+                    # the user specified a path, but did not want to use the file.
+                    if save_file:
+                        # The user wants to overwrite the current path, so we delete it
+                        # Todo: Old files don't have to be deleted, and the option to do so can be included
+                        try:
+                            os.unlink(routine_dict['path'])
+                            print "Replacing old %s file with new one" % routine
+                        except KeyError:
+                            pass
+            else:
+                # No valid file path is specified, but the path attribute has been specified
+                # In this case we save to file anyway, and overwrite the invalid file path
+                # with a valid one.  No trouble because we don't delete and files in this case.
+                save_file = True
+                pass
+        else:
+            # Path attribute omitted
+            # In this case we don't even try to load, or save.
+            # If the user doesn't specify the path attribute, but specified to save, the path attribute will be
+            # added anyway when the function attempts to save, so we don't
+            # even have to flip any of the booleans.
+            pass
+        # We can now call the routine function, but we don't return it until we figure out if we want to save it.
+        routine_object = routine_function(routine_dict=routine_dict, **kwargs)
+        try:
+            xml_file = kwargs['xml_file']
+            file_name = kwargs['file_name']
+        except KeyError:
+            logger.warn("Cannot save object for %s" % routine)
+            save_file = False
+        if save_file:
+            node = root.find(routine)
+            save_to_temp(routine_object, xml_file=xml_file, file_name=file_name, node=node, routine=routine)
+        return routine_object
+
+    return wrapper
+
+@check_to_save
+def optimization(routine_dict, model, params, **kwargs):
+    try:
+        plotter = routine_dict['plot']
+        if plotter == 'True':
+            plotter = True
+        else:
+            plotter = False
+    except KeyError:
+        plotter = False
+    try:
+        optimized_params = kwargs['loaded_object']
+        return cost_lm(optimized_params, model, optimize=False, plotter=plotter)
+    except KeyError:
+        return cost_lm(params, model, plotter=plotter)
+
+
+@check_to_save
+def ensemble(routine_dict, result_dictionary, model, **kwargs):
+    try:
+        pruned_ensemble = kwargs['loaded_object']
+        return pruned_ensemble
+    except KeyError:
+        pass
+    try:
+        optimized_params = result_dictionary['optimization']
+    except KeyError:
+        logger.warn("Optimized parameters not found for ensemble construction, using unoptimized parameters instead")
+        optimized_params = kwargs['params']
+    try:
+        num_steps = int(routine_dict['size'])
+        return construct_ensemble(optimized_params, model, num_steps)
+    except KeyError:
+        return construct_ensemble(optimized_params, model)
+
+
+def make_happen(root, experiment, xml_file=None, file_name=None):
+    result_dictionary = dict()
+    function_dictionary = {'optimization': optimization, 'ensemble': ensemble}
+    # TODO: Clean this mess up
+    # These actions should generally happen for any input #
+    # They have few enough options that there is little customization to be done and they are essential to setting
+    # up the model.
     sbml_reference = root.find("References").find("SBML").attrib["path"]
     net = IO.from_SBML_file(sbml_reference)  # Set model from SBML reference
     time = time_extract(experiment)
@@ -186,7 +337,19 @@ def make_happen(root, experiment):
     set_ic(fit_root, net)
     add_residuals(root, model)
     params = key_parameters(fit_root)
-    optimized_params = cost_lm(params, model)
-    pruned = construct_ensemble(optimized_params, model)
-    plot_histograms(pruned, ['r3', 'tao'], params)
+    ###
+    action_root = root.find("Actions")
+    for child in action_root:
+        try:
+            r_name = child.tag.lower()
+            result_dictionary[r_name] = function_dictionary[r_name](root=action_root, routine=child.tag,
+                                                                    model=model, params=params,
+                                                                    xml_file=xml_file, file_name=file_name,
+                                                                    result_dictionary=result_dictionary)
+        except KeyError:
+            logger.warn("No function associated with action tag %s" % child.tag)
     show()
+
+        #
+        # plot_histograms(pruned, ['r3', 'tao'], params)
+        # show()

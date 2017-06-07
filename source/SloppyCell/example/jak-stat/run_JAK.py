@@ -7,7 +7,6 @@ net.set_var_ic('v1', 'v1_0') # Won't need given initial assignments.           #
 import JAK_expt                                                                # (@\label{code:import_expt}@)
 m = Model([JAK_expt.expt], [net])
 
-
 params = KeyedList([('r1', 0.5), ('r3', 2), ('tao', 6.0),                      # (@\label{code:params} @)
                     ('r4_0', 1.35), ('v1_0', 1.19)])
 res = Residuals.PriorInLog('r3_prior', 'r3', 0, log(sqrt(1e4)))                # (@\label{code:prior_start}@)
@@ -28,24 +27,24 @@ j = m.jacobian_log_params_sens(log(params))                                    #
 jtj = dot(transpose(j), j)                                                     # (@\label{code:jtj}@)
 
 print 'Beginning ensemble calculation.'
-ens, gs, r = Ensembles.ensemble_log_params(m, asarray(params), jtj, steps=750)# (@\label{code:ens_gen}@)
+ens, gs, r = Ensembles.ensemble_log_params(m, asarray(params), jtj, steps=100)  # (@\label{code:ens_gen}@)
 print 'Finished ensemble calculation.'
-pruned_ens = asarray(ens[::25])                                                # (@\label{code:prune}@)
+pruned_ens = asarray(ens[::5])                                                # (@\label{code:prune}@)
 
 figure()
-hist(log(pruned_ens[:, 1]), normed=True)                                        # (@\label{code:hist}@)
+hist(pruned_ens[:, 1], normed=False)                                        # (@\label{code:hist}@)
 
-figure()
-hist(log(pruned_ens[:, 2]), normed=True)
 times = linspace(0, 65, 100)
 traj_set = Ensembles.ensemble_trajs\
     (net, times, pruned_ens)                    # (@\label{code:ens_trajs}@)
-lower, upper = Ensembles.traj_ensemble_quantiles(traj_set, (0.025, 0.975))
+
+lower, middle, upper = Ensembles.traj_ensemble_quantiles(traj_set, (0.025, .5, 0.975))
 
 figure()
-plot(times, lower.get_var_traj('frac_v3'), 'g')
-plot(times, upper.get_var_traj('frac_v3'), 'g')
-plot(times, lower.get_var_traj('frac_v4'), 'b')
-plot(times, upper.get_var_traj('frac_v4'), 'b')
+plot(times, middle.get_var_traj('data1'), 'g')
+plot(times, lower.get_var_traj('data1'), 'g')
+plot(times, upper.get_var_traj('data1'), 'g')
+# plot(times, lower.get_var_traj('frac_v4'), 'b')
+# plot(times, upper.get_var_traj('frac_v4'), 'b')
 
 show()

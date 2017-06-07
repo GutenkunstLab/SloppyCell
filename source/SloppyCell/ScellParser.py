@@ -176,7 +176,7 @@ def read_from_file(file_name):
                 logger.warn(e)
                 experiment = None
             if experiment is not None:
-                TestConstruct_XML.make_happen(root, experiment)
+                TestConstruct_XML.make_happen(root, experiment, xml_file=xml_file, file_name=file_name)
         else:
             scell_file = open(file_name, 'r')
             text = scell_file.read()

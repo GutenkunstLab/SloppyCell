@@ -3172,7 +3172,10 @@ class Network:
                 # Run f2py on the C. This may raise an exception if the command
                 # fails.
                 self.run_f2py(module_name, hide_f2py_output=True)
+                # Source of error: Henlo
+
                 c_module = importlib.import_module(module_name)
+
                 if del_c_files:
 
                     os.unlink('%s.pyf' % module_name)
@@ -3187,6 +3190,18 @@ class Network:
                     except OSError:
                         pass
             except ImportError, X:
+                if del_c_files:
+                    try:
+                        os.unlink('%s.pyf' % module_name)
+
+                        os.unlink('%s.c' % module_name)
+                        os.unlink('%s.so' % module_name)
+                    except OSError:
+                        pass
+                    try:
+                        os.unlink('%s.pyd' % module_name)
+                    except OSError:
+                        pass
 
                 # Compiling C failed.
                 logger.warn('Failed to import dynamically compiled C module %s '
@@ -3208,8 +3223,6 @@ class Network:
         c_code.append('#include <stdio.h>')
         c_code.append('#include <float.h>')
         c_code.append('#include "mtrand.h"')
-        #c_code.append('#include <Python.h>') #keeyan
-        #c_code.append('STUFF = "HI"') #keeyan
         c_code.append('#define exponentiale M_E')
         c_code.append('#define pi M_PI')
         c_code.append('double max(double a, double b){')
