@@ -1150,10 +1150,10 @@ class Network:
 
         # Test that we have a working integrator
         body = self._dynamic_funcs_python.get('integrate_stochastic_tidbit')
-        if 'pass' in body.split('\n')[-1]:
-            err_body = '\n'.join(
+        if 'pass' in body.splitlines()[-1]:
+            err_body = os.linesep.join(
                 ['Integrate stochastic failed due to the problem(s):']+
-                body.split('\n')[1:-1])
+                body.splitlines()[1:-1])
             raise RuntimeError(err_body)
         
         dv=scipy.array([self.get_var_val(_) for _ in self.dynamicVars.keys()])
@@ -3131,8 +3131,9 @@ class Network:
     def exec_dynamic_functions(self, disable_c=False, del_c_files=True, 
                                curr_c_code=None):
         # only get the bodies that were created.
-        curr_py_bodies = '\n'.join([body for body in self._dynamic_funcs_python.values()\
-                                    if body != None])
+        curr_py_bodies = os.linesep.join([body for body in
+                                          self._dynamic_funcs_python.values()
+                                          if body != None])
 
         key = (curr_py_bodies, tuple(self._func_strs.items()))
         # Search our cache of python functions.
@@ -3225,7 +3226,7 @@ class Network:
             c_code.append(body)
             c_code.append('')
 
-        c_code = '\n'.join(code for code in c_code if code != None)
+        c_code = os.linesep.join(code for code in c_code if code != None)
         return c_code
 
     def output_c(self, c_code, mod_name=None):
@@ -3279,7 +3280,7 @@ class Network:
                 dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: yprime\n'
                 dres_dparams_code += '        double precision intent(in), dimension(' + str(N_const) + ') :: constants\n'
                 dres_dparams_code += '        double precision intent(out), dimension(' + str(N_dyn) + ') :: pd\n'
-                dres_dparams_code += '    end subroutine ' + func_name + '\n'
+                dres_dparams_code += '    end subroutine ' + func_name + os.linesep
 
         # Now update the template with the code we just generated and the other
         # names and dimensions
