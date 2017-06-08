@@ -3165,9 +3165,9 @@ class Network:
             # Write C to file.
             module_name = self.output_c(curr_c_code)
             try:
-                # Run f2py on the C. This may raise an exception if the command
+                # Run distutils on the C. This may raise an exception if the command
                 # fails.
-                self.run_f2py(module_name, hide_f2py_output=True)
+                self.run_distutils(module_name, hide_output=True)
                 c_module = __import__(module_name)
                 if del_c_files:
                     os.unlink('%s.pyf' % module_name)
@@ -3297,40 +3297,47 @@ class Network:
 
         return mod_name
 
-    def run_f2py(self, mod_name, hide_f2py_output=True):
-        logger.debug('Running f2py for network %s.' % self.get_id())
-        from numpy.distutils.exec_command import exec_command
+    def run_distutils(self, mod_name, hide_output=True):
+        logger.debug('Running distutils for network %s.' % self.get_id())
         # Run f2py. The 'try... finally...' structure ensures that we stop
         #  redirecting output if there's an exection in running f2py
         # These options assume we're working with mingw.
-        win_options = ''
-        if sys.platform == 'win32':
-            win_options = '--compiler=mingw32 --fcompiler=gnu'
+        oldargv = sys.argv
         try:
-            if hide_f2py_output:
+            if hide_output:
                 redir = Utility.Redirector_mod.hideStdout()
                 redir.start()
-            sc_path = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
-            command = '-c %(win_options)s %(mod_name)s.pyf '\
-                    '%(mod_name)s.c %(sc_path)s/mtrand.c -I%(sc_path)s'\
-                    % {'win_options': win_options, 'mod_name': mod_name, 
-                       'sc_path': sc_path}
+            import setuptools
+            from numpy.distutils import core
+            # Identify compiler, in order to set flags that will suppress
+            # obnoxious warnings from f2py.
+            import numpy.distutils.ccompiler as ccompiler
+            if ccompiler.get_default_compiler() == 'unix':
+                extra_compile_args = ['-Wno-unused-variable', '-Wno-#warnings',
+                                      '-Wno-unused-function']
+            else:
+                extra_compile_args = None
 
-            prev_cflags = os.getenv('CFLAGS', '')
-            os.putenv('CFLAGS', prev_cflags + ' -Wno-unused-variable')
-            # f2py wants an extra argument at the front here. It's not actually
-            # used though...
-            oldargv = sys.argv
-            sys.argv =  ['f2py'] + command.split()
-            import numpy.f2py.f2py2e
-            output = numpy.f2py.f2py2e.run_compile()
-            sys.argv = sys.argv
-            os.putenv('CFLAGS', prev_cflags)
+            # Essentially we're running a setup.py script. Those scripts use
+            # sys.argv for control, so we directly edit it.
+            # See https://stackoverflow.com/questions/2850971/directly-call-distutils-or-setuptools-setup-function-with-command-name-optio
+            sys.argv =  ['%s_setup.py'%mod_name, 'build_ext',
+                         '--inplace']
+            RN_dir = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
+            ext = core.Extension(name=mod_name,
+                                 sources=['%s.c'%mod_name, '%s.pyf'%mod_name,
+                                          '%s/mtrand.c'%RN_dir],
+                                 include_dirs=[RN_dir],
+                                 extra_compile_args=extra_compile_args)
+            core.setup(ext_modules = [ext])
+            ## Hide common f2py warnings
+            #os.environ['OPT'] = '-Wno-unused-variable -Wno-#warnings'
         except SystemExit, X:
-            logger.warn('Call to f2py failed for network %s.' % self.get_id())
+            logger.warn('Call to distutils failed for network %s.' % self.get_id())
             logger.warn(X)
         finally:
-            if hide_f2py_output:
+            sys.argv = oldargv
+            if hide_output:
                 redir.stop()
 
     def import_c_funcs_from_module(self, module):

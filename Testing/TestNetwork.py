@@ -40,3 +40,6 @@ data = {'z': {0.5: (2.0, 0.2),
 expt2.set_data({'test2': data})
 
 m2 = Model([expt1, expt2], [net, net2])
+
+if __name__ == '__main__':
+    net.compile()
