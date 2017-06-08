@@ -2092,8 +2092,8 @@ class Network:
         c_body.append('int p_index = (int)constants[%i];' % N_const)
         c_body.append('double constants_only[%i];' % N_const)
         c_body.append('int jj;')
-        c_body.append('double *dc_dp;'
-        c_body.append('double *dcdot_dp;'
+        c_body.append('double *dc_dp;')
+        c_body.append('double *dcdot_dp;')
         c_body.append('double *local_dres_dp;')
         c_body.append('int ii;')
         c_body.append('double local_dres_dc[%i] = {0};' % N_dyn**2)
