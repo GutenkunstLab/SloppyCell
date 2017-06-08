@@ -1948,15 +1948,16 @@ class Network:
                                'void ddaskr_jac_(%s);' % c_args)
         c_body.append('double cj = *cj_ptr;')
         c_body.append('')
+        c_body.append('double local_dres_dcdot[%i*%i] = {0};' % (N_dyn, N_dyn))
+        c_body.append('int ii;')
+        c_body.append('')
         c_body.append('dres_dc_function_(time_ptr, dynamicVars, yprime, '
                       'constants, pd);')
         c_body.append('')
         # Like magic, this will initialize *all* elements to zero
-        c_body.append('double local_dres_dcdot[%i*%i] = {0};' % (N_dyn, N_dyn))
         c_body.append('dres_dcdot_function_(time_ptr, dynamicVars, yprime, '
                       'constants, local_dres_dcdot);')
         c_body.append('')
-        c_body.append('int ii;')
         c_body.append('for(ii=0; ii < %i; ii++){' % N_dyn**2)
         c_body.append('  pd[ii] += cj*local_dres_dcdot[ii];}')
         c_body.append('}')
@@ -2030,7 +2031,6 @@ class Network:
             self._dynamic_funcs_c.set(func_name, c_body)
 
     def _make_sens_rhs(self):
-
         py_body = []
         py_body.append('def sens_rhs(time, sens_y, sens_yp, constants):')
         py_body.append('sens_y = scipy.asarray(sens_y)')
@@ -2089,22 +2089,29 @@ class Network:
                        '+ scipy.dot(local_dres_dcdot, dcdot_dp)' % N_dyn)
 
         # This fills in the first half of our sens_res
+        c_body.append('int p_index = (int)constants[%i];' % N_const)
+        c_body.append('double constants_only[%i];' % N_const)
+        c_body.append('int jj;')
+        c_body.append('double *dc_dp;'
+        c_body.append('double *dcdot_dp;'
+        c_body.append('double *local_dres_dp;')
+        c_body.append('int ii;')
+        c_body.append('double local_dres_dc[%i] = {0};' % N_dyn**2)
+        c_body.append('double local_dres_dcdot[%i] = {0};' % N_dyn**2)
+        c_body.append('int row, col;')
+        c_body.append('')
         c_body.append('res_function_(time_ptr, sens_y, sens_yp, cj_ptr, '
                       'sens_res, ires_ptr, constants, ipar);')
         c_body.append('')
-        c_body.append('int p_index = (int)constants[%i];' % N_const)
         # we add an array that tracks the constants only, so that
         # the c version of the dres_dparam function gets an array of the
         # expected size
-        c_body.append('double constants_only[%i];' % N_const)
-        c_body.append('int jj;')
         c_body.append('for (jj = 0; jj < %s; jj++){' % N_const)
         c_body.append('constants_only[jj] = constants[jj];}')
-        c_body.append('double *dc_dp = &sens_y[%i];' % N_dyn)
-        c_body.append('double *dcdot_dp = &sens_yp[%i];' % N_dyn)
+        c_body.append('dc_dp = &sens_y[%i];' % N_dyn)
+        c_body.append('dcdot_dp = &sens_yp[%i];' % N_dyn)
         # We'll directly fill dres_dp into the appropriate place in sens_res
-        c_body.append('double *local_dres_dp = &sens_res[%i];' % N_dyn)
-        c_body.append('int ii;')
+        c_body.append('local_dres_dp = &sens_res[%i];' % N_dyn)
         # sens_res isn't necessarily all zeros when passed in using the
         # cpointer.
         c_body.append('for(ii = 0; ii < %s; ii++){' % N_dyn)
@@ -2119,15 +2126,12 @@ class Network:
             c_body.append('break;'), 
         c_body.append('}')
         # Fill in dres_dc
-        c_body.append('double local_dres_dc[%i] = {0};' % N_dyn**2)
         c_body.append('dres_dc_function_(time_ptr, sens_y, sens_yp, constants, '
                       'local_dres_dc);')
-        c_body.append('int row, col;')
         c_body.append('for(row = 0; row < %i; row++){' % N_dyn)
         c_body.append('for(col = 0; col < %i; col++){' % N_dyn)
         c_body.append('sens_res[row+%i] += local_dres_dc[row + col*%i]*dc_dp[col];}}' % (N_dyn, N_dyn))
 
-        c_body.append('double local_dres_dcdot[%i] = {0};' % N_dyn**2)
         c_body.append('dres_dcdot_function_(time_ptr, sens_y, sens_yp, '
                       'constants, local_dres_dcdot);')
         c_body.append('for(row = 0; row < %i; row++){' % N_dyn)
