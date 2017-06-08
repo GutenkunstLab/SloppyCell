@@ -3,3 +3,17 @@
 build
 *.swp
 diff.pickle
+*module.c
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.log
+*.out
+*.synctex.gz
+*.toc
+Doc/*/*.pdf
+*.bp
+Example/Tyson_1991/*.png
+Example/Tyson_1991/*.tex
+Testing/algebraic_net*.xml
