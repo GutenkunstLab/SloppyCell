@@ -1,6 +1,7 @@
 python module daskr__user__routines 
     interface daskr_user_interface 
         subroutine res(t,y,yprime,cj,residual,ires,rpar,ipar)
+            intent(c) res
             double precision intent(in) :: t
             double precision intent(in), dimension(ipar[0]) :: y
             double precision intent(in), dimension(ipar[0]) :: yprime
@@ -11,12 +12,16 @@ python module daskr__user__routines
             ! This has been set equal to (neq, len(rpar)) in the daskr call
             integer dimension(2), intent(hide) :: ipar
         end subroutine res
-        subroutine jac(t,y,yprime,pd,cj,rpar,ipar)
+        subroutine jac(t,y,yprime,delta,pd,cj,h,wt,rpar,ipar)
+            intent(c) jac
             double precision intent(in) :: t
             double precision intent(in), dimension(ipar[0]) :: y
             double precision intent(in), dimension(ipar[0]) :: yprime
+            double precision intent(hide), dimension(ipar[0]) :: delta
             double precision intent(out), dimension(ipar[0],ipar[0]) :: pd
             double precision intent(in) :: cj
+            double precision intent(hide) :: h
+            double precision intent(hide), dimension(ipar[0]) :: wt
             double precision intent(in), dimension(ipar[1]) :: rpar
             ! This has been set equal to (neq, len(rpar)) in the daskr call
             integer dimension(2), intent(hide) :: ipar
@@ -24,6 +29,7 @@ python module daskr__user__routines
         subroutine psol() ! support not implemented
         end subroutine psol
         subroutine rt(neq,t,y,yp,nrt,r0,rpar,ipar)
+            intent(c) rt
             integer intent(hide) :: neq
             double precision intent(in) :: t
             double precision intent(in), dimension(ipar[0]) :: y
@@ -39,7 +45,8 @@ end python module daskr__user__routines
 
 python module _daskr
 interface
-    subroutine ddaskr(res,neq,t,y,yprime,tout,info,rtol,atol,idid,rwork,lrw,iwork,liw,rpar,ipar,jac,psol,rt,nrt,jroot) ! in :_daskr:daskr.f
+    subroutine ddaskr(res,neq,t,y,yprime,tout,info,rtol,atol,idid,rwork,lrw,iwork,liw,rpar,ipar,jac,psol,rt,nrt,jroot)
+	intent(c) ddaskr
         double precision intent(in,out) :: t
         double precision intent(in) :: tout
         double precision intent(in,out,copy), dimension(neq) :: y
@@ -66,6 +73,6 @@ interface
         external jac
         external psol
         external rt
-    end subroutine daskr
+    end subroutine ddaskr
 end interface 
 end python module _daskr

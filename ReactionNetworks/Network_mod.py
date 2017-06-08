@@ -1941,7 +1941,8 @@ class Network:
         N_dyn = len(self.dynamicVars)
         c_body = []
         c_args = 'double *time_ptr, double *dynamicVars, double *yprime, '\
-                'double *pd, double *cj_ptr, double *constants, int *intpar'
+                'double *delta, double *pd, double *cj_ptr, double *h_ptr, '\
+                'double *wt, double *constants, int *intpar'
         c_body.append('void ddaskr_jac_(%s){' % c_args)
         self._prototypes_c.set('ddaskr_jac', 
                                'void ddaskr_jac_(%s);' % c_args)
