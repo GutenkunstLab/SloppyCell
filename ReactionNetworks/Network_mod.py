@@ -3246,7 +3246,7 @@ class Network:
 
 
         # Write the C code to a file.
-        c_fd = open('%s.c' % mod_name, 'w')
+        c_fd = open('%s.c' % mod_name, 'wb')
         c_fd.write(c_code)
         c_fd.close()
 
