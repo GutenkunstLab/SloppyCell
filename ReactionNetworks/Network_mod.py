@@ -1678,8 +1678,8 @@ class Network:
                     py_body.append('root_devs[%i] = (%s) - 0.5\n\t' 
                                    % (len_root_func, comp))
                     c_comp = ExprManip.make_c_compatible(comp)
-                    c_body.append('root_devs[%i] = (%s) - 0.5;\n\t' 
-                                   % (len_root_func, c_comp))
+                    c_body.append('root_devs[%i] = (%s) - 0.5;%s'
+                                   % (len_root_func, c_comp, os.linesep))
                     self.event_clauses.append(comp)
                     event.sub_clause_indices.append(len_root_func)
                     len_root_func += 1
@@ -3274,12 +3274,12 @@ class Network:
         if self.deriv_funcs_enabled == True:
             for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
                 func_name = 'dres_d' + wrt
-                dres_dparams_code += '    subroutine ' + func_name + '(time, dynamicVars, yprime, constants, pd)\n'
-                dres_dparams_code += '        double precision intent(in) :: time\n'
-                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: dynamicVars\n'
-                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: yprime\n'
-                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_const) + ') :: constants\n'
-                dres_dparams_code += '        double precision intent(out), dimension(' + str(N_dyn) + ') :: pd\n'
+                dres_dparams_code += '    subroutine ' + func_name + '(time, dynamicVars, yprime, constants, pd)'+os.linesep
+                dres_dparams_code += '        double precision intent(in) :: time' + os.linesep
+                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: dynamicVars' + os.linesep
+                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: yprime' + os.linesep
+                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_const) + ') :: constants' + os.linesep
+                dres_dparams_code += '        double precision intent(out), dimension(' + str(N_dyn) + ') :: pd' + os.linesep
                 dres_dparams_code += '    end subroutine ' + func_name + os.linesep
 
         # Now update the template with the code we just generated and the other
