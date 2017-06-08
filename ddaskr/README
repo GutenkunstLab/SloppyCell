@@ -1,0 +1,1 @@
+SloppyCell uses a version of the ddaskr library (http://www.netlib.org/ode/), which was originally written in Fortran. The C files here are from a f2c conversion that was done and cleaned-up by Martin Sjölund: https://github.com/sjoelund/Cdaskr .
