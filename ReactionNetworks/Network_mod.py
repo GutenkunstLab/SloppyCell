@@ -2440,8 +2440,6 @@ class Network:
         c_body.append('  int i; /* Temp variables */')
         c_body.append('')
         c_body.append('  unsigned long seed = *seed_ptr;')
-        c_body.append('  if (*reseed) {init_genrand(seed);}')
-        c_body.append('')
         if N_RXN > 0:
             c_body.append('  short stch[%i][%i] = {{%s}};' %
                           (N_RXN, N_DYN,
@@ -2458,11 +2456,14 @@ class Network:
         c_body.append('  double dt=0.0;')
         c_body.append('')
         c_body.append('  double dv0[%i];'%N_DYN)
-        c_body.append('  for (i=0;i<%i;i++) {dv0[i]=dv[i];}'%N_DYN)
-        c_body.append('')
         c_body.append('  int rxnInd = %i;'%N_RXN)
         c_body.append('  double propensity, selection, props[%i], av[%i];'%
                       (N_RXN, N_ASN))
+        c_body.append('    double _sd = 0.0;')
+        c_body.append('  if (*reseed) {init_genrand(seed);}')
+        c_body.append('')
+        c_body.append('  for (i=0;i<%i;i++) {dv0[i]=dv[i];}'%N_DYN)
+        c_body.append('')
         c_body.append('  while (time < stop_time) {')
         for index, rule in enumerate(self.assignmentRules.values()):
             c_body.append('    av[%i]=%s;'%(index, parse(rule)))
@@ -2491,7 +2492,6 @@ class Network:
         c_body.append('')
         c_body.append('    for (i=0;i<%i;i++) {dv[i]+=stch[rxnInd][i];}'%N_DYN)
         c_body.append('')
-        c_body.append('    double _sd = 0.0;')
         c_body.append('    for (i=0;i<%i;i++) {'%N_DYN)
         c_body.append('        _sd += (dv0[i]-dv[i])*(dv0[i]-dv[i]);')
         c_body.append('    }')
