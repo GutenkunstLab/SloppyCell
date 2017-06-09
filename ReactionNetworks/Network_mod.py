@@ -594,7 +594,7 @@ class Network:
         if rmsd==None:
             rmsd = _double_max_
             
-        self.stochastic = {'seed':seed, 'reseed':True,
+        self.stochastic = {'seed':seed%4294967295, 'reseed':True,
                            'fill_dt':fill_dt, 'rmsd':rmsd}
 
         if hasattr(self, 'periodic'):
