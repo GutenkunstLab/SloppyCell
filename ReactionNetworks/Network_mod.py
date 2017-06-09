@@ -1795,9 +1795,11 @@ class Network:
         c_body.append('')
 
         # Declare variables at top of C body
-        c_body.append('double %s;' % ', '.join(self.constantVars.keys()))
         c_body.append('double %s;' % ', '.join(self.dynamicVars.keys()))
-        c_body.append('double %s;' % ', '.join(self.assignmentRules.keys()))
+        if self.constantVars:
+            c_body.append('double %s;' % ', '.join(self.constantVars.keys()))
+        if self.assignmentRules:
+            c_body.append('double %s;' % ', '.join(self.assignmentRules.keys()))
 
         # Copy our algebraic variable guesses into the appropriate slots of
         # dynamicVars
