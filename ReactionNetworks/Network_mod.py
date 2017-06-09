@@ -1794,6 +1794,11 @@ class Network:
         c_body.append('double time = *time_ptr;')
         c_body.append('')
 
+        # Declare variables at top of C body
+        c_body.append('double %s;' % ', '.join(self.constantVars.keys()))
+        c_body.append('double %s;' % ', '.join(self.dynamicVars.keys()))
+        c_body.append('double %s;' % ', '.join(self.assignmentRules.keys()))
+
         # Copy our algebraic variable guesses into the appropriate slots of
         # dynamicVars
         for ii, key in enumerate(self.algebraicVars.keys()):
@@ -1808,7 +1813,8 @@ class Network:
         self._add_assignments_to_function_body(py_body)
         py_body.append('')
         c_body.append('')
-        self._add_assignments_to_function_body(c_body, in_c=True)
+        self._add_assignments_to_function_body(c_body, in_c=True,
+                                               declarations=False)
         c_body.append('')
 
         # Now evaluate all the algebraic rules.
@@ -2515,7 +2521,8 @@ class Network:
 
 
     def _add_assignments_to_function_body(self, body, in_c = False,
-                                          include_dts=False):
+                                          include_dts=False,
+                                          declarations=True):
         """
         Adds the assignment rules for this Network to the list of lines that
         are in body.
@@ -2535,10 +2542,15 @@ class Network:
                         body.append('%s_deriv_wrt_time = yprime.item(%i)' 
                                     % (id,ii))
                 else:
-                    body.append('double %s = %s[%i];' % (id, arg, ii))
-                    if include_dts and arg != 'constants':
-                        body.append('double %s_deriv_wrt_time = yprime[%i];' 
-                                    % (id,ii))
+                    if declarations:
+                        body.append('double %s = %s[%i];' % (id, arg, ii))
+                        if include_dts and arg != 'constants':
+                            body.append('double %s_deriv_wrt_time = yprime[%i];'
+                                        % (id,ii))
+                    else:
+                        body.append('%s = %s[%i];' % (id, arg, ii))
+                        if include_dts and arg != 'constants':
+                            body.append('%s_deriv_wrt_time = yprime[%i];' % (id,ii))
             body.append('')
 
         for variable, math in self.assignmentRules.items():
@@ -2546,7 +2558,10 @@ class Network:
                 body.append('%s = %s' % (variable, math))
             else:
                 c_math = ExprManip.make_c_compatible(math)
-                body.append('double %s = %s;' % (variable, c_math))
+                if declarations:
+                    body.append('double %s = %s;' % (variable, c_math))
+                else:
+                    body.append('%s = %s;' % (variable, c_math))
             if include_dts:
                 # This zero is in case assigment doesn't depend on any
                 # dynamic variables. In that case, simply_expr could fail
@@ -2571,8 +2586,11 @@ class Network:
                     body.append('%s_deriv_wrt_time = %s' % (variable, rhs))
                 else:
                     c_rhs = ExprManip.make_c_compatible(rhs)
-                    body.append('double %s_deriv_wrt_time = %s;'
-                                % (variable, c_rhs))
+                    if declarations:
+                        body.append('double %s_deriv_wrt_time = %s;'
+                                    % (variable, c_rhs))
+                    else:
+                        body.append('%s_deriv_wrt_time = %s;' % (variable, c_rhs))
 
         return body
 
