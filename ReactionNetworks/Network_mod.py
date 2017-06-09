@@ -3340,8 +3340,12 @@ class Network:
             if ccompiler.get_default_compiler() == 'unix':
                 extra_compile_args = ['-Wno-unused-variable', '-Wno-#warnings',
                                       '-Wno-unused-function']
+                extra_link_args = None
+            elif ccompiler.get_default_compiler() == 'msvc':
+                extra_compile_args = ['/wd4091', '/wd4244']
+                extra_link_args = ['/ignore:4197']
             else:
-                extra_compile_args = None
+                extra_compile_args, extra_link_args = None, None
 
             # Essentially we're running a setup.py script. Those scripts use
             # sys.argv for control, so we directly edit it.
@@ -3353,7 +3357,8 @@ class Network:
                                  sources=['%s.c'%mod_name, '%s.pyf'%mod_name,
                                           '%s/mtrand.c'%RN_dir],
                                  include_dirs=[RN_dir],
-                                 extra_compile_args=extra_compile_args)
+                                 extra_compile_args=extra_compile_args,
+                                 extra_link_args=extra_link_args)
             core.setup(ext_modules = [ext])
             ## Hide common f2py warnings
             #os.environ['OPT'] = '-Wno-unused-variable -Wno-#warnings'
