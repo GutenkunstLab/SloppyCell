@@ -10,7 +10,7 @@ interface
         double precision intent(in), dimension(%(N_const)i) :: constants
         integer intent(hide), dimension(2) :: ipar
     end subroutine res_function
-    subroutine ddaskr_jac(t,y,yprime,pd,cj,constants,ipar)
+    subroutine ddaskr_jac(t,y,yprime,delta,pd,cj,h,wt,rpar,ipar)
         double precision intent(in) :: t
         double precision intent(in), dimension(ipar[0]) :: y
         double precision intent(in), dimension(ipar[0]) :: yprime
