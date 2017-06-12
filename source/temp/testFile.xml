@@ -28,11 +28,11 @@
         </Skip>
 	</Parameters>
     <Actions>
-        <Optimization path="..\temp\Optimization_1496868084.bp" plot="True" save="True" use_path="True" />
-        <Ensemble path="..\temp\Ensemble_1496873736.bp" prune="5" save="True" size="75" use_path="False" />
+        <Optimization iterations="20" path="..\temp\Optimization_1496937714.bp" plot="False" save="True" use_path="True" />
+        <Ensemble path="..\temp\Ensemble_1496958325.bp" prune="5" save="True" steps="75" use_path="True" />
         <Histogram>
             <Variables>
-                <parameter bins="10" id="tao" log="True" />
+                <parameter bins="10" ids="tao, r3, r1" log="True" />
             </Variables>
         </Histogram>
         <EnsembleTrajectories time="65">
