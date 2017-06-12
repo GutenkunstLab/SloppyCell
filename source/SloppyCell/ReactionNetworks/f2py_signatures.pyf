@@ -10,13 +10,16 @@ interface
         double precision intent(in), dimension(%(N_const)i) :: constants
         integer intent(hide), dimension(2) :: ipar
     end subroutine res_function
-    subroutine ddaskr_jac(t,y,yprime,pd,cj,constants,ipar)
+    subroutine ddaskr_jac(t,y,yprime,delta,pd,cj,h,wt,rpar,ipar)
         double precision intent(in) :: t
-        double precision intent(in), dimension(%(N_dyn)i) :: y
-        double precision intent(in), dimension(%(N_dyn)i) :: yprime
-        double precision intent(out), dimension(%(N_dyn)i, %(N_dyn)i) :: pd
+        double precision intent(in), dimension(ipar[0]) :: y
+        double precision intent(in), dimension(ipar[0]) :: yprime
+        double precision intent(hide), dimension(ipar[0]) :: delta
+        double precision intent(out), dimension(ipar[0],ipar[0]) :: pd
         double precision intent(in) :: cj
-        double precision intent(in), dimension(%(N_const)i) :: constants
+        double precision intent(hide) :: h
+        double precision intent(hide), dimension(ipar[0]) :: wt
+        double precision intent(in), dimension(ipar[1]) :: rpar
         ! This has been set equal to (neq, len(rpar)) in the daskr call
         integer dimension(2), intent(hide) :: ipar
     end subroutine ddaskr_jac

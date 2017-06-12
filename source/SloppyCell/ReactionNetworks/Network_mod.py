@@ -11,7 +11,6 @@ import time
 import os
 import sys
 import operator
-import importlib
 
 import logging
 logger = logging.getLogger('ReactionNetworks.Network_mod')
@@ -23,7 +22,7 @@ import SloppyCell
 import SloppyCell.Utility as Utility
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
-import numpy.f2py.f2py2e
+
 import SloppyCell.ExprManip as ExprManip
 # We load a dictionary of previously-taken derivatives for efficiency
 ExprManip.load_derivs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
@@ -88,7 +87,7 @@ class Network:
                          'max': scipy.maximum
                          }
     # These are functions we need to create but that should be used commonly
-    _standard_func_defs = [('SloppyCell', ['n', 'x'],  'x**(1./n)'),
+    _standard_func_defs = [('root', ['n', 'x'],  'x**(1./n)'),
                            ('cot', ['x'],  '1./tan(x)'),
                            ('arccot', ['x'],  'atan(1/x)'),
                            ('coth', ['x'],  '1./tanh(x)'),
@@ -564,7 +563,7 @@ class Network:
                 system time and os.urandom (if available).
         fill_dt -- Fill in the trajectory at the requested time interval. This
                    is the simplest way to fill in a trajectory.
-        rmsd -- Maximum SloppyCell mean squared distance in the dynamic variable
+        rmsd -- Maximum root mean squared distance in the dynamic variable
                 space before taking a data point (a better trajectory filler).
 
         Outputs: None
@@ -595,7 +594,7 @@ class Network:
         if rmsd==None:
             rmsd = _double_max_
             
-        self.stochastic = {'seed':seed, 'reseed':True,
+        self.stochastic = {'seed':seed%4294967295, 'reseed':True,
                            'fill_dt':fill_dt, 'rmsd':rmsd}
 
         if hasattr(self, 'periodic'):
@@ -656,7 +655,7 @@ class Network:
     def _iter_limit_cycle(self, params, varNames, s0):
         """
         Internal function used to integrate a trajectory and find the point
-        nearest the initial point (defined as the SloppyCell sum squared distance)
+        nearest the initial point (defined as the root sum squared distance)
         in the period range of [0.475*tau, 1.5*tau]. The point found and period
         (tau) is returned.
 
@@ -1151,10 +1150,10 @@ class Network:
 
         # Test that we have a working integrator
         body = self._dynamic_funcs_python.get('integrate_stochastic_tidbit')
-        if 'pass' in body.split('\n')[-1]:
-            err_body = '\n'.join(
+        if 'pass' in body.splitlines()[-1]:
+            err_body = os.linesep.join(
                 ['Integrate stochastic failed due to the problem(s):']+
-                body.split('\n')[1:-1])
+                body.splitlines()[1:-1])
             raise RuntimeError(err_body)
         
         dv=scipy.array([self.get_var_val(_) for _ in self.dynamicVars.keys()])
@@ -1679,8 +1678,8 @@ class Network:
                     py_body.append('root_devs[%i] = (%s) - 0.5\n\t' 
                                    % (len_root_func, comp))
                     c_comp = ExprManip.make_c_compatible(comp)
-                    c_body.append('root_devs[%i] = (%s) - 0.5;\n\t' 
-                                   % (len_root_func, c_comp))
+                    c_body.append('root_devs[%i] = (%s) - 0.5;%s'
+                                   % (len_root_func, c_comp, os.linesep))
                     self.event_clauses.append(comp)
                     event.sub_clause_indices.append(len_root_func)
                     len_root_func += 1
@@ -1795,6 +1794,13 @@ class Network:
         c_body.append('double time = *time_ptr;')
         c_body.append('')
 
+        # Declare variables at top of C body
+        c_body.append('double %s;' % ', '.join(self.dynamicVars.keys()))
+        if self.constantVars:
+            c_body.append('double %s;' % ', '.join(self.constantVars.keys()))
+        if self.assignmentRules:
+            c_body.append('double %s;' % ', '.join(self.assignmentRules.keys()))
+
         # Copy our algebraic variable guesses into the appropriate slots of
         # dynamicVars
         for ii, key in enumerate(self.algebraicVars.keys()):
@@ -1809,7 +1815,8 @@ class Network:
         self._add_assignments_to_function_body(py_body)
         py_body.append('')
         c_body.append('')
-        self._add_assignments_to_function_body(c_body, in_c=True)
+        self._add_assignments_to_function_body(c_body, in_c=True,
+                                               declarations=False)
         c_body.append('')
 
         # Now evaluate all the algebraic rules.
@@ -1942,21 +1949,23 @@ class Network:
         N_dyn = len(self.dynamicVars)
         c_body = []
         c_args = 'double *time_ptr, double *dynamicVars, double *yprime, '\
-                'double *pd, double *cj_ptr, double *constants, int *intpar'
+                'double *delta, double *pd, double *cj_ptr, double *h_ptr, '\
+                'double *wt, double *constants, int *intpar'
         c_body.append('void ddaskr_jac_(%s){' % c_args)
         self._prototypes_c.set('ddaskr_jac', 
                                'void ddaskr_jac_(%s);' % c_args)
         c_body.append('double cj = *cj_ptr;')
         c_body.append('')
+        c_body.append('double local_dres_dcdot[%i*%i] = {0};' % (N_dyn, N_dyn))
+        c_body.append('int ii;')
+        c_body.append('')
         c_body.append('dres_dc_function_(time_ptr, dynamicVars, yprime, '
                       'constants, pd);')
         c_body.append('')
         # Like magic, this will initialize *all* elements to zero
-        c_body.append('double local_dres_dcdot[%i*%i] = {0};' % (N_dyn, N_dyn))
         c_body.append('dres_dcdot_function_(time_ptr, dynamicVars, yprime, '
                       'constants, local_dres_dcdot);')
         c_body.append('')
-        c_body.append('int ii;')
         c_body.append('for(ii=0; ii < %i; ii++){' % N_dyn**2)
         c_body.append('  pd[ii] += cj*local_dres_dcdot[ii];}')
         c_body.append('}')
@@ -2030,7 +2039,6 @@ class Network:
             self._dynamic_funcs_c.set(func_name, c_body)
 
     def _make_sens_rhs(self):
-
         py_body = []
         py_body.append('def sens_rhs(time, sens_y, sens_yp, constants):')
         py_body.append('sens_y = scipy.asarray(sens_y)')
@@ -2089,22 +2097,29 @@ class Network:
                        '+ scipy.dot(local_dres_dcdot, dcdot_dp)' % N_dyn)
 
         # This fills in the first half of our sens_res
+        c_body.append('int p_index = (int)constants[%i];' % N_const)
+        c_body.append('double constants_only[%i];' % N_const)
+        c_body.append('int jj;')
+        c_body.append('double *dc_dp;')
+        c_body.append('double *dcdot_dp;')
+        c_body.append('double *local_dres_dp;')
+        c_body.append('int ii;')
+        c_body.append('double local_dres_dc[%i] = {0};' % N_dyn**2)
+        c_body.append('double local_dres_dcdot[%i] = {0};' % N_dyn**2)
+        c_body.append('int row, col;')
+        c_body.append('')
         c_body.append('res_function_(time_ptr, sens_y, sens_yp, cj_ptr, '
                       'sens_res, ires_ptr, constants, ipar);')
         c_body.append('')
-        c_body.append('int p_index = (int)constants[%i];' % N_const)
         # we add an array that tracks the constants only, so that
         # the c version of the dres_dparam function gets an array of the
         # expected size
-        c_body.append('double constants_only[%i];' % N_const)
-        c_body.append('int jj;')
         c_body.append('for (jj = 0; jj < %s; jj++){' % N_const)
         c_body.append('constants_only[jj] = constants[jj];}')
-        c_body.append('double *dc_dp = &sens_y[%i];' % N_dyn)
-        c_body.append('double *dcdot_dp = &sens_yp[%i];' % N_dyn)
+        c_body.append('dc_dp = &sens_y[%i];' % N_dyn)
+        c_body.append('dcdot_dp = &sens_yp[%i];' % N_dyn)
         # We'll directly fill dres_dp into the appropriate place in sens_res
-        c_body.append('double *local_dres_dp = &sens_res[%i];' % N_dyn)
-        c_body.append('int ii;')
+        c_body.append('local_dres_dp = &sens_res[%i];' % N_dyn)
         # sens_res isn't necessarily all zeros when passed in using the
         # cpointer.
         c_body.append('for(ii = 0; ii < %s; ii++){' % N_dyn)
@@ -2119,15 +2134,12 @@ class Network:
             c_body.append('break;'), 
         c_body.append('}')
         # Fill in dres_dc
-        c_body.append('double local_dres_dc[%i] = {0};' % N_dyn**2)
         c_body.append('dres_dc_function_(time_ptr, sens_y, sens_yp, constants, '
                       'local_dres_dc);')
-        c_body.append('int row, col;')
         c_body.append('for(row = 0; row < %i; row++){' % N_dyn)
         c_body.append('for(col = 0; col < %i; col++){' % N_dyn)
         c_body.append('sens_res[row+%i] += local_dres_dc[row + col*%i]*dc_dp[col];}}' % (N_dyn, N_dyn))
 
-        c_body.append('double local_dres_dcdot[%i] = {0};' % N_dyn**2)
         c_body.append('dres_dcdot_function_(time_ptr, sens_y, sens_yp, '
                       'constants, local_dres_dcdot);')
         c_body.append('for(row = 0; row < %i; row++){' % N_dyn)
@@ -2338,17 +2350,13 @@ class Network:
             mapping[name] = 'av[%i]'%index
         
         class Parse(ExprManip.AST.compiler.visitor.ASTVisitor):
-            #Unsure as to why 'slf' was being used instead of 'self'
-            #Error being thrown, so 'slf' changed to 'self'
-            #slf was being passed as argument to compiler.walk()
-            #Replaced with 'self' for now, should be changed accordingly if issue arises
-            def __call__(self,s,c=True):
+            def __call__(slf,s,c=True):
                 if c: s = ExprManip.make_c_compatible(s)
                 ast = ExprManip.strip_parse(s)
-                ExprManip.AST.compiler.walk(ast, self)
+                ExprManip.AST.compiler.walk(ast, slf)
                 return ExprManip.ast2str(ast)
-            #same issue with 'slf' vs 'self' here, was giving error so changed for now
-            def visitName(self,node,*args):
+
+            def visitName(slf,node,*args):
                 if mapping.has_key(node.name): node.name=mapping[node.name]
         parse = Parse()
         
@@ -2434,8 +2442,6 @@ class Network:
         c_body.append('  int i; /* Temp variables */')
         c_body.append('')
         c_body.append('  unsigned long seed = *seed_ptr;')
-        c_body.append('  if (*reseed) {init_genrand(seed);}')
-        c_body.append('')
         if N_RXN > 0:
             c_body.append('  short stch[%i][%i] = {{%s}};' %
                           (N_RXN, N_DYN,
@@ -2452,11 +2458,14 @@ class Network:
         c_body.append('  double dt=0.0;')
         c_body.append('')
         c_body.append('  double dv0[%i];'%N_DYN)
-        c_body.append('  for (i=0;i<%i;i++) {dv0[i]=dv[i];}'%N_DYN)
-        c_body.append('')
         c_body.append('  int rxnInd = %i;'%N_RXN)
         c_body.append('  double propensity, selection, props[%i], av[%i];'%
                       (N_RXN, N_ASN))
+        c_body.append('    double _sd = 0.0;')
+        c_body.append('  if (*reseed) {init_genrand(seed);}')
+        c_body.append('')
+        c_body.append('  for (i=0;i<%i;i++) {dv0[i]=dv[i];}'%N_DYN)
+        c_body.append('')
         c_body.append('  while (time < stop_time) {')
         for index, rule in enumerate(self.assignmentRules.values()):
             c_body.append('    av[%i]=%s;'%(index, parse(rule)))
@@ -2485,7 +2494,6 @@ class Network:
         c_body.append('')
         c_body.append('    for (i=0;i<%i;i++) {dv[i]+=stch[rxnInd][i];}'%N_DYN)
         c_body.append('')
-        c_body.append('    double _sd = 0.0;')
         c_body.append('    for (i=0;i<%i;i++) {'%N_DYN)
         c_body.append('        _sd += (dv0[i]-dv[i])*(dv0[i]-dv[i]);')
         c_body.append('    }')
@@ -2515,7 +2523,8 @@ class Network:
 
 
     def _add_assignments_to_function_body(self, body, in_c = False,
-                                          include_dts=False):
+                                          include_dts=False,
+                                          declarations=True):
         """
         Adds the assignment rules for this Network to the list of lines that
         are in body.
@@ -2535,10 +2544,15 @@ class Network:
                         body.append('%s_deriv_wrt_time = yprime.item(%i)' 
                                     % (id,ii))
                 else:
-                    body.append('double %s = %s[%i];' % (id, arg, ii))
-                    if include_dts and arg != 'constants':
-                        body.append('double %s_deriv_wrt_time = yprime[%i];' 
-                                    % (id,ii))
+                    if declarations:
+                        body.append('double %s = %s[%i];' % (id, arg, ii))
+                        if include_dts and arg != 'constants':
+                            body.append('double %s_deriv_wrt_time = yprime[%i];'
+                                        % (id,ii))
+                    else:
+                        body.append('%s = %s[%i];' % (id, arg, ii))
+                        if include_dts and arg != 'constants':
+                            body.append('%s_deriv_wrt_time = yprime[%i];' % (id,ii))
             body.append('')
 
         for variable, math in self.assignmentRules.items():
@@ -2546,7 +2560,10 @@ class Network:
                 body.append('%s = %s' % (variable, math))
             else:
                 c_math = ExprManip.make_c_compatible(math)
-                body.append('double %s = %s;' % (variable, c_math))
+                if declarations:
+                    body.append('double %s = %s;' % (variable, c_math))
+                else:
+                    body.append('%s = %s;' % (variable, c_math))
             if include_dts:
                 # This zero is in case assigment doesn't depend on any
                 # dynamic variables. In that case, simply_expr could fail
@@ -2571,8 +2588,11 @@ class Network:
                     body.append('%s_deriv_wrt_time = %s' % (variable, rhs))
                 else:
                     c_rhs = ExprManip.make_c_compatible(rhs)
-                    body.append('double %s_deriv_wrt_time = %s;'
-                                % (variable, c_rhs))
+                    if declarations:
+                        body.append('double %s_deriv_wrt_time = %s;'
+                                    % (variable, c_rhs))
+                    else:
+                        body.append('%s_deriv_wrt_time = %s;' % (variable, c_rhs))
 
         return body
 
@@ -3132,11 +3152,12 @@ class Network:
     _py_func_dict_cache = {}
     _c_module_cache = {}
     # This is an option to disable compilation of C modules.
-    def exec_dynamic_functions(self, disable_c=False, del_c_files=True,
+    def exec_dynamic_functions(self, disable_c=False, del_c_files=True, 
                                curr_c_code=None):
         # only get the bodies that were created.
-        curr_py_bodies = '\n'.join([body for body in self._dynamic_funcs_python.values()\
-                                    if body != None])
+        curr_py_bodies = os.linesep.join([body for body in
+                                          self._dynamic_funcs_python.values()
+                                          if body != None])
 
         key = (curr_py_bodies, tuple(self._func_strs.items()))
         # Search our cache of python functions.
@@ -3169,17 +3190,12 @@ class Network:
             # Write C to file.
             module_name = self.output_c(curr_c_code)
             try:
-                # Run f2py on the C. This may raise an exception if the command
+                # Run distutils on the C. This may raise an exception if the command
                 # fails.
-                self.run_f2py(module_name, hide_f2py_output=True)
-                # Source of error: Henlo
-
-                c_module = importlib.import_module(module_name)
-
+                self.run_distutils(module_name, hide_output=True)
+                c_module = __import__(module_name)
                 if del_c_files:
-
                     os.unlink('%s.pyf' % module_name)
-
                     os.unlink('%s.c' % module_name)
                     try:
                         os.unlink('%s.so' % module_name)
@@ -3190,19 +3206,6 @@ class Network:
                     except OSError:
                         pass
             except ImportError, X:
-                if del_c_files:
-                    try:
-                        os.unlink('%s.pyf' % module_name)
-
-                        os.unlink('%s.c' % module_name)
-                        os.unlink('%s.so' % module_name)
-                    except OSError:
-                        pass
-                    try:
-                        os.unlink('%s.pyd' % module_name)
-                    except OSError:
-                        pass
-
                 # Compiling C failed.
                 logger.warn('Failed to import dynamically compiled C module %s '
                             'for network %s.' % (module_name, self.get_id()))
@@ -3247,7 +3250,7 @@ class Network:
             c_code.append(body)
             c_code.append('')
 
-        c_code = '\n'.join(code for code in c_code if code != None)
+        c_code = os.linesep.join(code for code in c_code if code != None)
         return c_code
 
     def output_c(self, c_code, mod_name=None):
@@ -3263,7 +3266,7 @@ class Network:
 
 
         # Write the C code to a file.
-        c_fd = open('%s.c' % mod_name, 'w')
+        c_fd = open('%s.c' % mod_name, 'wb')
         c_fd.write(c_code)
         c_fd.close()
 
@@ -3295,13 +3298,13 @@ class Network:
         if self.deriv_funcs_enabled == True:
             for wrt_ii, wrt in enumerate(self.optimizableVars.keys()):
                 func_name = 'dres_d' + wrt
-                dres_dparams_code += '    subroutine ' + func_name + '(time, dynamicVars, yprime, constants, pd)\n'
-                dres_dparams_code += '        double precision intent(in) :: time\n'
-                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: dynamicVars\n'
-                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: yprime\n'
-                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_const) + ') :: constants\n'
-                dres_dparams_code += '        double precision intent(out), dimension(' + str(N_dyn) + ') :: pd\n'
-                dres_dparams_code += '    end subroutine ' + func_name + '\n'
+                dres_dparams_code += '    subroutine ' + func_name + '(time, dynamicVars, yprime, constants, pd)'+os.linesep
+                dres_dparams_code += '        double precision intent(in) :: time' + os.linesep
+                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: dynamicVars' + os.linesep
+                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_dyn) + ') :: yprime' + os.linesep
+                dres_dparams_code += '        double precision intent(in), dimension(' + str(N_const) + ') :: constants' + os.linesep
+                dres_dparams_code += '        double precision intent(out), dimension(' + str(N_dyn) + ') :: pd' + os.linesep
+                dres_dparams_code += '    end subroutine ' + func_name + os.linesep
 
         # Now update the template with the code we just generated and the other
         # names and dimensions
@@ -3319,48 +3322,52 @@ class Network:
 
         return mod_name
 
-    def run_f2py(self, mod_name, hide_f2py_output=True):
-
-        logger.debug('Running f2py for network %s.' % self.get_id())
-        from numpy.distutils.exec_command import exec_command
+    def run_distutils(self, mod_name, hide_output=True):
+        logger.debug('Running distutils for network %s.' % self.get_id())
         # Run f2py. The 'try... finally...' structure ensures that we stop
-        #  redirecting output if there's an exception in running f2py
+        #  redirecting output if there's an exection in running f2py
         # These options assume we're working with mingw.
-        win_options = ''
-        if sys.platform == 'win32':
-            win_options = '--compiler=mingw32 --fcompiler=gnu'
+        oldargv = sys.argv
         try:
-            if hide_f2py_output:
-
+            if hide_output:
                 redir = Utility.Redirector_mod.hideStdout()
-
                 redir.start()
+            import setuptools
+            from numpy.distutils import core
+            # Identify compiler, in order to set flags that will suppress
+            # obnoxious warnings from f2py.
+            import numpy.distutils.ccompiler as ccompiler
+            if ccompiler.get_default_compiler() == 'unix':
+                extra_compile_args = ['-Wno-unused-variable', '-Wno-#warnings',
+                                      '-Wno-unused-function']
+                extra_link_args = None
+            elif ccompiler.get_default_compiler() == 'msvc':
+                extra_compile_args = ['/wd4091', '/wd4244']
+                extra_link_args = ['/ignore:4197']
+            else:
+                extra_compile_args, extra_link_args = None, None
 
-            sc_path = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
-            command = '-c -IC:\Users\Keeyan\AppData\Local\Temp -IC:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\jak-stat -LC:\TDM-GCC-64\\x86_64-w64-mingw32\lib %(win_options)s %(mod_name)s.pyf '\
-                    '%(mod_name)s.c %(sc_path)s/mtrand.c -I%(sc_path)s'\
-                    % {'win_options': win_options, 'mod_name': mod_name, 
-                       'sc_path': sc_path}
-
-            prev_cflags = os.getenv('CFLAGS', '')
-            os.environ['CFLAGS']= prev_cflags + '-Wno-unused-variable -Wl,--allow-multiple-definition'
-            os.environ['LDFLAGS'] = '-Wl,--allow-multiple-definition'
-
-            current_flags = os.getenv('CFLAGS', '')
-            # f2py wants an extra argument at the front here. It's not actually
-            # used though...
-            oldargv = sys.argv
-            sys.argv =['f2py'] + command.split()
-
-
-            numpy.f2py.f2py2e.run_compile()
-            #sys.argv = sys.argv
-            os.putenv('CFLAGS', prev_cflags)
+            # Essentially we're running a setup.py script. Those scripts use
+            # sys.argv for control, so we directly edit it.
+            # See https://stackoverflow.com/questions/2850971/directly-call-distutils-or-setuptools-setup-function-with-command-name-optio
+            sys.argv =  ['%s_setup.py'%mod_name, 'build_ext',
+                         '--inplace']
+            RN_dir = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
+            ext = core.Extension(name=mod_name,
+                                 sources=['%s.c'%mod_name, '%s.pyf'%mod_name,
+                                          '%s/mtrand.c'%RN_dir],
+                                 include_dirs=[RN_dir],
+                                 extra_compile_args=extra_compile_args,
+                                 extra_link_args=extra_link_args)
+            core.setup(ext_modules = [ext])
+            ## Hide common f2py warnings
+            #os.environ['OPT'] = '-Wno-unused-variable -Wno-#warnings'
         except SystemExit, X:
-            logger.warn('Call to f2py failed for network %s.  (Warning from ReactionNetworks.Network_mod)' % self.get_id())
+            logger.warn('Call to distutils failed for network %s.' % self.get_id())
             logger.warn(X)
         finally:
-            if hide_f2py_output:
+            sys.argv = oldargv
+            if hide_output:
                 redir.stop()
 
     def import_c_funcs_from_module(self, module):

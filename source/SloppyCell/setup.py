@@ -55,8 +55,9 @@ if hasattr(os, 'link'):
 #  on CCMR, it seems (very slightly), faster to use the included ones rather
 #  than linking against LAPACK.
 daskr = core.Extension(name = 'SloppyCell._daskr',
-                       sources = ['daskr.pyf', 'ddaskr/ddaskr.f', 
-                                  'ddaskr/daux.f', 'ddaskr/dlinpk.f'])
+                       sources = ['daskr.pyf', 'ddaskr/ddaskr.c',
+                                  'ddaskr/daux.c', 'ddaskr/dlinpk.c',
+                                  'ddaskr/ddaskr_types.h'])
 
 misc_c = core.Extension(name = 'SloppyCell.misc_c',
                         sources = ['misc_c.c', 'misc_c.pyf'])

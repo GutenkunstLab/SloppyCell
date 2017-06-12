@@ -708,7 +708,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
 
     # Our intial guess for ypIC will be based on the typical values
     typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]*2
-    ypIC = scipy.array(typ_vals)
+    ypIC = scipy.array(typ_vals, dtype=float)
     ypIC[N_dyn_vars:] /= net.get_var_ic(opt_var)
 
     tout = []
