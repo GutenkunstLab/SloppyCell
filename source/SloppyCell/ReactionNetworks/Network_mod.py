@@ -3192,7 +3192,7 @@ class Network:
             try:
                 # Run distutils on the C. This may raise an exception if the command
                 # fails.
-                self.run_distutils(module_name, hide_output=True)
+                self.run_distutils(module_name, hide_output=False)
                 c_module = __import__(module_name)
                 if del_c_files:
                     os.unlink('%s.pyf' % module_name)
@@ -3218,6 +3218,7 @@ class Network:
         # Now we add all the appropriate functions to our Network.
         if c_module is not None:
             self.import_c_funcs_from_module(c_module)
+
 
     def get_c_code(self):
         # Combine all our C functions into one block of code
