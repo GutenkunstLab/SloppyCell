@@ -70,7 +70,6 @@ def routine_dict_drier(routine_dict):
                         # The parameter is meant to be a string
                         # We allow certain attributes to be input as a comma-separated list.
                         if ',' in parameter:
-                            print "Seperating Values"
                             placeholder = []
                             alpha = parameter.split(',')
                             for beta in alpha:
@@ -159,6 +158,7 @@ def plot_histograms(pruned_ens, keyed_list, ids='all', bins=10, log=True):
     if isinstance(ids, list):
         for param in ids:
             if param in keyed_list.keys():
+                print "Plotting histogram for %s" % param
                 param_index = keyed_list.index_by_key(param)
                 fig = figure()
                 fig.suptitle(param, fontweight='bold')
@@ -178,19 +178,37 @@ def plot_histograms(pruned_ens, keyed_list, ids='all', bins=10, log=True):
             hist(param_array, normed=True, bins=bins)
 
 
-def plot_variables(pruned_ens, net, time=65, start=0, points=100):
+def plot_variables(pruned_ens = None, net = None, ids=None, time_r=65, start=0, points=100,
+                   make_figure=True, color='g', bounds=(.025, .975), **kwargs):
     # TODO: make plots show up based on file input.
-    times = linspace(start, time, points)
-    traj_set = Ensembles.ensemble_trajs(net, times, pruned_ens)
-    lower, upper = Ensembles.traj_ensemble_quantiles(traj_set, (0.025, 0.975))
+    times = linspace(start, time_r, points)
+    if isinstance(bounds, list) or isinstance(bounds, str):
+        bound_list = []
+        if 'lower' in bounds:
+            bound_list.append(.025)
+        if 'upper' in bounds:
+            bound_list.append(.975)
+        if 'middle' in bounds:
+            bound_list.append(.5)
+        bounds = tuple(bound_list)
+        if len(bounds) == 0:
+            bounds = (.025, .975)
+    if pruned_ens is not None:
+        traj_set = Ensembles.ensemble_trajs(net, times, pruned_ens)
+        quantiles = Ensembles.traj_ensemble_quantiles(traj_set, bounds)
+    else:
+        traj_set = kwargs['traj_set']
+        quantiles = Ensembles.traj_ensemble_quantiles(traj_set, bounds)
+        #quantiles = kwargs['quantiles']
 
-    figure()
-    plot(times, lower.get_var_traj('frac_v3'), 'g')
-    plot(times, upper.get_var_traj('frac_v3'), 'g')
-    plot(times, lower.get_var_traj('frac_v4'), 'b')
-    plot(times, upper.get_var_traj('frac_v4'), 'b')
+    if make_figure:
+        figure()
 
-    show()
+    print "Plotting trajectory set for %s" % ids
+    for quantile in quantiles:
+        plot(times, quantile.get_var_traj(ids), color)
+
+    return traj_set
 
 
 def cost_lm(params, m, optimize=True, plot=False, iterations=20):
@@ -418,6 +436,7 @@ def histogram_r(current_root, result_dictionary, params, **kwargs):
     """
     # Shadows numpy 'histogram()' function without underscore
     # Histograms cannot be loaded from file, they're based entirely on the ensemble.
+    # If you have the ensemble you can make the histogram pretty quickly
     # Graph objects could potentially be saved, but it's probably not worth it.
     try:
         pruned_ens = result_dictionary['ensemble']
@@ -427,22 +446,85 @@ def histogram_r(current_root, result_dictionary, params, **kwargs):
         pass
     for child in current_root:
         for variable in child:
+            # We don't run the save function so the attributes don't get dried in the decorator
             attributes = variable.attrib
             attributes = routine_dict_drier(attributes)
 
             plot_histograms(pruned_ens, params, **attributes)
 
 
+@check_to_save
+def ensemble_traj(current_root, result_dictionary, time_r, net, **kwargs):
+    print "Graphing trajectories"
+    try:
+        traj_dict = kwargs['loaded_object']
+        object_loaded = True
+    except KeyError:
+        object_loaded = False
+        traj_dict = {}
+    color_array = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
+    try:
+        pruned_ens = result_dictionary['ensemble']
+    except KeyError:
+        # We haven't constructed an ensemble yet.
+        # TODO: Same as histogram, need ensemble to be called before this in some way
+        pass
+    try:
+        time_r = current_root.attrib['time']
+    except KeyError:
+        logger.debug("No time specified, using default")
+        # User did not specify a time, so we use the estimated one from the experiment
+    # Need to dig into the root to get the variable information
+
+
+    for child_r in current_root:
+        for child in child_r:
+            graphing_set = []
+            index = 0
+            for variable in child:
+                # We don't run the save function so the attributes don't get dried in the decorator
+                # We do it here instead
+                attributes = variable.attrib
+                attributes = routine_dict_drier(attributes)
+                if 'color' not in attributes.keys():
+                    attributes['color'] = color_array[index]
+                    index += 1
+                # We have 8 colors to choose from
+                # TODO: Different graphs should not continue through the list and instead reset back to the beginning
+                if index > 7:
+                    index = 0
+                graphing_set.append(attributes)
+            figure_bool = True
+            for species_attributes in graphing_set:
+                species_id = species_attributes['ids']
+                if not object_loaded:
+                    traj_set = plot_variables(pruned_ens, net, time_r=time_r, make_figure=figure_bool, **species_attributes)
+                    # We can use this dictionary to recreate the graphs, and also allow future functions to easily
+                    # access the trajectory sets of different species
+                    traj_dict[species_id] = (traj_set, figure_bool)
+                else:
+                    traj_set = traj_dict[species_id][0]
+                    figure_bool = traj_dict[species_id][1]
+                    #quantiles = traj_dict[species_id][2]
+                    plot_variables(traj_set=traj_set, make_figure=figure_bool, time_r=time_r,
+                                   **species_attributes)
+
+                if figure_bool:
+                    figure_bool = False
+    return traj_dict
+
+
 def make_happen(root, experiment, xml_file=None, file_name=None):
     result_dictionary = dict()
-    function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r}
+    function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
+                           'ensembletrajectories': ensemble_traj}
     # TODO: Clean this mess up
     # These actions should generally happen for any input #
     # They have few enough options that there is little customization to be done and they are essential to setting
     # up the model.
     sbml_reference = root.find("References").find("SBML").attrib["path"]
     net = IO.from_SBML_file(sbml_reference)  # Set model from SBML reference
-    time = time_extract(experiment)
+    time_r = time_extract(experiment)
     model = Model([experiment], [net])  # Use experiment to create model
     fit_root = root.find("Parameters").find("Fit")
     set_ic(fit_root, net)
@@ -455,8 +537,8 @@ def make_happen(root, experiment, xml_file=None, file_name=None):
             r_name = child.tag.lower()
             result_dictionary[r_name] = function_dictionary[r_name](root=action_root, routine=child.tag,
                                                                     model=model, params=params, current_root=child,
-                                                                    xml_file=xml_file, file_name=file_name,
-                                                                    result_dictionary=result_dictionary)
+                                                                    xml_file=xml_file, file_name=file_name, time_r=time_r,
+                                                                    net=net, result_dictionary=result_dictionary)
         except KeyError:
             logger.warn("No function associated with action tag %s" % child.tag)
     show()
