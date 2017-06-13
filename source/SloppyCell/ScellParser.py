@@ -18,7 +18,7 @@ from xml.etree import ElementTree as ET
 
 logger = logging.getLogger('ScellParser')
 logging.basicConfig()
-# TODO: Defining global variables is bad practice so change this later.  Should really just make it a class. @Keeyan
+# This stuff is just about obsolete anyway. They're being left in just in case we decide to parse a unique format again
 tag_string = '<>'  # change things here to reformat Scell files
 data_tag_string = '[]'
 accepted_data_file_type = ('.csv', 'tsv', '.xlsx', '.txt')
@@ -83,7 +83,7 @@ def untag(file_string):
     
     """
 
-    # TODO: get rid of regex functions
+
     return_dictionary = {}
     all_items = re.findall('<.*>\[.*\]', file_string)  # Makes a list of every item in the file
     # .* denotes any character, and any amount.  Essentially the regex expression checks for characters enclosed by
@@ -95,12 +95,19 @@ def untag(file_string):
     return return_dictionary
 
 
-def experiment_constructor(data_file):
+def experiment_constructor(data_file, sbml_reference):
     """
     Uses provided data file path to find appropriate csv file
     Extracts data and formats it to create an 'Experiment' object
     Returns the experiment object to be utilized in the main function
     """
+    try:
+        net = IO.from_SBML_file(sbml_reference)
+        model_name = net.id
+    except Exception as e:
+        logger.warn("SBML reference not valid")
+        logger.warn(e)
+        return None
     expt = Experiment(os.path.splitext(os.path.basename(data_file))[0])  # Experiment named after data file
     # expt = Experiment('expt1')
     if data_file.lower().endswith(accepted_data_file_type):
@@ -131,7 +138,7 @@ def experiment_constructor(data_file):
                     temp_dict = {}
                     index = 0
                     for data_point in data:
-                        # TODO: Hopefully find a way to avoid hard-coding in sigma-value (Technically done already)
+                        # Sigma should be included with the data
                         sigma_list = data_point.split(',')
                         temp_dict[float(model_dict[time_key][index])] = (float(sigma_list[0]), float(sigma_list[1]))
                         index += 1
@@ -142,8 +149,7 @@ def experiment_constructor(data_file):
                     print e
                     print 'This exception was brought to you by bad csv parsing'
         return_dict = dict()
-        # TODO: Switch from hard-coded model inclusion to SBML file reading
-        return_dict['net1'] = final_dict
+        return_dict[model_name] = final_dict
         expt.set_data(return_dict)
         return expt, time_array
     else:
@@ -168,13 +174,20 @@ def read_from_file(file_name):
         if file_name.lower().endswith('.xml'):
             xml_file = ET.parse(file_name)
             root = xml_file.getroot()
+            experiment = None
             try:
-                data_reference = root.find("References").find("Data").attrib["path"]
-                experiment, time_array = experiment_constructor(data_reference)
+                sbml_reference = root.find("references").find("SBML").attrib['path']
+                try:
+                    data_reference = root.find("References").find("Data").attrib["path"]
+                    experiment, time_array = experiment_constructor(data_reference, sbml_reference)
+                except Exception as e:
+                    logger.warn('No data reference established, experiment cannot be constructed')
+                    logger.warn(e)
+                    experiment = None
+
             except Exception as e:
-                logger.warn('No data reference established, experiment cannot be constructed')
-                logger.warn(e)
-                experiment = None
+                logger.warn('No sbml reference established, model cannot be made.')
+
             if experiment is not None:
                 TestConstruct_XML.make_happen(root, experiment, xml_file=xml_file, file_name=file_name)
         else:
