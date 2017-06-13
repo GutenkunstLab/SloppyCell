@@ -3192,7 +3192,7 @@ class Network:
             try:
                 # Run distutils on the C. This may raise an exception if the command
                 # fails.
-                self.run_distutils(module_name, hide_output=False)
+                self.run_distutils(module_name, hide_output=True)
                 c_module = __import__(module_name)
                 if del_c_files:
                     os.unlink('%s.pyf' % module_name)
@@ -3206,6 +3206,17 @@ class Network:
                     except OSError:
                         pass
             except ImportError, X:
+                if del_c_files:
+                    try:
+                        os.unlink('%s.pyf' % module_name)
+                        os.unlink('%s.c' % module_name)
+                        os.unlink('%s.so' % module_name)
+                    except OSError:
+                        pass
+                    try:
+                        os.unlink('%s.pyd' % module_name)
+                    except OSError:
+                        pass
                 # Compiling C failed.
                 logger.warn('Failed to import dynamically compiled C module %s '
                             'for network %s.' % (module_name, self.get_id()))

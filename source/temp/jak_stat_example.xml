@@ -25,22 +25,22 @@
         </Skip>
 	</Parameters>
     <Actions>
-        <Optimization iterations="20" path="..\temp\Optimization_1497376711.bp" plot="True" save="True" use_path="True" />
-        <Ensemble path="..\temp\Ensemble_1497376793.bp" prune="5" save="True" steps="750" use_path="True" />
+        <Optimization iterations="20" path="..\temp\Optimization_1497387761.bp" plot="True" save="True" use_path="False" />
+        <Ensemble path="..\temp\Ensemble_1497387885.bp" prune="5" save="True" steps="1000" use_path="False" />
         <Histogram>
             <Variables>
-                <parameter bins="10" ids="tao, r3, r1" log="True" />
+                <parameter bins="10" ids="r3" log="True" />
             </Variables>
         </Histogram>
-        <EnsembleTrajectories path="..\temp\EnsembleTrajectories_1497383022.bp" save="True" use_path="True">
+        <EnsembleTrajectories path="..\temp\EnsembleTrajectories_1497387976.bp" save="True" use_path="False">
             <Variables>
                 <Graph>
                     <species bounds="lower, upper" ids="frac_v3" />
-                    <species bounds="lower, middle, upper" ids="frac_v4" />
+                    <species bounds="lower, upper" ids="frac_v4" />
                 </Graph>
                 <Graph>
-                    <species bounds="middle, upper" ids="data1" />
-                    <species bounds="lower, middle, upper" ids="data2" />
+                    <species bounds="" ids="data1" />
+                    <species bounds="" ids="data2" />
                 </Graph>
 
             </Variables>
