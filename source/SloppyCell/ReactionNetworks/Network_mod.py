@@ -3338,12 +3338,15 @@ class Network:
         logger.debug('Running distutils for network %s.' % self.get_id())
         # Run f2py. The 'try... finally...' structure ensures that we stop
         #  redirecting output if there's an exection in running f2py
-        # These options assume we're working with mingw.
         oldargv = sys.argv
         try:
             if hide_output:
-                redir = Utility.Redirector_mod.hideStdout()
-                redir.start()
+                # Redirect STDOUT and STDERR, to hide them if there's no
+                # problem.
+                redir_stdout = Utility.Redirector_mod.Redirector(1)
+                redir_stdout.start()
+                redir_stderr = Utility.Redirector_mod.Redirector(2)
+                redir_stderr.start()
             import setuptools
             from numpy.distutils import core
             # Identify compiler, in order to set flags that will suppress
@@ -3372,15 +3375,22 @@ class Network:
                                  extra_compile_args=extra_compile_args,
                                  extra_link_args=extra_link_args)
             core.setup(ext_modules = [ext])
-            ## Hide common f2py warnings
-            #os.environ['OPT'] = '-Wno-unused-variable -Wno-#warnings'
         except SystemExit, X:
-            logger.warn('Call to distutils failed for network %s.' % self.get_id())
-            logger.warn(X)
-        finally:
-            sys.argv = oldargv
+            # If we encounter an error, print out STDOUT and STDERR for
+            # debugging
             if hide_output:
-                redir.stop()
+                stdout = redir_stdout.stop()
+                stderr = redir_stderr.stop()
+                print '***STDOUT***'
+                print stdout
+                print '***STDERR***'
+                print stderr
+        finally:
+            # Ensure we always stop redirecting and restor sys.argv
+            if hide_output:
+                redir_stdout.stop()
+                redir_stderr.stop()
+            sys.argv = oldargv
 
     def import_c_funcs_from_module(self, module):
         for function in self._dynamic_funcs_c.keys():
