@@ -22,6 +22,123 @@ this_module = sys.modules[__name__]
 # Globally defined variables.  Should eventually be done away with.
 step_factor = 300
 
+# Here we define all of the modification functions for the networks
+# ------------------------------------------------------------------------
+
+
+def set_constant(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        network.set_var_constant(**attributes)
+    return network
+
+
+def add_species(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        network.add_species(**attributes)
+    return network
+
+
+def add_assignment(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        attributes = attributes.copy()
+        var_id = attributes.pop('id')
+        network.add_assignment_rule(var_id, **attributes)
+    return network
+
+
+def set_optimizable(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        network.set_var_optimizable(**attributes)
+    return network
+
+
+def set_initial(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        network.set_initial_var_value(**attributes)
+    return network
+
+
+def start_fixed(network, action_root):
+    attributes = action_root.attrib
+    try:
+        min = int(attributes['min'])
+    except KeyError:
+        min = 0
+    try:
+        max = int(attributes['max'])
+    except KeyError:
+        max = 1000
+    Dynamics.integrate(network, [min, max])
+    fp = Dynamics.dyn_var_fixed_point(network)
+    network.set_dyn_var_ics(fp)
+    return network
+
+
+def add_event(network, action_root):
+    # TODO: This could be easier to use
+    for child in action_root:
+        attributes = child.attrib
+        assignment_dict = {}
+        for assignment in child:
+            attribs = assignment.attrib
+            assignment_dict[attribs['id']] = attribs['func']
+        network.add_event(event_assignments=assignment_dict, **attributes)
+    return network
+
+
+def add_parameter(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        network.add_parameter(**attributes)
+    return network
+
+
+def add_rate_rule(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        var_id = attributes.pop('id')
+        network.add_rate_rule(var_id, **attributes)
+    return network
+
+
+def add_reaction(network, action_root):
+    for child in action_root:
+        pass_list = []
+        attributes = child.attrib
+        attributes = attributes.copy()
+        var_id = attributes.pop('id')
+        if 'stoich_var' in attributes and 'stoich_val' in attributes:
+            stoich = {}
+            try:
+                value_s = int(attributes['stoich_val'])
+            except ValueError:
+                value_s = attributes['stoich_val']
+            stoich[attributes['stoich_var']] = value_s
+            pass_list.apppend(stoich)
+        try:
+            reaction_name = attributes.pop('reaction')
+            try:
+                kinetic_law = getattr(globals()['Reactions'],reaction_name)
+                network.addReaction(kinetic_law, var_id, *pass_list, **attributes)
+                return network
+            except Exception as e:
+                print e
+                logger.warn("Please check that the reaction name is typed correctly")
+        except KeyError:
+            # No reaction specified
+            kinetic_law = attributes.pop('kinetic_law')
+            network.addReaction(var_id, kinetic_law, *pass_list, **attributes)
+            return network
+        for key in attributes:
+            pass_list.append(attributes[key])
+        network.addReaction(var_id, *pass_list)
+    return network
+
 
 def chop(word, character):
     if isinstance(character, str):
@@ -252,7 +369,7 @@ def time_extract(experiment):
             times = experiment.data[key_t][species_key].keys()
             # Experiments hold the time data as keys in a dictionary
             time_array.append(max(times))
-    return max(time_array) + 5  # Arbitrary number added, still unsure how x-axis is calculated for plots
+    return int(max(time_array)) + 5  # Arbitrary number added, still unsure how x-axis is calculated for plots
 
 
 def key_parameters(fit_root, tag="parameter"):
@@ -320,7 +437,14 @@ def check_to_save(routine_function):
         :return: the result of the associated routine function is returned.  If an object is loaded it is simply
                  passed down to the associated routine function.
         """
-        routine_dict = root.find(routine).attrib
+        try:
+            routine_dict = root.find(routine).attrib
+        except AttributeError:
+            try:
+                current_root = kwargs['current_root']
+                routine_dict = current_root.attrib
+            except AttributeError:
+                routine_dict = root.attrib
         routine_dict = routine_dict_drier(routine_dict)
         use_file = False
         save_file = False
@@ -382,6 +506,8 @@ def check_to_save(routine_function):
             save_file = False
         if save_file:
             node = root.find(routine)
+            if node is None:
+                    node = current_root
             save_to_temp(routine_object, xml_file=xml_file, file_name=file_name, node=node, routine=routine)
         return routine_object
 
@@ -514,28 +640,89 @@ def ensemble_traj(current_root, result_dictionary, time_r, net, **kwargs):
     return traj_dict
 
 
-def make_happen(root, experiment, xml_file=None, file_name=None):
+def trajectory_integration(result_dictionary, **kwargs):
+    pass
+
+
+@check_to_save
+def create_Network(current_root, routine_dict, sbml_reference, network_dictionary, network_func_dictionary, **kwargs):
+    try:
+        network = kwargs['loaded_object']
+        print network.id
+        return network
+    except KeyError:
+        pass
+    network_name = routine_dict['id']
+    if 'from_file' in routine_dict:
+        if routine_dict['from_file']:
+            network = IO.from_SBML_file(sbml_reference)
+    elif 'copy' in routine_dict:
+        try:
+            network_to_copy = network_dictionary[routine_dict['copy']]
+            network = network_to_copy.copy(network_name)
+        except KeyError:
+            # Should call recursively to see if we just haven't made the network meant to be copied yet.
+            # Can do this by ensuring this function is not called on networks that already exist in the dictionary
+
+            # This is the case that could cause network to be undefined
+            logger.warn("No network named %s to copy" % routine_dict['copy'])
+    else:
+        # We want to create a completely new network.
+        network = Network(network_name)
+    # Now that we have a network, we should modify it according to the xml file
+    for child in current_root:
+        r_name = child.tag.lower()
+        network = network_func_dictionary[r_name](network, child)
+    return network
+
+
+def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference = None):
     result_dictionary = dict()
-    function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
+    network_dictionary = dict()
+
+    action_function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
                            'ensembletrajectories': ensemble_traj}
+    network_func_dictionary = {'set_constant': set_constant, 'add_species': add_species,
+                               'add_assignment': add_assignment, 'set_optimizable': set_optimizable,
+                               'set_initial': set_initial, 'start_fixed': start_fixed,
+                               'add_event': add_event, 'add_parameter': add_parameter,
+                               'add_rate_rule': add_rate_rule, 'add_reaction': add_reaction}
     # TODO: Clean this mess up
     # These actions should generally happen for any input #
     # They have few enough options that there is little customization to be done and they are essential to setting
     # up the model.
-    sbml_reference = root.find("References").find("SBML").attrib["path"]
     net = IO.from_SBML_file(sbml_reference)  # Set model from SBML reference
     time_r = time_extract(experiment)
     model = Model([experiment], [net])  # Use experiment to create model
-    fit_root = root.find("Parameters").find("Fit")
-    set_ic(fit_root, net)
+    try:
+        fit_root = root.find("Parameters").find("Fit")
+        set_ic(fit_root, net)
+        params = key_parameters(fit_root)
+    except AttributeError:
+        pass
+
     add_residuals(root, model)
-    params = key_parameters(fit_root)
+
     ###
     action_root = root.find("Actions")
+    network_root = root.find("Networks")
+    if network_root is not None:
+        for network in network_root:
+            net_name = network.attrib['id']
+            print net_name
+            network_dictionary[net_name] = create_Network(root=network_root, routine=net_name, xml_file=xml_file,
+                                                          file_name=file_name, current_root=network,
+                                                          sbml_reference=sbml_reference,
+                                                          network_dictionary=network_dictionary,
+                                                          network_func_dictionary=network_func_dictionary)
+    else:
+        # No network element is established, so we should just use the default network
+        pass
+    print network_dictionary
     for child in action_root:
         try:
             r_name = child.tag.lower()
-            result_dictionary[r_name] = function_dictionary[r_name](root=action_root, routine=child.tag,
+            result_dictionary[r_name] = action_function_dictionary[r_name](root=action_root, routine=child.tag,
                                                                     model=model, params=params, current_root=child,
                                                                     xml_file=xml_file, file_name=file_name, time_r=time_r,
                                                                     net=net, result_dictionary=result_dictionary)
