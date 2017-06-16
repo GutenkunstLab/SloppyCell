@@ -175,6 +175,19 @@ class Network:
     for func_id, func_str in _common_func_strs.items():
         _common_namespace[func_id] = eval(func_str, _common_namespace, {})
 
+    def piecewise(*args):
+        values = args[0::2]
+        conditions = args[1::2]
+        for c,v in zip(conditions, values):
+            if c:
+                return v
+        if len(values) == len(conditions) + 1:
+            return values[-1]
+        else:
+            raise ValueError("No condition in piecewise evaluates to True.")
+
+    _common_namespace['piecewise'] = piecewise
+
     def __init__(self, id, name=''):
         self.id, self.name = id, name
 
@@ -3003,7 +3016,6 @@ class Network:
         Disables the creation of derivative functions, which can speed up
         integration.
         """
-        
         if self.deriv_funcs_enabled == True:
             self.ddaskr_jac = None
             self._dynamic_structure_methods = ['_make_res_function',
