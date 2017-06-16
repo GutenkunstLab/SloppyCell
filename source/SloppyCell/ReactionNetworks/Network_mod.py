@@ -10,6 +10,7 @@ import types
 import time
 import os
 import sys
+import shutil
 import operator
 
 import logging
@@ -173,6 +174,19 @@ class Network:
     # common ones in there.
     for func_id, func_str in _common_func_strs.items():
         _common_namespace[func_id] = eval(func_str, _common_namespace, {})
+
+    def piecewise(*args):
+        values = args[0::2]
+        conditions = args[1::2]
+        for c,v in zip(conditions, values):
+            if c:
+                return v
+        if len(values) == len(conditions) + 1:
+            return values[-1]
+        else:
+            raise ValueError("No condition in piecewise evaluates to True.")
+
+    _common_namespace['piecewise'] = piecewise
 
     def __init__(self, id, name=''):
         self.id, self.name = id, name
@@ -3002,7 +3016,6 @@ class Network:
         Disables the creation of derivative functions, which can speed up
         integration.
         """
-        
         if self.deriv_funcs_enabled == True:
             self.ddaskr_jac = None
             self._dynamic_structure_methods = ['_make_res_function',
@@ -3197,6 +3210,8 @@ class Network:
                 if del_c_files:
                     os.unlink('%s.pyf' % module_name)
                     os.unlink('%s.c' % module_name)
+                    os.unlink('%smodule.c' % module_name)
+                    shutil.rmtree('build')
                     try:
                         os.unlink('%s.so' % module_name)
                     except OSError:
@@ -3349,18 +3364,6 @@ class Network:
                 redir_stderr.start()
             import setuptools
             from numpy.distutils import core
-            # Identify compiler, in order to set flags that will suppress
-            # obnoxious warnings from f2py.
-            import numpy.distutils.ccompiler as ccompiler
-            if ccompiler.get_default_compiler() == 'unix':
-                extra_compile_args = ['-Wno-unused-variable', '-Wno-#warnings',
-                                      '-Wno-unused-function']
-                extra_link_args = None
-            elif ccompiler.get_default_compiler() == 'msvc':
-                extra_compile_args = ['/wd4091', '/wd4244']
-                extra_link_args = ['/ignore:4197']
-            else:
-                extra_compile_args, extra_link_args = None, None
 
             # Essentially we're running a setup.py script. Those scripts use
             # sys.argv for control, so we directly edit it.
@@ -3371,9 +3374,7 @@ class Network:
             ext = core.Extension(name=mod_name,
                                  sources=['%s.c'%mod_name, '%s.pyf'%mod_name,
                                           '%s/mtrand.c'%RN_dir],
-                                 include_dirs=[RN_dir],
-                                 extra_compile_args=extra_compile_args,
-                                 extra_link_args=extra_link_args)
+                                 include_dirs=[RN_dir])
             core.setup(ext_modules = [ext])
         except SystemExit, X:
             # If we encounter an error, print out STDOUT and STDERR for
