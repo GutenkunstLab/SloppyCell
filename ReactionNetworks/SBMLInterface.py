@@ -29,6 +29,12 @@ def toSBMLFile(net, fileName):
 def SBMLtoDOT(sbmlFileName, dotFileName):
     raise DeprecationWarning, 'SBMLtoDOT has been deprecated. Instead, use IO.net_DOT_file(net, filename)'
 
+def formula_to_py(ast):
+    formula = libsbml.formulaToString(ast)
+    formula = formula.replace('or(','or_func(')
+    formula = formula.replace('and(','and_func(')
+    return formula
+
 def rxn_add_stoich(srxn, rid, stoich, is_product=True):
     try:
         stoich = float(stoich)
@@ -344,9 +350,9 @@ def stoichToString(species, stoich):
     if stoich is None:
         stoich = str(species.getStoichiometry())
     elif hasattr(stoich, 'getMath'): # libsbml > 3.0
-        stoich = libsbml.formulaToString(stoich.getMath())
+        stoich = formula_to_py(stoich.getMath())
     else: # libsbml 2.3.4
-        stoich = libsbml.formulaToString(stoich)
+        stoich = formula_to_py(stoich)
     return stoich
 
 def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
@@ -378,9 +384,9 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         math = f.getMath()
         variables = []
         for ii in range(math.getNumChildren() - 1):
-            variables.append(libsbml.formulaToString(math.getChild(ii)))
+            variables.append(formula_to_py(math.getChild(ii)))
 
-        math = libsbml.formulaToString(math.getRightChild())
+        math = formula_to_py(math.getRightChild())
 
         rn.addFunctionDefinition(id, variables, math)
 
@@ -501,11 +507,11 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
 
     for ii, r in enumerate(m.getListOfRules()):
         if r.getTypeCode() == libsbml.SBML_ALGEBRAIC_RULE:
-            math = libsbml.formulaToString(r.getMath())
+            math = formula_to_py(r.getMath())
             rn.add_algebraic_rule(math)
         else:
             variable = r.getVariable()
-            math = libsbml.formulaToString(r.getMath())
+            math = formula_to_py(r.getMath())
             if r.getTypeCode() == libsbml.SBML_ASSIGNMENT_RULE:
                 rn.addAssignmentRule(variable, math)
             elif r.getTypeCode() == libsbml.SBML_RATE_RULE:
@@ -525,9 +531,8 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         except AttributeError:
             # For older versions
             trigger_math = e.getTrigger()
-        trigger = libsbml.formulaToString(trigger_math)
-        trigger = trigger.replace('or(','or_func(')
-        trigger = trigger.replace('and(','and_func(')
+        trigger = formula_to_py(trigger_math)
+        trigger = sbml_formula_to_py(trigger)
 
         if e.getDelay() is not None:
             try:
@@ -536,14 +541,14 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             except AttributeError:
                 # For older versions
                 delay_math = e.getDelay()
-            delay = libsbml.formulaToString(delay_math)
+            delay = formula_to_py(delay_math)
         else:
             delay = 0
 
         timeUnits = e.getTimeUnits()
         eaDict = KeyedList()
         for ea in e.getListOfEventAssignments():
-            ea_formula = libsbml.formulaToString(ea.getMath())
+            ea_formula = formula_to_py(ea.getMath())
             ea_formula = ea_formula.replace('or(','or_func(')
             ea_formula = ea_formula.replace('and(','and_func(')
             eaDict.set(ea.getVariable(), ea_formula)
@@ -559,7 +564,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
 
         trigger_math = con.getMath()
 
-        trigger = libsbml.formulaToString(trigger_math)
+        trigger = formula_to_py(trigger_math)
 
         if con.isSetMessage():
             message = con.getMessage()
