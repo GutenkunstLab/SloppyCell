@@ -10,6 +10,7 @@ import types
 import time
 import os
 import sys
+import shutil
 import operator
 
 import logging
@@ -3197,6 +3198,8 @@ class Network:
                 if del_c_files:
                     os.unlink('%s.pyf' % module_name)
                     os.unlink('%s.c' % module_name)
+                    os.unlink('%smodule.c' % module_name)
+                    shutil.rmtree('build')
                     try:
                         os.unlink('%s.so' % module_name)
                     except OSError:
