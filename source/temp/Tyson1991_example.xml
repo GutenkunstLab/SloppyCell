@@ -1,0 +1,74 @@
+<Scell>
+    <References>
+        <Data path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\temp\tyson_data.csv" />
+		<SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\Tyson_1991\BIOMD0000000005.xml" />
+    </References>
+    <Networks>
+        <Network from_file="True" id="base" path="..\temp\base_1497566455.bp" save="True" use_path="False">
+            <Set_Constant>
+                <var id="cell" is_constant="True" />
+                <var id="EmptySet" is_constant="True" />
+            </Set_Constant>
+            <Set_Optimizable>
+                <var id="k5notP" is_optimizable="False" />
+                <var id="k2" is_optimizable="False" />
+            </Set_Optimizable>
+            <Add_Species>
+                <var compartment="cell" id="YT" name="total cyclin" />
+            </Add_Species>
+            <Add_Assignment>
+                <var id="YT" rhs="Y+YP+pM+M" />
+            </Add_Assignment>
+        </Network>
+        <Network copy="base" id="perturbed" path="..\temp\perturbed_1497565588.bp" save="True" use_path="True">
+            <Set_Initial>
+                <var id="k6" value="2.0" />
+            </Set_Initial>
+            <Set_Optimizable>
+                <var id="k6" is_optimizable="False" />
+            </Set_Optimizable>
+            <Start_Fixed max="1000" min="0" />
+            <Add_Event>
+                <event id="perturb1" trigger="gt(time, 10)">
+                    <assignment func="1.2*M" id="M" />
+                </event>
+                <event id="perturb2" trigger="gt(time, 30)">
+                    <assignment func="2*M" id="M" />
+                </event>
+                <event id="perturb3" trigger="gt(time, 60)">
+                    <assignment func="2.4*M" id="M" />
+                </event>
+            </Add_Event>
+        </Network>
+        <Network copy="base" id="growth" path="..\temp\growth_1497565588.bp" save="True" use_path="True">
+            <Add_Parameter>
+                <var id="Td" initial_value="116" />
+            </Add_Parameter>
+            <Add_Rate_Rule>
+                <var rhs="-0.693 * k6/Td" />
+            </Add_Rate_Rule>
+            <Set_Initial>
+                <var id="k6" value="2.5" />
+            </Set_Initial>
+            <Add_Event>
+                <event id="gene_replication" trigger="lt(k6, 1.3)">
+                    <assignment func="2*k6" id="k6" />
+                </event>
+            </Add_Event>
+        </Network>
+        <Network copy="base" id="mine" path="..\temp\mine_1497566474.bp" save="True" use_path="True">
+            <Add_Species>
+                <var compartment="cell" id="killer" initial_conc="2.0" />
+                <var compartment="cell" id="killpM" initial_conc="0.0" />
+            </Add_Species>
+            <Add_Parameter>
+                <var id="kf_kpM" initial_value="1.0" />
+            </Add_Parameter>
+            <Add_Reaction>
+                <var A="pM" B="killer" dimer="killpM" id="kill_pM_binding" rate="kf_kpM" reaction="HeterodimerizationReaction" />
+                <var id="killer_degredation" kinetic_law="0.1*killer * sin(time/25)" stoich_val="-1" stoich_var="killer" />
+            </Add_Reaction>
+        </Network>
+    </Networks>
+
+</Scell>

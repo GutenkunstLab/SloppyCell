@@ -25,14 +25,14 @@
         </Skip>
 	</Parameters>
     <Actions>
-        <Optimization iterations="20" path="..\temp\Optimization_1497387761.bp" plot="True" save="True" use_path="False" />
-        <Ensemble path="..\temp\Ensemble_1497387885.bp" prune="5" save="True" steps="1000" use_path="False" />
+        <Optimization iterations="20" path="..\temp\Optimization_1497541417.bp" plot="True" save="True" use_path="True" />
+        <Ensemble path="..\temp\Ensemble_1497541523.bp" prune="5" save="True" steps="1000" use_path="True" />
         <Histogram>
             <Variables>
                 <parameter bins="10" ids="r3" log="True" />
             </Variables>
         </Histogram>
-        <EnsembleTrajectories path="..\temp\EnsembleTrajectories_1497387976.bp" save="True" use_path="False">
+        <EnsembleTrajectories path="..\temp\EnsembleTrajectories_1497541592.bp" save="True" use_path="True">
             <Variables>
                 <Graph>
                     <species bounds="lower, upper" ids="frac_v3" />
