@@ -3337,18 +3337,6 @@ class Network:
                 redir_stderr.start()
             import setuptools
             from numpy.distutils import core
-            # Identify compiler, in order to set flags that will suppress
-            # obnoxious warnings from f2py.
-            import numpy.distutils.ccompiler as ccompiler
-            if ccompiler.get_default_compiler() == 'unix':
-                extra_compile_args = ['-Wno-unused-variable', '-Wno-#warnings',
-                                      '-Wno-unused-function']
-                extra_link_args = None
-            elif ccompiler.get_default_compiler() == 'msvc':
-                extra_compile_args = ['/wd4091', '/wd4244']
-                extra_link_args = ['/ignore:4197']
-            else:
-                extra_compile_args, extra_link_args = None, None
 
             # Essentially we're running a setup.py script. Those scripts use
             # sys.argv for control, so we directly edit it.
@@ -3359,9 +3347,7 @@ class Network:
             ext = core.Extension(name=mod_name,
                                  sources=['%s.c'%mod_name, '%s.pyf'%mod_name,
                                           '%s/mtrand.c'%RN_dir],
-                                 include_dirs=[RN_dir],
-                                 extra_compile_args=extra_compile_args,
-                                 extra_link_args=extra_link_args)
+                                 include_dirs=[RN_dir])
             core.setup(ext_modules = [ext])
         except SystemExit, X:
             # If we encounter an error, print out STDOUT and STDERR for
