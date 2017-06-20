@@ -18,9 +18,19 @@ traj1 = Dynamics.integrate(base_net, [0, 100])
 traj2 = Dynamics.integrate(perturbed_net, [0,  100])
 traj3 = Dynamics.integrate(growth_net, [0, 500])
 traj4 = Dynamics.integrate(my_net, [0, 100])
+print traj1.values
+a = []
+b = []
+for thing in traj1.values:
+    a.append(thing[4])
+    b.append(thing[len(thing)-1])
+print max(a)
+print max(b)
+print traj1.keys()
+print traj1.dynamicVarKeys
 
 # Figure 3 from the paper.
-Plotting.figure(1, figsize=(15,4))
+Plotting.figure(1, figsize=(15, 4))
 Plotting.subplot(1, 3, 1)
 Plotting.plot_trajectory(traj1, ['M', 'YT'])
 Plotting.axis([0, 100, 0, .4])
@@ -58,6 +68,7 @@ Plotting.title('Before fitting')
 #  with 95% probility, between val/100 and val * 100.
 # (These are quite tight priors. Real applications (with more constraining data)
 #  will probably want looser priors.)
+print params.items()
 for id, val in params.items():
     m.AddResidual(Residuals.PriorInLog('prior_on_%s' % id, id, scipy.log(val), 
                                        scipy.log(10)))
