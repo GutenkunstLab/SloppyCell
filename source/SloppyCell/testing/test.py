@@ -31,7 +31,6 @@ def run_all_tests():
     SloppyCell.ReactionNetworks.Network_mod.Network.disable_c = True
     print ('*' * 80)
     print ('Running tests with C compilation disabled.')
-    print ('if you see this YOU HAVE DONE IT')
     print ('*' * 80)
     unittest.TextTestRunner(verbosity=2).run(all_tests)
 

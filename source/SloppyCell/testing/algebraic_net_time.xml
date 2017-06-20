@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
-  <model id="algebraic_net_andor_events">
+  <model metaid="SloppyCell_00000" id="algebraic_net_andor_events">
     <listOfCompartments>
-      <compartment id="cell" size="1" constant="true"/>
+      <compartment metaid="SloppyCell_00001" id="cell" size="1" constant="true"/>
     </listOfCompartments>
     <listOfSpecies>
-      <species id="X0" compartment="cell" initialConcentration="1" boundaryCondition="false"/>
-      <species id="X1" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
-      <species id="T" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
-      <species id="S1" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
-      <species id="S2" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00002" id="X0" compartment="cell" initialConcentration="1" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00003" id="X1" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00004" id="T" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00005" id="S1" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00006" id="S2" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
     </listOfSpecies>
     <listOfParameters>
-      <parameter id="Keq" value="2.5" constant="true"/>
-      <parameter id="k1" value="0.1" constant="true"/>
-      <parameter id="k2" value="0.15" constant="true"/>
-      <parameter id="timevar" value="1" constant="false"/>
+      <parameter metaid="SloppyCell_00007" id="Keq" value="2.5" constant="true"/>
+      <parameter metaid="SloppyCell_00008" id="k1" value="0.1" constant="true"/>
+      <parameter metaid="SloppyCell_00009" id="k2" value="0.15" constant="true"/>
+      <parameter metaid="SloppyCell_00010" id="timevar" value="1" constant="false"/>
     </listOfParameters>
     <listOfRules>
-      <assignmentRule variable="S2">
+      <assignmentRule metaid="SloppyCell_00011" variable="S2">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
           <apply>
             <times/>
@@ -27,7 +27,7 @@
           </apply>
         </math>
       </assignmentRule>
-      <algebraicRule>
+      <algebraicRule metaid="SloppyCell_00012">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
           <apply>
             <minus/>
@@ -42,7 +42,7 @@
       </algebraicRule>
     </listOfRules>
     <listOfReactions>
-      <reaction id="in">
+      <reaction metaid="SloppyCell_00013" id="in">
         <listOfReactants>
           <speciesReference species="X0" stoichiometry="1"/>
         </listOfReactants>
@@ -59,7 +59,7 @@
           </math>
         </kineticLaw>
       </reaction>
-      <reaction id="out">
+      <reaction metaid="SloppyCell_00014" id="out">
         <listOfReactants>
           <speciesReference species="T" stoichiometry="1"/>
         </listOfReactants>
@@ -91,7 +91,7 @@
       </reaction>
     </listOfReactions>
     <listOfEvents>
-      <event id="logical_event">
+      <event metaid="SloppyCell_00015" id="logical_event">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
