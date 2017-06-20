@@ -19,12 +19,18 @@ logger = logging.getLogger('ScellParser')
 logging.basicConfig()
 
 
+class GraphHandler:
+    def __init__(self, graph_root):
+        self.graph_root = graph_root
+
+
 def experiment_constructor(data_file, sbml_reference):
     """
     Uses provided data file path to find appropriate csv file
     Extracts data and formats it to create an 'Experiment' object
     Returns the experiment object to be utilized in the main function
     """
+    # TODO: Extend to allow multiple experiments to be constructed
     try:
         net = IO.from_SBML_file(sbml_reference)
         model_name = net.id
@@ -93,6 +99,7 @@ def read_from_file(file_name):
         try:
             sbml_reference = root.find("References").find("SBML").attrib['path']
             try:
+                # TODO: Allow multiple data files for multiple experiments
                 data_reference = root.find("References").find("Data").attrib["path"]
                 experiment, time_array = experiment_constructor(data_reference, sbml_reference)
             except AttributeError as e:
@@ -104,9 +111,9 @@ def read_from_file(file_name):
             logger.warn('No sbml reference established, model cannot be made.')
             print e
         if experiment is not None:
-            TestConstruct_XML.make_happen(root, experiment, xml_file=xml_file, file_name=file_name,
+            TestConstruct_XML.make_happen(root, experiment = {experiment.GetName(): experiment}, xml_file=xml_file, file_name=file_name,
                                           sbml_reference=sbml_reference)
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
-    read_from_file(r'C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\temp\jak_stat_example.xml')
+    read_from_file(r'C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\temp\Tyson1991_example.xml')

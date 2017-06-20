@@ -22,6 +22,15 @@ this_module = sys.modules[__name__]
 # Globally defined variables.  Should eventually be done away with.
 step_factor = 300
 
+
+def hash_routine(root):
+    root_iter = root.getiterator()
+    hash_list = []
+    for child in root_iter:
+        hash_list.append((child.tag, (tuple(child.attrib.keys()), tuple(child.attrib.values()))))
+        hash_list.sort()
+    return hash(tuple(hash_list))
+
 # Here we define all of the modification functions for the networks
 # ------------------------------------------------------------------------
 
@@ -101,6 +110,7 @@ def add_parameter(network, action_root):
 def add_rate_rule(network, action_root):
     for child in action_root:
         attributes = child.attrib
+        attributes = attributes.copy()
         var_id = attributes.pop('id')
         network.add_rate_rule(var_id, **attributes)
     return network
@@ -328,6 +338,10 @@ def plot_variables(pruned_ens = None, net = None, ids=None, time_r=65, start=0, 
     return traj_set
 
 
+def calculate_traj(network, lower_bound = 0, upper_bound = 100):
+    pass
+
+
 def cost_lm(params, m, optimize=True, plot=False, iterations=20):
     """
     This is the optimization routine.  It runs a cost analysis on the parameters provided and outputs a graph
@@ -359,16 +373,18 @@ def cost_lm(params, m, optimize=True, plot=False, iterations=20):
     return params
 
 
-def time_extract(experiment):
+def time_extract(experiment_r):
     """
     Goes through the experiment provided and finds the times
     """
     time_array = []
-    for key_t in experiment.data.keys():
-        for species_key in experiment.data[key_t].keys():
-            times = experiment.data[key_t][species_key].keys()
-            # Experiments hold the time data as keys in a dictionary
-            time_array.append(max(times))
+    for experiment in experiment_r.values():
+
+        for key_t in experiment.data.keys():
+            for species_key in experiment.data[key_t].keys():
+                times = experiment.data[key_t][species_key].keys()
+                # Experiments hold the time data as keys in a dictionary
+                time_array.append(max(times))
     return int(max(time_array)) + 5  # Arbitrary number added, still unsure how x-axis is calculated for plots
 
 
@@ -401,7 +417,7 @@ def find_by_tag(root, tag, attr=True, return_node=False):
     return found, None, None
 
 
-def save_to_temp(obj, file_name, xml_file, node, routine="temp_file"):
+def save_to_temp(obj, file_name, xml_file, node, hash_id, routine="temp_file"):
     """
     Saves a single object to a file and stores it in the temp folder.  
     
@@ -413,10 +429,11 @@ def save_to_temp(obj, file_name, xml_file, node, routine="temp_file"):
     :return: Doesn't return anything.
     """
     print "Saving " + routine + " to file"
-    filename = '..\\temp\\' + routine + "_" + str(int(math.ceil(time.time()))) + ".bp"
+    filename = '..\\temp\\' + routine + "_" + str(hash_id) + ".bp"
     Utility.save(obj, filename)
     node.set('path', filename)
     xml_file.write(file_name)
+
 
 
 def check_to_save(routine_function):
@@ -427,7 +444,7 @@ def check_to_save(routine_function):
     # TODO: Identify changes to variables and automatically neglect to load from file
     # TODO: Allow multiple files to be chosen from, maybe given names and dynamically accessed from command line?
 
-    def wrapper(root=None, routine=None, **kwargs):
+    def wrapper(root=None, routine=None, hash_node=None, **kwargs):
         """
         Handles the common "path", "save", and "use_path" attributes of most action routines
         
@@ -438,17 +455,23 @@ def check_to_save(routine_function):
                  passed down to the associated routine function.
         """
         try:
-            routine_dict = root.find(routine).attrib
+            pass_root = root.find(routine)
+            routine_dict = pass_root.attrib
         except AttributeError:
             try:
                 current_root = kwargs['current_root']
-                routine_dict = current_root.attrib
+                pass_root = current_root  # Prevents issue later on where pass_root doesn't work
+                routine_dict = pass_root.attrib
             except AttributeError:
                 routine_dict = root.attrib
+                pass_root = root
         routine_dict = routine_dict_drier(routine_dict)
         use_file = False
-        save_file = False
-
+        save_file = True
+        hash_id = hash_routine(pass_root)
+        print hash_id
+        parent = kwargs['parent']
+        hash_root = parent.find('hash')
         try:
             # We pop to get rid of the attributes related to saving, but we could just as easily
             # add **kwargs to all the routine actions to deal with the extra arguments
@@ -461,10 +484,25 @@ def check_to_save(routine_function):
         except KeyError as X:
             logger.debug("Save attribute not specified, will only save if no path currently exists.")
             logger.debug(X)
-        if 'path' in routine_dict:
-            saved_file_path = routine_dict.pop('path')
+        if hash_root is not None:
+            routine_path = hash_root.find(routine.lower())
+        else:
+            routine_path = None
+
+        if routine_path is not None:
+            attributes = routine_path.attrib
+            attributes = attributes.copy()
+            saved_file_path = attributes.pop('path')
             if os.path.isfile(saved_file_path):
                 # A file path is specified
+                hash_from_file = os.path.splitext(os.path.basename(saved_file_path))[0].split('_')[1]
+                print int(hash_from_file)
+                if int(hash_from_file) == hash_id:
+                    use_file = True
+                    save_file = False
+                else:
+                    use_file = False
+                    save_file = True
                 if use_file:
                     # User wants to load the object
                     print 'Successfully loaded %s objects from file' % routine
@@ -505,10 +543,12 @@ def check_to_save(routine_function):
             logger.warn("Cannot save object for %s" % routine)
             save_file = False
         if save_file:
-            node = root.find(routine)
-            if node is None:
-                    node = current_root
-            save_to_temp(routine_object, xml_file=xml_file, file_name=file_name, node=node, routine=routine)
+            action_node = hash_node.find(routine.lower())
+            if action_node is None:
+                print "Making new node"
+                action_node = ET.SubElement(hash_node, routine.lower())
+            save_to_temp(routine_object, hash_id=hash_id, xml_file=xml_file,
+                         file_name=file_name, node=action_node, routine=routine)
         return routine_object
 
     return wrapper
@@ -616,7 +656,6 @@ def ensemble_traj(current_root, result_dictionary, time_r, net, **kwargs):
                     attributes['color'] = color_array[index]
                     index += 1
                 # We have 8 colors to choose from
-                # TODO: Different graphs should not continue through the list and instead reset back to the beginning
                 if index > 7:
                     index = 0
                 graphing_set.append(attributes)
@@ -640,7 +679,11 @@ def ensemble_traj(current_root, result_dictionary, time_r, net, **kwargs):
     return traj_dict
 
 
-def trajectory_integration(result_dictionary, **kwargs):
+@check_to_save
+def trajectory_integration(result_dictionary, current_root, **kwargs):
+    traj_list = []
+    for var in current_root.iter("var"):
+        calculate_traj(var)
     pass
 
 
@@ -656,6 +699,7 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
     if 'from_file' in routine_dict:
         if routine_dict['from_file']:
             network = IO.from_SBML_file(sbml_reference)
+            print network.id
     elif 'copy' in routine_dict:
         try:
             network_to_copy = network_dictionary[routine_dict['copy']]
@@ -681,7 +725,7 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     network_dictionary = dict()
 
     action_function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
-                           'ensembletrajectories': ensemble_traj}
+                           'ensembletrajectories': ensemble_traj, 'trajectory': trajectory_integration}
     network_func_dictionary = {'set_constant': set_constant, 'add_species': add_species,
                                'add_assignment': add_assignment, 'set_optimizable': set_optimizable,
                                'set_initial': set_initial, 'start_fixed': start_fixed,
@@ -691,41 +735,70 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     # These actions should generally happen for any input #
     # They have few enough options that there is little customization to be done and they are essential to setting
     # up the model.
-    net = IO.from_SBML_file(sbml_reference)  # Set model from SBML reference
+
+
+    ###
+    hash_node = root.find('hash')
+    if hash_node is None:
+        hash_node = ET.Element('hash')
+        root.append(hash_node)
+
+    # TODO: Build a tree of dependents so that we don't load from file when a dependent changes.
+    # TODO: Don't include "independent" operations when calculating hash so that changing them has no effect
+    action_root = root.find("Actions")
+    network_root = root.find("Networks")
+    model_root = root.find("Model")
+    net = IO.from_SBML_file(sbml_reference)  # Set base network from SBML reference
+    if network_root is not None:
+        for network in network_root:
+            net_name = network.attrib['id']
+            network_dictionary[net_name] = create_Network(root=network_root, routine=net_name, xml_file=xml_file,
+                                                          file_name=file_name, current_root=network,
+                                                          sbml_reference=sbml_reference,
+                                                          network_dictionary=network_dictionary,
+                                                          network_func_dictionary=network_func_dictionary,
+                                                          hash_node=hash_node, parent=root)
+    else:
+        network_dictionary[net.id] = net
     time_r = time_extract(experiment)
-    model = Model([experiment], [net])  # Use experiment to create model
+
+    # TODO: Extend to allow multiple models?
+    if model_root is not None:
+        experiments = []
+        networks = []
+        for attribute in model_root:
+            if attribute.tag == 'experiment':
+                expt_name = attribute.attrib['id']
+                expt = experiment[expt_name]
+                experiments.append(expt)
+            if attribute.tag == 'network':
+                net_name = attribute.attrib['id']
+                networks.append(network_dictionary[net_name])
+        model = Model(experiments, networks)
+    else:
+        # If undefined, we default to making a model out of all available experiments and models
+        model = Model(experiment.values(), network_dictionary.values())
     try:
         fit_root = root.find("Parameters").find("Fit")
         set_ic(fit_root, net)
         params = key_parameters(fit_root)
     except AttributeError:
-        pass
-
+        # No parameters were specified, so we just take them all
+        params = model.get_params()
+    # This function is standalone and just tacks a residual onto anything that needs it
     add_residuals(root, model)
 
-    ###
-    action_root = root.find("Actions")
-    network_root = root.find("Networks")
-    if network_root is not None:
-        for network in network_root:
-            net_name = network.attrib['id']
-            print net_name
-            network_dictionary[net_name] = create_Network(root=network_root, routine=net_name, xml_file=xml_file,
-                                                          file_name=file_name, current_root=network,
-                                                          sbml_reference=sbml_reference,
-                                                          network_dictionary=network_dictionary,
-                                                          network_func_dictionary=network_func_dictionary)
-    else:
-        # No network element is established, so we should just use the default network
-        pass
     print network_dictionary
+
     for child in action_root:
         try:
             r_name = child.tag.lower()
             result_dictionary[r_name] = action_function_dictionary[r_name](root=action_root, routine=child.tag,
                                                                     model=model, params=params, current_root=child,
                                                                     xml_file=xml_file, file_name=file_name, time_r=time_r,
-                                                                    net=net, result_dictionary=result_dictionary)
+                                                                    net=net, result_dictionary=result_dictionary,
+                                                                    parent=root, hash_node=hash_node,
+                                                                    network_dictionary = network_dictionary)
         except KeyError:
             logger.warn("No function associated with action tag %s" % child.tag)
     show()
