@@ -3165,7 +3165,7 @@ class Network:
     _py_func_dict_cache = {}
     _c_module_cache = {}
     # This is an option to disable compilation of C modules.
-    def exec_dynamic_functions(self, disable_c=False, del_c_files=True, 
+    def exec_dynamic_functions(self, disable_c=False, del_c_files=True,
                                curr_c_code=None):
         # only get the bodies that were created.
         curr_py_bodies = os.linesep.join([body for body in
@@ -3223,9 +3223,11 @@ class Network:
             except ImportError, X:
                 if del_c_files:
                     try:
-                        os.unlink('%s.pyf' % module_name)
                         os.unlink('%s.c' % module_name)
+                        os.unlink('%smodule.c' % module_name)
+                        os.unlink('%s.pyf' % module_name)
                         os.unlink('%s.so' % module_name)
+                        shutil.rmtree('build')
                     except OSError:
                         pass
                     try:
@@ -3372,7 +3374,7 @@ class Network:
                          '--inplace']
             RN_dir = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
             ext = core.Extension(name=mod_name,
-                                 sources=['%s.c'%mod_name, '%s.pyf'%mod_name,
+                                 sources=['%s.pyf'%mod_name, '%s.c'%mod_name,
                                           '%s/mtrand.c'%RN_dir],
                                  include_dirs=[RN_dir])
             core.setup(ext_modules = [ext])
