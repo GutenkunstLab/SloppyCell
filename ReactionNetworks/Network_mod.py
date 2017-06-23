@@ -35,7 +35,7 @@ if SloppyCell.my_rank == 0:
                                                         'diff.pickle'))
     def rmbuild():
         if os.path.exists('build'):
-            rmtree('build')
+            shutil.rmtree('build')
     atexit.register(rmbuild)
 
 import Reactions
