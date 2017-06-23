@@ -33,7 +33,10 @@ if SloppyCell.my_rank == 0:
     import atexit
     atexit.register(ExprManip.save_derivs, os.path.join(SloppyCell._TEMP_DIR, 
                                                         'diff.pickle'))
-    atexit.register(shutil.rmtree, 'build')
+    def rmbuild():
+        if os.path.exists('build'):
+            rmtree('build')
+    atexit.register(rmbuild)
 
 import Reactions
 from Components import *
