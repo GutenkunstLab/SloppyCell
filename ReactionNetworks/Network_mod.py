@@ -33,6 +33,7 @@ if SloppyCell.my_rank == 0:
     import atexit
     atexit.register(ExprManip.save_derivs, os.path.join(SloppyCell._TEMP_DIR, 
                                                         'diff.pickle'))
+    atexit.register(shutil.rmtree, 'build')
 
 import Reactions
 from Components import *
@@ -3211,7 +3212,6 @@ class Network:
                     os.unlink('%s.pyf' % module_name)
                     os.unlink('%s.c' % module_name)
                     os.unlink('%smodule.c' % module_name)
-                    shutil.rmtree('build')
                     try:
                         os.unlink('%s.so' % module_name)
                     except OSError:
