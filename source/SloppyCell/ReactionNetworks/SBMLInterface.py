@@ -368,7 +368,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         for ii in range(d.getNumErrors()):
             pm = d.getError(ii)
             errors.append(pm.getMessage())
-        raise ValueError(message + '; '.join(errors))
+        print(message + '; '.join(errors))
 
     m = d.getModel()
 
@@ -533,7 +533,6 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             # For older versions
             trigger_math = e.getTrigger()
         trigger = formula_to_py(trigger_math)
-        trigger = sbml_formula_to_py(trigger)
 
         if e.getDelay() is not None:
             try:
