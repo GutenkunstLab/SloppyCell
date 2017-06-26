@@ -13,6 +13,7 @@ Redirector_mod.py
 Residuals.py
 RunInParallel.py
 ScellParser.py
+ScellParser_XML.py
 Subspaces.py
 TestConstruct.py
 TestConstruct_XML.py

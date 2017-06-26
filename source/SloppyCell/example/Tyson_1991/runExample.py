@@ -18,17 +18,18 @@ traj1 = Dynamics.integrate(base_net, [0, 100])
 traj2 = Dynamics.integrate(perturbed_net, [0,  100])
 traj3 = Dynamics.integrate(growth_net, [0, 500])
 traj4 = Dynamics.integrate(my_net, [0, 100])
-print traj1.values
-a = []
-b = []
-for thing in traj1.values:
-    a.append(thing[4])
-    b.append(thing[len(thing)-1])
-print max(a)
-print max(b)
-print traj1.keys()
-print traj1.dynamicVarKeys
-
+# print traj2.values
+# print traj2.assignedVarKeys
+# a = []
+# b = []
+# for thing in traj2.values:
+#     a.append(thing[2])
+#     b.append(thing[len(thing)-1])
+# print min(a)
+# print min(b)
+# print traj2.keys()
+# print traj2.dynamicVarKeys
+#
 # Figure 3 from the paper.
 Plotting.figure(1, figsize=(15, 4))
 Plotting.subplot(1, 3, 1)
@@ -45,6 +46,7 @@ Plotting.plot_trajectory(traj3, ['M', 'YT'])
 Plotting.axis([0, 500, 0, 0.6])
 
 Plotting.savefig('3.png', dpi=150)
+Plotting.show()
 
 #
 # Now let's fit the model to some data we've defined in Expts.py
@@ -55,7 +57,8 @@ from Expts import *
 # We put together our Model from the experiments and networks
 m = Model([expt1], [base_net, growth_net])
 params = m.get_params()
-
+print params
+print params.items()
 print 'Initial cost:', m.cost(params)
 Plotting.figure(2)
 Plotting.plot_model_results(m, loc='upper right')
@@ -70,6 +73,7 @@ Plotting.title('Before fitting')
 #  will probably want looser priors.)
 print params.items()
 for id, val in params.items():
+    print val
     m.AddResidual(Residuals.PriorInLog('prior_on_%s' % id, id, scipy.log(val), 
                                        scipy.log(10)))
 

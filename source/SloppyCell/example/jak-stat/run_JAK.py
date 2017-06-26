@@ -1,7 +1,6 @@
 from pylab import *                                                            # (@\label{whatever is inside these special 'at-parens comments' is visible to LaTeX}\label{code:import_start}@)
 from scipy import *
 from SloppyCell.ReactionNetworks import *                                      # (@\label{code:import_end}@)
-
 net = IO.from_SBML_file('JAK-STAT_SC.xml', 'net1')                             # (@\label{code:SBML_import}@)
 net.set_var_ic('v1', 'v1_0') # Won't need given initial assignments.           # (@\label{code:SBML_fix}@)
 import JAK_expt                                                                # (@\label{code:import_expt}@)
@@ -13,7 +12,6 @@ res = Residuals.PriorInLog('r3_prior', 'r3', 0, log(sqrt(1e4)))                #
 m.AddResidual(res)
 res = Residuals.PriorInLog('tao_prior', 'tao', log(4), log(sqrt(4)))
 m.AddResidual(res)                                                             # (@\label{code:prior_end}@)
-
 print 'Initial cost:', m.cost(params)                                          # (@\label{code:initial_cost}@)
 params = Optimization.fmin_lm_log_params(m, params, maxiter=20, disp=False)    # (@\label{code:lm_opt}@)
 print 'Optimized cost:', m.cost(params)

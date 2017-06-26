@@ -3169,6 +3169,7 @@ class Network:
     _py_func_dict_cache = {}
     _c_module_cache = {}
     # This is an option to disable compilation of C modules.
+
     def exec_dynamic_functions(self, disable_c=False, del_c_files=True,
                                curr_c_code=None):
         # only get the bodies that were created.
@@ -3221,7 +3222,7 @@ class Network:
                         pass
                     try:
                         os.unlink('%s.pyd' % module_name)
-                    except OSError:
+                    except OSError as e:
                         pass
             except ImportError, X:
                 if del_c_files:
@@ -3380,7 +3381,7 @@ class Network:
                                  sources=['%s.pyf'%mod_name, '%s.c'%mod_name,
                                           '%s/mtrand.c'%RN_dir],
                                  include_dirs=[RN_dir])
-            core.setup(ext_modules = [ext])
+            core.setup(ext_modules=[ext])
         except SystemExit, X:
             # If we encounter an error, print out STDOUT and STDERR for
             # debugging
