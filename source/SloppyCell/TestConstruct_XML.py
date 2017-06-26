@@ -22,7 +22,6 @@ this_module = sys.modules[__name__]
 # Globally defined variables.  Should eventually be done away with.
 step_factor = 300
 
-
 def hash_routine(root):
     root_iter = root.getiterator()
     hash_list = []
@@ -31,145 +30,11 @@ def hash_routine(root):
         hash_list.sort()
     return hash(tuple(hash_list))
 
-# Here we define all of the modification functions for the networks
-# ------------------------------------------------------------------------
-
-
-def set_constant(network, action_root):
-    for child in action_root:
-        attributes = child.attrib
-        network.set_var_constant(**attributes)
-    return network
-
-
-def add_species(network, action_root):
-    for child in action_root:
-        attributes = child.attrib
-        network.add_species(**attributes)
-    return network
-
-
-def add_assignment(network, action_root):
-    for child in action_root:
-        attributes = child.attrib
-        attributes = attributes.copy()
-        var_id = attributes.pop('id')
-        network.add_assignment_rule(var_id, **attributes)
-    return network
-
-
-def set_optimizable(network, action_root):
-    for child in action_root:
-        attributes = child.attrib
-        network.set_var_optimizable(**attributes)
-    return network
-
-
-def set_initial(network, action_root):
-    for child in action_root:
-        attributes = child.attrib
-        network.set_initial_var_value(**attributes)
-    return network
-
-
-def start_fixed(network, action_root):
-    attributes = action_root.attrib
-    try:
-        min = int(attributes['min'])
-    except KeyError:
-        min = 0
-    try:
-        max = int(attributes['max'])
-    except KeyError:
-        max = 1000
-    Dynamics.integrate(network, [min, max])
-    fp = Dynamics.dyn_var_fixed_point(network)
-    network.set_dyn_var_ics(fp)
-    return network
-
-
-def add_event(network, action_root):
-    # TODO: This could be easier to use
-    for child in action_root:
-        attributes = child.attrib
-        assignment_dict = {}
-        for assignment in child:
-            attribs = assignment.attrib
-            assignment_dict[attribs['id']] = attribs['func']
-        network.add_event(event_assignments=assignment_dict, **attributes)
-    return network
-
-
-def add_parameter(network, action_root):
-    for child in action_root:
-        attributes = child.attrib
-        network.add_parameter(**attributes)
-    return network
-
-
-def add_rate_rule(network, action_root):
-    for child in action_root:
-        attributes = child.attrib
-        attributes = attributes.copy()
-        var_id = attributes.pop('id')
-        network.add_rate_rule(var_id, **attributes)
-    return network
-
-
-def add_reaction(network, action_root):
-    for child in action_root:
-        pass_list = []
-        attributes = child.attrib
-        attributes = attributes.copy()
-        var_id = attributes.pop('id')
-        if 'stoich_var' in attributes and 'stoich_val' in attributes:
-            stoich = {}
-            try:
-                value_s = int(attributes['stoich_val'])
-            except ValueError:
-                value_s = attributes['stoich_val']
-            stoich[attributes['stoich_var']] = value_s
-            pass_list.apppend(stoich)
-        try:
-            reaction_name = attributes.pop('reaction')
-            try:
-                kinetic_law = getattr(globals()['Reactions'],reaction_name)
-                network.addReaction(kinetic_law, var_id, *pass_list, **attributes)
-                return network
-            except Exception as e:
-                print e
-                logger.warn("Please check that the reaction name is typed correctly")
-        except KeyError:
-            # No reaction specified
-            kinetic_law = attributes.pop('kinetic_law')
-            network.addReaction(var_id, kinetic_law, *pass_list, **attributes)
-            return network
-        for key in attributes:
-            pass_list.append(attributes[key])
-        network.addReaction(var_id, *pass_list)
-    return network
-
-
-def chop(word, character):
-    if isinstance(character, str):
-        if word.lower().find(character) > 0:
-            return word.replace(character, '')
-        else:
-            return word
-    else:
-        if isinstance(character, list):
-            for chara in character:
-                if word.lower().find(chara) > 0:
-                    return word.replace(chara, '')
-                else:
-                    pass
-            return word
-
 
 def routine_dict_drier(routine_dict):
     """
     Converts strings into the desired data type, allowing for easier use by other functions.
-    
+
     :param routine_dict: A dictionary containing all the attributes from some XML element
     :return: Returns a copy of the original dictionary.  Directly modifying the original dictionary
              causes issues when writing back to file.
@@ -205,8 +70,135 @@ def routine_dict_drier(routine_dict):
         routine_dict_copy[key_r] = parameter
     return routine_dict_copy
 
+# Here we define all of the modification functions for the networks
+# ------------------------------------------------------------------------
 
-def prior_drier(root):
+
+def set_constant(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        attributes = routine_dict_drier(attributes)
+        network.set_var_constant(**attributes)
+    return network
+
+
+def add_species(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        attributes = routine_dict_drier(attributes)
+        network.add_species(**attributes)
+    return network
+
+
+def add_assignment(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        attributes = attributes.copy()
+        attributes = routine_dict_drier(attributes)
+        var_id = attributes.pop('id')
+        network.add_assignment_rule(var_id, **attributes)
+    return network
+
+
+def set_optimizable(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        attributes = routine_dict_drier(attributes)
+        network.set_var_optimizable(**attributes)
+    return network
+
+
+def set_initial(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        attributes = routine_dict_drier(attributes)
+        network.set_initial_var_value(**attributes)
+    return network
+
+
+def start_fixed(network, action_root):
+    attributes = action_root.attrib
+    attributes = routine_dict_drier(attributes)
+    try:
+        min = int(attributes['min'])
+    except KeyError:
+        min = 0
+    try:
+        max = int(attributes['max'])
+    except KeyError:
+        max = 1000
+    Dynamics.integrate(network, [min, max])
+    fp = Dynamics.dyn_var_fixed_point(network)
+    network.set_dyn_var_ics(fp)
+    return network
+
+
+def add_event(network, action_root):
+    # TODO: This could be easier to use
+    for child in action_root:
+        attributes = child.attrib
+        assignment_dict = {}
+        for assignment in child:
+            attribs = assignment.attrib
+            assignment_dict[attribs['id']] = attribs['func']
+        network.add_event(event_assignments=assignment_dict, **attributes)
+    return network
+
+
+def add_parameter(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        attributes = routine_dict_drier(attributes)
+        network.add_parameter(**attributes)
+    return network
+
+
+def add_rate_rule(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        attributes = attributes.copy()
+        attributes = routine_dict_drier(attributes)
+        var_id = attributes.pop('id')
+        network.add_rate_rule(var_id, **attributes)
+    return network
+
+
+def add_reaction(network, action_root):
+    for child in action_root:
+        pass_list = []
+        attributes = child.attrib
+        attributes = attributes.copy()
+        attributes = routine_dict_drier(attributes)
+        var_id = attributes.pop('id')
+        if 'stoich_var' in attributes and 'stoich_val' in attributes:
+            stoich = {}
+            try:
+                value_s = int(attributes['stoich_val'])
+            except ValueError:
+                value_s = attributes['stoich_val']
+            stoich[attributes['stoich_var']] = value_s
+            pass_list.apppend(stoich)
+        try:
+            reaction_name = attributes.pop('reaction')
+            try:
+                kinetic_law = getattr(globals()['Reactions'],reaction_name)
+                network.addReaction(kinetic_law, var_id, *pass_list, **attributes)
+                return network
+            except Exception as e:
+                print e
+                logger.warn("Please check that the reaction name is typed correctly")
+        except KeyError:
+            # No reaction specified
+            kinetic_law = attributes.pop('kinetic_law')
+            network.addReaction(var_id, kinetic_law, *pass_list, **attributes)
+            return network
+        for key in attributes:
+            pass_list.append(attributes[key])
+        network.addReaction(var_id, *pass_list)
+    return network
+
+
+def prior_drier(root, model):
     """
     Finds the appropriate values to put into a PriorInLog function to constrain the function.  
     Simple algebra tells us that 'val_p' is equal to the square root of the upper bound multiplied
@@ -220,27 +212,52 @@ def prior_drier(root):
       contained in a dictionary for convenience 
     """
     prior_dictionary = {}
+    all_params = model.get_params()
+    all_params = all_params.items()
+
     try:
         for child in root.iter('parameter'):
             for p in child.iter('prior'):
+                param_list = []
                 bounds = p.attrib
                 parameter = child.attrib.get('id')
-                lower = float(bounds['lower'])
-                upper = float(bounds['upper'])
-                val_p = sqrt(lower * upper)
-                x = sqrt(upper / val_p)
-                # Just in case something goes wrong but doesn't cause any blatant errors
-                assert (x == sqrt(val_p / lower))
-                prior_dictionary[parameter] = {'val': val_p, 'x': x}
-    except Exception as a:
+                if parameter.lower() == 'all':
+                    param_list = all_params
+                try:
+                    width = float(bounds['width'])
+                    if len(param_list) > 0:
+                        for param_id,value in param_list:
+                            val_p = float(value)
+                            x = float(width)
+                            prior_dictionary[param_id] = {'val': val_p, 'x': x}
+                    else:
+                        #TODO: This needs to be fixed
+                        param = all_params[all_params.index(parameter)]
+                        val_p = param.items()[1]
+                        x = width
+                        prior_dictionary[parameter] = {'val': val_p, 'x': x}
+                except KeyError:
+                    lower = float(bounds['lower'])
+                    upper = float(bounds['upper'])
+
+                    val_p = sqrt(lower * upper)
+                    x = sqrt(upper / val_p)
+                    # Just in case something goes wrong but doesn't cause any blatant errors
+                    assert (x == sqrt(val_p / lower))
+                    prior_dictionary[parameter] = {'val': val_p, 'x': x}
+    except KeyError as a:
         logger.warn('Prior Calculation malfunction: ensure prior bounds are numbers, and do not include things like'
                     '"log(x)", "sin(x)", "sqrt()"')
         logger.warn(a)
     return prior_dictionary
 
+# Action routines begin here
+# --------------------------
+
 
 def add_residuals(root, model):
-    prior_dictionary = prior_drier(root)
+    root = root.find("Parameters")
+    prior_dictionary = prior_drier(root, model)
     for param in prior_dictionary.keys():
         values = prior_dictionary[param]
         res = Residuals.PriorInLog(param + '_prior', param, log(values['val']), log(values['x']))
@@ -338,8 +355,10 @@ def plot_variables(pruned_ens = None, net = None, ids=None, time_r=65, start=0, 
     return traj_set
 
 
-def calculate_traj(network, lower_bound = 0, upper_bound = 100):
-    pass
+def calculate_traj(network_dictionary, net, lower_bound = 0, upper_bound = 100):
+    net = network_dictionary[net]
+    traj = Dynamics.integrate(net, [int(lower_bound), int(upper_bound)])
+    return traj, lower_bound, upper_bound
 
 
 def cost_lm(params, m, optimize=True, plot=False, iterations=20):
@@ -435,7 +454,6 @@ def save_to_temp(obj, file_name, xml_file, node, hash_id, routine="temp_file"):
     xml_file.write(file_name)
 
 
-
 def check_to_save(routine_function):
     """
     Decorator for save/load functionality of action routines
@@ -469,7 +487,6 @@ def check_to_save(routine_function):
         use_file = False
         save_file = True
         hash_id = hash_routine(pass_root)
-        print hash_id
         parent = kwargs['parent']
         hash_root = parent.find('hash')
         try:
@@ -496,13 +513,17 @@ def check_to_save(routine_function):
             if os.path.isfile(saved_file_path):
                 # A file path is specified
                 hash_from_file = os.path.splitext(os.path.basename(saved_file_path))[0].split('_')[1]
-                print int(hash_from_file)
                 if int(hash_from_file) == hash_id:
                     use_file = True
                     save_file = False
                 else:
                     use_file = False
                     save_file = True
+                if "override" in sys.argv:
+                    # Allows the user to override the cache to avoid saving or loading
+                    print "Overriding"
+                    use_file = False
+                    save_file = False
                 if use_file:
                     # User wants to load the object
                     print 'Successfully loaded %s objects from file' % routine
@@ -680,25 +701,61 @@ def ensemble_traj(current_root, result_dictionary, time_r, net, **kwargs):
 
 
 @check_to_save
-def trajectory_integration(result_dictionary, current_root, **kwargs):
-    traj_list = []
-    for var in current_root.iter("var"):
-        calculate_traj(var)
-    pass
+def trajectory_integration(result_dictionary, current_root, network_dictionary, **kwargs):
+    traj_list = {}
+    for var in current_root.iter("traj"):
+        network,lower_bound, upper_bound = calculate_traj(network_dictionary, **var.attrib)
+        traj_list[var.attrib['net']] = (network, lower_bound, upper_bound)
+    current_column = 0
+    for root in current_root.iter("Graph"):
+        Plotting.figure(figsize=(15, 4))
+        columns = len(root)
+        for traj_node in root:
+            rows = len(traj_node)
+            current_column += 1
+            current_row = 0
+            for sub in traj_node:
+                current_row += 1
+                attributes = sub.attrib
+                Plotting.subplot(rows, columns, current_column*current_row)
+
+                traj_and_bounds = traj_list[traj_node.attrib['net']]
+                traj = traj_and_bounds[0]
+                lower_bound = traj_and_bounds[1]
+                upper_bound = traj_and_bounds[2]
+                id_list = []
+                for var in sub.iter("var"):
+                    id_list.append(var.attrib['id'])
+                attributes = routine_dict_drier(attributes)
+                Plotting.plot_trajectory(traj,id_list, **attributes)
+                # Axis solving
+                all_vars = traj.dynamicVarKeys
+                for thing in traj.assignedVarKeys:
+                    all_vars.append(thing)
+                max_list = []
+                min_list = []
+                for var in id_list:
+                    index = all_vars.index(var)
+                    value_list = []
+                    for value in traj.values:
+                        value_list.append(value[index])
+                    max_list.append(round(max(value_list),1))
+                    min_list.append(scipy.floor(min(value_list)))
+                padding = max(max_list) * .1
+                Plotting.axis([int(lower_bound), int(upper_bound), min(min_list), max(max_list)+padding])
 
 
 @check_to_save
 def create_Network(current_root, routine_dict, sbml_reference, network_dictionary, network_func_dictionary, **kwargs):
     try:
         network = kwargs['loaded_object']
-        print network.id
         return network
     except KeyError:
         pass
     network_name = routine_dict['id']
     if 'from_file' in routine_dict:
         if routine_dict['from_file']:
-            network = IO.from_SBML_file(sbml_reference)
+            network = IO.from_SBML_file(sbml_reference, network_name)
             print network.id
     elif 'copy' in routine_dict:
         try:
@@ -723,7 +780,6 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
 def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference = None):
     result_dictionary = dict()
     network_dictionary = dict()
-
     action_function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
                            'ensembletrajectories': ensemble_traj, 'trajectory': trajectory_integration}
     network_func_dictionary = {'set_constant': set_constant, 'add_species': add_species,
@@ -752,12 +808,19 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     if network_root is not None:
         for network in network_root:
             net_name = network.attrib['id']
-            network_dictionary[net_name] = create_Network(root=network_root, routine=net_name, xml_file=xml_file,
+            new_network = create_Network(root=network_root, routine=net_name, xml_file=xml_file,
                                                           file_name=file_name, current_root=network,
                                                           sbml_reference=sbml_reference,
                                                           network_dictionary=network_dictionary,
                                                           network_func_dictionary=network_func_dictionary,
                                                           hash_node=hash_node, parent=root)
+            network_dictionary[net_name] = new_network
+            try:
+                attributes = routine_dict_drier(network.attrib)
+                if attributes["from_file"]:
+                    net = new_network # override default network
+            except KeyError:
+                pass
     else:
         network_dictionary[net.id] = net
     time_r = time_extract(experiment)

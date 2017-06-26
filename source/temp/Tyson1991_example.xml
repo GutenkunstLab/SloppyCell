@@ -4,7 +4,7 @@
 		<SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\Tyson_1991\BIOMD0000000005.xml" />
     </References>
     <Networks>
-        <Network from_file="True" id="base" path="..\temp\base_1497891273.bp" save="True" use_path="False">
+        <Network from_file="True" id="base">
             <Set_Constant>
                 <var id="cell" is_constant="True" />
                 <var id="EmptySet" is_constant="True" />
@@ -20,7 +20,7 @@
                 <var id="YT" rhs="Y+YP+pM+M" />
             </Add_Assignment>
         </Network>
-        <Network copy="base" id="perturbed" path="..\temp\perturbed_1497565588.bp" save="True" use_path="True">
+        <Network copy="base" id="perturbed">
             <Set_Initial>
                 <var id="k6" value="2.0" />
             </Set_Initial>
@@ -40,7 +40,7 @@
                 </event>
             </Add_Event>
         </Network>
-        <Network copy="base" id="growth" path="..\temp\growth_1497565588.bp" save="True" use_path="True">
+        <Network copy="base" id="growth">
             <Add_Parameter>
                 <var id="Td" initial_value="116" />
             </Add_Parameter>
@@ -56,7 +56,7 @@
                 </event>
             </Add_Event>
         </Network>
-        <Network copy="base" id="mine" path="..\temp\mine_1497566474.bp" save="True" use_path="True">
+        <Network copy="base" id="mine">
             <Add_Species>
                 <var compartment="cell" id="killer" initial_conc="2.0" />
                 <var compartment="cell" id="killpM" initial_conc="0.0" />
@@ -75,19 +75,39 @@
         <network id="base" />
         <network id="growth" />
     </Model>
+    <Parameters>
+        <parameter id="all">
+            <prior width="10" />
+        </parameter>
+    </Parameters>
     <Actions>
         <Trajectory>
             <Graph>
-                <var net="base" upper_bound="100" />
-                <var net="perturbed" upper_bound="100" />
-                <var net="growth" upper_bound="500">
-                    <subplot id = "k6"/>
-                    <subplot id = "M" />
-                </var>
+                <traj net="base" upper_bound="100">
+                    <subplot>
+                        <var id="YT" />
+                        <var id="M" />
+                    </subplot>
+                </traj>
+                <traj net="perturbed" upper_bound="100">
+                    <subplot logy="True">
+                        <var id="M" />
+                        <var id="YT" />
+                    </subplot>
+                </traj>
+                <traj net="growth" upper_bound="500">
+                    <subplot>
+                        <var id="k6" />
+                    </subplot>
+                    <subplot>
+                        <var id="M" />
+                        <var id="YT" />
+                    </subplot>
+                </traj>
             </Graph>
-            <var net="mine" upper_bound="100" />
+            <traj net="mine" upper_bound="100" />
         </Trajectory>
     </Actions>
 
 
-<hash><base path="..\temp\base_-612065820.bp" /><perturbed path="..\temp\perturbed_-892334581.bp" /><growth path="..\temp\growth_-1351071276.bp" /><mine path="..\temp\mine_720732394.bp" /><trajectory path="..\temp\Trajectory_844934682.bp" /></hash></Scell>
+<hash><base path="..\temp\base_2035244572.bp" /><perturbed path="..\temp\perturbed_1527684867.bp" /><growth path="..\temp\growth_-1555107781.bp" /><mine path="..\temp\mine_806341540.bp" /><trajectory path="..\temp\Trajectory_-2090263372.bp" /></hash></Scell>
