@@ -107,7 +107,18 @@
             </Graph>
             <traj net="mine" upper_bound="100" />
         </Trajectory>
+        <Optimization initial_cost="True" plot_after="True" plot_before="True">
+            <opt type="Levenburg-Marquardt Least Square">
+                <opt type="Nelder-Mead" xtol="1e-2" />
+            </opt>
+        </Optimization>
+        <Hessian log="True" stepsize = '1e-4'>
+            <Graph>
+                <eigenvector
+            </Graph>
+
+        </Hessian>
     </Actions>
 
 
-<hash><base path="..\temp\base_2035244572.bp" /><perturbed path="..\temp\perturbed_1527684867.bp" /><growth path="..\temp\growth_-1555107781.bp" /><mine path="..\temp\mine_806341540.bp" /><trajectory path="..\temp\Trajectory_-2090263372.bp" /></hash></Scell>
+<hash><base path="..\temp\base_2035244572.bp" /><perturbed path="..\temp\perturbed_1527684867.bp" /><growth path="..\temp\growth_-1555107781.bp" /><mine path="..\temp\mine_806341540.bp" /><trajectory path="..\temp\Trajectory_-2090263372.bp" /><optimization path="..\temp\Optimization_86996795.bp" /></hash></Scell>

@@ -25,7 +25,7 @@
         </Skip>
 	</Parameters>
     <Actions>
-        <Optimization iterations="20" plot="True" />
+        <Optimization iterations="20" plot="True" disp = "False"/>
         <Ensemble prune="10" steps="1000" />
         <Histogram>
             <Variables>
