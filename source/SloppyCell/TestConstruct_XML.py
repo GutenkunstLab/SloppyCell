@@ -22,6 +22,25 @@ this_module = sys.modules[__name__]
 # Globally defined variables.  Should eventually be done away with.
 step_factor = 300
 
+
+def merge_dicts(*dict_args):
+    """
+    Given any number of dicts, shallow copy and merge into a new dict,
+    precedence goes to key value pairs in latter dicts.
+    """
+    result = {}
+    for dictionary in dict_args:
+        result.update(dictionary)
+    return result
+
+
+def recursive_list_builder(node, order):
+    if len(node) < 1:
+        return order
+    for child in node:
+        order.append(child)
+        return recursive_list_builder(child,order)
+
 def hash_routine(root):
     root_iter = root.getiterator()
     hash_list = []
@@ -279,7 +298,7 @@ def find_vars(root, tag, key, value):
     return tag_dict
 
 
-def construct_ensemble(params, m, steps=750, only_pruned=True, prune=0):
+def construct_ensemble(params, m, steps=750, only_pruned=True, prune=1):
     j = m.jacobian_log_params_sens(log(params))  # use JtJ approximation to Hessian
     jtj = dot(transpose(j), j)
     print 'Beginning ensemble calculation.'
@@ -361,7 +380,7 @@ def calculate_traj(network_dictionary, net, lower_bound = 0, upper_bound = 100):
     return traj, lower_bound, upper_bound
 
 
-def cost_lm(params, m, optimize=True, plot=False, iterations=20):
+def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = None, **kwargs):
     """
     This is the optimization routine.  It runs a cost analysis on the parameters provided and outputs a graph
     if asked.  Will do nothing if optimize and plot are set to false.  This can only be the case if the optimized 
@@ -374,22 +393,49 @@ def cost_lm(params, m, optimize=True, plot=False, iterations=20):
     :param iterations: The max iterations of the optimization function
     :return: returns the optimized parameters
     """
-
-    if optimize:
+    optimization_dictionary = {'nelder-mead': Optimization.fmin_log_params,
+                               'levenburg-marquardt least square': Optimization.leastsq_log_params,
+                               'levenburg-marquardt': Optimization.fmin_lm_log_params}
+    return_dictionary = {}
+    try:
+        plot_after = kwargs.pop('plot_after')
+    except KeyError:
+        plot_after = False
+    if initial_cost:
         initial_cost = m.cost(params)
         print 'Initial Cost:', initial_cost
-        params = Optimization.fmin_lm_log_params(m, params, maxiter=int(iterations), disp=False)
+        try:
+            if kwargs.pop('plot_before'):
+                initial_plot = Plotting.figure()
+
+                Plotting.plot_model_results(m)
+                Plotting.title('Before Optimization')
+                return_dictionary["initial"] = initial_plot
+        except KeyError:
+            pass
+    if optimize:
+        order.reverse()
+        for opt in order:
+            routine_dict_n = routine_dict_drier(opt.attrib)
+            try:
+                opt_type = routine_dict_n.pop('type').lower()
+            except KeyError:
+                opt_type = 'levenburg-marquardt'
+            params = optimization_dictionary[opt_type](m, params, **kwargs)
         optimized_cost = m.cost(params)
         print 'Optimized cost:', optimized_cost
-        print 'Optimized parameters:', params
-    if plot:
+        # print 'Optimized parameters:', params
+
+    if plot or plot_after:
         if not optimize:
             optimized_cost = m.cost(params)
             print 'Optimized cost:', optimized_cost
             print 'Optimized parameters:', params
-        figure()
+        Plotting.figure()
         Plotting.plot_model_results(m)
-    return params
+        Plotting.title('After Optimization')
+    return_dictionary["params"] = params
+    return return_dictionary
 
 
 def time_extract(experiment_r):
@@ -524,6 +570,10 @@ def check_to_save(routine_function):
                     print "Overriding"
                     use_file = False
                     save_file = False
+                elif "replace" in sys.argv:
+                    print "replacing"
+                    use_file = False
+                    save_file = True
                 if use_file:
                     # User wants to load the object
                     print 'Successfully loaded %s objects from file' % routine
@@ -576,17 +626,29 @@ def check_to_save(routine_function):
 
 
 @check_to_save
-def optimization(routine_dict, model, params, **kwargs):
+def optimization(routine_dict, model, params, current_root, **kwargs):
     """
     Action routine for optimization.  Checks if the decorator has loaded an object, and if not, runs the regular
     optimization procedure.
     :return: the optimized parameters are returned and passed back to the decorator
     """
     try:
-        optimized_params = kwargs['loaded_object']
+        loaded_object = kwargs['loaded_object']
+        optimized_params = loaded_object['params']
+        try:
+            initial_plot = loaded_object['initial']
+            routine_dict.pop("initial_cost")
+        except KeyError:
+            pass
         return cost_lm(optimized_params, model, optimize=False, **routine_dict)
     except KeyError:
-        return cost_lm(params, model, **routine_dict)
+        new_params = params.copy()
+        for child in current_root:
+            # TODO: Add support for multiple top-level optimizations
+            order = recursive_list_builder(child, [child])
+            return cost_lm(new_params, model, order=order, **routine_dict)
+
+       # return cost_lm(params, model, **routine_dict)
 
 
 @check_to_save
@@ -601,7 +663,7 @@ def ensemble(routine_dict, result_dictionary, model, **kwargs):
     except KeyError:
         pass
     try:
-        optimized_params = result_dictionary['optimization']
+        optimized_params = result_dictionary['optimization']['params']
     except KeyError:
         # We can just pass the unoptimized parameters to the construction function in this case.
         # Eventually should just call its dependent.
@@ -662,7 +724,6 @@ def ensemble_traj(current_root, result_dictionary, time_r, net, **kwargs):
         logger.debug("No time specified, using default")
         # User did not specify a time, so we use the estimated one from the experiment
     # Need to dig into the root to get the variable information
-
 
     for child_r in current_root:
         for child in child_r:
@@ -743,6 +804,10 @@ def trajectory_integration(result_dictionary, current_root, network_dictionary, 
                     min_list.append(scipy.floor(min(value_list)))
                 padding = max(max_list) * .1
                 Plotting.axis([int(lower_bound), int(upper_bound), min(min_list), max(max_list)+padding])
+
+
+def hessian(routine_dict, result_dictionary, current_root, network_dictionary, **kwargs):
+    pass
 
 
 @check_to_save
@@ -866,6 +931,7 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
             logger.warn("No function associated with action tag %s" % child.tag)
     show()
 
-        #
+
+            #
         # plot_histograms(pruned, ['r3', 'tao'], params)
         # show()
