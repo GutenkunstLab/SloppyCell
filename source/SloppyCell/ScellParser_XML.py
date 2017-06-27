@@ -19,6 +19,8 @@ logger = logging.getLogger('ScellParser')
 logging.basicConfig()
 
 
+
+
 class GraphHandler:
     def __init__(self, graph_root):
         self.graph_root = graph_root
@@ -111,9 +113,20 @@ def read_from_file(file_name):
             logger.warn('No sbml reference established, model cannot be made.')
             print e
         if experiment is not None:
-            TestConstruct_XML.make_happen(root, experiment = {experiment.GetName(): experiment}, xml_file=xml_file, file_name=file_name,
-                                          sbml_reference=sbml_reference)
+            TestConstruct_XML.make_happen(root, experiment={experiment.GetName(): experiment},
+                                          xml_file=xml_file, file_name=file_name, sbml_reference=sbml_reference)
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
     read_from_file(r'C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\temp\Tyson1991_example.xml')
+    files = []
+    for file in os.listdir(os.curdir):
+        if file.endswith(".pyd"):
+            files.append(file)
+    for file in files:
+        try:
+            if file.endswith(".pyd") and "_daskr" not in file:
+                os.unlink(file)
+        except OSError:
+            print "Failed"
+
