@@ -18,18 +18,7 @@ traj1 = Dynamics.integrate(base_net, [0, 100])
 traj2 = Dynamics.integrate(perturbed_net, [0,  100])
 traj3 = Dynamics.integrate(growth_net, [0, 500])
 traj4 = Dynamics.integrate(my_net, [0, 100])
-# print traj2.values
-# print traj2.assignedVarKeys
-# a = []
-# b = []
-# for thing in traj2.values:
-#     a.append(thing[2])
-#     b.append(thing[len(thing)-1])
-# print min(a)
-# print min(b)
-# print traj2.keys()
-# print traj2.dynamicVarKeys
-#
+
 # Figure 3 from the paper.
 Plotting.figure(1, figsize=(15, 4))
 Plotting.subplot(1, 3, 1)
@@ -46,7 +35,6 @@ Plotting.plot_trajectory(traj3, ['M', 'YT'])
 Plotting.axis([0, 500, 0, 0.6])
 
 Plotting.savefig('3.png', dpi=150)
-Plotting.show()
 
 #
 # Now let's fit the model to some data we've defined in Expts.py
@@ -57,8 +45,12 @@ from Expts import *
 # We put together our Model from the experiments and networks
 m = Model([expt1], [base_net, growth_net])
 params = m.get_params()
-print params
-print params.items()
+for id, val in params.items():
+    print id
+    print val
+
+    m.AddResidual(Residuals.PriorInLog('prior_on_%s' % id, id, scipy.log(val),
+                                       scipy.log(10.0)))
 print 'Initial cost:', m.cost(params)
 Plotting.figure(2)
 Plotting.plot_model_results(m, loc='upper right')
@@ -71,11 +63,6 @@ Plotting.title('Before fitting')
 #  with 95% probility, between val/100 and val * 100.
 # (These are quite tight priors. Real applications (with more constraining data)
 #  will probably want looser priors.)
-print params.items()
-for id, val in params.items():
-    print val
-    m.AddResidual(Residuals.PriorInLog('prior_on_%s' % id, id, scipy.log(val), 
-                                       scipy.log(10)))
 
 # And now we'll optimize. Note that optimization can be tricky. One needs to
 #  be in the right ball-park before the local routines can help much.
@@ -83,10 +70,14 @@ for id, val in params.items():
 #  they have different strengths and may head different places.
 
 # First we'll try Nelder-Mead
+print params
 pmin1 = Optimization.fmin_log_params(m, params, xtol=1e-2)
 # Then we run Levenburg-Marquardt
+print pmin1
 params = Optimization.leastsq_log_params(m, pmin1)
+print params
 # We save our parameter values, the reload them.
+print params
 Utility.save(params, 'min_params.bp')
 
 params = Utility.load('min_params.bp')
@@ -110,7 +101,16 @@ evals, evects = Utility.eig(hess)
 Plotting.figure(4)
 Plotting.plot_eigvals(evals)
 Plotting.figure(5)
-Plotting.plot_eigvect(evects[:,0], params.keys())
+Plotting.plot_eigvect(evects[:,0],params.keys())
+Plotting.figure()
+print len(evects)
+for number in range(9):
+    print evects[:, number]
+    Plotting.subplot(3,3,number+1)
+    print len(evects[:,number])
+    print len(params.keys())
+    Plotting.plot_eigvect(evects[:, number], params.keys())
+
 
 # Now we'll build an ensemble of parameters.
 # Make sure we run at full speed

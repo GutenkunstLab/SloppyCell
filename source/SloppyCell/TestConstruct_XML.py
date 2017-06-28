@@ -248,13 +248,17 @@ def prior_drier(root, model):
                         for param_id,value in param_list:
                             val_p = float(value)
                             x = float(width)
-                            prior_dictionary[param_id] = {'val': val_p, 'x': x}
+                            model.AddResidual(Residuals.PriorInLog('prior_on_%s' % param_id, param_id, scipy.log(val_p),
+                                                                   scipy.log(x)))
+                            prior_dictionary[param_id] = (val_p, x)
                     else:
-                        #TODO: This needs to be fixed
+                        # TODO: This needs to be fixed
                         param = all_params[all_params.index(parameter)]
                         val_p = param.items()[1]
                         x = width
-                        prior_dictionary[parameter] = {'val': val_p, 'x': x}
+                        model.AddResidual(Residuals.PriorInLog('prior_on_%s' % param_id, param_id, scipy.log(val_p),
+                                                               scipy.log(x)))
+                        prior_dictionary[parameter] = (val_p,x)
                 except KeyError:
                     lower = float(bounds['lower'])
                     upper = float(bounds['upper'])
@@ -263,11 +267,14 @@ def prior_drier(root, model):
                     x = sqrt(upper / val_p)
                     # Just in case something goes wrong but doesn't cause any blatant errors
                     assert (x == sqrt(val_p / lower))
-                    prior_dictionary[parameter] = {'val': val_p, 'x': x}
+                    model.AddResidual(Residuals.PriorInLog('prior_on_%s' % param_id, param_id, scipy.log(val_p),
+                                                           scipy.log(x)))
+                    prior_dictionary[parameter] = (val_p,x)
     except KeyError as a:
         logger.warn('Prior Calculation malfunction: ensure prior bounds are numbers, and do not include things like'
                     '"log(x)", "sin(x)", "sqrt()"')
         logger.warn(a)
+
     return prior_dictionary
 
 # Action routines begin here
@@ -277,10 +284,8 @@ def prior_drier(root, model):
 def add_residuals(root, model):
     root = root.find("Parameters")
     prior_dictionary = prior_drier(root, model)
-    for param in prior_dictionary.keys():
-        values = prior_dictionary[param]
-        res = Residuals.PriorInLog(param + '_prior', param, log(values['val']), log(values['x']))
-        model.AddResidual(res)
+
+
 
 
 def set_ic(fit_root, net):
@@ -415,13 +420,19 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
             pass
     if optimize:
         order.reverse()
+        new_params = params.copy()
+
+
         for opt in order:
+            print opt
             routine_dict_n = routine_dict_drier(opt.attrib)
             try:
                 opt_type = routine_dict_n.pop('type').lower()
             except KeyError:
                 opt_type = 'levenburg-marquardt'
-            params = optimization_dictionary[opt_type](m, params, **kwargs)
+
+            new_params = optimization_dictionary[opt_type](m, new_params, **routine_dict_n)
+            print new_params
         optimized_cost = m.cost(params)
         print 'Optimized cost:', optimized_cost
         # print 'Optimized parameters:', params
@@ -434,7 +445,8 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
         Plotting.figure()
         Plotting.plot_model_results(m)
         Plotting.title('After Optimization')
-    return_dictionary["params"] = params
+    return_dictionary["params"] = new_params
+    print return_dictionary
     return return_dictionary
 
 
@@ -805,9 +817,32 @@ def trajectory_integration(result_dictionary, current_root, network_dictionary, 
                 padding = max(max_list) * .1
                 Plotting.axis([int(lower_bound), int(upper_bound), min(min_list), max(max_list)+padding])
 
+@check_to_save
+def hessian(routine_dict, result_dictionary, model, network_dictionary, **kwargs):
+    try:
+        optimized_params = result_dictionary['optimization']['params']
+    except KeyError:
+        optimized_params = kwargs['params']
+    try:
+        hess = kwargs['loaded_object']
+    except KeyError:
+        try:
+            eps = routine_dict.pop('eps')
+        except KeyError:
+            eps = 0.0001
+        try:
+            if routine_dict.pop('log'):
+                print eps
+                hess = model.hessian_log_params(optimized_params, eps, **routine_dict)
+        except KeyError:
+            hess = model.hessian(optimized_params, eps, **routine_dict)
+    evals, evects = Utility.eig(hess)
+    Plotting.figure()
+    Plotting.plot_eigvals(evals)
+    Plotting.figure()
+    Plotting.plot_eigvect(evects[:,0], optimized_params.keys())
+    return hess
 
-def hessian(routine_dict, result_dictionary, current_root, network_dictionary, **kwargs):
-    pass
 
 
 @check_to_save
@@ -846,7 +881,8 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     result_dictionary = dict()
     network_dictionary = dict()
     action_function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
-                           'ensembletrajectories': ensemble_traj, 'trajectory': trajectory_integration}
+                                  'ensembletrajectories': ensemble_traj, 'trajectory': trajectory_integration,
+                                  'hessian':hessian}
     network_func_dictionary = {'set_constant': set_constant, 'add_species': add_species,
                                'add_assignment': add_assignment, 'set_optimizable': set_optimizable,
                                'set_initial': set_initial, 'start_fixed': start_fixed,
@@ -906,6 +942,7 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     else:
         # If undefined, we default to making a model out of all available experiments and models
         model = Model(experiment.values(), network_dictionary.values())
+
     try:
         fit_root = root.find("Parameters").find("Fit")
         set_ic(fit_root, net)
@@ -914,6 +951,8 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
         # No parameters were specified, so we just take them all
         params = model.get_params()
     # This function is standalone and just tacks a residual onto anything that needs it
+
+
     add_residuals(root, model)
 
     print network_dictionary
