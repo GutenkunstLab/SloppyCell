@@ -267,7 +267,7 @@ def prior_drier(root, model):
                     x = sqrt(upper / val_p)
                     # Just in case something goes wrong but doesn't cause any blatant errors
                     assert (x == sqrt(val_p / lower))
-                    model.AddResidual(Residuals.PriorInLog('prior_on_%s' % param_id, param_id, scipy.log(val_p),
+                    model.AddResidual(Residuals.PriorInLog('prior_on_%s' % parameter, parameter, scipy.log(val_p),
                                                            scipy.log(x)))
                     prior_dictionary[parameter] = (val_p,x)
     except KeyError as a:
@@ -303,28 +303,45 @@ def find_vars(root, tag, key, value):
     return tag_dict
 
 
-def construct_ensemble(params, m, steps=750, only_pruned=True, prune=1):
-    j = m.jacobian_log_params_sens(log(params))  # use JtJ approximation to Hessian
-    jtj = dot(transpose(j), j)
+def construct_ensemble(params, m, result_dictionary, autocorrelate=False, steps=750, only_pruned=True, prune=1,
+                       network_dictionary = None, **kwargs):
+    try:
+        hess = result_dictionary['hessian']
+    except KeyError:
+        j = m.jacobian_log_params_sens(log(params))  # use JtJ approximation to Hessian
+        hess = dot(transpose(j), j)
+    try:
+        if kwargs.pop("use_hessian"):
+            kwargs['hess'] = hess
+    except KeyError:
+        pass
+
+    Network.full_speed()
     print 'Beginning ensemble calculation.'
-    ens, gs, r = Ensembles.ensemble_log_params(m, asarray(params), jtj, steps=steps)
+    ens, gs, r = Ensembles.ensemble_log_params(m, params, steps=steps, **kwargs)
+
     print 'Finished ensemble calculation.'
+    if autocorrelate:
+        Plotting.figure()
+        Plotting.title("Autocorrelation")
+        ac = Ensembles.autocorrelation(gs)
+        Plotting.plot(ac)
     if prune == 0:
         prune = int(math.ceil(steps/float(250)))
-    pruned_ens = asarray(ens[::int(prune)])
+    pruned_ens = ens[::int(prune)]
     if only_pruned:
         return pruned_ens
     else:
-        return ens, pruned_ens
+        return ens, gs, r, pruned_ens
 
         # print pruned_ens[:, 1]  # finds all values related to r3, goes by index
 
 
-def plot_histograms(pruned_ens, keyed_list, ids='all', bins=10, log=True):
-    if ids == 'all':
-        ids = keyed_list.keys()
-    if isinstance(ids, list):
-        for param in ids:
+def plot_histograms(pruned_ens, keyed_list, id='all', bins=10, log=True):
+    if id == 'all':
+        id = keyed_list.keys()
+    if isinstance(id, list):
+        for param in id:
             if param in keyed_list.keys():
                 print "Plotting histogram for %s" % param
                 param_index = keyed_list.index_by_key(param)
@@ -336,9 +353,9 @@ def plot_histograms(pruned_ens, keyed_list, ids='all', bins=10, log=True):
                 else:
                     hist(param_array, normed=True, bins=bins)
     else:
-        param_index = keyed_list.index_by_key(ids)
+        param_index = keyed_list.index_by_key(id)
         fig = figure()
-        fig.suptitle(ids, fontweight='bold')
+        fig.suptitle(id, fontweight='bold')
         param_array = pruned_ens[:, param_index]
         if log:
             hist(scipy.log(param_array), normed=True, bins=bins)
@@ -346,35 +363,49 @@ def plot_histograms(pruned_ens, keyed_list, ids='all', bins=10, log=True):
             hist(param_array, normed=True, bins=bins)
 
 
-def plot_variables(pruned_ens = None, net = None, ids=None, time_r=65, start=0, points=100,
-                   make_figure=True, color='g', bounds=(.025, .975), **kwargs):
+def plot_variables(pruned_ens, net, id=None, time_r=65, start=0, points=200,
+                   make_figure=True, color='g', bounds=(.025, .975), net_ensemble=False, graphing_set=None, **kwargs):
     # TODO: make plots show up based on file input.
-    times = linspace(start, time_r, points)
-    if isinstance(bounds, list) or isinstance(bounds, str):
-        bound_list = []
-        if 'lower' in bounds:
-            bound_list.append(.025)
-        if 'upper' in bounds:
-            bound_list.append(.975)
-        if 'middle' in bounds:
-            bound_list.append(.5)
-        bounds = tuple(bound_list)
-        if len(bounds) == 0:
-            bounds = (.025, .975)
-    if pruned_ens is not None:
-        traj_set = Ensembles.ensemble_trajs(net, times, pruned_ens)
-        quantiles = Ensembles.traj_ensemble_quantiles(traj_set, bounds)
+    times = scipy.linspace(int(start), int(time_r), int(points))
+    if net_ensemble:
+        bt, mt, st = Ensembles.net_ensemble_trajs(net,
+                                                  times,
+                                                  pruned_ens)
+        vars = []
+        for attributes in graphing_set:
+            vars.append(attributes["id"])
+        Plotting.figure()
+        Plotting.plot_ensemble_trajs(bt, mt, st,
+                                     vars=vars)
+        Plotting.show()
+        traj_set = (bt,mt,st)
     else:
-        traj_set = kwargs['traj_set']
-        quantiles = Ensembles.traj_ensemble_quantiles(traj_set, bounds)
-        #quantiles = kwargs['quantiles']
 
-    if make_figure:
-        figure()
+        if isinstance(bounds, list) or isinstance(bounds, str):
+            bound_list = []
+            if 'lower' in bounds:
+                bound_list.append(.025)
+            if 'upper' in bounds:
+                bound_list.append(.975)
+            if 'middle' in bounds:
+                bound_list.append(.5)
+            bounds = tuple(bound_list)
+            if len(bounds) == 0:
+                bounds = (.025, .975)
+        if pruned_ens is not None:
+            traj_set = Ensembles.ensemble_trajs(net, times, pruned_ens)
+            quantiles = Ensembles.traj_ensemble_quantiles(traj_set, bounds)
+        else:
+            traj_set = kwargs['traj_set']
+            quantiles = Ensembles.traj_ensemble_quantiles(traj_set, bounds)
+            #quantiles = kwargs['quantiles']
 
-    print "Plotting trajectory set for %s" % ids
-    for quantile in quantiles:
-        plot(times, quantile.get_var_traj(ids), color)
+        if make_figure:
+            figure()
+
+        print "Plotting trajectory set for %s" % id
+        for quantile in quantiles:
+            plot(times, quantile.get_var_traj(id), color)
 
     return traj_set
 
@@ -421,10 +452,7 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
     if optimize:
         order.reverse()
         new_params = params.copy()
-
-
         for opt in order:
-            print opt
             routine_dict_n = routine_dict_drier(opt.attrib)
             try:
                 opt_type = routine_dict_n.pop('type').lower()
@@ -432,8 +460,8 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
                 opt_type = 'levenburg-marquardt'
 
             new_params = optimization_dictionary[opt_type](m, new_params, **routine_dict_n)
-            print new_params
-        optimized_cost = m.cost(params)
+        optimized_cost = m.cost(new_params)
+        params = new_params
         print 'Optimized cost:', optimized_cost
         # print 'Optimized parameters:', params
 
@@ -445,8 +473,7 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
         Plotting.figure()
         Plotting.plot_model_results(m)
         Plotting.title('After Optimization')
-    return_dictionary["params"] = new_params
-    print return_dictionary
+    return_dictionary["params"] = params
     return return_dictionary
 
 
@@ -664,7 +691,7 @@ def optimization(routine_dict, model, params, current_root, **kwargs):
 
 
 @check_to_save
-def ensemble(routine_dict, result_dictionary, model, **kwargs):
+def ensemble(routine_dict, result_dictionary, model, network_dictionary, **kwargs):
     """
     Action routine for ensemble construction.  Checks if an ensemble has been loaded, and if not, checks if the 
     optimized parameters have been calculated.
@@ -681,7 +708,16 @@ def ensemble(routine_dict, result_dictionary, model, **kwargs):
         # Eventually should just call its dependent.
         logger.warn("Optimized parameters not found for ensemble construction, using unoptimized parameters instead")
         optimized_params = kwargs['params']
-    return construct_ensemble(optimized_params, model, **routine_dict)
+    try:
+        autocorrelate = routine_dict.pop('autocorrelate')
+        if autocorrelate:
+            pruned_ens = construct_ensemble(optimized_params, model, result_dictionary, autocorrelate=autocorrelate,
+                                            network_dictionary=network_dictionary, **routine_dict)
+        else:
+            raise KeyError
+    except KeyError:
+        pruned_ens = construct_ensemble(optimized_params, model, result_dictionary, **routine_dict)
+    return pruned_ens
 
 
 def histogram_r(current_root, result_dictionary, params, **kwargs):
@@ -715,7 +751,7 @@ def histogram_r(current_root, result_dictionary, params, **kwargs):
 
 
 @check_to_save
-def ensemble_traj(current_root, result_dictionary, time_r, net, **kwargs):
+def ensemble_traj(current_root, routine_dict, result_dictionary, time_r, net, network_dictionary, **kwargs):
     print "Graphing trajectories"
     try:
         traj_dict = kwargs['loaded_object']
@@ -726,21 +762,36 @@ def ensemble_traj(current_root, result_dictionary, time_r, net, **kwargs):
     color_array = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
     try:
         pruned_ens = result_dictionary['ensemble']
+
     except KeyError:
         # We haven't constructed an ensemble yet.
         # TODO: Same as histogram, need ensemble to be called before this in some way
         pass
     try:
-        time_r = current_root.attrib['time']
+        time_r = routine_dict['time']
     except KeyError:
         logger.debug("No time specified, using default")
         # User did not specify a time, so we use the estimated one from the experiment
     # Need to dig into the root to get the variable information
+    try:
+        points = routine_dict["points"]
+    except KeyError:
+        points = 100
+    try:
+        net_to_pass = network_dictionary[routine_dict["net"]]
+    except KeyError:
+        # No net specified, use default
+        net_to_pass = net
 
     for child_r in current_root:
         for child in child_r:
             graphing_set = []
             index = 0
+            try:
+                net_ensemble = child.attrib['net_ensemble']
+            except KeyError:
+                net_ensemble = False
+
             for variable in child:
                 # We don't run the save function so the attributes don't get dried in the decorator
                 # We do it here instead
@@ -754,22 +805,28 @@ def ensemble_traj(current_root, result_dictionary, time_r, net, **kwargs):
                     index = 0
                 graphing_set.append(attributes)
             figure_bool = True
-            for species_attributes in graphing_set:
-                species_id = species_attributes['ids']
-                if not object_loaded:
-                    traj_set = plot_variables(pruned_ens, net, time_r=time_r, make_figure=figure_bool, **species_attributes)
-                    # We can use this dictionary to recreate the graphs, and also allow future functions to easily
-                    # access the trajectory sets of different species
-                    traj_dict[species_id] = (traj_set, figure_bool)
-                else:
-                    traj_set = traj_dict[species_id][0]
-                    figure_bool = traj_dict[species_id][1]
-                    #quantiles = traj_dict[species_id][2]
-                    plot_variables(traj_set=traj_set, make_figure=figure_bool, time_r=time_r,
-                                   **species_attributes)
+            if net_ensemble:
+                traj_set = plot_variables(pruned_ens, net_to_pass, time_r=time_r, make_figure=figure_bool,
+                                          net_ensemble=net_ensemble, graphing_set=graphing_set)
+            else:
 
-                if figure_bool:
-                    figure_bool = False
+                for species_attributes in graphing_set:
+                    species_id = species_attributes['id']
+                    if not object_loaded:
+                        traj_set = plot_variables(pruned_ens, net_to_pass, time_r=time_r, make_figure=figure_bool,
+                                                  graphing_set=graphing_set, points=points, **species_attributes)
+                        # We can use this dictionary to recreate the graphs, and also allow future functions to easily
+                        # access the trajectory sets of different species
+                        traj_dict[species_id] = (traj_set, figure_bool)
+                    else:
+                        traj_set = traj_dict[species_id][0]
+                        figure_bool = traj_dict[species_id][1]
+                        #quantiles = traj_dict[species_id][2]
+                        plot_variables(traj_set=traj_set, make_figure=figure_bool, time_r=time_r,
+                                       **species_attributes)
+
+                    if figure_bool:
+                        figure_bool = False
     return traj_dict
 
 
@@ -791,9 +848,15 @@ def trajectory_integration(result_dictionary, current_root, network_dictionary, 
                 current_row += 1
                 attributes = sub.attrib
                 Plotting.subplot(rows, columns, current_column*current_row)
-
-                traj_and_bounds = traj_list[traj_node.attrib['net']]
+                try:
+                    network_id = traj_node.attrib['net']
+                except KeyError:
+                    network_id = kwargs['net'].id
+                traj_and_bounds = traj_list[network_id]
                 traj = traj_and_bounds[0]
+                if current_row==1:
+                    Plotting.title(network_id)
+
                 lower_bound = traj_and_bounds[1]
                 upper_bound = traj_and_bounds[2]
                 id_list = []
@@ -804,9 +867,10 @@ def trajectory_integration(result_dictionary, current_root, network_dictionary, 
                 # Axis solving
                 all_vars = traj.dynamicVarKeys
                 for thing in traj.assignedVarKeys:
-                    all_vars.append(thing)
+                    all_vars.append(thing)  # The dynamic keys + assigned keys are all the var keys necessary
                 max_list = []
                 min_list = []
+                # Here we find the max and min on the y-axis to constrain the graph
                 for var in id_list:
                     index = all_vars.index(var)
                     value_list = []
@@ -814,8 +878,9 @@ def trajectory_integration(result_dictionary, current_root, network_dictionary, 
                         value_list.append(value[index])
                     max_list.append(round(max(value_list),1))
                     min_list.append(scipy.floor(min(value_list)))
-                padding = max(max_list) * .1
+                padding = max(max_list) * .1  # Pad the max y-value so things look nice
                 Plotting.axis([int(lower_bound), int(upper_bound), min(min_list), max(max_list)+padding])
+
 
 @check_to_save
 def hessian(routine_dict, result_dictionary, model, network_dictionary, **kwargs):
@@ -832,14 +897,15 @@ def hessian(routine_dict, result_dictionary, model, network_dictionary, **kwargs
             eps = 0.0001
         try:
             if routine_dict.pop('log'):
-                print eps
                 hess = model.hessian_log_params(optimized_params, eps, **routine_dict)
         except KeyError:
             hess = model.hessian(optimized_params, eps, **routine_dict)
     evals, evects = Utility.eig(hess)
     Plotting.figure()
+    Plotting.title("Eigenvalues")
     Plotting.plot_eigvals(evals)
     Plotting.figure()
+    Plotting.title("Eigenvectors")
     Plotting.plot_eigvect(evects[:,0], optimized_params.keys())
     return hess
 
@@ -856,7 +922,6 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
     if 'from_file' in routine_dict:
         if routine_dict['from_file']:
             network = IO.from_SBML_file(sbml_reference, network_name)
-            print network.id
     elif 'copy' in routine_dict:
         try:
             network_to_copy = network_dictionary[routine_dict['copy']]
@@ -916,6 +981,7 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
                                                           network_func_dictionary=network_func_dictionary,
                                                           hash_node=hash_node, parent=root)
             network_dictionary[net_name] = new_network
+
             try:
                 attributes = routine_dict_drier(network.attrib)
                 if attributes["from_file"]:
@@ -955,7 +1021,6 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
 
     add_residuals(root, model)
 
-    print network_dictionary
 
     for child in action_root:
         try:

@@ -25,22 +25,24 @@
         </Skip>
 	</Parameters>
     <Actions>
-        <Optimization iterations="20" plot="True" disp = "False"/>
+        <Optimization iterations="20" plot="True">
+            <opt type = "Levenburg-Marquardt"  disp = "False"/>
+        </Optimization>
         <Ensemble prune="10" steps="1000" />
         <Histogram>
             <Variables>
-                <parameter bins="10" ids="r3" log="True" />
+                <parameter bins="10" id="r3" log="True" />
             </Variables>
         </Histogram>
         <EnsembleTrajectories>
             <Variables>
                 <Graph>
-                    <species bounds="lower, upper" ids="frac_v3" />
-                    <species bounds="lower, upper" ids="frac_v4" />
+                    <species bounds="lower, upper" id="frac_v3" />
+                    <species bounds="lower, upper" id="frac_v4" />
                 </Graph>
                 <Graph>
-                    <species bounds="" ids="data2" />
-                    <species bounds="" ids="data1" />
+                    <species bounds="" id="data2" />
+                    <species bounds="" id="data1" />
                 </Graph>
             </Variables>
         </EnsembleTrajectories>
