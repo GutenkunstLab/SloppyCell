@@ -330,7 +330,10 @@ def construct_ensemble(params, m, result_dictionary, autocorrelate=False, steps=
         prune = int(math.ceil(steps/float(250)))
     pruned_ens = ens[::int(prune)]
     if only_pruned:
-        return pruned_ens
+        if autocorrelate:
+            return pruned_ens, ac
+        else:
+            return pruned_ens
     else:
         return ens, gs, r, pruned_ens
 
@@ -697,7 +700,15 @@ def ensemble(routine_dict, result_dictionary, model, network_dictionary, **kwarg
     optimized parameters have been calculated.
     """
     try:
+        # Todo: Find a way to load the autocorrelation graph
         pruned_ensemble = kwargs['loaded_object']
+        try:
+
+            Plotting.figure()
+            Plotting.title("Autocorrelation")
+            Plotting.plot(pruned_ensemble['ac'])
+        except IndexError:
+            pass
         return pruned_ensemble
     except KeyError:
         pass
@@ -711,13 +722,14 @@ def ensemble(routine_dict, result_dictionary, model, network_dictionary, **kwarg
     try:
         autocorrelate = routine_dict.pop('autocorrelate')
         if autocorrelate:
-            pruned_ens = construct_ensemble(optimized_params, model, result_dictionary, autocorrelate=autocorrelate,
+            pruned_ens, ac = construct_ensemble(optimized_params, model, result_dictionary, autocorrelate=autocorrelate,
                                             network_dictionary=network_dictionary, **routine_dict)
+            return {'pe': pruned_ens, 'ac': ac}
         else:
             raise KeyError
     except KeyError:
         pruned_ens = construct_ensemble(optimized_params, model, result_dictionary, **routine_dict)
-    return pruned_ens
+    return {'pe':pruned_ens}
 
 
 def histogram_r(current_root, result_dictionary, params, **kwargs):
@@ -737,6 +749,7 @@ def histogram_r(current_root, result_dictionary, params, **kwargs):
     # Graph objects could potentially be saved, but it's probably not worth it.
     try:
         pruned_ens = result_dictionary['ensemble']
+        pruned_ens= asarray(pruned_ens['pe'])
     except KeyError:
         # We might just not have done ensemble construction yet.
         # TODO: Either organize actions before calling, or have actions call their dependents
@@ -761,7 +774,7 @@ def ensemble_traj(current_root, routine_dict, result_dictionary, time_r, net, ne
         traj_dict = {}
     color_array = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
     try:
-        pruned_ens = result_dictionary['ensemble']
+        pruned_ens = result_dictionary['ensemble']['pe']
 
     except KeyError:
         # We haven't constructed an ensemble yet.
@@ -788,10 +801,10 @@ def ensemble_traj(current_root, routine_dict, result_dictionary, time_r, net, ne
             graphing_set = []
             index = 0
             try:
-                net_ensemble = child.attrib['net_ensemble']
+                attributes = routine_dict_drier(child.attrib)
+                net_ensemble = attributes['net_ensemble']
             except KeyError:
                 net_ensemble = False
-
             for variable in child:
                 # We don't run the save function so the attributes don't get dried in the decorator
                 # We do it here instead
@@ -809,7 +822,6 @@ def ensemble_traj(current_root, routine_dict, result_dictionary, time_r, net, ne
                 traj_set = plot_variables(pruned_ens, net_to_pass, time_r=time_r, make_figure=figure_bool,
                                           net_ensemble=net_ensemble, graphing_set=graphing_set)
             else:
-
                 for species_attributes in graphing_set:
                     species_id = species_attributes['id']
                     if not object_loaded:
@@ -884,6 +896,7 @@ def trajectory_integration(result_dictionary, current_root, network_dictionary, 
 
 @check_to_save
 def hessian(routine_dict, result_dictionary, model, network_dictionary, **kwargs):
+    # Todo: Make this load saved object
     try:
         optimized_params = result_dictionary['optimization']['params']
     except KeyError:
@@ -1023,16 +1036,17 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
 
 
     for child in action_root:
-        try:
-            r_name = child.tag.lower()
-            result_dictionary[r_name] = action_function_dictionary[r_name](root=action_root, routine=child.tag,
+        #try:
+        r_name = child.tag.lower()
+        result_dictionary[r_name] = action_function_dictionary[r_name](root=action_root, routine=child.tag,
                                                                     model=model, params=params, current_root=child,
                                                                     xml_file=xml_file, file_name=file_name, time_r=time_r,
                                                                     net=net, result_dictionary=result_dictionary,
                                                                     parent=root, hash_node=hash_node,
                                                                     network_dictionary = network_dictionary)
-        except KeyError:
-            logger.warn("No function associated with action tag %s" % child.tag)
+        #except KeyError as e:
+            #logger.warn("No function associated with action tag %s" % child.tag)
+            #logger.warn(e)
     show()
 
 
