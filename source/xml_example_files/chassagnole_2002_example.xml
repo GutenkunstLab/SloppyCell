@@ -1,0 +1,90 @@
+<Scell>
+     <References>
+        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\gutenkunst2007\Chassagnole_2002\BIOMD0000000051.xml" />
+     </References>
+    <Networks>
+        <Network compile="True" from_file="True" id="base">
+            <Remove>
+                <var id="time_t" />
+            </Remove>
+        </Network>
+        <Network copy="base" id="long">
+
+        </Network>
+        <Network copy="base" id="short">
+
+        </Network>
+    </Networks>
+    <Actions>
+        <Trajectory>
+            <Graph>
+                <traj net="base" upper_bound="40">
+                    <subplot>
+                        <var id="cglcex" />
+                    </subplot>
+                    <subplot>
+                        <var id="cfdp" />
+                    </subplot>
+                    <subplot>
+                        <var id="cg1p" />
+                    </subplot>
+                    <subplot>
+                        <var id="cg6p" />
+                    </subplot>
+                    <subplot>
+                        <var id="cpep" />
+                    </subplot>
+                    <subplot>
+                        <var id="cpyr" />
+                    </subplot>
+                    <subplot>
+                        <var id="cf6p" />
+                    </subplot>
+                    <subplot>
+                        <var id="cgap" />
+                    </subplot>
+                    <subplot>
+                        <var id="cpg" />
+                    </subplot>
+
+                </traj>
+            </Graph>
+            <Graph>
+                <traj net="base" upper_bound="1">
+                    <subplot>
+                        <var id="cg6p" />
+                    </subplot>
+                    <subplot>
+                        <var id="cf6p" />
+                    </subplot>
+                    <subplot>
+                        <var id="cpep" />
+                    </subplot>
+                    <subplot>
+                        <var id="cpyr" />
+                    </subplot>
+
+                </traj>
+            </Graph>
+            <Graph>
+                <traj net="base" upper_bound="40">
+                    <subplot>
+                        <var id="catp" />
+                        <var id="cadp" />
+                        <var id="camp" />
+                    </subplot>
+                    <subplot>
+                        <var id="cnad" />
+                        <var id="cnadh" />
+
+                    </subplot>
+                    <subplot>
+                        <var id="cnadp" />
+                        <var id="cnadph" />
+                    </subplot>
+                </traj>
+            </Graph>
+
+        </Trajectory>
+    </Actions>
+<hash><base path="..\temp\base_1416728543.bp" /><long path="..\temp\long_-1894557009.bp" /><short path="..\temp\short_631085224.bp" /><trajectory path="..\temp\Trajectory_1645206538.bp" /></hash></Scell>
