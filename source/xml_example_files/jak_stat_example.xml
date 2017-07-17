@@ -1,6 +1,6 @@
 <Scell>
 	<References>
-		<Data path="C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/temp/jak_data.csv" />
+		<Data path="C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/xml_example_files/jak_data.csv" />
 		<SBML path="C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/SloppyCell/example/jak-stat/JAK-STAT_SC.xml" />
 	</References>
 	<Parameters>
@@ -26,7 +26,7 @@
 	</Parameters>
     <Actions>
         <Optimization iterations="20" plot="True">
-            <opt type = "Levenburg-Marquardt"  disp = "False"/>
+            <opt disp="False" type="Levenburg-Marquardt" />
         </Optimization>
         <Ensemble prune="10" steps="1000" />
         <Histogram>
@@ -47,4 +47,4 @@
             </Variables>
         </EnsembleTrajectories>
     </Actions>
-<hash><optimization path="..\temp\Optimization_-791199835.bp" /><ensemble path="..\temp\Ensemble_1785690891.bp" /><ensembletrajectories path="..\temp\EnsembleTrajectories_818774673.bp" /></hash></Scell>
+<hash><optimization path="..\temp\Optimization_999672296.bp" /><ensemble path="..\temp\Ensemble_1785690891.bp" /><ensembletrajectories path="..\temp\EnsembleTrajectories_-53196623.bp" /></hash></Scell>

@@ -1,6 +1,6 @@
 <Scell>
     <References>
-        <Data path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\temp\tyson_data.csv" />
+        <Data path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\xml_example_files\tyson_data.csv" />
 		<SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\Tyson_1991\BIOMD0000000005.xml" />
     </References>
     <Networks>
