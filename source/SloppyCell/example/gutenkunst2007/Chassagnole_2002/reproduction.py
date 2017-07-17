@@ -61,3 +61,4 @@ for ii, v in enumerate(vars):
         Plotting.axis([0, 40, 0.04, 0.24])
 Plotting.subplots_adjust(wspace=0, hspace=0)
 
+Plotting.show()

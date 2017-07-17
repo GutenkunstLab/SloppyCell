@@ -127,3 +127,6 @@ Plotting.plot(traj_8.timepoints, traj_8.getVariableTrajectory('CDC14_8'), 'k-.')
 Plotting.plot(traj_8.timepoints, traj_8.getVariableTrajectory('CLB5T_23'), 'k-')
 #Plotting.title('sic1Del cdh1Del cdc6Del 2-49 GALL-CDC20')
 Plotting.axis([0, max(traj_8.timepoints), 0, 3])
+
+
+Plotting.show()

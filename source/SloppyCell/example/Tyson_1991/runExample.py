@@ -46,9 +46,6 @@ from Expts import *
 m = Model([expt1], [base_net, growth_net])
 params = m.get_params()
 for id, val in params.items():
-    print id
-    print val
-
     m.AddResidual(Residuals.PriorInLog('prior_on_%s' % id, id, scipy.log(val),
                                        scipy.log(10.0)))
 print 'Initial cost:', m.cost(params)

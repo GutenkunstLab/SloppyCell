@@ -76,4 +76,4 @@ for param_id in params.keys():
     Plotting.xticks([])
     Plotting.yticks([])
     Plotting.title(param_id)
-    Plotting.savefig('uncert_figs/%s.eps' % param_id)
+Plotting.show()

@@ -203,6 +203,7 @@ Testing/test_IntegrateWithoutDerivatives.py
 Testing/test_Misc.py
 Testing/test_OptDesign.py
 Testing/test_Periodic.py
+Testing/test_PiecewiseDynamics.py
 Testing/test_Plotting.py
 Testing/test_Py2TeX.py
 Testing/test_SBMLInterface.py

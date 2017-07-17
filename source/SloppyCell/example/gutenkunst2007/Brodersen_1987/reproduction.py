@@ -5,7 +5,7 @@ from SloppyCell.ReactionNetworks import *
 from Nets import *
 
 alb_net.resetDynamicVariables()
-alb_times = scipy.logspace(-6, -2, 1000)
+alb_times = scipy.linspace(2, 6, 1000)
 alb_traj = Dynamics.integrate(alb_net, alb_times) 
 
 heme_net.resetDynamicVariables()

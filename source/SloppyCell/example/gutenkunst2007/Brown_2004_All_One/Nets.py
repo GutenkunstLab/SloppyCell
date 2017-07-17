@@ -8,6 +8,7 @@ for var in net.variables.keys():
     # Set all non-zero ICs to 1.
     if net.get_var_ic(var) != 0:
         net.set_var_ic(var, 1.0)
+        print var
 
 net.set_var_ic('EGF', 0)
 net.set_var_ic('NGF', 0)

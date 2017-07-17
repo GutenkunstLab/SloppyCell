@@ -32,3 +32,4 @@ Plotting.plot(ngf_DN_Rap1_traj.get_times(),
               ngf_DN_Rap1_traj.get_var_traj('ErkActive'), 'r')
 Plotting.plot(ngf_DN_Ras_traj.get_times(),
               ngf_DN_Ras_traj.get_var_traj('ErkActive'), 'b')
+Plotting.show()
