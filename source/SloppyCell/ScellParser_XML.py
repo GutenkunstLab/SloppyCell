@@ -105,7 +105,8 @@ def read_from_file(file_name):
                 data_reference = root.find("References").find("Data").attrib["path"]
                 experiment, time_array = experiment_constructor(data_reference, sbml_reference)
             except AttributeError as e:
-                logger.warn('No data reference established, experiment cannot be constructed')
+                logger.warn('No data reference established, experiment cannot be constructed, SloppyCell will '
+                            'have limited functionality.')
                 logger.warn(e)
                 experiment = None
 
@@ -115,10 +116,13 @@ def read_from_file(file_name):
         if experiment is not None:
             TestConstruct_XML.make_happen(root, experiment={experiment.GetName(): experiment},
                                           xml_file=xml_file, file_name=file_name, sbml_reference=sbml_reference)
+        else:
+            TestConstruct_XML.make_happen(root, None, xml_file=xml_file, file_name=file_name,
+                                          sbml_reference=sbml_reference)
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
-    read_from_file(r'C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\temp\Tyson1991_example.xml')
+    read_from_file(r'C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\xml_example_files\Edelstein1996_example.xml')
     files = []
     for file in os.listdir(os.curdir):
         if file.endswith(".pyd"):

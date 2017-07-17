@@ -7,7 +7,7 @@ Runs appropriate functions to test input data and model (XML edition
 """
 
 import Utility
-import time
+import math
 import os
 import sys
 from pylab import *
@@ -15,12 +15,36 @@ import scipy
 from SloppyCell.ReactionNetworks import *
 from xml.etree import ElementTree as ET
 import logging
+import operator
 
 logger = logging.getLogger('TestConstruct_XML')
 logging.basicConfig()
 this_module = sys.modules[__name__]
 # Globally defined variables.  Should eventually be done away with.
 step_factor = 300
+
+
+def findOutlier(a, sensitivity=2.5):
+    third_quartile=scipy.percentile(a,75)
+    first_quartile=scipy.percentile(a,25)
+    print first_quartile,third_quartile
+
+    iqr = third_quartile-first_quartile
+    print iqr
+    outlier_list = []
+    for number in a:
+        if number>(third_quartile+iqr*sensitivity) or number < (first_quartile-iqr*sensitivity):
+            outlier_list.append(number)
+    return outlier_list
+
+
+def find_factors(x):
+    n = math.sqrt(x)
+    n = math.floor(n)
+    while x % n != 0:
+        n -= 1
+    m = x/n
+    return m, n
 
 
 def merge_dicts(*dict_args):
@@ -39,7 +63,8 @@ def recursive_list_builder(node, order):
         return order
     for child in node:
         order.append(child)
-        return recursive_list_builder(child,order)
+        return recursive_list_builder(child, order)
+
 
 def hash_routine(root):
     root_iter = root.getiterator()
@@ -86,11 +111,44 @@ def routine_dict_drier(routine_dict):
                             for beta in alpha:
                                 placeholder.append(beta.strip())
                             parameter = placeholder
+                        # Here we take care of any conditionals that are used for network creation
+                        if key_r == "condition":
+                            a = ['!=', '==', '<', '>', '*', '/']
+                            matches = next((x for x in a if x in parameter), False)
+                            value = float(parameter.split(matches)[1])
+                            b = {'!=': lambda x: x != value, '==': lambda x: x == value, '<': lambda x: x < value,
+                                 '>': lambda x: x > value, '*': lambda x: x*value, '/': lambda x: x/value}
+                            parameter = b[matches]
+
         routine_dict_copy[key_r] = parameter
     return routine_dict_copy
 
 # Here we define all of the modification functions for the networks
 # ------------------------------------------------------------------------
+
+
+def set_dynamic(network, action_root, network_dictionary):
+    for child in action_root:
+        if child.tag == 'traj':
+            attributes = child.attrib
+            traj, up_b, low_b = calculate_traj(network_dictionary, **attributes)
+            vals = traj.last_dynamic_var_values()
+            network.set_dyn_var_ics(vals)
+    return network
+
+
+def set_typical(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        attributes = routine_dict_drier(attributes)
+        if attributes['id'] == 'all':
+            variables = network.variables.keys()
+            for variable in variables:
+                network.set_var_typical_val(variable, attributes['value'])
+        else:
+            network.set_var_typical_val(**attributes)
+
+    return network
 
 
 def set_constant(network, action_root):
@@ -131,7 +189,31 @@ def set_initial(network, action_root):
     for child in action_root:
         attributes = child.attrib
         attributes = routine_dict_drier(attributes)
-        network.set_initial_var_value(**attributes)
+        try:
+            condition = attributes.pop('condition')
+        except KeyError:
+            condition = lambda x: True
+        if attributes['id'] == 'all':
+            variables = network.variables.keys()
+            for variable in variables:
+                alpha = condition(network.get_var_ic(variable))
+                if isinstance(alpha,bool):
+                    if alpha:
+                        network.set_var_ic(variable, attributes['value'])
+                else:
+                    network.set_var_ic(variable, alpha)
+
+        else:
+            if 'value' in attributes:
+                if condition(attributes['value']):
+                    network.set_initial_var_value(**attributes)
+            else:
+                value = network.get_var_ic(attributes['id'])
+                alpha = condition(value)
+                if isinstance(alpha,bool):
+                    network.set_var_ic(value=value, **attributes)
+                else:
+                    network.set_var_ic(value=alpha,**attributes)
     return network
 
 
@@ -139,14 +221,14 @@ def start_fixed(network, action_root):
     attributes = action_root.attrib
     attributes = routine_dict_drier(attributes)
     try:
-        min = int(attributes['min'])
+        min_r = int(attributes['min'])
     except KeyError:
-        min = 0
+        min_r = 0
     try:
-        max = int(attributes['max'])
+        max_r = int(attributes['max'])
     except KeyError:
-        max = 1000
-    Dynamics.integrate(network, [min, max])
+        max_r = 1000
+    Dynamics.integrate(network, [min_r, max_r])
     fp = Dynamics.dyn_var_fixed_point(network)
     network.set_dyn_var_ics(fp)
     return network
@@ -196,25 +278,36 @@ def add_reaction(network, action_root):
             except ValueError:
                 value_s = attributes['stoich_val']
             stoich[attributes['stoich_var']] = value_s
-            pass_list.apppend(stoich)
+            pass_list.append(stoich)
         try:
             reaction_name = attributes.pop('reaction')
             try:
-                kinetic_law = getattr(globals()['Reactions'],reaction_name)
+                kinetic_law = getattr(globals()['Reactions'], reaction_name)
                 network.addReaction(kinetic_law, var_id, *pass_list, **attributes)
                 return network
-            except Exception as e:
-                print e
+            except Exception as exep:
+                print exep
                 logger.warn("Please check that the reaction name is typed correctly")
         except KeyError:
             # No reaction specified
             kinetic_law = attributes.pop('kinetic_law')
             network.addReaction(var_id, kinetic_law, *pass_list, **attributes)
             return network
-        for key in attributes:
-            pass_list.append(attributes[key])
+        for key_r in attributes:
+            pass_list.append(attributes[key_r])
         network.addReaction(var_id, *pass_list)
     return network
+
+
+def remove_component(network, action_root):
+    for child in action_root:
+        attributes = child.attrib
+        attributes = attributes.copy()
+        attributes = routine_dict_drier(attributes)
+        network.remove_component(**attributes)
+        return network
+
+# -----------------------------------------------------------------
 
 
 def prior_drier(root, model):
@@ -227,6 +320,7 @@ def prior_drier(root, model):
     the parameters correctly (the p value and sigma p value, respectively)
 
     :param root: Full dictionary output from ScellParser, contains the prior dictionary
+    :param model: The model that we want to add priors to
     :return: A dictionary mapping each parameter to its respective (val_p,x) pair.  The (val_p,x) pair is 
       contained in a dictionary for convenience 
     """
@@ -245,7 +339,7 @@ def prior_drier(root, model):
                 try:
                     width = float(bounds['width'])
                     if len(param_list) > 0:
-                        for param_id,value in param_list:
+                        for param_id, value in param_list:
                             val_p = float(value)
                             x = float(width)
                             model.AddResidual(Residuals.PriorInLog('prior_on_%s' % param_id, param_id, scipy.log(val_p),
@@ -281,11 +375,49 @@ def prior_drier(root, model):
 # --------------------------
 
 
+def plot_traj(traj_dict, network_dictionary, id_list, attributes, id=None,
+              log=False, lower_bound=0, upper_bound=100, points=1, vary=True):
+    if vary:
+        if log:
+            space = scipy.logspace(int(lower_bound), int(upper_bound), int(points))
+        else:
+            space = scipy.linspace(int(lower_bound), int(upper_bound), int(points))
+    else:
+        space = [1]
+    network = network_dictionary[traj_dict['net']]
+    if len(id_list)<1:
+        id_list = None
+
+    for point in space:
+        if vary:
+            network.set_var_ic(id,point)
+        traj, lower_bound, upper_bound = calculate_traj(network_dictionary, **traj_dict)
+        try:
+            semilog = attributes["semilog"]
+            agg = semilogger(traj, id_list, semilog)
+            a = Plotting.semilogx(traj.get_times(), agg)
+            semilogged = True
+        except KeyError:
+            semilogged = False
+            agg=None
+            a = Plotting.plot_trajectory(traj, id_list, **attributes)
+    return traj, lower_bound, upper_bound, semilogged, a, agg
+
+
+
+def semilogger(traj,ids, semilog):
+    id_copy = list(ids)
+    agg=traj.get_var_traj(id_copy.pop(0))
+    for id in ids:
+        agg=agg+traj.get_var_traj(id)
+    agg = 1-agg
+    return agg
+
+
+
 def add_residuals(root, model):
     root = root.find("Parameters")
     prior_dictionary = prior_drier(root, model)
-
-
 
 
 def set_ic(fit_root, net):
@@ -326,6 +458,8 @@ def construct_ensemble(params, m, result_dictionary, autocorrelate=False, steps=
         Plotting.title("Autocorrelation")
         ac = Ensembles.autocorrelation(gs)
         Plotting.plot(ac)
+    else:
+        ac = None
     if prune == 0:
         prune = int(math.ceil(steps/float(250)))
     pruned_ens = ens[::int(prune)]
@@ -381,7 +515,7 @@ def plot_variables(pruned_ens, net, id=None, time_r=65, start=0, points=200,
         Plotting.plot_ensemble_trajs(bt, mt, st,
                                      vars=vars)
         Plotting.show()
-        traj_set = (bt,mt,st)
+        traj_set = (bt, mt, st)
     else:
 
         if isinstance(bounds, list) or isinstance(bounds, str):
@@ -413,8 +547,10 @@ def plot_variables(pruned_ens, net, id=None, time_r=65, start=0, points=200,
     return traj_set
 
 
-def calculate_traj(network_dictionary, net, lower_bound = 0, upper_bound = 100):
+def calculate_traj(network_dictionary, net, lower_bound = 0, upper_bound = 100, reset=False):
     net = network_dictionary[net]
+    if reset:
+        net.resetDynamicVariables()
     traj = Dynamics.integrate(net, [int(lower_bound), int(upper_bound)])
     return traj, lower_bound, upper_bound
 
@@ -844,54 +980,176 @@ def ensemble_traj(current_root, routine_dict, result_dictionary, time_r, net, ne
 
 @check_to_save
 def trajectory_integration(result_dictionary, current_root, network_dictionary, **kwargs):
-    traj_list = {}
-    for var in current_root.iter("traj"):
-        network,lower_bound, upper_bound = calculate_traj(network_dictionary, **var.attrib)
-        traj_list[var.attrib['net']] = (network, lower_bound, upper_bound)
+    # TODO: Break up into smaller functions
+    try:
+        traj_list = kwargs['loaded_object']
+    except KeyError:
+        traj_list = {}
+
+    color_array = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
+    color_pick = 0
     current_column = 0
+    print current_root.tag
+    traj_count=0
     for root in current_root.iter("Graph"):
-        Plotting.figure(figsize=(15, 4))
-        columns = len(root)
-        for traj_node in root:
+        columns = 0
+        sub_row_array = []
+        for traj_node in root.iter("traj"):
+            traj_count+=1
+            sub_rows = 0
+            column_list = []
+            for thing in traj_node:
+                column_list.append(thing.tag)
+                if thing.tag == "subplot":
+                    sub_rows += 1
+            if "subplot" in column_list:
+                columns = columns + 1
+            sub_row_array.append(sub_rows)
+        sub_rows = min(sub_row_array)
+        if sub_rows == 0:
+            sub_rows = 1
+        current_column = 0
+        if columns == 0:
+            columns = 1
+        if columns == 1:
+            sub_rows, sub_columns = find_factors(sub_rows)
+            current_fig = Plotting.figure(figsize=(sub_columns * 5, sub_rows * 4))
+        elif sub_rows == 1:
+            sub_columns, sub_rows = find_factors(columns)
+            current_fig = Plotting.figure(figsize=(sub_columns * 4, sub_rows * 5))
+        else:
+            current_fig = Plotting.figure(figsize=(columns*5,sub_rows*4))
+        max_list = []
+        min_list = []
+        placeholder_columns = columns
+        for traj_node in root.iter("traj"):
+            columns=placeholder_columns
             rows = len(traj_node)
-            current_column += 1
-            current_row = 0
+            if columns == 1:
+                rows, columns = find_factors(rows)
+            elif rows == 1:
+                if sub_rows>columns:
+                    rows, columns = find_factors(placeholder_columns)
+                else:
+                    columns, rows = find_factors(placeholder_columns)
+            column_list = []
+            for thing in traj_node:
+                column_list.append(thing.tag)
+            if "subplot" in column_list:
+                current_column = current_column + 1
+            current_row = 1
             for sub in traj_node:
-                current_row += 1
-                attributes = sub.attrib
-                Plotting.subplot(rows, columns, current_column*current_row)
+                id_list = []
+                if sub.tag.lower() == "subplot":
+                    color_pick = 0
+                    max_list = []
+                    min_list = []
+
+                    attributes = sub.attrib
+                    if current_row>rows*columns:
+                        if current_column==1:
+                            current_row=current_row-(rows*columns)+1
+                        elif current_row > rows and current_row * current_column > rows * columns:
+                            current_row = current_row - (rows)
+                    elif current_row*current_column>rows*columns:
+                        current_row=current_row-(columns)+1
+                    Plotting.subplot(rows, columns, current_column*current_row)
+                    current_row += columns
+                    for var in sub.iter("var"):
+                        id_list.append(var.attrib['id'])
+                else:
+                    attributes = root.attrib
+                    for var in traj_node.iter("var"):
+                        id_list.append(var.attrib['id'])
                 try:
                     network_id = traj_node.attrib['net']
                 except KeyError:
                     network_id = kwargs['net'].id
-                traj_and_bounds = traj_list[network_id]
-                traj = traj_and_bounds[0]
-                if current_row==1:
+                varied = False
+                attributes = routine_dict_drier(attributes)
+                try:
+                    show_outlier = attributes.pop("show_outlier")
+                except KeyError:
+                    show_outlier = False
+                try:
+                    lower_margin = attributes.pop("lower_bound")
+                except KeyError:
+                    lower_margin = None
+                try:
+                    upper_margin = attributes.pop("upper_bound")
+                except KeyError:
+                    upper_margin = None
+                traj_dict = routine_dict_drier(traj_node.attrib)
+                for vary in sub.iter("vary"):
+                    varied = True
+                    traj, lower_bound, upper_bound, semilogged, a, agg = plot_traj(traj_dict, network_dictionary,
+                                                                                   id_list, attributes, **vary.attrib)
+                if not varied:
+                    traj, lower_bound, upper_bound, semilogged, a, agg = plot_traj(traj_dict, network_dictionary,
+                                                                                   id_list, attributes, vary=False)
+
+                if current_row == 1+columns:
                     Plotting.title(network_id)
 
-                lower_bound = traj_and_bounds[1]
-                upper_bound = traj_and_bounds[2]
-                id_list = []
-                for var in sub.iter("var"):
-                    id_list.append(var.attrib['id'])
-                attributes = routine_dict_drier(attributes)
-                Plotting.plot_trajectory(traj,id_list, **attributes)
+                if "upper_bound" in traj_dict:
+                    upper_bound = int(traj_dict['upper_bound'])
+
+
+
+                # Plotting.plot(traj.get_times(),
+                # traj.get_var_traj(id_list[0]), **attributes)
+
+                if isinstance(a[0],list):
+                    lines = a[0]
+                    if len(lines) < 2:
+                        lines = lines[0][0]
+                        lines.set_color(color_array[color_pick])
+                        legend(loc="upper left")
+                    color_pick += 1
+                else:
+                    pass
+                #TODO: Make sure lines are separate colors regardless of scenario
                 # Axis solving
                 all_vars = traj.dynamicVarKeys
+                if len(id_list) < 1:
+                    print("LOPLOP")
+                    id_list = traj.dynamicVarKeys
                 for thing in traj.assignedVarKeys:
                     all_vars.append(thing)  # The dynamic keys + assigned keys are all the var keys necessary
-                max_list = []
-                min_list = []
+
                 # Here we find the max and min on the y-axis to constrain the graph
-                for var in id_list:
-                    index = all_vars.index(var)
-                    value_list = []
-                    for value in traj.values:
-                        value_list.append(value[index])
-                    max_list.append(round(max(value_list),1))
-                    min_list.append(scipy.floor(min(value_list)))
+                if semilogged:
+                    max_list=agg
+                    min_list=agg
+                else:
+                    for var in id_list:
+                        index = all_vars.index(var)
+                        value_list = []
+                        for value in traj.values:
+                            value_list.append(value[index])
+                        max_list.append(round(max(value_list), 3))
+                        if min(value_list)>0:
+                            min_list.append(scipy.floor(min(value_list)))
+                        else:
+                            min_list.append(round(min(value_list),3))
+
+
+                print max_list
+                print min_list
+                if not show_outlier:
+                    while len(findOutlier(max_list)) > 0:
+                        for outlier in findOutlier(max_list):
+                            max_list.remove(outlier)
                 padding = max(max_list) * .1  # Pad the max y-value so things look nice
-                Plotting.axis([int(lower_bound), int(upper_bound), min(min_list), max(max_list)+padding])
+                print "PADDING: " + str(padding)
+                if upper_margin is None:
+                    upper_margin=max(max_list)+padding
+                if lower_margin is None:
+                    lower_margin=min(min_list)
+
+                Plotting.axis([float(lower_bound), float(upper_bound), lower_margin, upper_margin])
+        current_fig.subplots_adjust(hspace=.3)
+    return traj_list
 
 
 @check_to_save
@@ -926,6 +1184,7 @@ def hessian(routine_dict, result_dictionary, model, network_dictionary, **kwargs
 
 @check_to_save
 def create_Network(current_root, routine_dict, sbml_reference, network_dictionary, network_func_dictionary, **kwargs):
+    network = None
     try:
         network = kwargs['loaded_object']
         return network
@@ -951,7 +1210,12 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
     # Now that we have a network, we should modify it according to the xml file
     for child in current_root:
         r_name = child.tag.lower()
-        network = network_func_dictionary[r_name](network, child)
+        if r_name != "set_dynamic":
+            network = network_func_dictionary[r_name](network, child)
+        else:
+            network = network_func_dictionary[r_name](network, child, network_dictionary)
+    if "compile" in routine_dict:
+        network.compile()
     return network
 
 
@@ -960,18 +1224,17 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     network_dictionary = dict()
     action_function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
                                   'ensembletrajectories': ensemble_traj, 'trajectory': trajectory_integration,
-                                  'hessian':hessian}
+                                  'hessian': hessian}
     network_func_dictionary = {'set_constant': set_constant, 'add_species': add_species,
                                'add_assignment': add_assignment, 'set_optimizable': set_optimizable,
                                'set_initial': set_initial, 'start_fixed': start_fixed,
                                'add_event': add_event, 'add_parameter': add_parameter,
-                               'add_rate_rule': add_rate_rule, 'add_reaction': add_reaction}
+                               'add_rate_rule': add_rate_rule, 'add_reaction': add_reaction,
+                               'set_typical': set_typical, "remove": remove_component, 'set_dynamic': set_dynamic}
     # TODO: Clean this mess up
     # These actions should generally happen for any input #
     # They have few enough options that there is little customization to be done and they are essential to setting
     # up the model.
-
-
     ###
     hash_node = root.find('hash')
     if hash_node is None:
@@ -983,7 +1246,10 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     action_root = root.find("Actions")
     network_root = root.find("Networks")
     model_root = root.find("Model")
-    net = IO.from_SBML_file(sbml_reference)  # Set base network from SBML reference
+    try:
+        net = IO.from_SBML_file(sbml_reference)  # Set base network from SBML reference
+    except ValueError:
+        net = None
     if network_root is not None:
         for network in network_root:
             net_name = network.attrib['id']
@@ -1003,8 +1269,10 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
                 pass
     else:
         network_dictionary[net.id] = net
-    time_r = time_extract(experiment)
-
+    if experiment is not None:
+        time_r = time_extract(experiment)
+    else:
+        time_r = 0
     # TODO: Extend to allow multiple models?
     if model_root is not None:
         experiments = []
@@ -1019,8 +1287,12 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
                 networks.append(network_dictionary[net_name])
         model = Model(experiments, networks)
     else:
-        # If undefined, we default to making a model out of all available experiments and models
-        model = Model(experiment.values(), network_dictionary.values())
+        # If undefined, we default to making a model out of all available experiments and networks
+        if experiment is not None:
+            model = Model(experiment.values(), network_dictionary.values())
+        else:
+            # We can only make a model with an experiment defined
+            model = None
 
     try:
         fit_root = root.find("Parameters").find("Fit")
@@ -1028,28 +1300,29 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
         params = key_parameters(fit_root)
     except AttributeError:
         # No parameters were specified, so we just take them all
-        params = model.get_params()
+        if model is not None:
+            params = model.get_params()
+        else:
+            params = None
+
     # This function is standalone and just tacks a residual onto anything that needs it
+    if model is not None:
+        add_residuals(root, model)
+    if action_root is not None:
 
-
-    add_residuals(root, model)
-
-
-    for child in action_root:
-        #try:
-        r_name = child.tag.lower()
-        result_dictionary[r_name] = action_function_dictionary[r_name](root=action_root, routine=child.tag,
-                                                                    model=model, params=params, current_root=child,
-                                                                    xml_file=xml_file, file_name=file_name, time_r=time_r,
-                                                                    net=net, result_dictionary=result_dictionary,
-                                                                    parent=root, hash_node=hash_node,
-                                                                    network_dictionary = network_dictionary)
-        #except KeyError as e:
-            #logger.warn("No function associated with action tag %s" % child.tag)
-            #logger.warn(e)
+        for child in action_root:
+            # try:
+            r_name = child.tag.lower()
+            action_function = action_function_dictionary[r_name]
+            result_dictionary[r_name] = action_function(root=action_root, routine=child.tag,
+                                                        model=model, params=params, current_root=child,
+                                                        xml_file=xml_file, file_name=file_name, time_r=time_r,
+                                                        net=net, result_dictionary=result_dictionary,
+                                                        parent=root, hash_node=hash_node,
+                                                        network_dictionary = network_dictionary)
+            # except KeyError as e:
+            #     logger.warn("No function associated with action tag %s" % child.tag)
+            #     logger.warn(e)
     show()
-
-
-            #
         # plot_histograms(pruned, ['r3', 'tao'], params)
         # show()
