@@ -1,0 +1,23 @@
+<Scell>
+    <References>
+        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\gutenkunst2007\Goldbeter_1991\BIOMD0000000003.xml" />
+
+    </References>
+    <Networks>
+        <Network compile="True" from_file="True" id="base" />
+    </Networks>
+    <Actions>
+        <Trajectory>
+            <Graph>
+                <traj net="base" upper_bound="100">
+                    <subplot>
+                        <var id="X" />
+                        <var id="C" />
+                        <var id="M" />
+                    </subplot>
+
+                </traj>
+            </Graph>
+        </Trajectory>
+    </Actions>
+<hash><base path="..\temp\base_-966257226.bp" /><trajectory path="..\temp\Trajectory_-1903177291.bp" /></hash></Scell>

@@ -56,3 +56,4 @@ ax.set_ylim(0.5e-6, 2)
 Plotting.subplots_adjust(bottom=0.08, right=0.97, top=0.97)
 
 Plotting.savefig('Fig1B_spectra_plot.eps')
+Plotting.show()

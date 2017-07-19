@@ -17,6 +17,8 @@ traj4 = Dynamics.integrate(double, [0, 72])
 
 maxP = max(traj1.get_var_traj('Perm'))
 maxC = max(traj1.get_var_traj('Clkm'))
+print maxP
+print maxC
 Plotting.figure(2)
 Plotting.subplot(2,2,1)
 Plotting.plot(traj1.get_times(), traj1.get_var_traj('Perm')/maxP)
@@ -39,3 +41,4 @@ traj5 = Dynamics.integrate(cper, [0, 72])
 Plotting.figure(3)
 Plotting.plot_trajectory(traj5, ['Perc', 'PTc', 'PTn'])
 Plotting.axis([0,72, 0, 10])
+Plotting.show()

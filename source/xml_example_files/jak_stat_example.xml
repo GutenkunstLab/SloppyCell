@@ -34,7 +34,7 @@
                 <parameter bins="10" id="r3" log="True" />
             </Variables>
         </Histogram>
-        <EnsembleTrajectories>
+        <EnsembleTrajectories points="100">
             <Variables>
                 <Graph>
                     <species bounds="lower, upper" id="frac_v3" />
@@ -47,4 +47,4 @@
             </Variables>
         </EnsembleTrajectories>
     </Actions>
-<hash><optimization path="..\temp\Optimization_999672296.bp" /><ensemble path="..\temp\Ensemble_1785690891.bp" /><ensembletrajectories path="..\temp\EnsembleTrajectories_-53196623.bp" /></hash></Scell>
+<hash><optimization path="..\temp\Optimization_999672296.bp" /><ensemble path="..\temp\Ensemble_1785690891.bp" /><ensembletrajectories path="..\temp\EnsembleTrajectories_-35621508.bp" /></hash></Scell>

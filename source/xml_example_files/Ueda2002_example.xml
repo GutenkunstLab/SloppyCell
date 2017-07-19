@@ -1,0 +1,99 @@
+<Scell>
+    <References>
+        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\gutenkunst2007\Ueda_2001\BIOMD0000000022.xml" />
+    </References>
+    <Networks>
+        <Network from_file="True" id="net1">
+            <Set_Constant>
+                <var id="EmptySet" is_constant="True" />
+            </Set_Constant>
+            <Set_Initial>
+                <var id="traj" point="480" />
+            </Set_Initial>
+        </Network>
+        <Network copy="net1" id="per01">
+            <Set_Initial>
+                <var id="s2" value="0" />
+                <var id="traj" point="4800" />
+            </Set_Initial>
+        </Network>
+        <Network copy="net1" id="dClkJrk">
+            <Set_Initial>
+                <var id="s6" value="0" />
+                <var id="traj" point="480" />
+            </Set_Initial>
+
+        </Network>
+        <Network copy="net1" id="double">
+            <Set_Initial>
+                <var id="s6" value="0" />
+                <var id="traj" point="480" />
+            </Set_Initial>
+
+        </Network>
+        <Network copy="net1" id="cper">
+            <Set_Initial>
+                <var id="s1" value="0" />
+                <var id="c1" value=".846" />
+                <var id="traj" point="495" />
+            </Set_Initial>
+
+        </Network>
+
+    </Networks>
+    <Actions>
+        <Trajectory>
+            <Graph>
+                <traj net="net1" upper_bound="72">
+                    <subplot>
+                        <var id="Perm" />
+                        <var id="Perc" />
+                        <var id="PTc" />
+                        <var id="PTn" />
+                    </subplot>
+                    <subplot>
+                        <var id="Clkm" />
+                        <var id="Clkc" />
+                        <var id="CCn" />
+                        <var id="CCc" />
+                    </subplot>
+                </traj>
+            </Graph>
+            <Graph>
+                <traj net="net1" upper_bound="72">
+                    <subplot>
+                        <var id="Perm" />
+                        <var id="Clkm" />
+                    </subplot>
+                </traj>
+                <traj net="per01" upper_bound="72">
+                    <subplot>
+                        <var id="Perm" />
+                        <var id="Clkm" />
+                    </subplot>
+                </traj>
+                <traj net="dClkJrk" upper_bound="72">
+                    <subplot>
+                        <var id="Perm" />
+                        <var id="Clkm" />
+                    </subplot>
+                </traj>
+                <traj net="double" upper_bound="72">
+                    <subplot>
+                        <var id="Perm" />
+                        <var id="Clkm" />
+                    </subplot>
+                </traj>
+            </Graph>
+            <Graph>
+                <traj net="cper" upper_bound="72">
+                    <subplot>
+                        <var id="Perc" />
+                        <var id="PTc" />
+                        <var id="PTn" />
+                    </subplot>
+                </traj>
+            </Graph>
+        </Trajectory>
+    </Actions>
+<hash><net1 path="..\temp\net1_1007437638.bp" /><per01 path="..\temp\per01_562085781.bp" /><dclkjrk path="..\temp\dClkJrk_780484845.bp" /><double path="..\temp\double_-464530020.bp" /><cper path="..\temp\cper_-1206475123.bp" /><trajectory path="..\temp\Trajectory_-1347107957.bp" /></hash></Scell>

@@ -5,7 +5,7 @@ net = IO.from_SBML_file('JAK-STAT_SC.xml', 'net1')                             #
 net.set_var_ic('v1', 'v1_0') # Won't need given initial assignments.           # (@\label{code:SBML_fix}@)
 import JAK_expt                                                                # (@\label{code:import_expt}@)
 m = Model([JAK_expt.expt], [net])
-
+print m.get_params()
 params = KeyedList([('r1', 0.5), ('r3', 2), ('tao', 6.0),                      # (@\label{code:params} @)
                     ('r4_0', 1.35), ('v1_0', 1.19)])
 res = Residuals.PriorInLog('r3_prior', 'r3', 0, log(sqrt(1e4)))                # (@\label{code:prior_start}@)

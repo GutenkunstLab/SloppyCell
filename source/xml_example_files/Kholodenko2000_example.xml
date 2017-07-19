@@ -1,0 +1,51 @@
+<Scell>
+    <References>
+        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\gutenkunst2007\Kholodenko_2000\BIOMD0000000010.xml" />
+    </References>
+    <Networks>
+        <Network from_file="True" id="base">
+            <Set_Optimizable>
+                <var id="n" is_optimizable="False" />
+            </Set_Optimizable>
+        </Network>
+        <Network copy="base" id="cooperative">
+            <Set_Initial>
+                <var id="n" value="2" />
+                <var id="Ki" value="18" />
+                <var id="K1" value="50" />
+                <var id="KK2" value="40" />
+                <var id="KK3" value="100" />
+                <var id="KK4" value="100" />
+                <var id="KK5" value="100" />
+                <var id="KK6" value="100" />
+                <var id="KK7" value="100" />
+                <var id="KK8" value="100" />
+                <var id="KK9" value="100" />
+                <var id="KK10" value="100" />
+                <var id="V9" value="1.25" />
+                <var id="V10" value="1.25" />
+            </Set_Initial>
+        </Network>
+    </Networks>
+    <Actions>
+        <Trajectory>
+            <Graph>
+                <traj net="base" upper_bound="9000">
+                    <subplot>
+                        <var id="MAPK_PP" />
+                        <var id="MAPK" />
+
+                    </subplot>
+                </traj>
+            </Graph>
+            <Graph>
+                <traj net="cooperative" upper_bound="15000">
+                    <subplot>
+                        <var id="MAPK_PP" />
+                        <var id="MAPK" />
+                    </subplot>
+                </traj>
+            </Graph>
+        </Trajectory>
+    </Actions>
+<hash><base path="..\temp\base_-1621604737.bp" /><cooperative path="..\temp\cooperative_107366587.bp" /><trajectory path="..\temp\Trajectory_1282975483.bp" /></hash></Scell>
