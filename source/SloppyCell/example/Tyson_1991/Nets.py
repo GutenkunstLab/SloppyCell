@@ -9,8 +9,8 @@ base_net = IO.from_SBML_file('BIOMD0000000005.xml', 'base')
 # First, we force the 'cell', and 'EmptySet' variables to have constant values.
 # This doesn't change the dynamics at all, but does speed up the integration
 #  a little bit.
-base_net.set_var_constant('cell', True)
-base_net.set_var_constant('EmptySet', True)
+base_net.set_var_constant('cell', False)
+base_net.set_var_constant('EmptySet', False)
 
 # We'll define the 'total cyclin' species that is used in plots.
 base_net.add_species('YT', 'cell', name = 'total cyclin')

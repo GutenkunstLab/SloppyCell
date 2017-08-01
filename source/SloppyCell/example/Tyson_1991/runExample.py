@@ -45,6 +45,7 @@ from Expts import *
 # We put together our Model from the experiments and networks
 m = Model([expt1], [base_net, growth_net])
 params = m.get_params()
+print params
 for id, val in params.items():
     m.AddResidual(Residuals.PriorInLog('prior_on_%s' % id, id, scipy.log(val),
                                        scipy.log(10.0)))

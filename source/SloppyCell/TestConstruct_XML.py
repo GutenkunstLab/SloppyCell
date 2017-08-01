@@ -24,13 +24,13 @@ this_module = sys.modules[__name__]
 step_factor = 300
 
 
-def findOutlier(a, sensitivity=3.5):
-    third_quartile=scipy.percentile(a,75)
-    first_quartile=scipy.percentile(a,25)
+def findoutlier(a, sensitivity=3.5):
+    third_quartile = scipy.percentile(a, 75)
+    first_quartile = scipy.percentile(a, 25)
     iqr = third_quartile-first_quartile
     outlier_list = []
     for number in a:
-        if number>(third_quartile+iqr*sensitivity) or number < (first_quartile-iqr*sensitivity):
+        if number > (third_quartile+iqr*sensitivity) or number < (first_quartile-iqr*sensitivity):
             outlier_list.append(number)
     return outlier_list
 
@@ -123,7 +123,8 @@ def routine_dict_drier(routine_dict):
 # Here we define all of the modification functions for the networks
 # ------------------------------------------------------------------------
 
-def add_compartment(network,action_root, network_dictionary):
+
+def add_compartment(network, action_root, network_dictionary):
     for child in action_root:
         attributes = child.attrib
         attributes = routine_dict_drier(attributes)
@@ -374,7 +375,7 @@ def prior_drier(root, model):
                     val_p = sqrt(lower * upper)
                     x = sqrt(upper / val_p)
                     # Just in case something goes wrong but doesn't cause any blatant errors
-                    assert (x == sqrt(val_p / lower))
+                    # assert (x == sqrt(val_p / lower))
                     model.AddResidual(Residuals.PriorInLog('prior_on_%s' % parameter, parameter, scipy.log(val_p),
                                                            scipy.log(x)))
                     prior_dictionary[parameter] = (val_p,x)
@@ -431,7 +432,8 @@ def semilogger(traj,ids, semilog):
 
 def add_residuals(root, model):
     root = root.find("Parameters")
-    prior_dictionary = prior_drier(root, model)
+    if root is not None:
+        prior_dictionary = prior_drier(root, model)
 
 
 def set_ic(fit_root, net):
@@ -612,7 +614,6 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
                 opt_type = routine_dict_n.pop('type').lower()
             except KeyError:
                 opt_type = 'levenburg-marquardt'
-
             new_params = optimization_dictionary[opt_type](m, new_params, **routine_dict_n)
         optimized_cost = m.cost(new_params)
         params = new_params
@@ -1169,8 +1170,8 @@ def trajectory_integration(result_dictionary, current_root, network_dictionary, 
 
 
                     if not show_outlier:
-                        while len(findOutlier(max_list)) > 0:
-                            for outlier in findOutlier(max_list):
+                        while len(findoutlier(max_list)) > 0:
+                            for outlier in findoutlier(max_list):
                                 max_list.remove(outlier)
                     padding = max(max_list) * .1  # Pad the max y-value so things look nice
                     if upper_margin is None:
@@ -1213,7 +1214,6 @@ def hessian(routine_dict, result_dictionary, model, network_dictionary, **kwargs
     return hess
 
 
-
 @check_to_save
 def create_Network(current_root, routine_dict, sbml_reference, network_dictionary, network_func_dictionary, **kwargs):
     network = None
@@ -1245,6 +1245,8 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
         network = network_func_dictionary[r_name](network, child, network_dictionary)
     if "compile" in routine_dict:
         network.compile()
+
+
     return network
 
 
@@ -1304,6 +1306,19 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     else:
         time_r = 0
     # TODO: Extend to allow multiple models?
+    try:
+        get_from_model=False
+        fit_root = root.find("Parameters").find("Fit")
+        set_ic(fit_root, net)
+        params = key_parameters(fit_root)
+        for network in network_dictionary:
+            network = network_dictionary[network]
+            for param in network.parameters.keys():
+                if param not in params.keys():
+                    network.set_var_constant(param, False)
+
+    except AttributeError:
+        get_from_model=True
     if model_root is not None:
         experiments = []
         networks = []
@@ -1324,18 +1339,15 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
             # We can only make a model with an experiment defined
             model = None
 
-    try:
-        fit_root = root.find("Parameters").find("Fit")
-        set_ic(fit_root, net)
-        params = key_parameters(fit_root)
-    except AttributeError:
+    if get_from_model is True:
         # No parameters were specified, so we just take them all
         if model is not None:
             params = model.get_params()
         else:
             params = None
-
+    print model.get_params()
     # This function is standalone and just tacks a residual onto anything that needs it
+
     if model is not None:
         add_residuals(root, model)
     if action_root is not None:

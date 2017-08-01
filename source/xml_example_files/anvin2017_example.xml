@@ -1,0 +1,32 @@
+<Scell>
+    <References>
+        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\Anvin_2017\Updated_LOV_zdk(time0change)V4.xml" />
+        <Data path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\Anvin_2017\VCell_data.csv" />
+    </References>
+    <Networks>
+        <Network from_file="true" id="base" />
+    </Networks>
+    <Actions>
+        <Optimization initial_cost="True" plot_after="True" plot_before="True">
+            <opt maxiter="75" type="Levenburg-Marquardt" />
+        </Optimization>
+        <Trajectory>
+            <Graph>
+                <traj net="base" upper_bound="25">
+                    <subplot>
+                        <var id="Li" />
+                        <var id="La" />
+                    </subplot>
+                    <subplot>
+                        <var id="LiZ" />
+                        <var id="LaZ" />
+                    </subplot>
+
+
+                </traj>
+            </Graph>
+        </Trajectory>
+
+    </Actions>
+
+<hash><base path="..\temp\base_1287109298.bp" /><optimization path="..\temp\Optimization_1355748438.bp" /><trajectory path="..\temp\Trajectory_-160868710.bp" /><ensemble path="..\temp\Ensemble_-1185028736.bp" /></hash></Scell>

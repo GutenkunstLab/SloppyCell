@@ -61,8 +61,8 @@ def experiment_constructor(data_file, sbml_reference):
                     if decoded_field.lower() == 'model':
                         if line[field] is not '':
                             current_model = line[field]
-                    elif decoded_field.lower() == 'time':
-                        time = int(line[field])
+                    elif decoded_field.lower() == 'time' or decoded_field.lower() == 't':
+                        time = float(line[field])
                     elif line[field] is not '':
                         if switch:
                             data_name.append(field)
@@ -72,7 +72,7 @@ def experiment_constructor(data_file, sbml_reference):
                             sigma.append(line[field])
                             switch = True
                 for number in range(len(data_name)):
-                    s = (time, data_name[number], float(value[number]), float(sigma[number]))
+                    s = (time, data_name[number], float(value[number])/10000, float(sigma[number]))
                     try:
                         return_dictionary[current_model][s[1]][time] = (s[2],s[3])
                         time_array.append(time)
@@ -122,7 +122,7 @@ def read_from_file(file_name):
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
-    read_from_file(r'C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\xml_example_files\jak_stat_example.xml')
+    read_from_file(r'C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\xml_example_files\anvin2017_example_updated.xml')
     files = []
     for file in os.listdir(os.curdir):
         if file.endswith(".pyd"):
