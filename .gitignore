@@ -1,6 +1,8 @@
+SloppyCell.egg-info
 *.pyc
 *.so
 build
+dist
 *.swp
 diff.pickle
 *module.c
@@ -16,4 +18,4 @@ Doc/*/*.pdf
 *.bp
 Example/Tyson_1991/*.png
 Example/Tyson_1991/*.tex
-Testing/algebraic_net*.xml
+test/algebraic_net*.xml

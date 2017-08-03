@@ -1,5 +1,3 @@
-recursive-include Doc *
-recursive-include Example *
+global-exclude *.SloppyCell*
+global-exclude *build*
 recursive-include Testing/SBML_files *
-include *.pyf
-include ReactionNetworks/*.pyf
