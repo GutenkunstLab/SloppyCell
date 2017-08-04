@@ -1,3 +1,4 @@
+import setuptools
 import numpy.distutils.core as core
 daskr = core.Extension(name = 'SloppyCell._daskr',
                        sources = ['SloppyCell/daskr.pyf',
@@ -14,12 +15,18 @@ rxn_data_files = ['SloppyCell/ReactionNetworks/{0}'.format(_) for _
                   in ['mtrand.c', 'mtrand.h', 'f2py_signatures.pyf',
                       'f2py_signatures_no_derivs.pyf']]
 
+# For reading a file into lon_description 
+import os
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
 core.setup(name='SloppyCell',
-           version='1.1.0',
+           version='1.1.0.dev1',
            author='Ryan Gutenkunst',
            author_email='rgutenk@email.arizona.edu',
            url='http://sloppycell.sourceforge.net',
            license='BSD',
+           long_description=read('README.rst'),
            classifiers=['Development Status :: 5 - Production/Stable',
                         'Environment :: Console',
                         'Intended Audience :: Science/Research',
