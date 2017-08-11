@@ -1,0 +1,1120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" xmlns:xhtml="http://www.w3.org/1999/xhtml" level="2" version="4">
+  <model id="Updated_LOV_zdk_Deterministic" name="Updated_LOV_zdk_Deterministic">
+    <annotation>
+      <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+        <vcell:VCMLSpecific>
+          <vcell:BioModel Name="Updated_LOV_zdk" KeyValue="115583708"/>
+          <vcell:SimulationSpec Name="Deterministic" KeyValue="115583676"/>
+        </vcell:VCMLSpecific>
+      </vcell:VCellInfo>
+    </annotation>
+    <listOfUnitDefinitions>
+      <unitDefinition id="substance">
+        <listOfUnits>
+          <unit kind="item" exponent="1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="volume">
+        <listOfUnits>
+          <unit kind="metre" exponent="3" scale="-18" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="area">
+        <listOfUnits>
+          <unit kind="metre" exponent="2" scale="-12" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="length">
+        <listOfUnits>
+          <unit kind="metre" exponent="1" scale="-6" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="time">
+        <listOfUnits>
+          <unit kind="second" exponent="1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="molecules">
+        <listOfUnits>
+          <unit kind="item" exponent="1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="uM">
+        <listOfUnits>
+          <unit kind="dimensionless" exponent="1" scale="-3" multiplier="1"/>
+          <unit kind="mole" exponent="1" scale="0" multiplier="1"/>
+          <unit kind="metre" exponent="3" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="s_1_uM_1">
+        <listOfUnits>
+          <unit kind="dimensionless" exponent="1" scale="3" multiplier="1"/>
+          <unit kind="metre" exponent="3" scale="0" multiplier="1"/>
+          <unit kind="mole" exponent="-1" scale="0" multiplier="1"/>
+          <unit kind="second" exponent="-1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="s_1">
+        <listOfUnits>
+          <unit kind="second" exponent="-1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="_one_">
+        <listOfUnits>
+          <unit kind="dimensionless" exponent="1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="s">
+        <listOfUnits>
+          <unit kind="second" exponent="1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="molecules_um_2">
+        <listOfUnits>
+          <unit kind="dimensionless" exponent="1" scale="12" multiplier="1"/>
+          <unit kind="item" exponent="1" scale="0" multiplier="1"/>
+          <unit kind="metre" exponent="-2" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="um3_uM">
+        <listOfUnits>
+          <unit kind="mole" exponent="1" scale="-21" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="um3">
+        <listOfUnits>
+          <unit kind="metre" exponent="3" scale="-18" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="um3_uM_molecules_1">
+        <listOfUnits>
+          <unit kind="dimensionless" exponent="1" scale="-21" multiplier="1"/>
+          <unit kind="item" exponent="-1" scale="0" multiplier="1"/>
+          <unit kind="mole" exponent="1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="um2_uM_molecules_1">
+        <listOfUnits>
+          <unit kind="dimensionless" exponent="1" scale="-15" multiplier="1"/>
+          <unit kind="item" exponent="-1" scale="0" multiplier="1"/>
+          <unit kind="metre" exponent="-1" scale="0" multiplier="1"/>
+          <unit kind="mole" exponent="1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="molecules_um_2_s_1">
+        <listOfUnits>
+          <unit kind="dimensionless" exponent="1" scale="12" multiplier="1"/>
+          <unit kind="item" exponent="1" scale="0" multiplier="1"/>
+          <unit kind="metre" exponent="-2" scale="0" multiplier="1"/>
+          <unit kind="second" exponent="-1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="pA_um_2">
+        <listOfUnits>
+          <unit kind="ampere" exponent="1" scale="0" multiplier="1"/>
+          <unit kind="metre" exponent="-2" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfCompartments>
+      <compartment id="EC" name="EC" spatialDimensions="3" size="50000" units="um3" constant="true"/>
+      <compartment id="Cytosol" name="Cytosol" spatialDimensions="3" size="50000" units="um3" constant="true"/>
+      <compartment id="PM" name="PM" spatialDimensions="2" size="6563" constant="true">
+        <annotation>
+          <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+            <vcell:FreeText>Plasma Membrane
+</vcell:FreeText>
+          </vcell:VCellInfo>
+        </annotation>
+      </compartment>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="Li" compartment="PM" substanceUnits="molecules" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false">
+        <annotation>
+          <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+            <vcell:FreeText>LOV inactive</vcell:FreeText>
+            <vcell:VCMLSpecific>
+              <vcell:Compound Name="s0"/>
+            </vcell:VCMLSpecific>
+          </vcell:VCellInfo>
+        </annotation>
+      </species>
+      <species id="La" compartment="PM" substanceUnits="molecules" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false">
+        <annotation>
+          <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+            <vcell:FreeText>LOV active</vcell:FreeText>
+            <vcell:VCMLSpecific>
+              <vcell:Compound Name="s1"/>
+            </vcell:VCMLSpecific>
+          </vcell:VCellInfo>
+        </annotation>
+      </species>
+      <species id="LiZ" compartment="PM" substanceUnits="molecules" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false">
+        <annotation>
+          <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+            <vcell:FreeText>Inactive Bound State of LOV and zdk</vcell:FreeText>
+            <vcell:VCMLSpecific>
+              <vcell:Compound Name="s2"/>
+            </vcell:VCMLSpecific>
+          </vcell:VCellInfo>
+        </annotation>
+      </species>
+      <species id="zdk" compartment="Cytosol" substanceUnits="molecules" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false">
+        <annotation>
+          <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+            <vcell:FreeText>ZDark with LOV Domain binding site</vcell:FreeText>
+            <vcell:VCMLSpecific>
+              <vcell:Compound Name="s3"/>
+            </vcell:VCMLSpecific>
+          </vcell:VCellInfo>
+        </annotation>
+      </species>
+      <species id="LaZ" compartment="PM" substanceUnits="molecules" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false">
+        <annotation>
+          <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+            <vcell:FreeText>Activated bound state of LOV and Zdk
+</vcell:FreeText>
+            <vcell:VCMLSpecific>
+              <vcell:Compound Name="s5"/>
+            </vcell:VCMLSpecific>
+          </vcell:VCellInfo>
+        </annotation>
+      </species>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="Kd1" value="0.026" units="uM" constant="true"/>
+      <parameter id="KfActive1" units="s_1_uM_1" constant="false"/>
+      <parameter id="KfActive2" value="3" units="s_1_uM_1" constant="true"/>
+      <parameter id="KfActive3" value="10" units="s_1" constant="true"/>
+      <parameter id="Kd2" value="4" units="uM" constant="true"/>
+      <parameter id="Act_light" value="0" units="_one_" constant="false"/>
+      <parameter id="Receptor_Occupancy" units="_one_" constant="false"/>
+      <parameter id="constant" value="2233" units="_one_" constant="true"/>
+      <parameter id="Reflection" units="_one_" constant="false"/>
+      <parameter id="LOV_fluorescence" units="_one_" constant="false"/>
+      <parameter id="predicted_signal_norefl" units="_one_" constant="false"/>
+      <parameter id="KrActive3" value="0.01" units="s_1" constant="true"/>
+      <parameter id="ideal_background" value="22271.27861" units="_one_" constant="true"/>
+      <parameter id="ideal_unboundF" value="1712.81937" units="_one_" constant="true"/>
+      <parameter id="predicted_signal_wrefl" units="_one_" constant="false"/>
+      <parameter id="Gain" value="98" units="_one_" constant="true"/>
+      <parameter id="Time2" value="1" units="s" constant="true"/>
+      <parameter id="Time3" value="40" units="s" constant="true"/>
+      <parameter id="zdk_init" value="1" units="uM" constant="true"/>
+      <parameter id="Li_init" value="100" units="molecules_um_2" constant="true"/>
+      <parameter id="La_init" value="0" units="molecules_um_2" constant="true"/>
+      <parameter id="LiZ_init" value="0" units="molecules_um_2" constant="true"/>
+      <parameter id="LaZ_init" value="0" units="molecules_um_2" constant="true"/>
+      <parameter id="K_zdk_tot" units="um3_uM" constant="false"/>
+      <parameter id="SizePM" value="6563" units="um2" constant="true"/>
+      <parameter id="SizeCyt" value="50000" units="um3" constant="true"/>
+      <parameter id="UnitFactor" value="0.00166112956810631" units="um3_uM_molecules_1" constant="true"/>
+      <parameter id="K_Li_tot" units="um3_uM" constant="false"/>
+      <parameter id="VarA" units="molecules_um_2" constant="false"/>
+      <parameter id="VarB" units="uM" constant="false"/>
+      <parameter id="VarC" units="um2_uM_molecules_1" constant="false"/>
+      <parameter id="zdk_ss" units="uM" constant="false"/>
+      <parameter id="LiZ_ss" units="molecules_um_2" constant="false"/>
+      <parameter id="Li_ss" units="molecules_um_2" constant="false"/>
+      <parameter id="g0" constant="false"/>
+      <parameter id="Li_function" units="molecules_um_2" constant="false"/>
+      <parameter id="Li_zdk_ratio" units="_one_" constant="false"/>
+      <parameter id="Atot" units="molecules" constant="false"/>
+      <parameter id="Btot" units="_one_" constant="false"/>
+      <parameter id="Eq1" units="_one_" constant="false"/>
+      <parameter id="delta" units="_one_" constant="false"/>
+      <parameter id="C1" units="_one_" constant="false"/>
+      <parameter id="C2" units="_one_" constant="false"/>
+      <parameter id="alpha" units="_one_" constant="false"/>
+      <parameter id="eq5_1" constant="false"/>
+      <parameter id="eq5_2" constant="false"/>
+      <parameter id="Eq5" constant="false"/>
+      <parameter id="C0_C1_diff" constant="false"/>
+      <parameter id="Alt_C_conc_2" constant="false"/>
+      <parameter id="Cyt_fluor" constant="false"/>
+      <parameter id="UF" value="602" constant="true"/>
+      <parameter id="Kf_Li__La" units="s_1" constant="false"/>
+      <parameter id="Kr_Li__La" units="s_1" constant="false"/>
+      <parameter id="Kf_Li_zdk" units="s_1_uM_1" constant="false"/>
+      <parameter id="Kr_Li_zdk" units="s_1" constant="false"/>
+      <parameter id="Kf_LaZ__La_Z" units="s_1" constant="false"/>
+      <parameter id="Kr_LaZ__La_Z" units="s_1_uM_1" constant="false"/>
+      <parameter id="Kf_LiZ_LaZ" units="s_1" constant="false"/>
+      <parameter id="Kr_LiZ_LaZ" units="s_1" constant="false"/>
+    </listOfParameters>
+    <listOfInitialAssignments>
+      <initialAssignment symbol="Li">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> Li_ss </ci>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="La">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> La_init </ci>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="LiZ">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> LiZ_ss </ci>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="zdk">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> zdk_ss </ci>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="LaZ">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> LaZ_init </ci>
+        </math>
+      </initialAssignment>
+    </listOfInitialAssignments>
+    <listOfRules>
+      <assignmentRule variable="KfActive1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> KfActive2 </ci>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Receptor_Occupancy">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <apply>
+              <plus/>
+              <ci> LiZ </ci>
+              <ci> LaZ </ci>
+            </apply>
+            <apply>
+              <divide/>
+              <cn> 1 </cn>
+              <apply>
+                <plus/>
+                <ci> Li </ci>
+                <ci> LiZ </ci>
+                <ci> LaZ </ci>
+                <ci> La </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Reflection">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> constant </ci>
+            <ci> Act_light </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Cyt_fluor">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn> 0.367879441171442 </cn>
+            <apply>
+              <divide/>
+              <cn> 1 </cn>
+              <ci> zdk </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="LOV_fluorescence">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> Gain </ci>
+            <apply>
+              <plus/>
+              <ci> Receptor_Occupancy </ci>
+              <apply>
+                <times/>
+                <ci> Cyt_fluor </ci>
+                <ci> UF </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="predicted_signal_norefl">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> LOV_fluorescence </ci>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="predicted_signal_wrefl">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> predicted_signal_norefl </ci>
+            <ci> Reflection </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="K_zdk_tot">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <apply>
+              <times/>
+              <ci> SizeCyt </ci>
+              <ci> zdk_init </ci>
+            </apply>
+            <apply>
+              <times/>
+              <ci> SizePM </ci>
+              <ci> UnitFactor </ci>
+              <ci> LiZ_init </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="K_Li_tot">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <apply>
+              <times/>
+              <ci> SizePM </ci>
+              <ci> UnitFactor </ci>
+              <ci> Li_init </ci>
+            </apply>
+            <apply>
+              <times/>
+              <ci> SizePM </ci>
+              <ci> UnitFactor </ci>
+              <ci> LiZ_init </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="VarA">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> K_Li_tot </ci>
+            <apply>
+              <divide/>
+              <cn> 1 </cn>
+              <apply>
+                <times/>
+                <ci> SizePM </ci>
+                <ci> UnitFactor </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="VarB">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> K_zdk_tot </ci>
+            <apply>
+              <divide/>
+              <cn> 1 </cn>
+              <ci> SizeCyt </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="VarC">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> SizePM </ci>
+            <ci> UnitFactor </ci>
+            <apply>
+              <divide/>
+              <cn> 1 </cn>
+              <ci> SizeCyt </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+            <assignmentRule variable="LiZ_ss">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <apply>
+              <plus/>
+              <ci> VarB </ci>
+              <apply>
+                <times/>
+                <ci> VarA </ci>
+                <ci> VarC </ci>
+              </apply>
+              <ci> Kd1 </ci>
+              <apply>
+                <minus/>
+                <apply>
+                  <root/>
+                  <degree>
+                    <cn type="integer"> 2 </cn>
+                  </degree>
+                  <apply>
+                    <plus/>
+                    <apply>
+                      <power/>
+                      <apply>
+                        <plus/>
+                        <apply>
+                          <times/>
+                          <ci> VarA </ci>
+                          <ci> VarC </ci>
+                        </apply>
+                        <ci> VarB </ci>
+                        <ci> Kd1 </ci>
+                      </apply>
+                      <cn> 2 </cn>
+                    </apply>
+                    <apply>
+                      <minus/>
+                      <apply>
+                        <times/>
+                        <cn> 4 </cn>
+                        <ci> VarA </ci>
+                        <ci> VarB </ci>
+                        <ci> VarC </ci>
+                      </apply>
+                    </apply>
+                  </apply>
+                </apply>
+              </apply>
+            </apply>
+            <apply>
+              <divide/>
+              <cn> 1 </cn>
+              <apply>
+                <times/>
+                <cn> 2 </cn>
+                <ci> VarC </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="zdk_ss">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> VarB </ci>
+            <apply>
+              <minus/>
+              <apply>
+                <times/>
+                <ci> VarC </ci>
+                <ci> LiZ_ss </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+
+      <assignmentRule variable="Li_ss">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> VarA </ci>
+            <apply>
+              <minus/>
+              <ci> LiZ_ss </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="g0">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <apply>
+              <times/>
+              <ci> SizePM </ci>
+              <ci> UnitFactor </ci>
+              <ci> Li </ci>
+            </apply>
+            <apply>
+              <times/>
+              <ci> SizePM </ci>
+              <ci> UnitFactor </ci>
+              <ci> LiZ </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Li_function">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> VarA </ci>
+            <apply>
+              <minus/>
+              <ci> LiZ </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Li_zdk_ratio">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> Li_init </ci>
+            <apply>
+              <divide/>
+              <cn> 1 </cn>
+              <ci> zdk_init </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Atot">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> Li </ci>
+            <ci> LiZ </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Btot">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> zdk </ci>
+            <ci> LiZ </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Eq1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <apply>
+              <times/>
+              <ci> KfActive1 </ci>
+              <apply>
+                <plus/>
+                <ci> Btot </ci>
+                <apply>
+                  <minus/>
+                  <ci> LiZ </ci>
+                </apply>
+              </apply>
+              <apply>
+                <plus/>
+                <ci> Atot </ci>
+                <apply>
+                  <minus/>
+                  <ci> LiZ </ci>
+                </apply>
+              </apply>
+            </apply>
+            <apply>
+              <minus/>
+              <apply>
+                <times/>
+                <ci> KfActive1 </ci>
+                <ci> LiZ </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="delta">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <root/>
+            <degree>
+              <cn type="integer"> 2 </cn>
+            </degree>
+            <apply>
+              <plus/>
+              <apply>
+                <power/>
+                <ci> Kd1 </ci>
+                <cn> 2 </cn>
+              </apply>
+              <apply>
+                <times/>
+                <cn> 2 </cn>
+                <ci> Kd1 </ci>
+                <apply>
+                  <plus/>
+                  <ci> Atot </ci>
+                  <ci> Btot </ci>
+                </apply>
+              </apply>
+              <apply>
+                <power/>
+                <apply>
+                  <plus/>
+                  <ci> Atot </ci>
+                  <apply>
+                    <minus/>
+                    <ci> Btot </ci>
+                  </apply>
+                </apply>
+                <cn> 2 </cn>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="C1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn> 0.5 </cn>
+            <apply>
+              <plus/>
+              <ci> Btot </ci>
+              <ci> Atot </ci>
+              <ci> Kd1 </ci>
+              <apply>
+                <minus/>
+                <ci> delta </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="C2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn> 0.5 </cn>
+            <apply>
+              <plus/>
+              <ci> Btot </ci>
+              <ci> Atot </ci>
+              <ci> Kd1 </ci>
+              <ci> delta </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="alpha">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> KfActive1 </ci>
+            <ci> delta </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="eq5_1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> delta </ci>
+            <apply>
+              <power/>
+              <apply>
+                <plus/>
+                <ci> LiZ_ss </ci>
+                <apply>
+                  <minus/>
+                  <ci> C1 </ci>
+                </apply>
+              </apply>
+              <apply>
+                <minus/>
+                <apply>
+                  <times/>
+                  <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time">time</csymbol>
+                  <ci> alpha </ci>
+                </apply>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="eq5_2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> delta </ci>
+            <apply>
+              <minus/>
+              <apply>
+                <times/>
+                <apply>
+                  <plus/>
+                  <ci> LiZ_ss </ci>
+                  <apply>
+                    <minus/>
+                    <ci> C1 </ci>
+                  </apply>
+                </apply>
+                <apply>
+                  <power/>
+                  <cn> 1 </cn>
+                  <apply>
+                    <times/>
+                    <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time">time</csymbol>
+                    <ci> alpha </ci>
+                  </apply>
+                </apply>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Eq5">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> C1 </ci>
+            <apply>
+              <times/>
+              <ci> eq5_1 </ci>
+              <apply>
+                <divide/>
+                <cn> 1 </cn>
+                <ci> eq5_2 </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="C0_C1_diff">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> LiZ_ss </ci>
+            <apply>
+              <minus/>
+              <ci> C1 </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Alt_C_conc_2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <plus/>
+            <ci> C1 </ci>
+            <apply>
+              <power/>
+              <apply>
+                <plus/>
+                <ci> LiZ_ss </ci>
+                <ci> C1 </ci>
+              </apply>
+              <apply>
+                <minus/>
+                <apply>
+                  <times/>
+                  <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time">time</csymbol>
+                  <ci> alpha </ci>
+                </apply>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+
+      <assignmentRule variable="Kf_Li__La">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> KfActive3 </ci>
+            <ci> Act_light </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Kr_Li__La">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> KrActive3 </ci>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Kf_Li_zdk">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> KfActive1 </ci>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Kr_Li_zdk">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> Kd1 </ci>
+            <ci> KfActive1 </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Kf_LaZ__La_Z">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> Kd2 </ci>
+            <ci> KfActive2 </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Kr_LaZ__La_Z">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> KfActive2 </ci>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Kf_LiZ_LaZ">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> KfActive3 </ci>
+            <ci> Act_light </ci>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="Kr_LiZ_LaZ">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> KrActive3 </ci>
+        </math>
+      </assignmentRule>
+    </listOfRules>
+    <listOfReactions>
+      <reaction id="Li__La" name="Li-&gt;La" reversible="true" fast="false">
+        <annotation>
+          <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+            <vcell:VCMLSpecific>
+              <vcell:SimpleReaction Structure="PM"/>
+              <vcell:ReactionRate Name="J"/>
+            </vcell:VCMLSpecific>
+          </vcell:VCellInfo>
+        </annotation>
+        <listOfReactants>
+          <speciesReference species="Li" stoichiometry="1">
+            <notes>
+              <p xmlns="http://www.w3.org/1999/xhtml">VCELL guess: how do we know if reaction is constant?</p>
+            </notes>
+          </speciesReference>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="La" stoichiometry="1">
+            <notes>
+              <p xmlns="http://www.w3.org/1999/xhtml">VCELL guess: how do we know if reaction is constant?</p>
+            </notes>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <plus/>
+              <apply>
+                <times/>
+                <ci> Kf_Li__La </ci>
+                <ci> Li </ci>
+              </apply>
+              <apply>
+                <minus/>
+                <apply>
+                  <times/>
+                  <ci> Kr_Li__La </ci>
+                  <ci> La </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="I" value="0" units="pA_um_2"/>
+            <parameter id="netValence" value="1" units="_one_"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="Li_zdk" name="Li_zdk" reversible="true" fast="false">
+        <annotation>
+          <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+            <vcell:VCMLSpecific>
+              <vcell:SimpleReaction Structure="PM"/>
+              <vcell:ReactionRate Name="J"/>
+            </vcell:VCMLSpecific>
+          </vcell:VCellInfo>
+        </annotation>
+        <listOfReactants>
+          <speciesReference species="Li" stoichiometry="1">
+            <notes>
+              <p xmlns="http://www.w3.org/1999/xhtml">VCELL guess: how do we know if reaction is constant?</p>
+            </notes>
+          </speciesReference>
+          <speciesReference species="zdk" stoichiometry="1">
+            <notes>
+              <p xmlns="http://www.w3.org/1999/xhtml">VCELL guess: how do we know if reaction is constant?</p>
+            </notes>
+          </speciesReference>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="LiZ" stoichiometry="1">
+            <notes>
+              <p xmlns="http://www.w3.org/1999/xhtml">VCELL guess: how do we know if reaction is constant?</p>
+            </notes>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <plus/>
+              <apply>
+                <times/>
+                <ci> Kf_Li_zdk </ci>
+                <ci> Li </ci>
+                <ci> zdk </ci>
+              </apply>
+              <apply>
+                <minus/>
+                <apply>
+                  <times/>
+                  <ci> Kr_Li_zdk </ci>
+                  <ci> LiZ </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="I" value="0" units="pA_um_2"/>
+            <parameter id="netValence" value="1" units="_one_"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="LaZ__La_Z" name="LaZ-&gt;La_Z" reversible="true" fast="false">
+        <annotation>
+          <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+            <vcell:VCMLSpecific>
+              <vcell:SimpleReaction Structure="PM"/>
+              <vcell:ReactionRate Name="J"/>
+            </vcell:VCMLSpecific>
+          </vcell:VCellInfo>
+        </annotation>
+        <listOfReactants>
+          <speciesReference species="LaZ" stoichiometry="1">
+            <notes>
+              <p xmlns="http://www.w3.org/1999/xhtml">VCELL guess: how do we know if reaction is constant?</p>
+            </notes>
+          </speciesReference>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="zdk" stoichiometry="1">
+            <notes>
+              <p xmlns="http://www.w3.org/1999/xhtml">VCELL guess: how do we know if reaction is constant?</p>
+            </notes>
+          </speciesReference>
+          <speciesReference species="La" stoichiometry="1">
+            <notes>
+              <p xmlns="http://www.w3.org/1999/xhtml">VCELL guess: how do we know if reaction is constant?</p>
+            </notes>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <plus/>
+              <apply>
+                <times/>
+                <ci> Kf_LaZ__La_Z </ci>
+                <ci> LaZ </ci>
+              </apply>
+              <apply>
+                <minus/>
+                <apply>
+                  <times/>
+                  <ci> Kr_LaZ__La_Z </ci>
+                  <ci> zdk </ci>
+                  <ci> La </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="I" value="0" units="pA_um_2"/>
+            <parameter id="netValence" value="1" units="_one_"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="LiZ_LaZ" name="LiZ_LaZ" reversible="true" fast="false">
+        <annotation>
+          <vcell:VCellInfo xmlns:vcell="http://sourceforge.net/projects/vcell">
+            <vcell:VCMLSpecific>
+              <vcell:SimpleReaction Structure="PM"/>
+              <vcell:ReactionRate Name="J"/>
+            </vcell:VCMLSpecific>
+          </vcell:VCellInfo>
+        </annotation>
+        <listOfReactants>
+          <speciesReference species="LiZ" stoichiometry="1">
+            <notes>
+              <p xmlns="http://www.w3.org/1999/xhtml">VCELL guess: how do we know if reaction is constant?</p>
+            </notes>
+          </speciesReference>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="LaZ" stoichiometry="1">
+            <notes>
+              <p xmlns="http://www.w3.org/1999/xhtml">VCELL guess: how do we know if reaction is constant?</p>
+            </notes>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <plus/>
+              <apply>
+                <times/>
+                <ci> Kf_LiZ_LaZ </ci>
+                <ci> LiZ </ci>
+              </apply>
+              <apply>
+                <minus/>
+                <apply>
+                  <times/>
+                  <ci> Kr_LiZ_LaZ </ci>
+                  <ci> LaZ </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="I" value="0" units="pA_um_2"/>
+            <parameter id="netValence" value="1" units="_one_"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <listOfEvents>
+      <event id="event0">
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 1 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <listOfEventAssignments>
+          <eventAssignment variable="Act_light">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 1 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+      <event id="event1">
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci> time </ci>
+              <cn type="integer"> 15 </cn>
+            </apply>
+          </math>
+        </trigger>
+        <listOfEventAssignments>
+          <eventAssignment variable="Act_light">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn> 0 </cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+    </listOfEvents>
+  </model>
+</sbml>

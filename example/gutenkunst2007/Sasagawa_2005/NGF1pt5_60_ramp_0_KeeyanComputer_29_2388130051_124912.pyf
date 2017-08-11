@@ -1,0 +1,1757 @@
+python module NGF1pt5_60_ramp_0_KeeyanComputer_29_2388130051_124912
+interface
+    subroutine res_function(time, dynamicVars, yprime, cj, residual, ires, constants, ipar) 
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(hide) :: cj
+        double precision intent(out), dimension(98) :: residual
+        integer intent(hide) :: ires
+        double precision intent(in), dimension(238) :: constants
+        integer intent(hide), dimension(2) :: ipar
+    end subroutine res_function
+    subroutine ddaskr_jac(t,y,yprime,delta,pd,cj,h,wt,rpar,ipar)
+        double precision intent(in) :: t
+        double precision intent(in), dimension(ipar[0]) :: y
+        double precision intent(in), dimension(ipar[0]) :: yprime
+        double precision intent(hide), dimension(ipar[0]) :: delta
+        double precision intent(out), dimension(ipar[0],ipar[0]) :: pd
+        double precision intent(in) :: cj
+        double precision intent(hide) :: h
+        double precision intent(hide), dimension(ipar[0]) :: wt
+        double precision intent(in), dimension(ipar[1]) :: rpar
+        ! This has been set equal to (neq, len(rpar)) in the daskr call
+        integer dimension(2), intent(hide) :: ipar
+    end subroutine ddaskr_jac
+    subroutine root_func(neq,t,y,yp,nrt,root_devs,constants,ipar)
+        integer intent(hide) :: neq
+        double precision intent(in) :: t
+        double precision intent(in), dimension(98) :: y
+        double precision intent(in), dimension(98) :: yp
+        integer intent(hide) :: nrt
+        double precision intent(out), dimension(0) :: root_devs
+        double precision intent(in), dimension(238) :: constants
+        ! This has been set equal to (neq, len(rpar)) in the daskr call
+        integer dimension(2), intent(hide) :: ipar
+    end subroutine root_func
+    subroutine alg_deriv_func(alg_yp, dynamicVars, yp, time, constants, alg_derivs_res)
+        double precision intent(in), dimension(0) :: alg_yp
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yp
+        double precision intent(in) :: time
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(0) :: alg_derivs_res
+    end subroutine alg_deriv_func
+    subroutine alg_res_func(alg_vals, dynamicVars, time, constants, residual) 
+        double precision intent(in), dimension(0) :: alg_vals
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in) :: time
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(0) :: residual
+    end subroutine alg_res_func
+    subroutine dres_dc_function(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98, 98) :: pd
+    end subroutine dres_dc_function
+    subroutine dres_dcdot_function(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98, 98) :: pd
+    end subroutine dres_dcdot_function
+    subroutine dres_dre1_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dre1_k1
+    subroutine dres_dre1_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dre1_k2
+    subroutine dres_dre2_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dre2_k1
+    subroutine dres_dre2_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dre2_k2
+    subroutine dres_dre8_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dre8_k1
+    subroutine dres_dre8_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dre8_k2
+    subroutine dres_dJ3_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ3_k1
+    subroutine dres_dJ3_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ3_k2
+    subroutine dres_dJ4_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ4_k1
+    subroutine dres_dJ4_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ4_k2
+    subroutine dres_dJ5_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ5_k1
+    subroutine dres_dJ5_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ5_k2
+    subroutine dres_dJ6_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ6_k1
+    subroutine dres_dJ6_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ6_k2
+    subroutine dres_dJ7_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ7_k1
+    subroutine dres_dJ7_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ7_k2
+    subroutine dres_dJ8_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ8_k1
+    subroutine dres_dJ8_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ8_k2
+    subroutine dres_dJ9_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ9_k1
+    subroutine dres_dJ9_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ9_k2
+    subroutine dres_dJ10_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ10_k
+    subroutine dres_dJ11_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ11_k
+    subroutine dres_dJ12_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ12_k1
+    subroutine dres_dJ12_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ12_k2
+    subroutine dres_dJ13_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ13_k
+    subroutine dres_dJ14_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ14_k
+    subroutine dres_dJ15_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ15_k
+    subroutine dres_dJ16_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ16_k1
+    subroutine dres_dJ16_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ16_k2
+    subroutine dres_dJ17_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ17_k
+    subroutine dres_dJ18_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ18_k
+    subroutine dres_dJ19_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ19_k
+    subroutine dres_dJ20_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ20_k
+    subroutine dres_dJ21_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ21_k
+    subroutine dres_dJ22_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ22_k1
+    subroutine dres_dJ22_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ22_k2
+    subroutine dres_dJ23_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ23_k1
+    subroutine dres_dJ23_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ23_k2
+    subroutine dres_dJ24_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ24_k1
+    subroutine dres_dJ24_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ24_k2
+    subroutine dres_dJ25_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ25_k1
+    subroutine dres_dJ25_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ25_k2
+    subroutine dres_dJ27_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ27_k1
+    subroutine dres_dJ27_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ27_k2
+    subroutine dres_dJ28_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ28_k
+    subroutine dres_dJ29_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ29_k
+    subroutine dres_dJ30_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ30_k
+    subroutine dres_dJ31_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ31_Vmax
+    subroutine dres_dJ31_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ31_Km1
+    subroutine dres_dJ32_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ32_k
+    subroutine dres_dJ33_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ33_k
+    subroutine dres_dJ34_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ34_k1
+    subroutine dres_dJ34_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ34_k2
+    subroutine dres_dJ35_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ35_k1
+    subroutine dres_dJ35_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ35_k2
+    subroutine dres_dJ36_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ36_k1
+    subroutine dres_dJ36_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ36_k2
+    subroutine dres_dJ37_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ37_k
+    subroutine dres_dJ38_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ38_k1
+    subroutine dres_dJ38_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ38_k2
+    subroutine dres_dJ39_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ39_k1
+    subroutine dres_dJ39_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ39_k2
+    subroutine dres_dJ40_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ40_k1
+    subroutine dres_dJ40_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ40_k2
+    subroutine dres_dJ41_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ41_k
+    subroutine dres_dJ42_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ42_k
+    subroutine dres_dJ43_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ43_k
+    subroutine dres_dJ44_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ44_k1
+    subroutine dres_dJ44_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ44_k2
+    subroutine dres_dJ45_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ45_k
+    subroutine dres_dJ46_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ46_k
+    subroutine dres_dJ47_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ47_k
+    subroutine dres_dJ49_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ49_k1
+    subroutine dres_dJ49_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ49_k2
+    subroutine dres_dJ50_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ50_Vmax
+    subroutine dres_dJ50_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ50_Km1
+    subroutine dres_dJ51_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ51_Vmax
+    subroutine dres_dJ51_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ51_Km1
+    subroutine dres_dJ52_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ52_k1
+    subroutine dres_dJ52_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ52_k2
+    subroutine dres_dJ53_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ53_k1
+    subroutine dres_dJ53_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ53_k2
+    subroutine dres_dJ54_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ54_k1
+    subroutine dres_dJ54_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ54_k2
+    subroutine dres_dJ57_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ57_Vmax
+    subroutine dres_dJ57_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ57_Km1
+    subroutine dres_dJ58_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ58_Vmax
+    subroutine dres_dJ58_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ58_Km1
+    subroutine dres_dJ61_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ61_Vmax
+    subroutine dres_dJ61_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ61_Km1
+    subroutine dres_dJ62_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ62_Vmax
+    subroutine dres_dJ62_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ62_Km1
+    subroutine dres_dJ63_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ63_k1
+    subroutine dres_dJ63_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ63_k2
+    subroutine dres_dJ66_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ66_k
+    subroutine dres_dJ67_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ67_k
+    subroutine dres_dJ68_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ68_Vmax
+    subroutine dres_dJ68_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ68_Km1
+    subroutine dres_dJ69_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ69_Vmax
+    subroutine dres_dJ69_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ69_Km1
+    subroutine dres_dJ70_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ70_k1
+    subroutine dres_dJ70_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ70_k2
+    subroutine dres_dJ71_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ71_k
+    subroutine dres_dJ72_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ72_k
+    subroutine dres_dJ73_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ73_k
+    subroutine dres_dJ74_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ74_k
+    subroutine dres_dJ75_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ75_k1
+    subroutine dres_dJ75_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ75_k2
+    subroutine dres_dJ76_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ76_k1
+    subroutine dres_dJ76_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ76_k2
+    subroutine dres_dJ77_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ77_k1
+    subroutine dres_dJ77_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ77_k2
+    subroutine dres_dJ78_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ78_k1
+    subroutine dres_dJ78_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ78_k2
+    subroutine dres_dJ79_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ79_k1
+    subroutine dres_dJ79_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ79_k2
+    subroutine dres_dJ80_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ80_k1
+    subroutine dres_dJ80_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ80_k2
+    subroutine dres_dJ81_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ81_k
+    subroutine dres_dJ82_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ82_k
+    subroutine dres_dJ83_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ83_k
+    subroutine dres_dJ84_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ84_k1
+    subroutine dres_dJ84_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ84_k2
+    subroutine dres_dJ85_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ85_k1
+    subroutine dres_dJ85_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ85_k2
+    subroutine dres_dJ86_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ86_k
+    subroutine dres_dJ87_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ87_k
+    subroutine dres_dJ88_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ88_k
+    subroutine dres_dJ89_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ89_k
+    subroutine dres_dJ90_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ90_k
+    subroutine dres_dJ92_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ92_k
+    subroutine dres_dJ93_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ93_k
+    subroutine dres_dJ94_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ94_k
+    subroutine dres_dJ95_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ95_k1
+    subroutine dres_dJ95_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ95_k2
+    subroutine dres_dJ96_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ96_k1
+    subroutine dres_dJ96_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ96_k2
+    subroutine dres_dJ97_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ97_k
+    subroutine dres_dJ98_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ98_k
+    subroutine dres_dJ99_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ99_k
+    subroutine dres_dJ100_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ100_k
+    subroutine dres_dJ101_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ101_k
+    subroutine dres_dJ102_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ102_k
+    subroutine dres_dJ103_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ103_k1
+    subroutine dres_dJ103_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ103_k2
+    subroutine dres_dJ104_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ104_k1
+    subroutine dres_dJ104_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ104_k2
+    subroutine dres_dJ105_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ105_k1
+    subroutine dres_dJ105_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ105_k2
+    subroutine dres_dJ106_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ106_k1
+    subroutine dres_dJ106_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ106_k2
+    subroutine dres_dJ107_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ107_k
+    subroutine dres_dJ108_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ108_k
+    subroutine dres_dJ109_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ109_k
+    subroutine dres_dJ110_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ110_k
+    subroutine dres_dJ112_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ112_k
+    subroutine dres_dJ113_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ113_k1
+    subroutine dres_dJ113_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ113_k2
+    subroutine dres_dJ115_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ115_k1
+    subroutine dres_dJ115_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ115_k2
+    subroutine dres_dJ116_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ116_k1
+    subroutine dres_dJ116_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ116_k2
+    subroutine dres_dJ117_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ117_k1
+    subroutine dres_dJ117_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ117_k2
+    subroutine dres_dJ119_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ119_k1
+    subroutine dres_dJ119_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ119_k2
+    subroutine dres_dJ118_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ118_k1
+    subroutine dres_dJ118_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ118_k2
+    subroutine dres_dJ120_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ120_k1
+    subroutine dres_dJ120_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ120_k2
+    subroutine dres_dJ121_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ121_Vmax
+    subroutine dres_dJ121_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ121_Km1
+    subroutine dres_dJ122_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ122_Vmax
+    subroutine dres_dJ122_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ122_Km1
+    subroutine dres_dJ123_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ123_Vmax
+    subroutine dres_dJ123_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ123_Km1
+    subroutine dres_dJ124_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ124_Vmax
+    subroutine dres_dJ124_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ124_Km1
+    subroutine dres_dJ133_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ133_k1
+    subroutine dres_dJ133_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ133_k2
+    subroutine dres_dJ134_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ134_k1
+    subroutine dres_dJ134_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ134_k2
+    subroutine dres_dJ135_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ135_k1
+    subroutine dres_dJ135_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ135_k2
+    subroutine dres_dJ136_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ136_k
+    subroutine dres_dJ137_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ137_Vmax
+    subroutine dres_dJ137_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ137_Km1
+    subroutine dres_dJ138_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ138_Vmax
+    subroutine dres_dJ138_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ138_Km1
+    subroutine dres_dJ139_Vmax(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ139_Vmax
+    subroutine dres_dJ139_Km1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ139_Km1
+    subroutine dres_dJ140_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ140_k1
+    subroutine dres_dJ140_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ140_k2
+    subroutine dres_dJ141_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ141_k1
+    subroutine dres_dJ141_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ141_k2
+    subroutine dres_dJ142_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ142_k1
+    subroutine dres_dJ142_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ142_k2
+    subroutine dres_dJ143_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ143_k1
+    subroutine dres_dJ143_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ143_k2
+    subroutine dres_dJ144_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ144_k1
+    subroutine dres_dJ144_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ144_k2
+    subroutine dres_dJ145_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ145_k1
+    subroutine dres_dJ145_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ145_k2
+    subroutine dres_dJ146_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ146_k1
+    subroutine dres_dJ146_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ146_k2
+    subroutine dres_dJ147_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ147_k1
+    subroutine dres_dJ147_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ147_k2
+    subroutine dres_dJ148_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ148_k1
+    subroutine dres_dJ148_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ148_k2
+    subroutine dres_dJ149_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ149_k1
+    subroutine dres_dJ149_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ149_k2
+    subroutine dres_dJ150_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ150_k1
+    subroutine dres_dJ150_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ150_k2
+    subroutine dres_dJ151_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ151_k1
+    subroutine dres_dJ151_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ151_k2
+    subroutine dres_dJ152_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ152_k
+    subroutine dres_dJ153_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ153_k
+    subroutine dres_dJ154_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ154_k
+    subroutine dres_dJ155_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ155_k
+    subroutine dres_dJ156_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ156_k
+    subroutine dres_dJ157_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ157_k
+    subroutine dres_dJ158_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ158_k
+    subroutine dres_dJ159_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ159_k
+    subroutine dres_dJ160_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ160_k
+    subroutine dres_dJ161_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ161_k
+    subroutine dres_dJ162_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ162_k
+    subroutine dres_dJ163_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ163_k
+    subroutine dres_dJ164_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ164_k
+    subroutine dres_dJ165_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ165_k1
+    subroutine dres_dJ165_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ165_k2
+    subroutine dres_dJ166_k1(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ166_k1
+    subroutine dres_dJ166_k2(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ166_k2
+    subroutine dres_dJ167_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ167_k
+    subroutine dres_dJ168_k(time, dynamicVars, yprime, constants, pd)
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: dynamicVars
+        double precision intent(in), dimension(98) :: yprime
+        double precision intent(in), dimension(238) :: constants
+        double precision intent(out), dimension(98) :: pd
+    end subroutine dres_dJ168_k
+    
+    subroutine sens_rhs(time, sens_y, sens_yp, cj, sens_res, ires, constants, ipar) 
+        double precision intent(in) :: time
+        double precision intent(in), dimension(2*98) :: sens_y
+        double precision intent(in), dimension(2*98) :: sens_yp
+        double precision intent(hide) :: cj
+        double precision intent(out), dimension(2*98) :: sens_res
+        integer intent(hide) :: ires
+        double precision intent(in), dimension(238+1) :: constants
+        integer intent(hide), dimension(2) :: ipar
+    end subroutine sens_rhs
+    subroutine res_function_logdv(time, log_dv, log_yp, cj, residual, ires, constants, ipar) 
+        double precision intent(in) :: time
+        double precision intent(in), dimension(98) :: log_dv
+        double precision intent(in), dimension(98) :: log_yp
+        double precision intent(hide) :: cj
+        double precision intent(out), dimension(98) :: residual
+        integer intent(hide) :: ires
+        double precision intent(in), dimension(238) :: constants
+        integer intent(hide), dimension(2) :: ipar
+    end subroutine res_function_logdv
+    subroutine root_func_logdv(neq,t,log_dv,log_yp,nrt,root_devs,constants,ipar)
+        integer intent(hide) :: neq
+        double precision intent(in) :: t
+        double precision intent(in), dimension(98) :: log_dv
+        double precision intent(in), dimension(98) :: log_yp
+        integer intent(hide) :: nrt
+        double precision intent(out), dimension(0) :: root_devs
+        double precision intent(in), dimension(238) :: constants
+        ! This has been set equal to (neq, len(rpar)) in the daskr call
+        integer dimension(2), intent(hide) :: ipar
+    end subroutine root_func_logdv
+    subroutine sens_rhs_logdv(time, sens_y_log, sens_yp_log, cj, sens_res, ires, constants, ipar) 
+        double precision intent(in) :: time
+        double precision intent(in), dimension(2*98) :: sens_y_log
+        double precision intent(in), dimension(2*98) :: sens_yp_log
+        double precision intent(hide) :: cj
+        double precision intent(out), dimension(2*98) :: sens_res
+        integer intent(hide) :: ires
+        double precision intent(in), dimension(238+1) :: constants
+        integer intent(hide), dimension(2) :: ipar
+    end subroutine sens_rhs_logdv
+    subroutine integrate_stochastic_tidbit(seed_ptr, reseed, time_ptr, dv, cv, rmsd_ptr, stop_time_ptr, trajectory)
+	integer intent(in) :: seed_ptr
+	integer intent(in) :: reseed
+	double precision intent(in,out) :: time_ptr
+	integer intent(in,out), dimension(98) :: dv
+	double precision intent(in), dimension(238) :: cv
+	double precision intent(in) :: rmsd_ptr
+	double precision intent(in,out) :: stop_time_ptr
+	double precision intent(out), dimension(98) :: trajectory
+    end subroutine integrate_stochastic_tidbit
+end interface
+end module NGF1pt5_60_ramp_0_KeeyanComputer_29_2388130051_124912
