@@ -1,6 +1,6 @@
 <Scell>
     <References>
-        <SBML path="example\gutenkunst2007\Edelstein_1996\BIOMD0000000002.xml" />
+        <SBML path="Example\gutenkunst2007\Edelstein_1996\BIOMD0000000002.xml" />
 
     </References>
     <Networks>

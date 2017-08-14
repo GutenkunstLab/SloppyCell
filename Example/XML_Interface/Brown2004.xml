@@ -1,6 +1,6 @@
 <Scell>
     <References>
-        <SBML path="example\gutenkunst2007\Brown_2004_All_One\BIOMD0000000033.xml" />
+        <SBML path="Example\gutenkunst2007\Brown_2004_All_One\BIOMD0000000033.xml" />
     </References>
     <Networks>
         <Network compile="True" from_file="True" id="base">

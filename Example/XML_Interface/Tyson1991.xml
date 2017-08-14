@@ -1,7 +1,7 @@
 <Scell>
     <References>
-        <Data path="example\XML_Interface\Tyson1991_data.csv" />
-		<SBML path="example\Tyson_1991\BIOMD0000000005.xml" />
+        <Data path="Example\XML_Interface\Tyson1991_data.csv" />
+		<SBML path="Example\Tyson_1991\BIOMD0000000005.xml" />
     </References>
     <Networks>
         <Network from_file="True" id="base">
