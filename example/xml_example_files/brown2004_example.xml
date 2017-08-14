@@ -1,0 +1,95 @@
+<Scell>
+    <References>
+        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\gutenkunst2007\Brown_2004_All_One\BIOMD0000000033.xml" />
+    </References>
+    <Networks>
+        <Network compile="True" from_file="True" id="base">
+            <Set_Typical>
+                <var id="all" value="1" />
+            </Set_Typical>
+            <Set_Initial>
+                <var condition="!=0" id="all" value="1" />
+                <var id="EGF" value="0" />
+                <var id="NGF" value="0" />
+            </Set_Initial>
+        </Network>
+        <Network copy="base" id="EGF-stim">
+            <Set_Initial>
+                <var id="EGF" value="1" />
+            </Set_Initial>
+        </Network>
+        <Network copy="base" id="NGF-stim">
+            <Set_Initial>
+                <var id="NGF" value="1" />
+            </Set_Initial>
+        </Network>
+        <Network copy="EGF-stim" id="EGF-LY">
+            <Set_Initial>
+                <var id="kPI3KRas" value="0" />
+                <var id="kPI3K" value="0" />
+            </Set_Initial>
+            <Set_Optimizable>
+                <var id="kPI3KRas" is_optimizable="False" />
+                <var id="kPI3K" is_optimizable="False" />
+            </Set_Optimizable>
+        </Network>
+        <Network copy="NGF-stim" id="NGF-LY">
+            <Set_Initial>
+                <var id="kPI3KRas" value="0" />
+                <var id="kPI3K" value="0" />
+            </Set_Initial>
+            <Set_Optimizable>
+                <var id="kPI3KRas" is_optimizable="False" />
+                <var id="kPI3K" is_optimizable="False" />
+            </Set_Optimizable>
+        </Network>
+        <Network copy="NGF-stim" id="NGF-DN-Rap1">
+            <Set_Initial>
+                <var id="kRap1ToBRaf" value="0" />
+            </Set_Initial>
+            <Set_Optimizable>
+                <var id="kRap1ToBRaf" is_optimizable="False" />
+            </Set_Optimizable>
+        </Network>
+        <Network copy="NGF-stim" id="NGF-DN-Ras">
+            <Set_Initial>
+                <var id="kRasToRaf1" value="0" />
+                <var id="kPI3KRas" value="0" />
+            </Set_Initial>
+            <Set_Optimizable>
+                <var id="kRasToRaf1" is_optimizable="False" />
+                <var id="kPI3KRas" is_optimizable="False" />
+            </Set_Optimizable>
+        </Network>
+    </Networks>
+    <Actions>
+        <Trajectory>
+            <Graph>
+                <traj net="EGF-stim" upper_bound="120">
+                        <var id="ErkActive" />
+                </traj>
+                <traj net="NGF-stim" upper_bound="120">
+                        <var id="ErkActive" />
+                </traj>
+            </Graph>
+            <Graph>
+                <traj net="EGF-LY" upper_bound="120">
+                    <subplot>
+                        <var id="ErkActive" />
+                    </subplot>
+                </traj>
+                <traj net="NGF-LY" upper_bound="120">
+                    <var id="ErkActive" />
+                </traj>
+                <traj net="NGF-DN-Rap1" upper_bound="120">
+                    <subplot>
+                         <var id="ErkActive" />
+                    </subplot>
+                </traj>
+                <traj net="NGF-DN-Ras" upper_bound="120">
+                    <var id="ErkActive" />
+                </traj>
+            </Graph>
+        </Trajectory>
+    </Actions>
+<hash><base path="..\temp\base_-672843966.bp" /><egf_stim path="..\temp\EGF_stim_61323685.bp" /><ngf_stim path="..\temp\NGF_stim_-2078353443.bp" /><egf_ly path="..\temp\EGF_LY_-454022350.bp" /><ngf_ly path="..\temp\NGF_LY_-1886277496.bp" /><ngf_dn_rap1 path="..\temp\NGF_DN_Rap1_267079263.bp" /><ngf_dn_ras path="..\temp\NGF_DN_Ras_841933714.bp" /><egf-stim path="..\temp\EGF-stim_-244505197.bp" /><ngf-stim path="..\temp\NGF-stim_1361702647.bp" /><egf-ly path="..\temp\EGF-LY_109906822.bp" /><ngf-ly path="..\temp\NGF-LY_-2027482568.bp" /><ngf-dn-rap1 path="..\temp\NGF-DN-Rap1_348875977.bp" /><ngf-dn-ras path="..\temp\NGF-DN-Ras_1184687576.bp" /><trajectory path="..\temp\Trajectory_274261901.bp" /></hash></Scell>

@@ -1,0 +1,76 @@
+<Scell>
+    <References>
+        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\gutenkunst2007\Vilar_2002\BIOMD0000000035.xml" />
+
+    </References>
+    <Networks>
+        <Network from_file="True" id="base">
+
+        </Network>
+        <Network copy="base" id="stable">
+            <Set_Initial>
+                <var id="deltaR" value="0.05" />
+            </Set_Initial>
+
+        </Network>
+        <Network id="reduced">
+            <Add_Compartment>
+                <var id="base" />
+            </Add_Compartment>
+            <Add_Parameter>
+                <var net="base" />
+                <var id="Kd" is_constant="False" />
+                <var id="rho" is_constant="False" />
+                <var id="A_tilde" is_constant="False" />
+            </Add_Parameter>
+            <Add_Species>
+                <var compartment="base" id="R" initial_conc="0" />
+                <var compartment="base" id="C" initial_conc="0" />
+            </Add_Species>
+            <Add_Assignment>
+                <var id="Kd" rhs="thetaA/gammaA" />
+                <var id="rho" rhs="betaA/(deltaMA * (gammaC*R + deltaA))" />
+                <var id="A_tilde" rhs=".5*(alphaAp * rho - Kd) + .5 * sqrt((alphaAp * rho - Kd)**2 + 4*alphaA*rho*Kd)" />
+            </Add_Assignment>
+            <Add_Rate_Rule>
+                <var id="R" rhs="betaR/deltaMR * (alphaR*thetaR + alphaRp*gammaR*A_tilde)/(thetaR + gammaR*A_tilde) - gammaC*A_tilde*R + deltaA*C - deltaR*R" />
+                <var id="C" rhs="gammaC*A_tilde*R - deltaA * C" />
+            </Add_Rate_Rule>
+        </Network>
+    </Networks>
+    <Actions>
+        <Trajectory>
+            <Graph>
+                <traj net="base" upper_bound="400">
+                    <subplot>
+                        <var id="A" />
+                    </subplot>
+                    <subplot>
+                        <var id="R" />
+                    </subplot>
+                </traj>
+            </Graph>
+            <Graph>
+                <traj net="reduced" upper_bound="200">
+                    <subplot>
+                        <var id="R" />
+                        <var id="C" />
+                    </subplot>
+                </traj>
+                <traj net="base" upper_bound="400">
+                    <subplot>
+                        <var id="R" />
+                        <var id="C" />
+                    </subplot>
+                </traj>
+            </Graph>
+            <Graph>
+                <traj net="stable" upper_bound="400">
+                    <subplot>
+                        <var id="R" />
+                    </subplot>
+                </traj>
+            </Graph>
+        </Trajectory>
+    </Actions>
+<hash><base path="..\temp\base_-248631662.bp" /><stable path="..\temp\stable_-114743918.bp" /><reduced path="..\temp\reduced_1811934775.bp" /><trajectory path="..\temp\Trajectory_-306027052.bp" /></hash></Scell>

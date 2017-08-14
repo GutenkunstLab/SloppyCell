@@ -1,0 +1,171 @@
+<Scell>
+    <References>
+        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\gutenkunst2007\Edelstein_1996\BIOMD0000000002.xml" />
+
+    </References>
+    <Networks>
+        <Network from_file="True" id="base">
+            <Set_Initial>
+                <var id="B" value="1" />
+            </Set_Initial>
+            <Set_Constant>
+                <var id="L" is_constant="True" />
+            </Set_Constant>
+            <Add_Parameter>
+                <var id="B_k_on" initial_value="1.5e8" />
+                <var id="B_k_off" initial_value="8000" />
+                <var id="BAp" initial_value="0.2" />
+                <var id="BA_k_2" initial_value="3e4" />
+                <var id="AB_k_2" initial_value="7e2" />
+                <var id="A_k_on" initial_value="1.5e8" />
+                <var id="A_k_off" initial_value="8.64" />
+                <var id="AIp" initial_value="0.99" />
+                <var id="AI_k_2" initial_value="20.0" />
+                <var id="IA_k_2" initial_value="0.81" />
+                <var id="I_k_on" initial_value="1.5e8" />
+                <var id="I_k_off" initial_value="4.0" />
+                <var id="IDp" initial_value="0.99" />
+                <var id="ID_k_2" initial_value="5e-2" />
+                <var id="DI_k_2" initial_value="1.2e-3" />
+                <var id="D_k_on" initial_value="1.5e8" />
+                <var id="D_k_off" initial_value="4.0" />
+                <var id="B_K_d" />
+                <var id="A_K_d" />
+                <var id="I_K_d" />
+                <var id="D_K_d" />
+                <var id="BAc" />
+                <var id="AIc" />
+                <var id="IDc" />
+            </Add_Parameter>
+            <Add_Assignment>
+                <var id="B_K_d" rhs="B_k_off/B_k_on" />
+                <var id="A_K_d" rhs="A_k_off/A_k_on" />
+                <var id="I_K_d" rhs="I_k_off/I_k_on" />
+                <var id="D_K_d" rhs="D_k_off/D_k_on" />
+                <var id="BAc" rhs="A_K_d/B_K_d" />
+                <var id="AIc" rhs="I_K_d/A_K_d" />
+                <var id="IDc" rhs="D_K_d/I_K_d" />
+                <var id="kf_0" rhs="2 * B_k_on" />
+                <var id="kr_0" rhs="B_k_off" />
+                <var id="kf_1" rhs="B_k_on" />
+                <var id="kr_1" rhs="2 * B_k_off" />
+                <var id="kf_2" rhs="BA_k_2" />
+                <var id="kr_2" rhs="AB_k_2" />
+                <var id="kf_3" rhs="2 * A_k_on" />
+                <var id="kr_3" rhs="A_k_off" />
+                <var id="kf_4" rhs="A_k_on" />
+                <var id="kr_4" rhs="2 * A_k_off" />
+                <var id="kf_6" rhs="BA_k_2*BAc**(1 - BAp)" />
+                <var id="kr_6" rhs="AB_k_2/BAc**BAp" />
+                <var id="kf_5" rhs="kf_6*BAc**(1 - BAp)" />
+                <var id="kr_5" rhs="kr_6/BAc**BAp" />
+                <var id="kf_7" rhs="2 * I_k_on" />
+                <var id="kr_7" rhs="I_k_off" />
+                <var id="kf_8" rhs="I_k_on" />
+                <var id="kr_8" rhs="2 * I_k_off" />
+                <var id="kf_10" rhs="AI_k_2*AIc**(1 - AIp)" />
+                <var id="kr_10" rhs="IA_k_2/AIc**AIp" />
+                <var id="kf_9" rhs="kf_10*AIc**(1 - AIp)" />
+                <var id="kr_9" rhs="kr_10/AIc**AIp" />
+                <var id="kf_11" rhs="AI_k_2" />
+                <var id="kr_11" rhs="IA_k_2" />
+                <var id="kf_12" rhs="2 * D_k_on" />
+                <var id="kr_12" rhs="D_k_off" />
+                <var id="kf_13" rhs="D_k_on" />
+                <var id="kr_13" rhs="2 * D_k_off" />
+                <var id="kf_14" rhs="ID_k_2" />
+                <var id="kr_14" rhs="DI_k_2" />
+                <var id="kf_16" rhs="ID_k_2*IDc**(1 - IDp)" />
+                <var id="kr_16" rhs="DI_k_2/IDc**IDp" />
+                <var id="kf_15" rhs="kf_16*IDc**(1 - IDp)" />
+                <var id="kr_15" rhs="kr_16/IDc**IDp" />
+
+            </Add_Assignment>
+        </Network>
+        <Network copy="base" id="progression">
+            <Set_Initial>
+                <var id="L" value="1e-5" />
+            </Set_Initial>
+        </Network>
+        <Network copy="base" id="recovery">
+            <Set_Initial>
+                <var id="L" value="0" />
+
+            </Set_Initial>
+            <Set_Dynamic>
+                <traj net="progression" upper_bound="20" />
+            </Set_Dynamic>
+        </Network>
+        <Network copy="progression" id="lowerK2">
+            <Set_Initial>
+                <var id="kf_11" value="200" />
+            </Set_Initial>
+        </Network>
+        <Network copy="base" id="em7">
+            <Set_Initial>
+                <var id="L" value="4e-7" />
+            </Set_Initial>
+        </Network>
+    </Networks>
+    <Actions>
+        <Trajectory>
+            <Graph>
+                <traj lower_bound="10e-6" net="progression" reset="True" upper_bound="10e3">
+                    <subplot semilog="X">
+                        <var id="A" />
+                        <var id="AL" />
+                        <var id="ALL" />
+                    </subplot>
+                    <subplot logx="True">
+                        <var id="B" />
+                        <var id="BL" />
+                        <var id="ALL" />
+                        <var id="ILL" />
+                        <var id="DLL" />
+                    </subplot>
+                </traj>
+                <traj lower_bound="1e-3" net="recovery" upper_bound="1e4">
+                    <subplot logx="True">
+                        <var id="B" />
+                        <var id="IL" />
+                        <var id="ALL" />
+                        <var id="ILL" />
+                        <var id="DLL" />
+                        <var id="DL" />
+                        <var id="I" />
+                        <var id="D" />
+                    </subplot>
+                </traj>
+
+            </Graph>
+            <Graph>
+                <traj lower_bound="1e-6" net="progression" reset="True" upper_bound="1e1">
+                    <subplot semilog="x">
+                        <vary id="L" log="True" lower_bound="-6" points="16" upper_bound="-3">
+                            <var id="A" />
+                            <var id="AL" />
+                            <var id="ALL" />
+                        </vary>
+                    </subplot>
+                </traj>
+                <traj lower_bound="1e-6" net="lowerK2" reset="True" upper_bound="1e1">
+                    <subplot semilog="x">
+                        <vary id="L" log="True" lower_bound="-6" points="16" upper_bound="-3">
+                            <var id="A" />
+                            <var id="AL" />
+                            <var id="ALL" />
+                        </vary>
+                    </subplot>
+                </traj>
+
+            </Graph>
+            <Graph>
+                <traj lower_bound="1e-6" net="em7" reset="True" upper_bound="1e3">
+                    <subplot logx="True" upper_bound="1" />
+                    <subplot upper_bound="1" />
+                </traj>
+            </Graph>
+
+        </Trajectory>
+    </Actions>
+<hash><base path="..\temp\base_2085777994.bp" /><progression path="..\temp\progression_-391559183.bp" /><recovery path="..\temp\recovery_-1808412531.bp" /><trajectory path="..\temp\Trajectory_-242012369.bp" /><lowerk2 path="..\temp\lowerK2_-1232237830.bp" /><em7 path="..\temp\em7_754110760.bp" /></hash></Scell>

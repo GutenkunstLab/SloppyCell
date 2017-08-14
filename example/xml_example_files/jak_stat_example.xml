@@ -1,0 +1,50 @@
+<Scell>
+	<References>
+		<Data path="C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/xml_example_files/jak_data.csv" />
+		<SBML path="C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/SloppyCell/example/jak-stat/JAK-STAT_SC.xml" />
+	</References>
+	<Parameters>
+		<Fit>
+            <parameter id="r1" value="0.5">
+            </parameter>
+			<parameter id="r3" value="2">
+                <prior lower="1e-4" upper="1e4" />
+            </parameter>
+            <parameter id="tao" value="6">
+                <prior lower="1" upper="16" />
+            </parameter>
+            <parameter id="r4_0" value="1.35">
+
+            </parameter>
+            <parameter id="v1_0" value="1.19">
+                <ic id="v1" />
+
+            </parameter>
+		</Fit>
+		<Skip>
+        </Skip>
+	</Parameters>
+    <Actions>
+        <Optimization iterations="20" plot="True">
+            <opt disp="False" type="Levenburg-Marquardt" />
+        </Optimization>
+        <Ensemble prune="10" steps="1000" />
+        <Histogram>
+            <Variables>
+                <parameter bins="10" id="r3" log="True" />
+            </Variables>
+        </Histogram>
+        <EnsembleTrajectories points="100">
+            <Variables>
+                <Graph>
+                    <species bounds="lower, upper" id="frac_v3" />
+                    <species bounds="lower, upper" id="frac_v4" />
+                </Graph>
+                <Graph>
+                    <species bounds="" id="data2" />
+                    <species bounds="" id="data1" />
+                </Graph>
+            </Variables>
+        </EnsembleTrajectories>
+    </Actions>
+<hash><optimization path="..\temp\Optimization_999672296.bp" /><ensemble path="..\temp\Ensemble_1785690891.bp" /><ensembletrajectories path="..\temp\EnsembleTrajectories_-35621508.bp" /></hash></Scell>

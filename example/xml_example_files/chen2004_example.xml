@@ -1,0 +1,211 @@
+<Scell>
+    <References>
+        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\gutenkunst2007\Chen_2004\BIOMD0000000056.xml" />
+    </References>
+    <Networks>
+        <Network compile="True" from_file="True" id="Chen2004">
+            <Set_Initial>
+                <var id="PE_45" value="0.698687" />
+                <var id="CDC15_10" value="0.6565" />
+                <var id="CDC15i_11" value="0.3435" />
+            </Set_Initial>
+
+        </Network>
+        <Network copy="Chen2004" id="mutant_1">
+            <Set_Initial>
+                <var id="ksn_203" value="0" />
+                <var id="ksn_204" value="0" />
+                <var id="Dn3_80" value="0" />
+            </Set_Initial>
+        </Network>
+        <Network copy="Chen2004" id="mutant_2">
+            <Set_Initial>
+                <var id="ksn_203" value="0" />
+                <var id="ksn_204" value="0" />
+                <var id="Dn3_80" value="0" />
+                <var id="ksc_197" value="0" />
+                <var id="ksc_198" value="0" />
+            </Set_Initial>
+        </Network>
+        <Network copy="Chen2004" id="mutant_3">
+            <Set_Initial>
+                <var id="ksn_203" value="0" />
+                <var id="ksn_204" value="0" />
+                <var id="Dn3_80" value="0" />
+                <var id="kscdh_199" value="0" />
+                <var id="CDH1_17" value="0" />
+                <var id="CDH1i_18" value="0" />
+            </Set_Initial>
+        </Network>
+        <Network copy="Chen2004" id="mutant_4">
+            <Set_Initial>
+                <var id="ks_189" value="0" />
+                <var id="ks_190" value="0" />
+                <var id="kspds_188" value="0" />
+                <var id="kspds_191" value="0" />
+            </Set_Initial>
+        </Network>
+        <Network copy="Chen2004" id="mutant_5">
+            <Set_Initial>
+                <var id="ks_189" value="0" />
+                <var id="ks_190" value="0" />
+                <var id="ksb_194" value="0" />
+                <var id="ksb_195" value="0" />
+            </Set_Initial>
+        </Network>
+        <Network copy="Chen2004" id="mutant_6">
+            <Set_Initial>
+                <var id="ks_189" value="0" />
+                <var id="ks_190" value="0" />
+                <var id="ksb_194" value="0" />
+                <var id="ksb_195" value="0" />
+                <var id="kspds_188" value="0" />
+                <var id="kspds_191" value="0" />
+            </Set_Initial>
+        </Network>
+        <Network copy="Chen2004" id="mutant_7">
+            <Set_Initial>
+                <var id="ksc_197" value="0" />
+                <var id="ksc_198" value="0" />
+                <var id="ksf_200" value="0" />
+                <var id="ksf_201" value="0" />
+                <var id="ksf_202" value="0" />
+                <var id="kscdh_199" value="0" />
+                <var id="CDH1_17" value="0" />
+                <var id="CDH1i_18" value="0" />
+            </Set_Initial>
+        </Network>
+        <Network copy="Chen2004" id="mutant_8">
+            <Set_Initial>
+                <var id="ksc_197" value="0" />
+                <var id="ksc_198" value="0" />
+                <var id="ksf_200" value="0" />
+                <var id="ksf_201" value="0" />
+                <var id="ksf_202" value="0" />
+                <var id="kscdh_199" value="0" />
+                <var id="CDH1_17" value="0" />
+                <var id="CDH1i_18" value="0" />
+                <var id="ks_189" value="4.0" />
+                <var id="mdt_216" value="150" />
+            </Set_Initial>
+        </Network>
+    </Networks>
+    <Actions>
+        <Trajectory>
+            <Graph>
+                <traj net="Chen2004" upper_bound="225">
+                    <subplot>
+                        <var id="MASS_37" />
+                        <var id="BUD_3" />
+                        <var id="ORI_43" />
+                        <var id="SPN_53" />
+                    </subplot>
+                    <subplot>
+                        <var id="CLB5T_23" />
+                        <var id="PDS1_44" />
+                        <var id="CLB2T_21" />
+                    </subplot>
+                    <subplot>
+                        <var id="CDC6T_16" />
+                        <var id="SIC1T_52" />
+                        <var id="CDH1_17" />
+                    </subplot>
+                    <subplot>
+                        <var id="CLN2_24" />
+                        <var id="CDC20_12" />
+                        <var id="CDC14_8" />
+                    </subplot>
+                    <subplot>
+                        <var id="SBF_49" />
+                        <var id="MCM1_38" />
+                        <var id="SWI5_54" />
+                    </subplot>
+                </traj>
+            </Graph>
+            <Graph>
+                <traj net="mutant_1" upper_bound="225">
+                    <subplot>
+                        <var id="MASS_37" />
+                        <var id="ORI_43" />
+                        <var id="CLB2T_21" />
+                        <var id="CDH1_17" />
+                        <var id="CDC6_14" />
+                    </subplot>
+
+                </traj>
+                <traj net="mutant_2" upper_bound="225">
+                    <subplot>
+                        <var id="MASS_37" />
+                        <var id="ORI_43" />
+                        <var id="CLB2T_21" />
+                        <var id="CDH1_17" />
+                        <var id="CDC6_14" />
+                        <var id="CLB5T_23" />
+                    </subplot>
+
+                </traj>
+                <traj net="mutant_3" upper_bound="225">
+                    <subplot>
+                        <var id="MASS_37" />
+                        <var id="ORI_43" />
+                        <var id="CLB2T_21" />
+                        <var id="CDC6_14" />
+                        <var id="SIC1T_52" />
+                    </subplot>
+
+                </traj>
+                <traj net="mutant_4" upper_bound="225">
+                    <subplot>
+                        <var id="MASS_37" />
+                        <var id="CDH1_17" />
+                        <var id="CLB2T_21" />
+                        <var id="CLB5T_23" />
+                        <var id="CDC14_8" />
+                    </subplot>
+
+                </traj>
+                <traj net="mutant_5" upper_bound="225">
+                    <subplot>
+                        <var id="MASS_37" />
+                        <var id="CDH1_17" />
+                        <var id="CLB2T_21" />
+                        <var id="PDS1_44" />
+                        <var id="CDC14_8" />
+                    </subplot>
+
+                </traj>
+                <traj net="mutant_6" upper_bound="225">
+                    <subplot>
+                        <var id="MASS_37" />
+                        <var id="CDH1_17" />
+                        <var id="CLB2T_21" />
+                        <var id="CDC14_8" />
+                    </subplot>
+
+                </traj>
+                <traj net="mutant_7" upper_bound="350">
+                    <subplot>
+                        <var id="MASS_37" />
+                        <var id="CDC20_12" />
+                        <var id="CLB2T_21" />
+                        <var id="CDC14_8" />
+                        <var id="CLB5T_23" />
+                    </subplot>
+
+                </traj>
+                <traj net="mutant_8" upper_bound="350">
+                    <subplot>
+                        <var id="MASS_37" />
+                        <var id="CDC20_12" />
+                        <var id="CLB2T_21" />
+                        <var id="CDC14_8" />
+                        <var id="CLB5T_23" />
+                    </subplot>
+
+                </traj>
+            </Graph>
+
+
+        </Trajectory>
+    </Actions>
+<hash><chen2004 path="..\temp\Chen2004_-366599026.bp" /><mutant_1 path="..\temp\mutant_1_729605654.bp" /><mutant_2 path="..\temp\mutant_2_-196177936.bp" /><mutant_3 path="..\temp\mutant_3_1736120635.bp" /><mutant_4 path="..\temp\mutant_4_-1991427546.bp" /><mutant_5 path="..\temp\mutant_5_-410068616.bp" /><mutant_6 path="..\temp\mutant_6_-1783596861.bp" /><mutant_7 path="..\temp\mutant_7_346537514.bp" /><mutant_8 path="..\temp\mutant_8_1694649506.bp" /><trajectory path="..\temp\Trajectory_768633985.bp" /></hash></Scell>
