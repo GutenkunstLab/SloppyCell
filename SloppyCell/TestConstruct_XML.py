@@ -8,7 +8,7 @@ Runs appropriate functions to test input data and model (XML edition
 
 import logging
 from xml.etree import ElementTree as ET
-
+import os
 import scipy
 from SloppyCell.ReactionNetworks import *
 from pylab import *
