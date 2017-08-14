@@ -1,6 +1,6 @@
 <Scell>
     <References>
-        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\gutenkunst2007\Curto_1998\BIOMD0000000015.xml" />
+        <SBML path="example\gutenkunst2007\Curto_1998\BIOMD0000000015.xml" />
     </References>
     <Networks>
         <Network from_file="True" id="base">

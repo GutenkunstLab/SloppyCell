@@ -1,7 +1,7 @@
 <Scell>
 	<References>
-		<Data path="C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/xml_example_files/jak_data.csv" />
-		<SBML path="C:/Users/Keeyan/Desktop/CCAM_Lab/sloppycell-git/source/SloppyCell/example/jak-stat/JAK-STAT_SC.xml" />
+		<Data path="example/XML_Interface/jak_data.csv" />
+		<SBML path="example/jak-stat/JAK-STAT_SC.xml" />
 	</References>
 	<Parameters>
 		<Fit>

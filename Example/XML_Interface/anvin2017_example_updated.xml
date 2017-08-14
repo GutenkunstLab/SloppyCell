@@ -1,7 +1,7 @@
 <Scell>
     <References>
-        <SBML path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\Anvin_2017\Updated_LOV_zdk(time0change)V4_2.xml" />
-        <Data path="C:\Users\Keeyan\Desktop\CCAM_Lab\sloppycell-git\source\SloppyCell\example\Anvin_2017\VCell_data_scaled.csv" />
+        <SBML path="example\Anvin_2017\Updated_LOV_zdk.xml" />
+        <Data path="example\Anvin_2017\VCell_data_scaled.csv" />
     </References>
     <Networks>
         <Network from_file="true" id="base" />
@@ -41,4 +41,4 @@
 
     </Actions>
 
-<hash><base path="..\temp\base_1287109298.bp" /><optimization path="..\temp\Optimization_36966392.bp" /><trajectory path="..\temp\Trajectory_-160868710.bp" /><ensemble path="..\temp\Ensemble_-1185028736.bp" /><ensembletrajectories path="..\temp\EnsembleTrajectories_-279209350.bp" /></hash></Scell>
+<hash><base path="temp\base_1287109298.bp" /><optimization path="temp\Optimization_36966392.bp" /><trajectory path="temp\Trajectory_-160868710.bp" /><ensemble path="temp\Ensemble_-1185028736.bp" /><ensembletrajectories path="temp\EnsembleTrajectories_-279209350.bp" /></hash></Scell>
