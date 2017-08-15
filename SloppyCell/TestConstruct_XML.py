@@ -625,7 +625,8 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
             print 'Optimized parameters:', params
         Plotting.figure()
         f=Plotting.plot_model_results(m)
-        f[0][0].set_alpha(.2)
+        for thing in f[0]:
+            thing.set_alpha(.7)
 
         Plotting.title('After Optimization')
     return_dictionary["params"] = params
@@ -688,7 +689,7 @@ def save_to_temp(obj, file_name, xml_file, node, hash_id, routine="temp_file"):
     :return: Doesn't return anything.
     """
     print "Saving " + routine + " to file"
-    filename = 'temp\\' + routine + "_" + str(hash_id) + ".bp"
+    filename = '..\\temp\\' + routine + "_" + str(hash_id) + ".bp"
     Utility.save(obj, filename)
     node.set('path', filename)
     xml_file.write(file_name)
