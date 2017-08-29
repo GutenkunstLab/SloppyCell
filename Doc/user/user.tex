@@ -36,8 +36,7 @@ belowskip=0pt
 \sloppy %Prevent lines from running off edge of text
 
 \begin{document}
-\title{SloppyCell User Documentation\\
-\large$Revision$}
+\title{SloppyCell User Documentation}
 \maketitle
 \tableofcontents
 \clearpage
@@ -69,7 +68,7 @@ Here we consider an example application using the JAK-STAT model of Swameye et a
 caption={[Example SloppyCell script for the JAK-STAT model] This script reproduces some of the results from~\cite{bib:Gutenkunst2008}. For detailed comments see Section~\ref{sec:user:example}.}
 ]{../../Example/JAK-STAT/run_JAK.py}
 
-Using the script shown in Listing~\ref{sec:user:example}, we'll fit the model, build an ensemble, and then estimate some prediction uncertainties, reproducing most of the Figure from~\cite{bib:Gutenkunst2008}.
+Using the script shown in Listing~\ref{sec:user:example}, we'll fit the model, build an ensemble, and then estimate some prediction uncertainties.
 (This script is also found in the \shell{Example/JAK-STAT} directory of the SloppyCell source distribution.)
 Some of the concepts may be a little subtle, so don't be afraid to turn to any section in the Overview and come back here.
 
@@ -329,7 +328,7 @@ Generating a thoroughly converged ensemble that independently samples the distri
 
 \begin{figure}
 \begin{center}
-%\includegraphics{autocorr}
+\includegraphics{autocorr}
 \end{center}
 \caption[Example autocorrelation functions]{Shown are autocorrelation functions functions for the cost (blue) and the logarithm of a particular parameter (green) in an ensemble built for the small JAK-STAT example model (Section~\ref{sec:user:example}). The correlation time for both is about 25 steps, suggesting that parameter sets 25 steps apart are statistically independent.\label{fig:user:autocorr}}
 \end{figure}
@@ -343,7 +342,7 @@ The number of independent samples in an ensemble is approximately the length of 
 Scaling arguments suggest that, for the default ensemble parameters, the number of steps in one autocorrelation time is at least the square of the number of parameters~\cite[Section 3.5.1]{bib:GutenkunstPhD}.
 
 If the correlation time for your ensemble is much longer than the square of the number of parameters, your cost basin is probably substantially curved.
-For advice on how to deal with this, see Section~\cite[Section 6.3]{bib:GutenkunstPhD}.
+For advice on how to deal with this, see~\cite[Section 6.3]{bib:GutenkunstPhD}.
 
 \subsubsection{Predicting from an Ensemble}
 
@@ -360,7 +359,7 @@ Similarly, \py{Ensembles.traj_ensemble_stats} will return trajectories containin
 
 \subsection{Plotting}
 
-SloppyCell's plotting functionality is built upon matplotlib~\cite{bib:Hunter2007}, also known as \py{pylab}; a nice tutorial is available at \url{http://matplotlib.sourceforge.net/tutorial.html}.
+SloppyCell's plotting functionality is built upon matplotlib~\cite{bib:Hunter2007}, also known as \py{pylab}; a nice tutorial is available at \url{https://matplotlib.org/users/pyplot_tutorial.html}.
 SloppyCell's \py{Plotting} module adds several routines that are convenient for analyzing fits, ensembles, and Hessians.
 For example, Figure~\ref{fig:user:model_results} shows a plot of the best fit for our example model (Section~\ref{sec:user:example}) with no additional tweaking.
 
@@ -386,94 +385,24 @@ Note that these rely on Python's binary `pickle' format, so there is a slight da
 \section{Installation}\label{sec:user:install}
 
 \subsection{Required Dependencies}
-\begin{description}
 
-\item[Python] version 2.4 or higher\\
- Available from \url{http://python.org/}.
-
-\item[NumPy] version 1.0.2 or higher\\
- Available from \url{http://scipy.org/}
-
-\item[SciPy] version 0.5.2 or higher\\
- Available from \url{http://scipy.org/}
-
-\item[matplotlib] version 0.90.0 or higher\\
- Available from \url{http://matplotlib.sourceforge.net/}
-\end{description}
+SloppyCell requires Python 2.x and the libraries NumPy, SciPy, and matplotlib.
+As of late 2017, the easiest way to install these is through the Anaconda (\url{https://www.anaconda.com/download/}) or Enthought (\url{https://www.enthought.com/product/canopy/}) distributions.
+Both include many scientific Python libraries and a package manager for easy installation.
 
 \subsection{Optional Dependencies}
 
-\begin{description}
+To read and write files encoded in the Systems Biology Markup Language~\cite{bib:Hucka2003}, libSBML is required (\url{http://sbml.org/Software/libSBML/Downloading_libSBML#Python}).
 
-\item[libSBML] version 2.3.4\\
-Available from \url{http://www.sbml.org/software/libsbml/}.\\
-If libSBML is installed, SloppyCell will be able read and write files encoded in the Systems Biology Markup Language~\cite{bib:Hucka2003}. See section~\ref{sec:user:IO}.
-
-\item[IPython]
-Available from \url{http://ipython.scipy.org/}.\\
-IPython is a dramatic improvement over the standard python shell and we highly recommended it for interactive work.
-
-\item[C compiler]
 For speed, SloppyCell by default generates C versions of the network equations, and this requires a C compiler. 
-If a C compiler is not installed, SloppyCell will run with Python versions of the network equations, which may be up to a factor of 30 slower. 
-This capability has been tested only with the compiler \filename{gcc}, but it should work with others.
-
-%\item[\LaTeX]
-%Available from \url{http://www.latex-project.org/}.\\
-%\LaTeX is a document preparation system that is heavily used in the physical sciences. It handles mathematics beautifully, and SloppyCell can output \filename{.tex} files containing the equations defining a network. This is quite useful for debugging models. See section~\ref{sec:SCuser:LaTeX} for an example.
-
-%\item[Graphviz]
-%Available from \url{http://www.graphviz.org/}.\\
-%SloppyCell can generate \filename{.dot} files specifying network diagrams which can be visualized using Graphviz. See section~\ref{sec:SCuser:dot} for an example.
-\end{description}
-
-\subsection{On Linux}
-Installation on a Linux system should be straightforward, as Linux machines are generally well-equipped with the proper compilers.
-
-\begin{enumerate}
-\item Install the required dependencies
-\item Unpack the tarball containing the SloppyCell code. (\shell{tar xzf SloppyCell-XXX.tar.gz})
-\item Descend into the SloppyCell-XXX directory. (\shell{cd SloppyCell-XXX})
-\item Run the installation script to build SloppyCell. (\shell{python setup.py build}).\\
-Depending on your system, this may fail due to difficulties with Fortran compilation. The available Fortran compilers can be found with  \shell{python setup.py config_fc --help_fcompiler}, and if you contact us we can help with this step.
-\item Run the installation script to install. (\shell{python setup.py install}).\\
-If you prefer to use SloppyCell from the current directory rather than installing it elsewhere, use the \shell{--install-lib} option, \shell{python setup.py install --install-lib=..} . 
-You will have to adjust your \shell{PYTHONPATH} environment variable to include the directory the SloppyCell directory is contained within. 
-This installation option is particularly convenient for staying up-to-date with the CVS repository.
-\end{enumerate}
-
-\subsection{OS X}
-Note that installation of libsbml with python bindings on Intel macs currently requires some work-arounds. Hopefully these will be resolved soon by the libsbml maintainers. If you're having difficulties, please contact us.
-
-\subsubsection{Pre-built binary}
-Binary \shell{mpkgs} are available from the Sourceforge download site.
-These have been built against the framework builds of Python available from \url{http://www.python.org} on OS~X~10.4 (`Tiger').
-
-\subsubsection{From source code}
-Fortran compilers for OS X are available at  \url{http://hpc.sf.net}. Once you've installed 
-such a compiler, follow the instructions for installing on Linux.
-
-\subsection{Windows}
-Installing \shell{gcc} on Windows requires some effort, but is highly suggested as it will dramatically speed up SloppyCell.
-
-In our experience, the easiest way to get \shell{gcc} is to install \shell{MinGW}.
-To install it, run \shell{MinGW-5.1.3.exe} from
-\url{http://sourceforge.net/projects/mingw/}.
-Tell the installer you want \shell{g77} and \shell{g++} in addition to the defaults.
-
-Unfortunately, there is an issue with MinGW-5.1.3 that will cause compilation problems. To fix them, you will need to find \shell{libgcc.a} and run the following command:
-\shell{ar dvs libgcc.a __main.o}~\cite{bib:SCuser:ar}.
-On our test system \shell{libgcc.a} was in \shell{c:\\mingw\\lib\\gcc\\mingw32\\3.4.2}.
-
-\subsubsection{Pre-built binary}
-Pre-built binaries are available for Python 2.4 and Python 2.5.
-
-\subsubsection{From source code}
-Given that you installed \shell{g77} along during the MinGW install, you should be able to follow the Linux install instructions.
+If a C compiler is not installed, SloppyCell will run with Python versions of the network equations, which may be up to a factor of 30 slower.
+For Windows, you'll need to install the version of Visual C++ that is compatible with your version of Python, most likely Visual C++ 9.0 (\url{https://wiki.python.org/moin/WindowsCompilers}).
+For OS X, install Xcode (\url{https://developer.apple.com/xcode/}).
+For Linux, most distributions come with a C compiler installed.
 
 \subsection{Testing the Installation}\label{sec:test}
 The SloppyCell source code includes a large package of test routines.
-To access them: download and unpack \shell{SloppyCell-XXX.tar.gz} or \shell{SloppyCell-XXX.zip}, descend into the SloppyCell-XXX directory (\shell{cd SloppyCell-XXX}), and run \shell{cd Testing; python test.py}.
+To access them: download and unpack \shell{SloppyCell-XXX.tar.gz}, descend into the SloppyCell-XXX directory (\shell{cd SloppyCell-XXX}), and run \shell{cd test; python test.py}.
 This will run an extensive series of tests, both with and without C-compilation.
 
 \section{Troubleshooting}

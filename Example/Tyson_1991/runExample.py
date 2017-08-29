@@ -119,6 +119,7 @@ Utility.save((ens, ens_costs, ratio), 'ensemble.bp')
 Plotting.figure(7)
 ac = Ensembles.autocorrelation(ens_costs)
 Plotting.plot(ac)
+Plotting.savefig('autocorr.pdf')
 
 print "Ensemble has %i members. Acceptance ratio was %f." % (len(ens), ratio)
 

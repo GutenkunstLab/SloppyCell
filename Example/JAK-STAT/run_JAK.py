@@ -22,8 +22,9 @@ print 'Optimized cost:', m.cost(params)
 print 'Optimized parameters:', params
 
 # Plot our optimal fit.
-figure()                      
+figure()
 Plotting.plot_model_results(m)                                                 # (@\label{code:plot_results}@)
+savefig('model_results.pdf')
 
 j = m.jacobian_log_params_sens(log(params))                                    # (@\label{code:j_calc}@)
 jtj = dot(transpose(j), j)                                                     # (@\label{code:jtj}@)
@@ -36,6 +37,7 @@ pruned_ens = asarray(ens[::25])                                                #
 
 figure()
 hist(log(pruned_ens[:,1]), normed=True)                                        # (@\label{code:hist}@)
+savefig('hist.pdf')
 
 times = linspace(0, 65, 100)
 traj_set = Ensembles.ensemble_trajs(net, times, pruned_ens)                    # (@\label{code:ens_trajs}@)
@@ -46,5 +48,6 @@ plot(times, lower.get_var_traj('frac_v3'), 'g')
 plot(times, upper.get_var_traj('frac_v3'), 'g')
 plot(times, lower.get_var_traj('frac_v4'), 'b')
 plot(times, upper.get_var_traj('frac_v4'), 'b')
+savefig('uncerts.pdf')
 
 show()
