@@ -208,7 +208,7 @@ Solving for $\frac{d t_f}{dp}$ we obtain
     \frac{\partial \trigger}{\partial p} 
     + \sum_y \frac{\partial \trigger}{\partial y} \frac{dy}{dp}
 }{
-    \frac{\partial \trigger}{dt} 
+    \frac{\partial \trigger}{\partial t} 
     + \sum_y \frac{\partial \trigger}{\partial y} \frac{dy}{dt}
 }.
 \end{align}
@@ -238,7 +238,7 @@ First consider a variable $y$ whose value is not changed by the event.
 Note that $\frac{dy}{dt}$ may be different before and after the event executes because of changes to other variables.
 Then the perturbation to its sensitivity $\frac{dy}{dp}$ is given by
 \begin{align}
-\left.\frac{dy}{dp}\right|_{> t_e} = \left.\frac{dy}{dp}\right|_{< t_e} + \left.\frac{dy}{dt}\right|_{< t_e} \frac{d t_e}{dp} + \left.\frac{dy}{dt}\right|_{> t_e} \frac{d t_e}{dp},
+\left.\frac{dy}{dp}\right|_{> t_e} = \left.\frac{dy}{dp}\right|_{< t_e} + \left.\frac{dy}{dt}\right|_{< t_e} \frac{d t_e}{dp} - \left.\frac{dy}{dt}\right|_{> t_e} \frac{d t_e}{dp},
 \end{align}
 where $|_{< t_e}$ denotes values prior to event execution and $|_{> t_e}$ denotes values after event execution. 
 The additional terms involving $\frac{dy}{dt}$ can be thought of as changes in $y$ that do or do not happen because of the shift execution time.
