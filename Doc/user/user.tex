@@ -147,7 +147,7 @@ More extensive examples can be found in the \shell{Examples} directory of the so
 
 \begin{figure}
 \begin{center}
-\input{architecture.pstex_t}
+%\input{architecture.pstex_t}
 \end{center}
 \caption{The architecture of some of the primary SloppyCell tools is illustrated here. \py{Model}, \py{Network}, and \py{Experiment} are classes, and a model is composed of one or more \py{Network}s and \py{Experiment}s. The oval boxes represent modules (collections of functions) and the dotted arrows indicated the class of objects they primarily act upon.}
 \end{figure}
@@ -329,7 +329,7 @@ Generating a thoroughly converged ensemble that independently samples the distri
 
 \begin{figure}
 \begin{center}
-\includegraphics{autocorr}
+%\includegraphics{autocorr}
 \end{center}
 \caption[Example autocorrelation functions]{Shown are autocorrelation functions functions for the cost (blue) and the logarithm of a particular parameter (green) in an ensemble built for the small JAK-STAT example model (Section~\ref{sec:user:example}). The correlation time for both is about 25 steps, suggesting that parameter sets 25 steps apart are statistically independent.\label{fig:user:autocorr}}
 \end{figure}
@@ -374,35 +374,14 @@ Additionally, each entry is associated with a key, so that values can be added a
 
 SloppyCell's \py{IO} module includes several functions to facilitate import and export of useful representations of \py{Network}s.
 
-\begin{figure}
-\begin{center}
-\includegraphics[width=\textwidth]{EGFstim100}
-\end{center}
-\caption[Automatically generated network diagram for G protein model]{Shown is a SloppyCell-generated network diagram for the growth-factor-signaling model of Brown et al.~\cite{bib:Brown2004}. Black ovals denote species and red boxes denote reactions between them.\label{fig:user:dot}}
-\end{figure}
-
 \py{IO.from_SBML_file} and \py{IO.to_SBML_file} allow importing and exporting of SBML files. (Note that SloppyCell will not preserve annotations of an SBML network that has been imported.)
-\py{IO.net_DOT_file} generates \shell{dot} files which can be fed to Graphviz (\url{http://www.graphviz.org/}) to generate basic network diagrams as seen in Figure~\ref{fig:user:dot}.
-Finally, \py{IO.eqns_TeX_file} will export a \shell{tex} file that can be used with \LaTeX to generate nicely-formatted equations. These are useful both for inclusion in publications and for debugging models.
+\py{IO.eqns_TeX_file} will export a \shell{tex} file that can be used with \LaTeX to generate nicely-formatted equations. These are useful both for inclusion in publications and for debugging models.
 
 \subsection{Miscellaneous Utilities}
 
 To conveniently save results for future analysis, you can use \py{Utility.save} and \py{Utility.load}.
 Note that these rely on Python's binary `pickle' format, so there is a slight danger that upgrades to Python or SloppyCell will render them unreadable. For more robust but less space-efficient saving, dump results to text files using, for example, \py{scipy.io.write_array}.
 
-\subsection{Parallelization\label{sec:user:parallel}}
-
-SloppyCell implements a relatively simple parallelization paradigm~\cite{bib:Myers2007} over MPI, using the PyPar (\url{http://sourceforge.net/projects/pypar/}) interface.
-Two major tasks have been parallelized.
-(1) If evaluating the cost of a \py{Model} involves integrating several \py{Network}s, those integrations can be spread across several processors.
-(2) In \py{Dynamics.integrate_sensitivity}, the integrations for different parameters can be distributed across processors.
-Parallel execution is enabled by a simple import:
-\begin{lstlisting}
-import SloppyCell.ReactionNetworks.RunInParallel as Par.
-\end{lstlisting}
-Anything in the script beyond this import will be run only by the master, who can send commands to the slaves. 
-The slaves can be directly controlled using using methods in Par.
-For example, \py{Par.statement_to_all_workers("print 'I am processor', my_rank")} will cause each processor to print a message giving its rank.
 
 \section{Installation}\label{sec:user:install}
 
@@ -438,11 +417,6 @@ IPython is a dramatic improvement over the standard python shell and we highly r
 For speed, SloppyCell by default generates C versions of the network equations, and this requires a C compiler. 
 If a C compiler is not installed, SloppyCell will run with Python versions of the network equations, which may be up to a factor of 30 slower. 
 This capability has been tested only with the compiler \filename{gcc}, but it should work with others.
-
-\item[Pypar]
-Available from \url{http://sourceforge.net/projects/pypar/}.\\
-With Pypar installed, SloppyCell can run several common calculations in parallel over MPI. See section~\ref{sec:user:parallel}
-(As of August 21, 2007 the alpha version of Pypar 2.0 is required for compatibility with NumPy.)
 
 %\item[\LaTeX]
 %Available from \url{http://www.latex-project.org/}.\\
