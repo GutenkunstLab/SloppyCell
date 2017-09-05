@@ -1,6 +1,6 @@
-<Scell>
+<Scell name="Locke2005">
     <References>
-        <SBML path="Example\gutenkunst2007\Locke_2005\BIOMD055-noceil.xml" />
+        <SBML path=".\Example\gutenkunst2007\Locke_2005\BIOMD055-noceil.xml" />
     </References>
     <Networks>
         <Network compile="True" from_file="True" id="base">
@@ -135,4 +135,4 @@
             </Graph>
         </Trajectory>
     </Actions>
-<hash><base path="..\temp\base_-966257226.bp" /><net1212 path="..\temp\net1212_-297259173.bp" /><mutant_net path="..\temp\mutant_net_1641006774.bp" /><net_12l_12d_12l_d path="..\temp\net_12L_12D_12L_D_-1014596879.bp" /><net_12d_l path="..\temp\net_12D_L_764635283.bp" /><mutant-net path="..\temp\mutant-net_-1799799216.bp" /><net-12l-12d-12l-d path="..\temp\net-12L-12D-12L-D_1816343489.bp" /><net-12d-l path="..\temp\net-12D-L_8341959.bp" /><mutant-12l-12d-12l-d path="..\temp\mutant-12L-12D-12L-D_380044165.bp" /><mutant-12d-l path="..\temp\mutant-12D-L_-1585296661.bp" /><trajectory path="..\temp\Trajectory_1799891298.bp" /></hash></Scell>
+</Scell>
