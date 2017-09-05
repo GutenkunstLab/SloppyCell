@@ -389,7 +389,7 @@ def prior_drier(root, model):
 
 
 def plot_traj(traj_dict, network_dictionary, id_list, attributes, id=None,
-              log=False, lower_bound=0, upper_bound=100, points=1, vary=True):
+              log=False, lower_bound=0, upper_bound=100, points=1, file_name=None, network_id=None, vary=True):
     if vary:
         if log:
             space = scipy.logspace(int(lower_bound), int(upper_bound), int(points))
@@ -414,6 +414,12 @@ def plot_traj(traj_dict, network_dictionary, id_list, attributes, id=None,
             semilogged = False
             agg=None
             a = Plotting.plot_trajectory(traj, id_list, **attributes)
+    if file_name is not None:
+        dir_name = os.path.dirname(file_name)
+        parent_name = os.path.basename(dir_name)
+        hash_id = 0
+        hash_id = id_list[0]+"_"+str(upper_bound)+"_"+str(len(id_list))
+        traj.to_file("Example/XML_Interface/"+parent_name+"/saved_files/Traj_"+network_id+"_"+hash_id+".csv")
     return traj, lower_bound, upper_bound, semilogged, a, agg
 
 
@@ -558,7 +564,7 @@ def plot_variables(pruned_ens=None, net=None, id=None, time_r=65, start=0, point
         print "Plotting trajectory set for %s" % id
         for quantile in quantiles:
             plot(times, quantile.get_var_traj(id), color)
-
+    print traj_set
     return traj_set
 
 
@@ -688,10 +694,20 @@ def save_to_temp(obj, file_name, xml_file, node, hash_id, routine="temp_file"):
     :param routine: The name of the action routine, 
     :return: Doesn't return anything.
     """
+    dir_name = os.path.dirname(file_name)
+    parent_name = os.path.basename(dir_name)
     print "Saving " + routine + " to file"
-    filename = '..\\temp\\' + routine + "_" + str(hash_id) + ".bp"
-    Utility.save(obj, filename)
-    node.set('path', filename)
+    model_name = xml_file.getroot().attrib['name']
+    save_folder = "\\saved_files\\" + routine +"-"+model_name+ "_" +str(hash_id)+ ".bp"
+    filename = dir_name+save_folder
+
+    relative_path="Example\\XML_Interface\\"+parent_name+save_folder
+    try:
+        Utility.save(obj, filename)
+    except IOError:
+        os.mkdir(dir_name+"\\saved_files\\")
+        Utility.save(obj, filename)
+    node.set('path', relative_path)
     xml_file.write(file_name)
 
 
@@ -729,7 +745,7 @@ def check_to_save(routine_function):
         save_file = True
         hash_id = hash_routine(pass_root)
         parent = kwargs['parent']
-        hash_root = parent.find('hash')
+        hash_root = parent.find('saved_files')
         try:
             # We pop to get rid of the attributes related to saving, but we could just as easily
             # add **kwargs to all the routine actions to deal with the extra arguments
@@ -755,6 +771,7 @@ def check_to_save(routine_function):
                 # A file path is specified
                 hash_from_file = os.path.splitext(os.path.basename(saved_file_path))[0].split('_')[1]
                 if int(hash_from_file) == hash_id:
+
                     use_file = True
                     save_file = False
                 else:
@@ -997,8 +1014,9 @@ def ensemble_traj(current_root, routine_dict, result_dictionary, time_r, net, ne
 
 
 @check_to_save
-def trajectory_integration(result_dictionary, current_root, network_dictionary, **kwargs):
+def trajectory_integration(result_dictionary, current_root, network_dictionary, file_name=None, **kwargs):
     # TODO: Break up into smaller functions
+    print "File_name: " +file_name
     try:
         traj_list = kwargs['loaded_object']
     except KeyError:
@@ -1114,10 +1132,12 @@ def trajectory_integration(result_dictionary, current_root, network_dictionary, 
                     for vary in sub.iter("vary"):
                         varied = True
                         traj, lower_bound, upper_bound, semilogged, a, agg = plot_traj(traj_dict, network_dictionary,
-                                                                                       id_list, attributes, **vary.attrib)
+                                                                                       id_list, attributes,
+                                                                                       network_id=network_id,file_name=file_name, **vary.attrib)
                     if not varied:
                         traj, lower_bound, upper_bound, semilogged, a, agg = plot_traj(traj_dict, network_dictionary,
-                                                                                       id_list, attributes, vary=False)
+                                                                                       id_list, attributes,
+                                                                                       network_id=network_id, file_name=file_name, vary=False)
 
                     if current_row == 1+columns:
                         Plotting.title(network_id)
@@ -1255,6 +1275,7 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
 def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference = None):
     result_dictionary = dict()
     network_dictionary = dict()
+    print "File name: " + file_name
     action_function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
                                   'ensembletrajectories': ensemble_traj, 'trajectory': trajectory_integration,
                                   'hessian': hessian}
@@ -1270,9 +1291,9 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     # They have few enough options that there is little customization to be done and they are essential to setting
     # up the model.
     ###
-    hash_node = root.find('hash')
+    hash_node = root.find('saved_files')
     if hash_node is None:
-        hash_node = ET.Element('hash')
+        hash_node = ET.Element('saved_files')
         root.append(hash_node)
 
     # TODO: Build a tree of dependents so that we don't load from file when a dependent changes.
