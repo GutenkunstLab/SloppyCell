@@ -10,6 +10,7 @@ import logging
 from xml.etree import ElementTree as ET
 import os
 import scipy
+import time
 from SloppyCell.ReactionNetworks import *
 from pylab import *
 
@@ -529,6 +530,8 @@ def plot_variables(pruned_ens=None, net=None, id=None, time_r=65, start=0, point
         bt, mt, st = Ensembles.net_ensemble_trajs(net,
                                                   times,
                                                   pruned_ens)
+        # We could write the bt, mt, and st to file
+        # bt.to_file("henlo.csv")
         vars = []
         for attributes in graphing_set:
             vars.append(attributes["id"])
@@ -564,7 +567,6 @@ def plot_variables(pruned_ens=None, net=None, id=None, time_r=65, start=0, point
         print "Plotting trajectory set for %s" % id
         for quantile in quantiles:
             plot(times, quantile.get_var_traj(id), color)
-    print traj_set
     return traj_set
 
 
@@ -698,14 +700,14 @@ def save_to_temp(obj, file_name, xml_file, node, hash_id, routine="temp_file"):
     parent_name = os.path.basename(dir_name)
     print "Saving " + routine + " to file"
     model_name = xml_file.getroot().attrib['name']
-    save_folder = "\\saved_files\\" + routine +"-"+model_name+ "_" +str(hash_id)+ ".bp"
+    save_folder = "/saved_files/" + routine +"-"+model_name+ "_" +str(hash_id)+ ".bp"
     filename = dir_name+save_folder
 
-    relative_path="Example\\XML_Interface\\"+parent_name+save_folder
+    relative_path="Example/XML_Interface/"+parent_name+save_folder
     try:
         Utility.save(obj, filename)
     except IOError:
-        os.mkdir(dir_name+"\\saved_files\\")
+        os.mkdir(dir_name+"/saved_files/")
         Utility.save(obj, filename)
     node.set('path', relative_path)
     xml_file.write(file_name)
@@ -1016,7 +1018,6 @@ def ensemble_traj(current_root, routine_dict, result_dictionary, time_r, net, ne
 @check_to_save
 def trajectory_integration(result_dictionary, current_root, network_dictionary, file_name=None, **kwargs):
     # TODO: Break up into smaller functions
-    print "File_name: " +file_name
     try:
         traj_list = kwargs['loaded_object']
     except KeyError:
@@ -1025,7 +1026,6 @@ def trajectory_integration(result_dictionary, current_root, network_dictionary, 
     color_array = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
     color_pick = 0
     current_column = 0
-    print current_root.tag
     traj_count=0
     for root in current_root.iter("Graph"):
         columns = 0
@@ -1275,7 +1275,6 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
 def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference = None):
     result_dictionary = dict()
     network_dictionary = dict()
-    print "File name: " + file_name
     action_function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
                                   'ensembletrajectories': ensemble_traj, 'trajectory': trajectory_integration,
                                   'hessian': hessian}
@@ -1388,6 +1387,7 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
             # except KeyError as e:
             #     logger.warn("No function associated with action tag %s" % child.tag)
             #     logger.warn(e)
+    time.sleep(2)
     show()
         # plot_histograms(pruned, ['r3', 'tao'], params)
         # show()
