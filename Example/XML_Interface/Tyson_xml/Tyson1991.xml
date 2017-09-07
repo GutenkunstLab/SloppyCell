@@ -1,6 +1,6 @@
 <Scell name="Tyson1991">
     <References>
-        <Data path="Example\XML_Interface\Tyson_xml\Tyson1991_data.csv" />
+        <Data path="Example/XML_Interface/Tyson_xml/Tyson1991_data.csv" />
 		<SBML path="Example/Tyson_1991/BIOMD0000000005.xml" />
     </References>
     <Networks>

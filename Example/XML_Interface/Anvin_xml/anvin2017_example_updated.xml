@@ -1,7 +1,7 @@
 <Scell name="Anvin2017">
     <References>
-        <SBML path=".\Example\Anvin_2017\Updated_LOV_zdk.xml" />
-        <Data path=".\Example\Anvin_2017\VCell_data_scaled.csv" />
+        <SBML path="./Example/Anvin_2017/Updated_LOV_zdk.xml" />
+        <Data path="./Example/Anvin_2017/VCell_data_scaled.csv" />
     </References>
     <Networks>
         <Network from_file="true" id="base" />
@@ -40,5 +40,4 @@
         </EnsembleTrajectories>
 
     </Actions>
-
-<saved_files><base path="Example\XML_Interface\Anvin_xml\saved_files\base-Anvin2017_1287109298.bp" /></saved_files></Scell>
+</Scell>
