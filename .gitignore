@@ -14,7 +14,6 @@ diff.pickle
 *.out
 *.synctex.gz
 *.toc
-Doc/*/*.pdf
 *.bp
 Example/Tyson_1991/*.png
 Example/Tyson_1991/*.tex
