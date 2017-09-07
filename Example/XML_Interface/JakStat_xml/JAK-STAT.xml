@@ -1,6 +1,6 @@
-<Scell>
+<Scell name="JakStat">
 	<References>
-		<Data path="Example/XML_Interface/jak_data.csv" />
+		<Data path="Example\XML_Interface\JakStat_xml\JAK-STAT_data.csv" />
 		<SBML path="Example/jak-stat/JAK-STAT_SC.xml" />
 	</References>
 	<Parameters>
@@ -47,4 +47,4 @@
             </Variables>
         </EnsembleTrajectories>
     </Actions>
-<hash><optimization path="..\temp\Optimization_999672296.bp" /><ensemble path="..\temp\Ensemble_1785690891.bp" /><ensembletrajectories path="..\temp\EnsembleTrajectories_-35621508.bp" /></hash></Scell>
+<saved_files><optimization path="Example\XML_Interface\JakStat_Xml\saved_files\Optimization-JakStat_999672296.bp" /><ensemble path="Example\XML_Interface\JakStat_Xml\saved_files\Ensemble-JakStat_1785690891.bp" /><ensembletrajectories path="Example\XML_Interface\JakStat_Xml\saved_files\EnsembleTrajectories-JakStat_-35621508.bp" /></saved_files></Scell>

@@ -120,7 +120,7 @@ def read_from_file(file_name):
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
-    read_from_file(r'C:\Users\Keeyan\Desktop\sloppyTest\sloppycell-git\sloppycell-git\Example\XML_Interface\Leloup1999.xml')
+    read_from_file(r'C:\Users\Keeyan\Desktop\sloppyTest\sloppycell-git\sloppycell-git\Example\XML_Interface\Brown_xml\Brown2004.xml')
     files = []
     for file in os.listdir(os.curdir):
         if file.endswith(".pyd"):

@@ -1,6 +1,6 @@
-<Scell>
+<Scell name="Ueda2002">
     <References>
-        <SBML path="Example\gutenkunst2007\Ueda_2001\BIOMD0000000022.xml" />
+        <SBML path=".\Example\gutenkunst2007\Ueda_2001\BIOMD0000000022.xml" />
     </References>
     <Networks>
         <Network from_file="True" id="net1">
@@ -96,4 +96,4 @@
             </Graph>
         </Trajectory>
     </Actions>
-<hash><net1 path="..\temp\net1_1007437638.bp" /><per01 path="..\temp\per01_562085781.bp" /><dclkjrk path="..\temp\dClkJrk_780484845.bp" /><double path="..\temp\double_-464530020.bp" /><cper path="..\temp\cper_-1206475123.bp" /><trajectory path="..\temp\Trajectory_-1347107957.bp" /></hash></Scell>
+</Scell>
