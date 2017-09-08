@@ -3,7 +3,7 @@ SloppyCell
 
 SloppyCell is a software environment for simulation and analysis of biomolecular networks. A particular strength of SloppyCell is estimating parameters by fitting experimental data and then calculating the resulting uncertainties on parameter values and model predictions.
 
-SloppyCell was initially developed by Ryan Gutenkunst in the research group of `Jim Sethna <http://sethna.lassp.cornell.edu/>`_. Ryan now has his `own group <http://gutengroup.mcb.arizona.edu>`_, where SloppyCell continues to be developed. Most recently, an XML interface was been developed in collaboration with `Michael Blinov <http://apache.cam.uchc.edu/mblinov/>`_ , to facilitate integration with other modeling frameworks, such as `The Virtual Cell <http://vcell.org>`_.
+SloppyCell was initially developed by Ryan Gutenkunst in the research group of `Jim Sethna <http://sethna.lassp.cornell.edu/>`_. Ryan now has his `own group <http://gutengroup.mcb.arizona.edu>`_, where SloppyCell continues to be developed. Most recently, an XML interface was been developed in collaboration with `Michael Blinov <http://apache.cam.uchc.edu/mblinov/>`_, to facilitate integration with other modeling frameworks, such as `The Virtual Cell <http://vcell.org>`_.
 
 Features
 --------
