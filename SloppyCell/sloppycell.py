@@ -34,7 +34,8 @@ parser = argparse.ArgumentParser(description='Accept SloppyCell inputs')
 # >default< is the value the flag returns if it is not specified at all.
 parser.add_argument('-i', type=str, dest='input_file', action='store', help='Specify input file location',
                     nargs='?', default='unspecified')
-parser.add_argument('-o', type=str, dest='output_file', action='store', help='Specify output directory location')
+parser.add_argument('-o', type=str, dest='output_file', action='store', help='Specify output directory location',
+                    nargs='?', default='unspecified')
 parser.add_argument('--create', dest='file_creation', help='Create an .scell file.  Overrides other options.',
                     nargs='?', const=True, default=False)
 
@@ -43,4 +44,4 @@ output_v = parser.parse_args().output_file
 file_create = parser.parse_args().file_creation
 print input_v
 if input_v is not 'unspecified':
-    ScellParser.read_from_file(input_v)
+    ScellParser.read_from_file(input_v, output_v)

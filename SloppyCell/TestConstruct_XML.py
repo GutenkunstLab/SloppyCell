@@ -696,12 +696,17 @@ def save_to_temp(obj, file_name, xml_file, node, hash_id, routine="temp_file"):
     :param routine: The name of the action routine, 
     :return: Doesn't return anything.
     """
-    dir_name = os.path.dirname(file_name)
-    print dir_name
+    root = xml_file.getroot()
 
+    output = root.find("saved_files").attrib["path"]
+    if output is not None:
+        dir_name = output
+    else:
+        dir_name = os.path.dirname(file_name)
+    print dir_name
     parent_name = os.path.basename(dir_name)
     print "Saving " + routine + " to file"
-    model_name = xml_file.getroot().attrib['name']
+    model_name = root.attrib['name']
     save_folder = "/saved_files/" + routine +"-"+model_name+ "_" +str(hash_id)+ ".bp"
     filename = dir_name+save_folder
 
@@ -1274,9 +1279,7 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
     return network
 
 
-def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference = None):
-    print "Current dir"
-    print os.getcwd()
+def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference = None, output_location=None):
     result_dictionary = dict()
     network_dictionary = dict()
     action_function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
@@ -1298,7 +1301,8 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     if hash_node is None:
         hash_node = ET.Element('saved_files')
         root.append(hash_node)
-
+    if output_location is not "unspecified":
+        hash_node.set("path",output_location)
     # TODO: Build a tree of dependents so that we don't load from file when a dependent changes.
     # TODO: Don't include "independent" operations when calculating hash so that changing them has no effect
     action_root = root.find("Actions")

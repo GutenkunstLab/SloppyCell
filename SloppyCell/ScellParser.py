@@ -91,7 +91,7 @@ def experiment_constructor(data_file, sbml_reference):
         logger.warn('Selected data file type not supported.')
 
 
-def read_from_file(file_name):
+def read_from_file(file_name, output_location):
 
     if file_name.lower().endswith('.xml'):
         xml_file = ET.parse(file_name)
@@ -114,10 +114,11 @@ def read_from_file(file_name):
             print e
         if experiment is not None:
             TestConstruct_XML.make_happen(root, experiment={experiment.GetName(): experiment},
-                                          xml_file=xml_file, file_name=file_name, sbml_reference=sbml_reference)
+                                          xml_file=xml_file, file_name=file_name, sbml_reference=sbml_reference,
+                                          output_location=output_location)
         else:
             TestConstruct_XML.make_happen(root, None, xml_file=xml_file, file_name=file_name,
-                                          sbml_reference=sbml_reference)
+                                          sbml_reference=sbml_reference, output_location=output_location)
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
