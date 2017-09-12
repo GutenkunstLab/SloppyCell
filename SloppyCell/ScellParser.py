@@ -92,6 +92,7 @@ def experiment_constructor(data_file, sbml_reference):
 
 
 def read_from_file(file_name):
+
     if file_name.lower().endswith('.xml'):
         xml_file = ET.parse(file_name)
         root = xml_file.getroot()
@@ -120,7 +121,7 @@ def read_from_file(file_name):
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
-    read_from_file(r'C:\Users\Keeyan\Desktop\sloppyTest\sloppycell-git\sloppycell-git\Example\XML_Interface\Brown_xml\Brown2004.xml')
+    read_from_file(r'C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Leloup_xml\Leloup1999.xml')
     files = []
     for file in os.listdir(os.curdir):
         if file.endswith(".pyd"):

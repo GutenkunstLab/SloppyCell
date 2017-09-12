@@ -420,7 +420,7 @@ def plot_traj(traj_dict, network_dictionary, id_list, attributes, id=None,
         parent_name = os.path.basename(dir_name)
         hash_id = 0
         hash_id = id_list[0]+"_"+str(upper_bound)+"_"+str(len(id_list))
-        traj.to_file("Example/XML_Interface/"+parent_name+"/saved_files/Traj_"+network_id+"_"+hash_id+".csv")
+        traj.to_file(dir_name+"/saved_files/Traj_"+network_id+"_"+hash_id+".csv")
     return traj, lower_bound, upper_bound, semilogged, a, agg
 
 
@@ -697,13 +697,15 @@ def save_to_temp(obj, file_name, xml_file, node, hash_id, routine="temp_file"):
     :return: Doesn't return anything.
     """
     dir_name = os.path.dirname(file_name)
+    print dir_name
+
     parent_name = os.path.basename(dir_name)
     print "Saving " + routine + " to file"
     model_name = xml_file.getroot().attrib['name']
     save_folder = "/saved_files/" + routine +"-"+model_name+ "_" +str(hash_id)+ ".bp"
     filename = dir_name+save_folder
 
-    relative_path="Example/XML_Interface/"+parent_name+save_folder
+    relative_path=dir_name+save_folder
     try:
         Utility.save(obj, filename)
     except IOError:
@@ -1273,6 +1275,8 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
 
 
 def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference = None):
+    print "Current dir"
+    print os.getcwd()
     result_dictionary = dict()
     network_dictionary = dict()
     action_function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
