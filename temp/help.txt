@@ -1,1 +1,0 @@
-The directory won't push without having something in it
