@@ -12,7 +12,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # Adds root directory to path
 import argparse
-import ScellParser
+import SloppyCell.ScellParser
 import logging
 logger = logging.getLogger('Command')
 
@@ -44,4 +44,4 @@ output_v = parser.parse_args().output_file
 file_create = parser.parse_args().file_creation
 print input_v
 if input_v is not 'unspecified':
-    ScellParser.read_from_file(input_v, output_v)
+    SloppyCell.ScellParser.read_from_file(input_v, output_v)

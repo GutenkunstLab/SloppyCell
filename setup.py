@@ -36,6 +36,7 @@ core.setup(name='SloppyCell',
                         'Programming Language :: C',
                         'Topic :: Scientific/Engineering :: Bio-Informatics'
                        ],
+           scripts=['SloppyCell/sloppycell.py'],
            keywords='systems biology, sloppy modeling',
            requires=['scipy', 'numpy', 'matplotlib'],
            install_requires=['numpy', 'scipy'],
