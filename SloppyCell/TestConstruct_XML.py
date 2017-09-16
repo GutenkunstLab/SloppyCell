@@ -697,8 +697,10 @@ def save_to_temp(obj, file_name, xml_file, node, hash_id, routine="temp_file"):
     :return: Doesn't return anything.
     """
     root = xml_file.getroot()
-
-    output = root.find("saved_files").attrib["path"]
+    try:
+        output = root.find("saved_files").attrib["path"]
+    except KeyError:
+        output = None
     if output is not None:
         dir_name = output
     else:
@@ -1395,6 +1397,7 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
             # except KeyError as e:
             #     logger.warn("No function associated with action tag %s" % child.tag)
             #     logger.warn(e)
+    print "All routines complete, showing graphs"
     time.sleep(2)
     show()
         # plot_histograms(pruned, ['r3', 'tao'], params)

@@ -91,7 +91,7 @@ def experiment_constructor(data_file, sbml_reference):
         logger.warn('Selected data file type not supported.')
 
 
-def read_from_file(file_name, output_location):
+def read_from_file(file_name, output_location=None):
 
     if file_name.lower().endswith('.xml'):
         xml_file = ET.parse(file_name)
