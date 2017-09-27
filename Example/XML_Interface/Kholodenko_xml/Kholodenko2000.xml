@@ -1,6 +1,6 @@
 <Scell name="Kholondenko2000">
     <References>
-        <SBML path=".\Example\gutenkunst2007\Kholodenko_2000\BIOMD0000000010.xml" />
+        <SBML path="../../gutenkunst2007/Kholodenko_2000/BIOMD0000000010.xml" />
     </References>
     <Networks>
         <Network from_file="True" id="base">
@@ -48,4 +48,5 @@
             </Graph>
         </Trajectory>
     </Actions>
-</Scell>
+
+<saved_files><base path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Kholodenko_xml/saved_files/base-Kholondenko2000_-1621604737.bp" /><cooperative path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Kholodenko_xml/saved_files/cooperative-Kholondenko2000_107366587.bp" /><trajectory path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Kholodenko_xml/saved_files/Trajectory-Kholondenko2000_1282975483.bp" /></saved_files></Scell>

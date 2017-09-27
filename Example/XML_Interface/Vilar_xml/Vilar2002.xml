@@ -1,6 +1,6 @@
 <Scell name="Vilar2002">
     <References>
-        <SBML path="./Example/gutenkunst2007/Vilar_2002/BIOMD0000000035.xml" />
+        <SBML path="../../gutenkunst2007/Vilar_2002/BIOMD0000000035.xml" />
 
     </References>
     <Networks>

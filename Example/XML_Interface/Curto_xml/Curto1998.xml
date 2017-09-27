@@ -1,6 +1,6 @@
 <Scell name="Curto1998">
     <References>
-        <SBML path="./Example/gutenkunst2007/Curto_1998/BIOMD0000000015.xml" />
+        <SBML path="../../gutenkunst2007/Curto_1998/BIOMD0000000015.xml" />
     </References>
     <Networks>
         <Network from_file="True" id="base">

@@ -1,6 +1,6 @@
 <Scell name="Brown2004">
     <References>
-        <SBML path="./Example/gutenkunst2007/Brown_2004_All_One/BIOMD0000000033.xml" />
+        <SBML path="../../Gutenkunst2007/Brown_2004_All_One/BIOMD0000000033.xml" />
     </References>
     <Networks>
         <Network compile="True" from_file="True" id="base">
@@ -92,4 +92,4 @@
             </Graph>
         </Trajectory>
     </Actions>
-</Scell>
+<saved_files><base path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Brown_xml/saved_files/base-Brown2004_-672843966.bp" /><egf-stim path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Brown_xml/saved_files/EGF-stim-Brown2004_-244505197.bp" /><ngf-stim path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Brown_xml/saved_files/NGF-stim-Brown2004_1361702647.bp" /><egf-ly path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Brown_xml/saved_files/EGF-LY-Brown2004_109906822.bp" /><ngf-ly path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Brown_xml/saved_files/NGF-LY-Brown2004_-2027482568.bp" /><ngf-dn-rap1 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Brown_xml/saved_files/NGF-DN-Rap1-Brown2004_348875977.bp" /><ngf-dn-ras path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Brown_xml/saved_files/NGF-DN-Ras-Brown2004_1184687576.bp" /><trajectory path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Brown_xml/saved_files/Trajectory-Brown2004_274261901.bp" /></saved_files></Scell>

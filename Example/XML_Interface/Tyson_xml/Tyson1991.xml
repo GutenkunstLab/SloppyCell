@@ -1,7 +1,7 @@
 <Scell name="Tyson1991">
     <References>
-        <Data path="Example/XML_Interface/Tyson_xml/Tyson1991_data.csv" />
-		<SBML path="Example/Tyson_1991/BIOMD0000000005.xml" />
+        <Data path="Tyson1991_data.csv" />
+		<SBML path="../../Tyson_1991/BIOMD0000000005.xml" />
     </References>
     <Networks>
         <Network from_file="True" id="base">
@@ -130,4 +130,4 @@
     </Actions>
 
 
-<saved_files><base path="Example\XML_Interface\Tyson_xml\saved_files\base-Tyson1991_2035244572.bp" /><perturbed path="Example\XML_Interface\Tyson_xml\saved_files\perturbed-Tyson1991_1527684867.bp" /><growth path="Example\XML_Interface\Tyson_xml\saved_files\growth-Tyson1991_-1555107781.bp" /><mine path="Example\XML_Interface\Tyson_xml\saved_files\mine-Tyson1991_806341540.bp" /><trajectory path="Example\XML_Interface\Tyson_xml\saved_files\Trajectory-Tyson1991_-2090263372.bp" /><optimization path="Example\XML_Interface\Tyson_xml\saved_files\Optimization-Tyson1991_86996795.bp" /><hessian path="Example\XML_Interface\Tyson_xml\saved_files\Hessian-Tyson1991_-916073474.bp" /><ensemble path="Example\XML_Interface\Tyson_xml\saved_files\Ensemble-Tyson1991_-1185028736.bp" /><ensembletrajectories path="Example\XML_Interface\Tyson_xml\saved_files\EnsembleTrajectories-Tyson1991_1578735628.bp" /></saved_files></Scell>
+<saved_files><base path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Tyson_xml/saved_files/base-Tyson1991_2035244572.bp" /><perturbed path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Tyson_xml/saved_files/perturbed-Tyson1991_1527684867.bp" /><growth path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Tyson_xml/saved_files/growth-Tyson1991_-1555107781.bp" /><mine path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Tyson_xml/saved_files/mine-Tyson1991_806341540.bp" /><trajectory path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Tyson_xml/saved_files/Trajectory-Tyson1991_-2090263372.bp" /><optimization path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Tyson_xml/saved_files/Optimization-Tyson1991_86996795.bp" /><hessian path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\XML_Interface\Tyson_xml/saved_files/Hessian-Tyson1991_-916073474.bp" /><ensemble path="Example\XML_Interface\Tyson_xml\saved_files\Ensemble-Tyson1991_-1185028736.bp" /><ensembletrajectories path="Example\XML_Interface\Tyson_xml\saved_files\EnsembleTrajectories-Tyson1991_1578735628.bp" /></saved_files></Scell>

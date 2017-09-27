@@ -1,6 +1,6 @@
 <Scell name="Leloup1999">
     <References>
-        <SBML path="Example/gutenkunst2007/Leloup_1999/BIOMD0000000021.xml" />
+        <SBML path="../../gutenkunst2007/Leloup_1999/BIOMD0000000021.xml" />
 
     </References>
     <Networks>
@@ -155,4 +155,4 @@
             </Graph>
         </Trajectory>
     </Actions>
-<saved_files><base path="Example\XML_Interface\Leloup_xml\saved_files\base-Leloup1999_-67148303.bp" /><net2 path="Example\XML_Interface\Leloup_xml\saved_files\net2-Leloup1999_2147227257.bp" /><net3 path="Example\XML_Interface\Leloup_xml\saved_files\net3-Leloup1999_-857320625.bp" /><net4 path="Example\XML_Interface\Leloup_xml\saved_files\net4-Leloup1999_-1232876203.bp" /><net5 path="Example\XML_Interface\Leloup_xml\saved_files\net5-Leloup1999_2126315414.bp" /><net6 path="Example\XML_Interface\Leloup_xml\saved_files\net6-Leloup1999_602068072.bp" /><net7 path="Example\XML_Interface\Leloup_xml\saved_files\net7-Leloup1999_1142574737.bp" /><trajectory path="Example\XML_Interface\Leloup_xml\saved_files\Trajectory-Leloup1999_1358809581.bp" /></saved_files></Scell>
+<saved_files path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp"><base path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/base-Leloup1999_-67148303.bp" /><net2 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/net2-Leloup1999_2147227257.bp" /><net3 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/net3-Leloup1999_-857320625.bp" /><net4 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/net4-Leloup1999_-1232876203.bp" /><net5 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/net5-Leloup1999_2126315414.bp" /><net6 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/net6-Leloup1999_602068072.bp" /><net7 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/net7-Leloup1999_1142574737.bp" /><trajectory path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/Trajectory-Leloup1999_1358809581.bp" /></saved_files></Scell>

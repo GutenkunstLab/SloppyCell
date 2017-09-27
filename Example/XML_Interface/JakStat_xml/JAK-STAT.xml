@@ -1,7 +1,7 @@
 <Scell name="JakStat">
 	<References>
-		<Data path="../Example/XML_Interface/JakStat_xml/JAK-STAT_data.csv" />
-		<SBML path="../Example/jak-stat/JAK-STAT_SC.xml" />
+		<Data path="JAK-STAT_data.csv" />
+		<SBML path="../../jak-stat/JAK-STAT_SC.xml" />
 	</References>
 	<Parameters>
 		<Fit>
