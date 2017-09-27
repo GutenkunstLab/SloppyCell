@@ -5,9 +5,9 @@ Author @Keeyan
 
 Parses XML file, creates experiment
 """
+import os
 import csv
 import logging
-import os
 from xml.etree import ElementTree as ET
 
 import TestConstruct_XML
@@ -99,9 +99,15 @@ def read_from_file(file_name, output_location=None):
         experiment = None
         try:
             sbml_reference = root.find("References").find("SBML").attrib['path']
+            dir = os.path.dirname(os.path.abspath(file_name))
+            #sbml_reference = os.path.relpath(sbml_reference,dir)
+            sbml_reference = os.path.normpath(os.path.join(dir,sbml_reference))
             try:
                 # TODO: Allow multiple data files for multiple experiments
                 data_reference = root.find("References").find("Data").attrib["path"]
+                dir = os.path.dirname(os.path.abspath(file_name))
+                #data_reference = os.path.relpath(data_reference, dir)
+                data_reference = os.path.normpath(os.path.join(dir, data_reference))
                 experiment, time_array = experiment_constructor(data_reference, sbml_reference)
             except AttributeError as e:
                 logger.warn('No data reference established, experiment cannot be constructed, SloppyCell will '
@@ -112,13 +118,14 @@ def read_from_file(file_name, output_location=None):
         except TypeError as e:
             logger.warn('No sbml reference established, model cannot be made.')
             print e
+
         if experiment is not None:
             TestConstruct_XML.make_happen(root, experiment={experiment.GetName(): experiment},
                                           xml_file=xml_file, file_name=file_name, sbml_reference=sbml_reference,
                                           output_location=output_location)
         else:
             TestConstruct_XML.make_happen(root, None, xml_file=xml_file, file_name=file_name,
-                                          sbml_reference=sbml_reference, output_location=output_location)
+                                         sbml_reference=sbml_reference, output_location=output_location)
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
