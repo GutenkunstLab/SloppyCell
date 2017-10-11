@@ -1,133 +1,139 @@
 <Scell name="Tyson1991">
-    <References>
-        <Data path="Tyson1991_data.csv" />
-		<SBML path="../Tyson_1991/BIOMD0000000005.xml" />
-    </References>
-    <Networks>
-        <Network from_file="True" id="base">
-            <Set_Constant>
-                <var id="cell" is_constant="True" />
-                <var id="EmptySet" is_constant="True" />
-            </Set_Constant>
-            <Set_Optimizable>
-                <var id="k5notP" is_optimizable="False" />
-                <var id="k2" is_optimizable="False" />
-            </Set_Optimizable>
-            <Add_Species>
-                <var compartment="cell" id="YT" name="total cyclin" />
-            </Add_Species>
-            <Add_Assignment>
-                <var id="YT" rhs="Y+YP+pM+M" />
-            </Add_Assignment>
-        </Network>
-        <Network copy="base" id="perturbed">
-            <Set_Initial>
-                <var id="k6" value="2.0" />
-            </Set_Initial>
-            <Set_Optimizable>
-                <var id="k6" is_optimizable="False" />
-            </Set_Optimizable>
-            <Start_Fixed max="1000" min="0" />
-            <Add_Event>
-                <event id="perturb1" trigger="gt(time, 10)">
-                    <assignment func="1.2*M" id="M" />
-                </event>
-                <event id="perturb2" trigger="gt(time, 30)">
-                    <assignment func="2*M" id="M" />
-                </event>
-                <event id="perturb3" trigger="gt(time, 60)">
-                    <assignment func="2.4*M" id="M" />
-                </event>
-            </Add_Event>
-        </Network>
-        <Network copy="base" id="growth">
-            <Add_Parameter>
-                <var id="Td" initial_value="116" />
-            </Add_Parameter>
-            <Add_Rate_Rule>
-                <var id="k6" rhs="-0.693 * k6/Td" />
-            </Add_Rate_Rule>
-            <Set_Initial>
-                <var id="k6" value="2.5" />
-            </Set_Initial>
-            <Add_Event>
-                <event id="gene_replication" trigger="lt(k6, 1.3)">
-                    <assignment func="2*k6" id="k6" />
-                </event>
-            </Add_Event>
-        </Network>
-        <Network copy="base" id="mine">
-            <Add_Species>
-                <var compartment="cell" id="killer" initial_conc="2.0" />
-                <var compartment="cell" id="killpM" initial_conc="0.0" />
-            </Add_Species>
-            <Add_Parameter>
-                <var id="kf_kpM" initial_value="1.0" />
-            </Add_Parameter>
-            <Add_Reaction>
-                <var A="pM" B="killer" dimer="killpM" id="kill_pM_binding" rate="kf_kpM" reaction="HeterodimerizationReaction" />
-                <var id="killer_degredation" kinetic_law="0.1*killer * sin(time/25)" stoich_val="-1" stoich_var="killer" />
-            </Add_Reaction>
-        </Network>
-    </Networks>
-    <Model>
-        <experiment id="Tyson1991_data" />
-        <network id="base" />
-        <network id="growth" />
-    </Model>
-    <Parameters>
-        <parameter id="all">
-            <prior width="10" />
-        </parameter>
-    </Parameters>
-    <Actions>
-        <Trajectory>
-            <Graph>
-                <traj net="base" upper_bound="100">
-                    <subplot>
-                        <var id="YT" />
-                        <var id="M" />
-                    </subplot>
-                </traj>
-                <traj net="perturbed" upper_bound="100">
-                    <subplot logy="True">
-                        <var id="M" />
-                        <var id="YT" />
-                    </subplot>
-                </traj>
-                <traj net="growth" upper_bound="500">
-                    <subplot>
-                        <var id="k6" />
-                    </subplot>
-                    <subplot>
-                        <var id="M" />
-                        <var id="YT" />
-                    </subplot>
-                </traj>
-            </Graph>
-            <traj net="mine" upper_bound="100" />
-        </Trajectory>
-        <Optimization initial_cost="True" plot_after="True" plot_before="True">
-            <opt type="Levenburg-Marquardt Least Square">
-                <opt type="Nelder-Mead" xtol="1e-2" />
-            </opt>
-        </Optimization>
-        <Hessian eps="1e-4" log="True">
+  <References>
+    <Data path="Tyson1991_data.csv" />
+    <SBML path="../Tyson_1991/BIOMD0000000005.xml" />
+  </References>
+  <Networks>
+    <Network from_file="True" id="base">
+      <Set_Constant>
+        <var id="cell" is_constant="True" />
+        <var id="EmptySet" is_constant="True" />
+      </Set_Constant>
+      <Set_Optimizable>
+        <var id="k5notP" is_optimizable="False" />
+        <var id="k2" is_optimizable="False" />
+      </Set_Optimizable>
+      <Add_Species>
+        <var compartment="cell" id="YT" name="total cyclin" />
+      </Add_Species>
+      <Add_Assignment>
+        <var id="YT" rhs="Y+YP+pM+M" />
+      </Add_Assignment>
+    </Network>
+    <Network copy="base" id="perturbed">
+      <Set_Initial>
+        <var id="k6" value="2.0" />
+      </Set_Initial>
+      <Set_Optimizable>
+        <var id="k6" is_optimizable="False" />
+      </Set_Optimizable>
+      <Start_Fixed max="1000" min="0" />
+      <Add_Event>
+        <event id="perturb1" trigger="gt(time, 10)">
+          <assignment func="1.2*M" id="M" />
+        </event>
+        <event id="perturb2" trigger="gt(time, 30)">
+          <assignment func="2*M" id="M" />
+        </event>
+        <event id="perturb3" trigger="gt(time, 60)">
+          <assignment func="2.4*M" id="M" />
+        </event>
+      </Add_Event>
+    </Network>
+    <Network copy="base" id="growth">
+      <Add_Parameter>
+        <var id="Td" initial_value="116" />
+      </Add_Parameter>
+      <Add_Rate_Rule>
+        <var id="k6" rhs="-0.693 * k6/Td" />
+      </Add_Rate_Rule>
+      <Set_Initial>
+        <var id="k6" value="2.5" />
+      </Set_Initial>
+      <Add_Event>
+        <event id="gene_replication" trigger="lt(k6, 1.3)">
+          <assignment func="2*k6" id="k6" />
+        </event>
+      </Add_Event>
+    </Network>
+    <Network copy="base" id="mine">
+      <Add_Species>
+        <var compartment="cell" id="killer" initial_conc="2.0" />
+        <var compartment="cell" id="killpM" initial_conc="0.0" />
+      </Add_Species>
+      <Add_Parameter>
+        <var id="kf_kpM" initial_value="1.0" />
+      </Add_Parameter>
+      <Add_Reaction>
+        <var A="pM" B="killer" dimer="killpM" id="kill_pM_binding" rate="kf_kpM" reaction="HeterodimerizationReaction" />
+        <var id="killer_degredation" kinetic_law="0.1*killer * sin(time/25)" stoich_val="-1" stoich_var="killer" />
+      </Add_Reaction>
+    </Network>
+  </Networks>
+  <Model>
+    <experiment id="Tyson1991_data" />
+    <network id="base" />
+    <network id="growth" />
+  </Model>
+  <Parameters>
+    <parameter id="all">
+      <prior width="10" />
+    </parameter>
+  </Parameters>
+  <Actions>
+    <Trajectory>
+      <Graph>
+        <traj net="base" upper_bound="100">
+          <subplot>
+            <var id="YT" />
+            <var id="M" />
+          </subplot>
+        </traj>
+        <traj net="perturbed" upper_bound="100">
+          <subplot logy="True">
+            <var id="M" />
+            <var id="YT" />
+          </subplot>
+        </traj>
+        <traj net="growth" upper_bound="500">
+          <subplot>
+            <var id="k6" />
+          </subplot>
+          <subplot>
+            <var id="M" />
+            <var id="YT" />
+          </subplot>
+        </traj>
+      </Graph>
+      <traj net="mine" upper_bound="100" />
+    </Trajectory>
+    <Optimization initial_cost="True" plot_after="True" plot_before="True">
+      <opt type="Levenburg-Marquardt Least Square">
+        <opt type="Nelder-Mead" xtol="1e-2" />
+      </opt>
+    </Optimization>
+    <Hessian eps="1e-4" log="True">
         </Hessian>
-        <Ensemble autocorrelate="True" max_run_hours=".1666666" prune="10" steps="5000">
+    <Ensemble autocorrelate="True" max_run_hours=".1666666" prune="10" steps="5000">
         </Ensemble>
-        <EnsembleTrajectories net="growth" points="200" time="500">
-            <Variables>
-                <Graph net_ensemble="True">
-                    <species id="CP" />
-                    <species id="M" />
-                </Graph>
-            </Variables>
-
-
-        </EnsembleTrajectories>
-
-    </Actions>
-
-
-<saved_files path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp"><base path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/base-Tyson1991_2035244572.bp" /><perturbed path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/perturbed-Tyson1991_1527684867.bp" /><growth path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/growth-Tyson1991_-1555107781.bp" /><mine path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/mine-Tyson1991_806341540.bp" /><trajectory path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/Trajectory-Tyson1991_-2090263372.bp" /><optimization path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/Optimization-Tyson1991_86996795.bp" /><hessian path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\temp/saved_files/Hessian-Tyson1991_-916073474.bp" /></saved_files></Scell>
+    <EnsembleTrajectories net="growth" points="200" time="500">
+      <Variables>
+        <Graph net_ensemble="True">
+          <species id="CP" />
+          <species id="M" />
+        </Graph>
+      </Variables>
+    </EnsembleTrajectories>
+  </Actions>
+  <saved_files>
+    <base path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991/saved_files/base-Tyson1991_2035244572.bp" />
+    <perturbed path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991/saved_files/perturbed-Tyson1991_1527684867.bp" />
+    <growth path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991/saved_files/growth-Tyson1991_-1555107781.bp" />
+    <mine path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991/saved_files/mine-Tyson1991_806341540.bp" />
+    <trajectory path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991/saved_files/Trajectory-Tyson1991_-2090263372.bp" />
+    <optimization path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991/saved_files/Optimization-Tyson1991_86996795.bp" />
+    <hessian path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991/saved_files/Hessian-Tyson1991_-916073474.bp" />
+    <ensemble path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991/saved_files/Ensemble-Tyson1991_-1185028736.bp" />
+    <ensembletrajectories path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991/saved_files/EnsembleTrajectories-Tyson1991_1578735628.bp" />
+  </saved_files>
+</Scell>

@@ -21,7 +21,23 @@ logging.basicConfig()
 this_module = sys.modules[__name__]
 # Globally defined variables.  Should eventually be done away with.
 step_factor = 300
+saved_already = []
 
+
+def indent(elem, level=0):
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
 def findoutlier(a, sensitivity=3.5):
     third_quartile = scipy.percentile(a, 75)
@@ -538,7 +554,6 @@ def plot_variables(pruned_ens=None, net=None, id=None, time_r=65, start=0, point
         Plotting.figure()
         Plotting.plot_ensemble_trajs(bt, mt, st,
                                      vars=vars)
-        Plotting.show()
         traj_set = (bt, mt, st)
     else:
 
@@ -710,16 +725,28 @@ def save_to_temp(obj, file_name, xml_file, node, hash_id, routine="temp_file"):
     print "Output folder: " + dir_name
     model_name = root.attrib['name']
     save_folder = "/saved_files/" + routine +"-"+model_name+ "_" +str(hash_id)+ ".bp"
+
     filename = dir_name+save_folder
 
     relative_path=dir_name+save_folder
+    if not os.path.isdir(dir_name+"/saved_images"):
+        os.mkdir(dir_name+"/saved_images")
+    for i in plt.get_fignums():
+        if i not in saved_already:
+            saved_already.append(i)
+            Plotting.figure(i)
+            save_image_folder = '/saved_images/'+routine+"-"+model_name+'-figure%d.png' % i
+            Plotting.savefig(dir_name+save_image_folder)
     try:
         Utility.save(obj, filename)
     except IOError:
         os.mkdir(dir_name+"/saved_files/")
         Utility.save(obj, filename)
     node.set('path', relative_path)
+    root = xml_file.getroot()
+    indent(root)
     xml_file.write(file_name)
+
 
 
 def check_to_save(routine_function):
@@ -1284,6 +1311,7 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
 def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference = None, output_location=None):
     result_dictionary = dict()
     network_dictionary = dict()
+    file_name = os.path.abspath(file_name)
     action_function_dictionary = {'optimization': optimization, 'ensemble': ensemble, 'histogram': histogram_r,
                                   'ensembletrajectories': ensemble_traj, 'trajectory': trajectory_integration,
                                   'hessian': hessian}
@@ -1398,7 +1426,5 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
             #     logger.warn("No function associated with action tag %s" % child.tag)
             #     logger.warn(e)
     print "All routines complete, showing graphs"
+
     time.sleep(2)
-    show()
-        # plot_histograms(pruned, ['r3', 'tao'], params)
-        # show()
