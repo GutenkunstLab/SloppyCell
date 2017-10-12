@@ -133,13 +133,3 @@ def read_from_file(file_name, output_location=None):
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
     read_from_file(r'..\Example\Tyson_1991\Tyson1991.xml')
-    files = []
-    for file in os.listdir(os.curdir):
-        if file.endswith(".pyd"):
-            files.append(file)
-    for file in files:
-        try:
-            if file.endswith(".pyd") and "_daskr" not in file:
-                os.unlink(file)
-        except OSError:
-            print "Failed"
