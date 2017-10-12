@@ -13,6 +13,7 @@ import scipy
 import time
 from SloppyCell.ReactionNetworks import *
 from pylab import *
+import csv
 
 import Utility
 
@@ -473,7 +474,7 @@ def find_vars(root, tag, key, value):
 
 
 def construct_ensemble(params, m, result_dictionary, autocorrelate=False, steps=750, only_pruned=True, prune=1,
-                       network_dictionary = None, **kwargs):
+                       network_dictionary = None, file_name = None, **kwargs):
     try:
         hess = result_dictionary['hessian']
     except KeyError:
@@ -501,6 +502,15 @@ def construct_ensemble(params, m, result_dictionary, autocorrelate=False, steps=
     if prune == 0:
         prune = int(math.ceil(steps/float(250)))
     pruned_ens = ens[::int(prune)]
+    if file_name is not None:
+        dir_name = os.path.dirname(file_name)
+        csv_friendly_ens = asarray(pruned_ens)
+        with open(dir_name+"/saved_files/Ensemble_ens_"+str(steps)+".csv", 'wb') as myfile:
+            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+            print params.keys()
+            wr.writerow(params.keys())
+            for row in csv_friendly_ens:
+                wr.writerow(row)
     if only_pruned:
         if autocorrelate:
             return pruned_ens, ac
@@ -903,7 +913,7 @@ def optimization(routine_dict, model, params, current_root, **kwargs):
 
 
 @check_to_save
-def ensemble(routine_dict, result_dictionary, model, network_dictionary, **kwargs):
+def ensemble(routine_dict, result_dictionary, model, network_dictionary, file_name, **kwargs):
     """
     Action routine for ensemble construction.  Checks if an ensemble has been loaded, and if not, checks if the 
     optimized parameters have been calculated.
@@ -932,12 +942,13 @@ def ensemble(routine_dict, result_dictionary, model, network_dictionary, **kwarg
         autocorrelate = routine_dict.pop('autocorrelate')
         if autocorrelate:
             pruned_ens, ac = construct_ensemble(optimized_params, model, result_dictionary, autocorrelate=autocorrelate,
-                                            network_dictionary=network_dictionary, **routine_dict)
+                                                network_dictionary=network_dictionary, file_name=file_name,
+                                                **routine_dict)
             return {'pe': pruned_ens, 'ac': ac}
         else:
             raise KeyError
     except KeyError:
-        pruned_ens = construct_ensemble(optimized_params, model, result_dictionary, **routine_dict)
+        pruned_ens = construct_ensemble(optimized_params, model, result_dictionary, file_name=file_name, **routine_dict)
     return {'pe':pruned_ens}
 
 
@@ -1406,7 +1417,6 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
             params = model.get_params()
         else:
             params = None
-
     # This function is standalone and just tacks a residual onto anything that needs it
     if model is not None:
         add_residuals(root, model)
@@ -1425,6 +1435,6 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
             # except KeyError as e:
             #     logger.warn("No function associated with action tag %s" % child.tag)
             #     logger.warn(e)
-    print "All routines complete, showing graphs"
+    print "All routines complete"
 
     time.sleep(2)
