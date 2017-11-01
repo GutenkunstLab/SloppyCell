@@ -41,7 +41,7 @@ def experiment_constructor(data_file, sbml_reference):
     expt = Experiment(os.path.splitext(os.path.basename(data_file))[0])  # Experiment named after data file
     # expt = Experiment('expt1')
     if data_file.lower().endswith('.csv'):
-        with open(data_file) as csv_file:
+        with open(data_file, 'rU') as csv_file:
             reader_v = csv.DictReader(csv_file)
             field_list = reader_v.fieldnames
             # We assume the file is constructed with the format "Model,Time,Variable,Sigma,Variable,Sigma..."
@@ -132,4 +132,4 @@ def read_from_file(file_name, output_location=None):
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
-    read_from_file(r'..\Example\Tyson_1991\Tyson1991.xml')
+    read_from_file(r'C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Blinov\MultiApp-input.xml')
