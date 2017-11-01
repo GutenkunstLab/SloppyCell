@@ -1,0 +1,53 @@
+<Scell name="Tyson1991">
+  <References>
+    <Data path="data-windows.csv" />
+    <SBML path="Tutorial_MultiApp_L2v1_2.xml" />
+  </References>
+  <Networks>
+    <Network from_file="True" id="base">
+      <Set_Optimizable>
+        <var id="I" is_optimizable="False" />
+      </Set_Optimizable>
+    </Network>
+  </Networks>
+  <Model>
+    <experiment id="data-windows" />
+    <network id="base" />
+  </Model>
+  <Parameters>
+  </Parameters>
+  <Actions>
+    <Trajectory>
+      <Graph>
+        <traj net="base" upper_bound="100">
+          <subplot>
+            <var id="RanC_nuc" />
+            <var id="RanC_cyt" />
+            <var id="Ran_cyt" />
+          </subplot>
+        </traj>
+      </Graph>
+    </Trajectory>
+    <Optimization initial_cost="True" plot_after="True" plot_before="True">
+      <opt disp="False" maxiter="20" type="Levenburg-Marquardt" />
+    </Optimization>
+    <Ensemble autocorrelate="True" max_run_hours=".1666666" prune="10" steps="50">
+    </Ensemble>
+    <EnsembleTrajectories net="base" points="100" time="10">
+      <Variables>
+        <Graph net_ensemble="True">
+          <species id="RanC_nuc" />
+          <species id="RanC_cyt" />
+        </Graph>
+      </Variables>
+    </EnsembleTrajectories>
+  </Actions>
+  <saved_files>
+    <base path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Blinov/saved_files/base-Tyson1991_-1351886630.bp" />
+    <trajectory path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Blinov/saved_files/Trajectory-Tyson1991_-1292787853.bp" />
+    <optimization path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Blinov/saved_files/Optimization-Tyson1991_1034989268.bp" />
+    <hessian path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Blinov/saved_files/Hessian-Tyson1991_-916073474.bp" />
+    <ensemble path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Blinov/saved_files/Ensemble-Tyson1991_371490110.bp" />
+    <ensembletrajectories path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Blinov/saved_files/EnsembleTrajectories-Tyson1991_1042185447.bp" />
+  </saved_files>
+</Scell>
