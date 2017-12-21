@@ -6,7 +6,9 @@ See also addAssignmentRulesToFunctionBody in ReactionNetworks/Network_mod.py
 """
 import scipy
 
-if int(scipy.__version__.split('.')[1]) < 4:
+from pkg_resources import parse_version
+
+if parse_version(scipy.__version__) < parse_version('0.5.1'):
     # Type names have changed
     scipy.float_ = scipy.Float
     scipy.float64 = scipy.Float64
