@@ -56,7 +56,7 @@ def experiment_constructor(data_file, sbml_reference):
             for line in reader_v:
                 for field in field_list:
                     decoded_field = field.decode("utf-8-sig").encode("utf-8")
-                    if decoded_field.lower() == 'model':
+                    if decoded_field.lower() == 'network':
                         if line[field] is not '':
                             current_model = line[field]
                     elif decoded_field.lower() == 'time' or decoded_field.lower() == 't':
@@ -132,4 +132,4 @@ def read_from_file(file_name, output_location=None):
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
-    read_from_file(r'C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Blinov\MultiApp-input.xml')
+    read_from_file(r'C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991\Tyson1991.xml')

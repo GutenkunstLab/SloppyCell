@@ -1,4 +1,4 @@
-﻿Model,Time,M,SigmaM,CP,SigmaCP
+﻿Network,Time,M,SigmaM,CP,SigmaCP
 base,10,0.2,0.1,,
 ,20,0.05,0.03,,
 ,45,0.2,0.1,1.2,0.2

@@ -33,11 +33,10 @@ parser = argparse.ArgumentParser(description='Accept SloppyCell inputs')
 # >const< is the value the flag returns if it is specified but nothing is put after it (no arguments given)
 # >default< is the value the flag returns if it is not specified at all.
 parser.add_argument('-i', type=str, dest='input_file', action='store', help='Specify input file location',
-                    nargs='?', default='unspecified')
+                    default='unspecified')
 parser.add_argument('-o', type=str, dest='output_file', action='store', help='Specify output directory location',
-                    nargs='?', default='unspecified')
-parser.add_argument('--create', dest='file_creation', help='Create an .scell file.  Overrides other options.',
-                    nargs='?', const=True, default=False)
+                    default='unspecified')
+
 
 input_v = parser.parse_args().input_file
 output_v = parser.parse_args().output_file

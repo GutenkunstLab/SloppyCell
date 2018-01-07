@@ -488,6 +488,7 @@ def construct_ensemble(params, m, result_dictionary, autocorrelate=False, steps=
 
     Network.full_speed()
     print 'Beginning ensemble calculation.'
+    print(params)
     ens, gs, r = Ensembles.ensemble_log_params(m, params, steps=steps, **kwargs)
 
     print 'Finished ensemble calculation.'
@@ -564,6 +565,7 @@ def plot_variables(pruned_ens=None, net=None, id=None, time_r=65, start=0, point
         Plotting.figure()
         Plotting.plot_ensemble_trajs(bt, mt, st,
                                      vars=vars)
+        Plotting.title("Ensemble Trajectory")
         traj_set = (bt, mt, st)
     else:
 
@@ -893,6 +895,7 @@ def optimization(routine_dict, model, params, current_root, **kwargs):
     optimization procedure.
     :return: the optimized parameters are returned and passed back to the decorator
     """
+    print(params)
     try:
         loaded_object = kwargs['loaded_object']
         optimized_params = loaded_object['params']
