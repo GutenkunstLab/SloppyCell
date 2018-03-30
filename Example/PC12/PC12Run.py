@@ -2,7 +2,6 @@ from SloppyCell.ReactionNetworks import *
 
 import Nets
 import Experiments as Expts
-from min5_wFinal import min5_wFinal_params
 
 m = Model([Expts.ErkMekTraverse2EGF.expt,
            Expts.Raf1LandrethEGF.expt,
@@ -22,10 +21,6 @@ m = Model([Expts.ErkMekTraverse2EGF.expt,
            Nets.EGFRx50_EGFstim100,
            ])
 
-params = KeyedList(min5_wFinal_params)
-params.setOrder(m.get_params().keys())
-
-m.compile()
-
+params = m.get_params()
 c = m.cost(params)
 print('Cost: {0:.5f}, should be ~39.9105'.format(c))
