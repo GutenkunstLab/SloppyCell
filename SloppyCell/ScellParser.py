@@ -9,7 +9,7 @@ import os
 import csv
 import logging
 from xml.etree import ElementTree as ET
-
+import pandas as pd
 import TestConstruct_XML
 from SloppyCell.ReactionNetworks import *
 
@@ -40,55 +40,43 @@ def experiment_constructor(data_file, sbml_reference):
         return None
     expt = Experiment(os.path.splitext(os.path.basename(data_file))[0])  # Experiment named after data file
     # expt = Experiment('expt1')
+    time_array = []
+    expt_dict = {}
     if data_file.lower().endswith('.csv'):
         with open(data_file, 'rU') as csv_file:
-            reader_v = csv.DictReader(csv_file)
-            field_list = reader_v.fieldnames
-            # We assume the file is constructed with the format "Model,Time,Variable,Sigma,Variable,Sigma..."
-            current_model = ''
-            time = 0
-            return_dictionary = {}
-            switch = True
-            data_name = []
-            value = []
-            sigma = []
-            time_array = []
-            for line in reader_v:
-                for field in field_list:
-                    decoded_field = field.decode("utf-8-sig").encode("utf-8")
-                    if decoded_field.lower() == 'network':
-                        if line[field] is not '':
-                            current_model = line[field]
-                    elif decoded_field.lower() == 'time' or decoded_field.lower() == 't':
-                        time = float(line[field])
-                    elif line[field] is not '':
-                        if switch:
-                            data_name.append(field)
-                            value.append(line[field])
-                            switch = False
-                        elif not switch:
-                            sigma.append(line[field])
-                            switch = True
-                for number in range(len(data_name)):
-                    s = (time, data_name[number], float(value[number]), float(sigma[number]))
-                    try:
-                        return_dictionary[current_model][s[1]][time] = (s[2],s[3])
-                        time_array.append(time)
-                    except KeyError:
-                        if current_model not in return_dictionary:
-                            return_dictionary[current_model] = {}
-                        if s[1] not in return_dictionary[current_model]:
-                            return_dictionary[current_model][s[1]] = {}
-                        return_dictionary[current_model][s[1]][time] = (s[2], s[3])
-                        time_array.append(time)
-                data_name = []
-                value = []
-                sigma = []
-            expt.set_data(return_dictionary)
-            return expt, time_array
+            db = pd.read_csv(csv_file)
+            new_col = db.columns.values
+            new_col[0] = new_col[0].lower()
+            new_col[1] = new_col[1].lower()
+            db.columns =new_col
+            ap = list(db['network'][db['network'].notnull()])
+            db['network']=db['network'].fillna(method='ffill')
+            for network in ap:
+                return_dict =  combineSigma((db[db['network']==network]),network)
+                expt_dict[network] = return_dict
+        print(expt_dict)
+        expt.set_data(expt_dict)
+        time_array = list(db['time'])
+        return expt, time_array
 
     else:
         logger.warn('Selected data file type not supported.')
+
+def combineSigma(df,network):
+    lastcol = None
+    return_dict = {}
+    makelist = []
+    for col in df:
+        if 'sigma' in col.lower():
+            dfa = df.dropna(subset=[col])
+            dfa['mix']=list(zip(dfa[lastcol],dfa[col]))
+            dfa_dict = pd.Series(dfa.mix.values, index=dfa.time).to_dict()
+            if(len(dfa_dict) > 0):
+                return_dict[lastcol] = dfa_dict
+
+        lastcol = col
+
+    return return_dict
 
 
 def read_from_file(file_name, output_location=None):
@@ -132,4 +120,6 @@ def read_from_file(file_name, output_location=None):
 
 # for debugging purposes.  This module shouldn't do anything when run.
 if __name__ == '__main__':
-    read_from_file(r'C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991\Tyson1991.xml')
+    jak = r'C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\JAK-STAT\JAK-STAT.xml'
+    tys = r'C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991\Tyson1991.xml'
+    read_from_file(tys)

@@ -674,12 +674,12 @@ def time_extract(experiment_r):
     """
     time_array = []
     for experiment in experiment_r.values():
-
         for key_t in experiment.data.keys():
             for species_key in experiment.data[key_t].keys():
                 times = experiment.data[key_t][species_key].keys()
                 # Experiments hold the time data as keys in a dictionary
                 time_array.append(max(times))
+    print(time_array)
     return int(max(time_array)) + 5  # Arbitrary number added, still unsure how x-axis is calculated for plots
 
 
@@ -1352,92 +1352,101 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
     action_root = root.find("Actions")
     network_root = root.find("Networks")
     model_root = root.find("Model")
-    try:
-        net = IO.from_SBML_file(sbml_reference)  # Set base network from SBML reference
-    except ValueError:
-        net = None
-    if network_root is not None:
-        for network in network_root:
-            net_name = network.attrib['id']
-            new_network = create_Network(root=network_root, routine=net_name, xml_file=xml_file,
-                                                          file_name=file_name, current_root=network,
-                                                          sbml_reference=sbml_reference,
-                                                          network_dictionary=network_dictionary,
-                                                          network_func_dictionary=network_func_dictionary,
-                                                          hash_node=hash_node, parent=root)
-            network_dictionary[net_name] = new_network
+    end_session = False
+    if network_root is None:
+        logger.critical("A network section is required for use of XML format input.  Use the <Network> tag and set its ID to 'base' to default to the sbml file")
+        end_session = True
+    if model_root is None:
+        end_session =True
+        logger.critical("A model section is required for use of XML format.  Use the <Model> tag and include an experiment and at least one network")
+    if not end_session:
 
-            try:
-                attributes = routine_dict_drier(network.attrib)
-                if attributes["from_file"]:
-                    net = new_network # override default network
-            except KeyError:
-                pass
-    else:
-        network_dictionary[net.id] = net
-    if experiment is not None:
-        time_r = time_extract(experiment)
-    else:
-        time_r = 0
-    # TODO: Extend to allow multiple models?
-    try:
-        get_from_model=False
-        fit_root = root.find("Parameters").find("Fit")
-        set_ic(fit_root, net)
-        params = key_parameters(fit_root)
-        for network in network_dictionary:
-            network = network_dictionary[network]
-            for param in network.parameters.keys():
-                if param not in params.keys():
-                    network.set_var_constant(param, False)
+        try:
+            net = IO.from_SBML_file(sbml_reference)  # Set base network from SBML reference
+        except ValueError:
+            net = None
+        if network_root is not None:
+            for network in network_root:
+                net_name = network.attrib['id']
+                new_network = create_Network(root=network_root, routine=net_name, xml_file=xml_file,
+                                                              file_name=file_name, current_root=network,
+                                                              sbml_reference=sbml_reference,
+                                                              network_dictionary=network_dictionary,
+                                                              network_func_dictionary=network_func_dictionary,
+                                                              hash_node=hash_node, parent=root)
+                network_dictionary[net_name] = new_network
 
-    except AttributeError:
-        get_from_model = True
-
-    if model_root is not None:
-        experiments = []
-        networks = []
-        for attribute in model_root:
-            if attribute.tag == 'experiment':
-                expt_name = attribute.attrib['id']
-                expt = experiment[expt_name]
-                experiments.append(expt)
-            if attribute.tag == 'network':
-                net_name = attribute.attrib['id']
-                networks.append(network_dictionary[net_name])
-        model = Model(experiments, networks)
-    else:
-        # If undefined, we default to making a model out of all available experiments and networks
+                try:
+                    attributes = routine_dict_drier(network.attrib)
+                    if attributes["from_file"]:
+                        net = new_network # override default network
+                except KeyError:
+                    pass
+        else:
+            network_dictionary[net.id] = net
         if experiment is not None:
-            model = Model(experiment.values(), network_dictionary.values())
+            time_r = time_extract(experiment)
         else:
-            # We can only make a model with an experiment defined
-            model = None
+            time_r = 0
+        # TODO: Extend to allow multiple models?
+        try:
+            get_from_model=False
+            fit_root = root.find("Parameters").find("Fit")
+            set_ic(fit_root, net)
+            params = key_parameters(fit_root)
+            for network in network_dictionary:
+                network = network_dictionary[network]
+                for param in network.parameters.keys():
+                    if param not in params.keys():
+                        network.set_var_constant(param, False)
 
-    if get_from_model is True:
-        # No parameters were specified, so we just take them all
+        except AttributeError:
+            get_from_model = True
+
+        if model_root is not None:
+            experiments = []
+            networks = []
+            for attribute in model_root:
+                if attribute.tag == 'experiment':
+                    expt_name = attribute.attrib['id']
+                    expt = experiment[expt_name]
+                    experiments.append(expt)
+                if attribute.tag == 'network':
+                    net_name = attribute.attrib['id']
+                    networks.append(network_dictionary[net_name])
+            model = Model(experiments, networks)
+        else:
+            # If undefined, we default to making a model out of all available experiments and networks
+            if experiment is not None:
+                model = Model(experiment.values(), network_dictionary.values())
+            else:
+                # We can only make a model with an experiment defined
+                model = None
+
+        if get_from_model is True:
+            # No parameters were specified, so we just take them all
+            if model is not None:
+                params = model.get_params()
+            else:
+                params = None
+        # This function is standalone and just tacks a residual onto anything that needs it
         if model is not None:
-            params = model.get_params()
-        else:
-            params = None
-    # This function is standalone and just tacks a residual onto anything that needs it
-    if model is not None:
-        add_residuals(root, model)
-    if action_root is not None:
+            add_residuals(root, model)
+        if action_root is not None:
 
-        for child in action_root:
-            # try:
-            r_name = child.tag.lower()
-            action_function = action_function_dictionary[r_name]
-            result_dictionary[r_name] = action_function(root=action_root, routine=child.tag,
-                                                        model=model, params=params, current_root=child,
-                                                        xml_file=xml_file, file_name=file_name, time_r=time_r,
-                                                        net=net, result_dictionary=result_dictionary,
-                                                        parent=root, hash_node=hash_node,
-                                                        network_dictionary = network_dictionary)
-            # except KeyError as e:
-            #     logger.warn("No function associated with action tag %s" % child.tag)
-            #     logger.warn(e)
-    print "All routines complete"
+            for child in action_root:
+                # try:
+                r_name = child.tag.lower()
+                action_function = action_function_dictionary[r_name]
+                result_dictionary[r_name] = action_function(root=action_root, routine=child.tag,
+                                                            model=model, params=params, current_root=child,
+                                                            xml_file=xml_file, file_name=file_name, time_r=time_r,
+                                                            net=net, result_dictionary=result_dictionary,
+                                                            parent=root, hash_node=hash_node,
+                                                            network_dictionary = network_dictionary)
+                # except KeyError as e:
+                #     logger.warn("No function associated with action tag %s" % child.tag)
+                #     logger.warn(e)
+        print "All routines complete"
 
     time.sleep(2)

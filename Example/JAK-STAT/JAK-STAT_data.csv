@@ -1,4 +1,4 @@
-Model,TIME,data1,sigma1,data2,sigma2
+Network,TIME,data1,sigma1,data2,sigma2
 net1,0,0,.037,1,.084
 ,2,0.16575,.025,0.9275,.046
 ,4,0.43225,.033,0.7923,.038
