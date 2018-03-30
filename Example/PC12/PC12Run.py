@@ -21,6 +21,8 @@ import Experiments as Expts
 import Calculations as Calcs
 from min5_wFinal import min5_wFinal_params
 
+import Nets
+reload(Nets)
 m = Model_mod.Model([Expts.ErkMekTraverse2EGF.expt,
            Expts.Raf1LandrethEGF.expt,
            Expts.Erk1HYaoEGF.expt,
@@ -32,11 +34,11 @@ m = Model_mod.Model([Expts.ErkMekTraverse2EGF.expt,
            Expts.Raf1BRafLandrethNGF.expt,
            Expts.ErkMekTraverseHERover.expt,
            ],
-          [Calcs.EGFstim100.network,
-           Calcs.NGFstim50.network,
-           Calcs.EGFstim30.network,
-           Calcs.NGFstim100.network,
-           Calcs.EGFRx50_EGFstim100.network,
+          [Nets.EGFstim100,
+           Nets.NGFstim50,
+           Nets.EGFstim30,
+           Nets.NGFstim100,
+           Nets.EGFRx50_EGFstim100,
            ])
 
 params = KeyedList(min5_wFinal_params)
