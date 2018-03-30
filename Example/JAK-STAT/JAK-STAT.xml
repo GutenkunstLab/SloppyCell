@@ -1,8 +1,19 @@
 <Scell name="JakStat">
 	<References>
 		<Data path="JAK-STAT_data.csv" />
-		<SBML path="../../jak-stat/JAK-STAT_SC.xml" />
+		<SBML path="../jak-stat/JAK-STAT_SC.xml" />
 	</References>
+    <Networks>
+        <Network>
+            <Network from_file="True" id="base">
+            </Network>
+
+        </Network>
+    </Networks>
+    <Model>
+        <experiment id="JAK-STAT_data" />
+        <network id="base" />
+    </Model>
 	<Parameters>
 		<Fit>
             <parameter id="r1" value="0.5">
@@ -24,6 +35,7 @@
 		<Skip>
         </Skip>
 	</Parameters>
+
     <Actions>
         <Optimization plot="True">
             <opt disp="False" maxiter="20" type="Levenburg-Marquardt" />
@@ -47,4 +59,4 @@
             </Variables>
         </EnsembleTrajectories>
     </Actions>
-<saved_files><optimization path="Example/XML_Interface/JakStat_xml/saved_files/Optimization-JakStat_1480498873.bp" /><ensemble path="Example/XML_Interface/JakStat_xml/saved_files/Ensemble-JakStat_1785690891.bp" /><ensembletrajectories path="Example/XML_Interface/JakStat_xml/saved_files/EnsembleTrajectories-JakStat_-35621508.bp" /></saved_files></Scell>
+<saved_files><optimization path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\JAK-STAT/saved_files/Optimization-JakStat_1480498873.bp" /><ensemble path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\JAK-STAT/saved_files/Ensemble-JakStat_1785690891.bp" /><ensembletrajectories path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\JAK-STAT/saved_files/EnsembleTrajectories-JakStat_-35621508.bp" /><base path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\JAK-STAT/saved_files/base-JakStat_1844791050.bp" /><trajectory path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\JAK-STAT/saved_files/Trajectory-JakStat_-1119915842.bp" /></saved_files></Scell>
