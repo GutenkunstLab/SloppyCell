@@ -1,7 +1,7 @@
 from SloppyCell.ReactionNetworks import *
 
 # Load the network from the XML file
-net = IO.from_SBML_file('BIOMD0000000033.xml')
+net = IO.from_SBML_file('BIOMD0000000033_url.xml')
 net.set_var_ic('EGF', 0)
 net.set_var_ic('NGF', 0)
 net.compile()
