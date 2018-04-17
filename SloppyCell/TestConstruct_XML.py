@@ -895,7 +895,7 @@ def optimization(routine_dict, model, params, current_root, **kwargs):
     optimization procedure.
     :return: the optimized parameters are returned and passed back to the decorator
     """
-    print(params)
+    print(type(params))
     try:
         loaded_object = kwargs['loaded_object']
         optimized_params = loaded_object['params']
@@ -1321,7 +1321,28 @@ def create_Network(current_root, routine_dict, sbml_reference, network_dictionar
 
     return network
 
-
+def scale_factors(scale_root,expts):
+    print("Scaling")
+    print("\n")
+    experiments = {}
+    for expt in expts:
+        experiments[expt.name] = expt
+    for expt in scale_root:
+        current_expt = experiments[expt.attrib['id']]
+        scale_dict = {}
+        shared_dict = {}
+        for variable in expt:
+            attrib = variable.attrib
+            if('value' in attrib):
+                scale_dict[variable.attrib['id']]=variable.attrib['value']
+            if('shared' in attrib):
+                try:
+                    shared_dict[attrib['shared']].append(attrib['id'])
+                except Exception as e:
+                    shared_dict[attrib['shared']] = []
+                    shared_dict[attrib['shared']].append(attrib['id'])
+        current_expt.set_shared_sf(shared_dict.values())
+        current_expt.set_fixed_sf(scale_dict)
 def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference = None, output_location=None):
     result_dictionary = dict()
     network_dictionary = dict()
@@ -1389,13 +1410,14 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
         else:
             time_r = 0
         # TODO: Extend to allow multiple models?
+        print(network_dictionary)
         try:
             get_from_model=False
             fit_root = root.find("Parameters").find("Fit")
-            set_ic(fit_root, net)
             params = key_parameters(fit_root)
             for network in network_dictionary:
                 network = network_dictionary[network]
+                set_ic(fit_root, network)
                 for param in network.parameters.keys():
                     if param not in params.keys():
                         network.set_var_constant(param, False)
@@ -1432,6 +1454,8 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
         # This function is standalone and just tacks a residual onto anything that needs it
         if model is not None:
             add_residuals(root, model)
+        scale_root = root.find("Scale_Factors")
+        scale_factors(scale_root,experiments)
         if action_root is not None:
 
             for child in action_root:
