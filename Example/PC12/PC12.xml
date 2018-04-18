@@ -1,0 +1,51 @@
+<Scell name="PC12">
+  <References>
+    <Data path="Erk1HYaoEGF.csv" />
+<!--
+    <Data path="Raf1BrafLandrethNGF.csv" />
+    <Data path="Erk1HYaoNGF.csv" />
+    <Data path="Raf1LandrethEGF.csv" />
+    <Data path="ErkMekTraverse2EGF.csv" />
+    <Data path="Rap1YorkNGF.csv" />
+    <Data path="ErkMekTraverse2NGF.csv" />
+    <Data path="RasGreen1EGF.csv" />
+    <Data path="ErkMekTraverseHERover.csv" />
+    <Data path="RasGreen1NGF.csv" />
+-->
+    <SBML path="BIOMD0000000033_url.xml" />
+  </References>
+  <Networks>
+    <Network from_file="True" id="base">
+       <Set_Initial>
+	 <var id="EGF" value="0" />
+         <var id="NGF" value="0" />
+       </Set_Initial>
+    </Network>
+    <Network copy="base" id="EGFstim100">
+       <Set_Initial>
+         <var id="EGF" value="10002000" />
+       </Set_Initial>
+    </Network>
+    <Network copy="base" id="EGFstim30">
+       <Set_Initial>
+         <var id="EGF" value="3000600" />
+       </Set_Initial>
+    </Network>
+    <Network copy="base" id="NGFstim50">
+       <Set_Initial>
+         <var id="NGF" value="228000" />
+       </Set_Initial>
+    </Network>
+    <Network copy="base" id="NGFstim100">
+       <Set_Initial>
+         <var id="NGF" value="4560000" />
+       </Set_Initial>
+    </Network>
+    <Network copy="base" id="EGFRx50_EGFstim100">
+       <Set_Initial>
+         <var id="EGF" value="10002000" />
+         <var id="freeEGFReceptor" value="80000" />
+       </Set_Initial>
+    </Network>
+  </Networks>
+</Scell>

@@ -1,0 +1,6 @@
+Network,    Time,   Raf1Active,  SigmaRaf1Active
+EGFstim100, 2,      2.75,        0.75
+          , 5,      1.6,         0.52
+          , 15,     0.25,        0.26
+          , 30,     0.0,         0.2
+          , 60,     0.0,         0.2

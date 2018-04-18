@@ -1,0 +1,5 @@
+Network,    Time,   ErkActive,  SigmaErkActive
+NGFstim50,  10,     6.8,        0.78,
+         ,  20,     7.8,        1.2,
+         ,  30,     7.1,        0.81,
+         ,  60,     6.6,        1.2,
