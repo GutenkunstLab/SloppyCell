@@ -1,7 +1,6 @@
 <Scell name="PC12">
   <References>
     <Data path="Erk1HYaoEGF.csv" />
-<!--
     <Data path="Raf1BrafLandrethNGF.csv" />
     <Data path="Erk1HYaoNGF.csv" />
     <Data path="Raf1LandrethEGF.csv" />
@@ -11,41 +10,65 @@
     <Data path="RasGreen1EGF.csv" />
     <Data path="ErkMekTraverseHERover.csv" />
     <Data path="RasGreen1NGF.csv" />
--->
     <SBML path="BIOMD0000000033_url.xml" />
   </References>
   <Networks>
     <Network from_file="True" id="base">
-       <Set_Initial>
-	 <var id="EGF" value="0" />
-         <var id="NGF" value="0" />
-       </Set_Initial>
+      <Set_Initial>
+        <var id="EGF" value="0" />
+        <var id="NGF" value="0" />
+      </Set_Initial>
     </Network>
     <Network copy="base" id="EGFstim100">
-       <Set_Initial>
-         <var id="EGF" value="10002000" />
-       </Set_Initial>
+      <Set_Initial>
+        <var id="EGF" value="10002000" />
+      </Set_Initial>
     </Network>
     <Network copy="base" id="EGFstim30">
-       <Set_Initial>
-         <var id="EGF" value="3000600" />
-       </Set_Initial>
+      <Set_Initial>
+        <var id="EGF" value="3000600" />
+      </Set_Initial>
     </Network>
     <Network copy="base" id="NGFstim50">
-       <Set_Initial>
-         <var id="NGF" value="228000" />
-       </Set_Initial>
+      <Set_Initial>
+        <var id="NGF" value="228000" />
+      </Set_Initial>
     </Network>
     <Network copy="base" id="NGFstim100">
-       <Set_Initial>
-         <var id="NGF" value="4560000" />
-       </Set_Initial>
+      <Set_Initial>
+        <var id="NGF" value="4560000" />
+      </Set_Initial>
     </Network>
     <Network copy="base" id="EGFRx50_EGFstim100">
-       <Set_Initial>
-         <var id="EGF" value="10002000" />
-         <var id="freeEGFReceptor" value="80000" />
-       </Set_Initial>
+      <Set_Initial>
+        <var id="EGF" value="10002000" />
+        <var id="freeEGFReceptor" value="80000" />
+      </Set_Initial>
     </Network>
   </Networks>
+  <Model>
+    <experiment id="Erk1HYaoEGF" />
+    <experiment id="Raf1BrafLandrethNGF" />
+    <experiment id="Erk1HYaoNGF" />
+    <experiment id="Raf1LandrethEGF" />
+    <experiment id="ErkMekTraverse2EGF" />
+    <experiment id="Rap1YorkNGF" />
+    <experiment id="ErkMekTraverse2NGF" />
+    <experiment id="RasGreen1EGF" />
+    <experiment id="ErkMekTraverseHERover" />
+    <experiment id="RasGreen1NGF" />
+    <network id="EGFstim100" />
+    <network id="EGFstim30" />
+    <network id="NGFstim50" />
+    <network id="NGFstim100" />
+    <network id="EGFRx50_EGFstim100" />
+  </Model>
+  <saved_files>
+    <base path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/base-PC12_1795598701.bp" />
+    <egfstim100 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/EGFstim100-PC12_-659409278.bp" />
+    <egfstim30 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/EGFstim30-PC12_290296092.bp" />
+    <ngfstim50 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/NGFstim50-PC12_-318767104.bp" />
+    <ngfstim100 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/NGFstim100-PC12_-2108921275.bp" />
+    <egfrx50_egfstim100 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/EGFRx50_EGFstim100-PC12_-1128264453.bp" />
+  </saved_files>
 </Scell>

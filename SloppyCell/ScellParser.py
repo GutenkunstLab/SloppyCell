@@ -44,7 +44,8 @@ def experiment_constructor(data_file, sbml_reference):
     expt_dict = {}
     if data_file.lower().endswith('.csv'):
         with open(data_file, 'rU') as csv_file:
-            db = pd.read_csv(csv_file)
+            db = pd.read_csv(csv_file,skipinitialspace=True)
+
             new_col = db.columns.values
             new_col[0] = new_col[0].lower()
             new_col[1] = new_col[1].lower()
@@ -54,9 +55,11 @@ def experiment_constructor(data_file, sbml_reference):
             for network in ap:
                 return_dict =  combineSigma((db[db['network']==network]),network)
                 expt_dict[network] = return_dict
-        print(expt_dict)
         expt.set_data(expt_dict)
-        time_array = list(db['time'])
+        try:
+            time_array = list(db['time'])
+        except Exception as e:
+            time_array = list(db['Time'])
         return expt, time_array
 
     else:
@@ -87,7 +90,7 @@ def read_from_file(file_name, output_location=None):
     if file_name.lower().endswith('.xml'):
         xml_file = ET.parse(file_name)
         root = xml_file.getroot()
-        experiment = None
+        experiments = []
         try:
             sbml_reference = root.find("References").find("SBML").attrib['path']
             dir = os.path.dirname(os.path.abspath(file_name))
@@ -95,11 +98,14 @@ def read_from_file(file_name, output_location=None):
             sbml_reference = os.path.normpath(os.path.join(dir,sbml_reference))
             try:
                 # TODO: Allow multiple data files for multiple experiments
-                data_reference = root.find("References").find("Data").attrib["path"]
+                data_reference = root.find("References").findall('Data')
                 dir = os.path.dirname(os.path.abspath(file_name))
-                #data_reference = os.path.relpath(data_reference, dir)
-                data_reference = os.path.normpath(os.path.join(dir, data_reference))
-                experiment, time_array = experiment_constructor(data_reference, sbml_reference)
+                for ref in data_reference:
+                    data_ref = ref.attrib['path']
+                    #data_reference = os.path.relpath(data_reference, dir)
+                    data_ref = os.path.normpath(os.path.join(dir, data_ref))
+                    experiment, time_array = experiment_constructor(data_ref, sbml_reference)
+                    experiments.append(experiment)
             except AttributeError as e:
                 logger.warn('No data reference established, experiment cannot be constructed, SloppyCell will '
                             'have limited functionality.')
@@ -110,8 +116,11 @@ def read_from_file(file_name, output_location=None):
             logger.warn('No sbml reference established, model cannot be made.')
             print e
 
-        if experiment is not None:
-            TestConstruct_XML.make_happen(root, experiment={experiment.GetName(): experiment},
+        if experiments is not []:
+            expt_dict = {}
+            for experiment in experiments:
+                expt_dict[experiment.GetName()] = experiment
+            TestConstruct_XML.make_happen(root, experiment=expt_dict,
                                           xml_file=xml_file, file_name=file_name, sbml_reference=sbml_reference,
                                           output_location=output_location)
         else:
@@ -122,4 +131,5 @@ def read_from_file(file_name, output_location=None):
 if __name__ == '__main__':
     jak = r'C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\JAK-STAT\JAK-STAT.xml'
     tys = r'C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\Tyson_1991\Tyson1991.xml'
-    read_from_file(tys)
+    pc12 = r'C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12\PC12.xml'
+    read_from_file(pc12)

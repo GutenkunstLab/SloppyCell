@@ -679,7 +679,6 @@ def time_extract(experiment_r):
                 times = experiment.data[key_t][species_key].keys()
                 # Experiments hold the time data as keys in a dictionary
                 time_array.append(max(times))
-    print(time_array)
     return int(max(time_array)) + 5  # Arbitrary number added, still unsure how x-axis is calculated for plots
 
 
@@ -819,7 +818,7 @@ def check_to_save(routine_function):
             saved_file_path = attributes.pop('path')
             if os.path.isfile(saved_file_path):
                 # A file path is specified
-                hash_from_file = os.path.splitext(os.path.basename(saved_file_path))[0].split('_')[1]
+                hash_from_file = os.path.splitext(os.path.basename(saved_file_path))[0].split('_')[-1]
                 if int(hash_from_file) == hash_id:
 
                     use_file = True
@@ -1410,7 +1409,6 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
         else:
             time_r = 0
         # TODO: Extend to allow multiple models?
-        print(network_dictionary)
         try:
             get_from_model=False
             fit_root = root.find("Parameters").find("Fit")
@@ -1424,7 +1422,6 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
 
         except AttributeError:
             get_from_model = True
-
         if model_root is not None:
             experiments = []
             networks = []
@@ -1455,7 +1452,8 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
         if model is not None:
             add_residuals(root, model)
         scale_root = root.find("Scale_Factors")
-        scale_factors(scale_root,experiments)
+        if(scale_root is not None):
+            scale_factors(scale_root,experiments)
         if action_root is not None:
 
             for child in action_root:
