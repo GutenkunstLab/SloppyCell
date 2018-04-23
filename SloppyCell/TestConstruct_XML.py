@@ -1333,7 +1333,7 @@ def scale_factors(scale_root,expts):
         for variable in expt:
             attrib = variable.attrib
             if('value' in attrib):
-                scale_dict[variable.attrib['id']]=variable.attrib['value']
+                scale_dict[variable.attrib['id']]=float(variable.attrib['value'])
             if('shared' in attrib):
                 try:
                     shared_dict[attrib['shared']].append(attrib['id'])
