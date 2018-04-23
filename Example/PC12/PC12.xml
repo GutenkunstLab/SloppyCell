@@ -36,39 +36,47 @@
     </Network>
     <Network copy="base" id="NGFstim100">
       <Set_Initial>
-        <var id="NGF" value="4560000" />
+        <var id="NGF" value="456000" />
       </Set_Initial>
     </Network>
     <Network copy="base" id="EGFRx50_EGFstim100">
       <Set_Initial>
         <var id="EGF" value="10002000" />
-        <var id="freeEGFReceptor" value="80000" />
+        <var id="freeEGFReceptor" value="4000000" />
       </Set_Initial>
     </Network>
   </Networks>
+  <Scale_Factors>
+    <experiment id="RasGreen1EGF">
+      <var id="RasActive" value="8.33333333e-5" />
+    </experiment>
+    <experiment id="RasGreen1NGF">
+      <var id="RasActive" value="8.33333333e-5" />
+    </experiment>
+    <experiment id="Rap1YorkNGF">
+      <var id="Rap1Active" value="8.3333333e-5" />
+    </experiment>
+  </Scale_Factors>
   <Model>
     <experiment id="Erk1HYaoEGF" />
-    <experiment id="Raf1BrafLandrethNGF" />
-    <experiment id="Erk1HYaoNGF" />
     <experiment id="Raf1LandrethEGF" />
-    <experiment id="ErkMekTraverse2EGF" />
-    <experiment id="Rap1YorkNGF" />
-    <experiment id="ErkMekTraverse2NGF" />
     <experiment id="RasGreen1EGF" />
-    <experiment id="ErkMekTraverseHERover" />
+    <experiment id="ErkMekTraverse2EGF" />
+    <experiment id="Erk1HYaoNGF" />
     <experiment id="RasGreen1NGF" />
+    <experiment id="ErkMekTraverse2NGF" />
+    <experiment id="ErkMekTraverseHERover" />
+    <experiment id="Raf1BrafLandrethNGF" />
+    <experiment id="Rap1YorkNGF" />
     <network id="EGFstim100" />
     <network id="EGFstim30" />
     <network id="NGFstim50" />
     <network id="NGFstim100" />
     <network id="EGFRx50_EGFstim100" />
   </Model>
-  <saved_files>
-    <base path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/base-PC12_1795598701.bp" />
-    <egfstim100 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/EGFstim100-PC12_-659409278.bp" />
-    <egfstim30 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/EGFstim30-PC12_290296092.bp" />
-    <ngfstim50 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/NGFstim50-PC12_-318767104.bp" />
-    <ngfstim100 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/NGFstim100-PC12_-2108921275.bp" />
-    <egfrx50_egfstim100 path="C:\Users\ksg13004\Desktop\SloppyCell\sloppycell-git\Example\PC12/saved_files/EGFRx50_EGFstim100-PC12_-1128264453.bp" />
-  </saved_files>
+  <Actions>
+    <Optimization initial_cost="True" plot_after="True" plot_before="True">
+      <opt type="Nelder-Mead" xtol="1e-2" />
+    </Optimization>
+  </Actions>
 </Scell>

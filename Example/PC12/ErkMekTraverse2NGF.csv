@@ -1,4 +1,4 @@
-Network,    Time,   ErkActive,  SigmaErkActive, MekActive, SigmaMekActive
+Network,    Time,   MekActive,  SigmaMekActive, ErkActive, SigmaErkActive
 NGFstim50,  2,      0.375,      0.05,           0.4,       0.1
          ,  5,      1.8,        0.3,            3.7,       0.37
          ,  15,     1.13,       0.113,          3.5,       0.4
