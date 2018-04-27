@@ -1,0 +1,832 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <model metaid="SloppyCell_00000" id="EGFstim100" name="Brown2004 - NGF and EGF signaling">
+    <listOfCompartments>
+      <compartment metaid="SloppyCell_00001" id="cell" size="1" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species metaid="SloppyCell_00002" id="EGF" compartment="cell" initialConcentration="10002000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00003" id="NGF" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00004" id="freeEGFReceptor" compartment="cell" initialConcentration="80000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00005" id="boundEGFReceptor" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00006" id="freeNGFReceptor" compartment="cell" initialConcentration="10000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00007" id="boundNGFReceptor" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00008" id="SosInactive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00009" id="SosActive" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00010" id="P90RskInactive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00011" id="P90RskActive" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00012" id="RasInactive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00013" id="RasActive" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00014" id="RasGapActive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00015" id="Raf1Inactive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00016" id="Raf1Active" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00017" id="BRafInactive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00018" id="BRafActive" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00019" id="MekInactive" compartment="cell" initialConcentration="600000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00020" id="MekActive" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00021" id="ErkInactive" compartment="cell" initialConcentration="600000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00022" id="ErkActive" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00023" id="PI3KInactive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00024" id="PI3KActive" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00025" id="AktInactive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00026" id="AktActive" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00027" id="C3GInactive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00028" id="C3GActive" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00029" id="Rap1Inactive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00030" id="Rap1Active" compartment="cell" initialConcentration="0" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00031" id="RapGapActive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00032" id="PP2AActive" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+      <species metaid="SloppyCell_00033" id="Raf1PPtase" compartment="cell" initialConcentration="120000" boundaryCondition="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter metaid="SloppyCell_00034" id="krbEGF" value="6.19017762095268e-05" constant="true"/>
+      <parameter metaid="SloppyCell_00035" id="kruEGF" value="0.0275727088457195" constant="true"/>
+      <parameter metaid="SloppyCell_00036" id="krbNGF" value="2.73637662625869e-07" constant="true"/>
+      <parameter metaid="SloppyCell_00037" id="kruNGF" value="0.00259139336268433" constant="true"/>
+      <parameter metaid="SloppyCell_00038" id="kEGF" value="1488.99877623156" constant="true"/>
+      <parameter metaid="SloppyCell_00039" id="KmEGF" value="2010790.43678412" constant="true"/>
+      <parameter metaid="SloppyCell_00040" id="kNGF" value="144.006832133491" constant="true"/>
+      <parameter metaid="SloppyCell_00041" id="KmNGF" value="777.722842070718" constant="true"/>
+      <parameter metaid="SloppyCell_00042" id="kdSos" value="2794.64523915474" constant="true"/>
+      <parameter metaid="SloppyCell_00043" id="KmdSos" value="848898.414834777" constant="true"/>
+      <parameter metaid="SloppyCell_00044" id="kSos" value="14.9033615722906" constant="true"/>
+      <parameter metaid="SloppyCell_00045" id="KmSos" value="13171.8665991108" constant="true"/>
+      <parameter metaid="SloppyCell_00046" id="kRasGap" value="4906.01662239301" constant="true"/>
+      <parameter metaid="SloppyCell_00047" id="KmRasGap" value="455043.385441275" constant="true"/>
+      <parameter metaid="SloppyCell_00048" id="kRasToRaf1" value="0.595337292644276" constant="true"/>
+      <parameter metaid="SloppyCell_00049" id="KmRasToRaf1" value="113315.284774927" constant="true"/>
+      <parameter metaid="SloppyCell_00050" id="kpRaf1" value="606.458380328501" constant="true"/>
+      <parameter metaid="SloppyCell_00051" id="KmpRaf1" value="5100193.70096584" constant="true"/>
+      <parameter metaid="SloppyCell_00052" id="kpBRaf" value="216.829301518951" constant="true"/>
+      <parameter metaid="SloppyCell_00053" id="KmpBRaf" value="52829.8026906849" constant="true"/>
+      <parameter metaid="SloppyCell_00054" id="kdMek" value="0.798659784098108" constant="true"/>
+      <parameter metaid="SloppyCell_00055" id="KmdMek" value="1645511.13697074" constant="true"/>
+      <parameter metaid="SloppyCell_00056" id="kpMekCytoplasmic" value="9.64680824973837" constant="true"/>
+      <parameter metaid="SloppyCell_00057" id="KmpMekCytoplasmic" value="545771.452127485" constant="true"/>
+      <parameter metaid="SloppyCell_00058" id="kdErk" value="3.54204537396885" constant="true"/>
+      <parameter metaid="SloppyCell_00059" id="KmdErk" value="11805209.8897643" constant="true"/>
+      <parameter metaid="SloppyCell_00060" id="kpP90Rsk" value="0.0800435583066134" constant="true"/>
+      <parameter metaid="SloppyCell_00061" id="KmpP90Rsk" value="535308.058545915" constant="true"/>
+      <parameter metaid="SloppyCell_00062" id="kPI3K" value="5.41433096207658" constant="true"/>
+      <parameter metaid="SloppyCell_00063" id="KmPI3K" value="184150.491758486" constant="true"/>
+      <parameter metaid="SloppyCell_00064" id="kPI3KRas" value="0.0228965987914394" constant="true"/>
+      <parameter metaid="SloppyCell_00065" id="KmPI3KRas" value="169817.722700541" constant="true"/>
+      <parameter metaid="SloppyCell_00066" id="kAkt" value="0.0209409570504436" constant="true"/>
+      <parameter metaid="SloppyCell_00067" id="KmAkt" value="179694.301754338" constant="true"/>
+      <parameter metaid="SloppyCell_00068" id="kdRaf1ByAkt" value="11.7768882913957" constant="true"/>
+      <parameter metaid="SloppyCell_00069" id="KmRaf1ByAkt" value="424976.592739282" constant="true"/>
+      <parameter metaid="SloppyCell_00070" id="kC3GNGF" value="342.451853611639" constant="true"/>
+      <parameter metaid="SloppyCell_00071" id="KmC3GNGF" value="41671.819227781" constant="true"/>
+      <parameter metaid="SloppyCell_00072" id="kC3G" value="1.5069409689427" constant="true"/>
+      <parameter metaid="SloppyCell_00073" id="KmC3G" value="6516.99641714027" constant="true"/>
+      <parameter metaid="SloppyCell_00074" id="kRapGap" value="37.2462432810151" constant="true"/>
+      <parameter metaid="SloppyCell_00075" id="KmRapGap" value="1129783.63304981" constant="true"/>
+      <parameter metaid="SloppyCell_00076" id="kRap1ToBRaf" value="0.563187922409521" constant="true"/>
+      <parameter metaid="SloppyCell_00077" id="KmRap1ToBRaf" value="826560.784920073" constant="true"/>
+      <parameter metaid="SloppyCell_00078" id="kdRaf1" value="0.0355408046591242" constant="true"/>
+      <parameter metaid="SloppyCell_00079" id="KmdRaf1" value="813.49816274495" constant="true"/>
+      <parameter metaid="SloppyCell_00080" id="kdBRaf" value="204.675878130989" constant="true"/>
+      <parameter metaid="SloppyCell_00081" id="KmdBRaf" value="5581332.00702711" constant="true"/>
+    </listOfParameters>
+    <listOfReactions>
+      <reaction metaid="SloppyCell_00082" id="EGFBindingReaction">
+        <listOfReactants>
+          <speciesReference species="EGF" stoichiometry="1"/>
+          <speciesReference species="freeEGFReceptor" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="boundEGFReceptor" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <ci> krbEGF </ci>
+              <ci> EGF </ci>
+              <ci> freeEGFReceptor </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00083" id="EGFUnbindingReaction">
+        <listOfReactants>
+          <speciesReference species="boundEGFReceptor" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="EGF" stoichiometry="1"/>
+          <speciesReference species="freeEGFReceptor" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <ci> kruEGF </ci>
+              <ci> boundEGFReceptor </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00084" id="NGFBindingReaction">
+        <listOfReactants>
+          <speciesReference species="NGF" stoichiometry="1"/>
+          <speciesReference species="freeNGFReceptor" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="boundNGFReceptor" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> krbNGF </ci>
+              <ci> NGF </ci>
+              <ci> freeNGFReceptor </ci>
+              <ci> cell </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00085" id="NGFUnbindingReaction">
+        <listOfReactants>
+          <speciesReference species="boundNGFReceptor" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="NGF" stoichiometry="1"/>
+          <speciesReference species="freeNGFReceptor" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kruNGF </ci>
+              <ci> boundNGFReceptor </ci>
+              <ci> cell </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00086" id="SosActivationByEGFReaction">
+        <listOfReactants>
+          <speciesReference species="SosInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="SosActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kEGF </ci>
+                  <ci> boundEGFReceptor </ci>
+                  <ci> SosInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> SosInactive </ci>
+                  <ci> KmEGF </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00087" id="SosActivationByNGFReaction">
+        <listOfReactants>
+          <speciesReference species="SosInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="SosActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kNGF </ci>
+                  <ci> boundNGFReceptor </ci>
+                  <ci> SosInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> SosInactive </ci>
+                  <ci> KmNGF </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00088" id="SosDeactivationReaction">
+        <listOfReactants>
+          <speciesReference species="SosActive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="SosInactive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kdSos </ci>
+                  <ci> P90RskActive </ci>
+                  <ci> SosActive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> SosActive </ci>
+                  <ci> KmdSos </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00089" id="RasActivationReaction">
+        <listOfReactants>
+          <speciesReference species="RasInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="RasActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kSos </ci>
+                  <ci> SosActive </ci>
+                  <ci> RasInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> RasInactive </ci>
+                  <ci> KmSos </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00090" id="RasDeactivationReaction">
+        <listOfReactants>
+          <speciesReference species="RasActive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="RasInactive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kRasGap </ci>
+                  <ci> RasGapActive </ci>
+                  <ci> RasActive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> RasActive </ci>
+                  <ci> KmRasGap </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00091" id="Raf1ByRasActivationReaction">
+        <listOfReactants>
+          <speciesReference species="Raf1Inactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Raf1Active" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kRasToRaf1 </ci>
+                  <ci> RasActive </ci>
+                  <ci> Raf1Inactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> Raf1Inactive </ci>
+                  <ci> KmRasToRaf1 </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00092" id="MekbyRaf1ActivationReaction">
+        <listOfReactants>
+          <speciesReference species="MekInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MekActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kpRaf1 </ci>
+                  <ci> Raf1Active </ci>
+                  <ci> MekInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> MekInactive </ci>
+                  <ci> KmpRaf1 </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00093" id="MekbyBRafActivationReaction">
+        <listOfReactants>
+          <speciesReference species="MekInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MekActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kpBRaf </ci>
+                  <ci> BRafActive </ci>
+                  <ci> MekInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> MekInactive </ci>
+                  <ci> KmpBRaf </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00094" id="ErkActivationReaction">
+        <listOfReactants>
+          <speciesReference species="ErkInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="ErkActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kpMekCytoplasmic </ci>
+                  <ci> MekActive </ci>
+                  <ci> ErkInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> ErkInactive </ci>
+                  <ci> KmpMekCytoplasmic </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00095" id="MekDeactivationReaction">
+        <listOfReactants>
+          <speciesReference species="MekActive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="MekInactive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kdMek </ci>
+                  <ci> PP2AActive </ci>
+                  <ci> MekActive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> MekActive </ci>
+                  <ci> KmdMek </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00096" id="ErkDeactivationReaction">
+        <listOfReactants>
+          <speciesReference species="ErkActive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="ErkInactive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kdErk </ci>
+                  <ci> PP2AActive </ci>
+                  <ci> ErkActive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> ErkActive </ci>
+                  <ci> KmdErk </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00097" id="Raf1byPPtaseDeactivationReaction">
+        <listOfReactants>
+          <speciesReference species="Raf1Active" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Raf1Inactive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kdRaf1 </ci>
+                  <ci> Raf1PPtase </ci>
+                  <ci> Raf1Active </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> Raf1Active </ci>
+                  <ci> KmdRaf1 </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00098" id="P90RskActivationReaction">
+        <listOfReactants>
+          <speciesReference species="P90RskInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="P90RskActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kpP90Rsk </ci>
+                  <ci> ErkActive </ci>
+                  <ci> P90RskInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> P90RskInactive </ci>
+                  <ci> KmpP90Rsk </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00099" id="PI3KbyEGFRActivationReaction">
+        <listOfReactants>
+          <speciesReference species="PI3KInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PI3KActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kPI3K </ci>
+                  <ci> boundEGFReceptor </ci>
+                  <ci> PI3KInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> PI3KInactive </ci>
+                  <ci> KmPI3K </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00100" id="PI3KbyRasActivationReaction">
+        <listOfReactants>
+          <speciesReference species="PI3KInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="PI3KActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kPI3KRas </ci>
+                  <ci> RasActive </ci>
+                  <ci> PI3KInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> PI3KInactive </ci>
+                  <ci> KmPI3KRas </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00101" id="AktActivationReaction">
+        <listOfReactants>
+          <speciesReference species="AktInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="AktActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kAkt </ci>
+                  <ci> PI3KActive </ci>
+                  <ci> AktInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> AktInactive </ci>
+                  <ci> KmAkt </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00102" id="Raf1ByAktDeactivationReaction">
+        <listOfReactants>
+          <speciesReference species="Raf1Active" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Raf1Inactive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kdRaf1ByAkt </ci>
+                  <ci> AktActive </ci>
+                  <ci> Raf1Active </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> Raf1Active </ci>
+                  <ci> KmRaf1ByAkt </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00103" id="C3GActivationReaction">
+        <listOfReactants>
+          <speciesReference species="C3GInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C3GActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kC3GNGF </ci>
+                  <ci> boundNGFReceptor </ci>
+                  <ci> C3GInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> C3GInactive </ci>
+                  <ci> KmC3GNGF </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00104" id="Rap1ActivationReaction">
+        <listOfReactants>
+          <speciesReference species="Rap1Inactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Rap1Active" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kC3G </ci>
+                  <ci> C3GActive </ci>
+                  <ci> Rap1Inactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> Rap1Inactive </ci>
+                  <ci> KmC3G </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00105" id="Rap1DeactivationReaction">
+        <listOfReactants>
+          <speciesReference species="Rap1Active" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Rap1Inactive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kRapGap </ci>
+                  <ci> RapGapActive </ci>
+                  <ci> Rap1Active </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> Rap1Active </ci>
+                  <ci> KmRapGap </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00106" id="BRafByRap1ActivationReaction">
+        <listOfReactants>
+          <speciesReference species="BRafInactive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="BRafActive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kRap1ToBRaf </ci>
+                  <ci> Rap1Active </ci>
+                  <ci> BRafInactive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> BRafInactive </ci>
+                  <ci> KmRap1ToBRaf </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction metaid="SloppyCell_00107" id="BRafbyPPtaseDeactivationReaction">
+        <listOfReactants>
+          <speciesReference species="BRafActive" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="BRafInactive" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> cell </ci>
+              <apply>
+                <divide/>
+                <apply>
+                  <times/>
+                  <ci> kdBRaf </ci>
+                  <ci> Raf1PPtase </ci>
+                  <ci> BRafActive </ci>
+                </apply>
+                <apply>
+                  <plus/>
+                  <ci> BRafActive </ci>
+                  <ci> KmdBRaf </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>

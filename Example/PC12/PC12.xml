@@ -10,7 +10,7 @@
     <Data path="RasGreen1EGF.csv" />
     <Data path="ErkMekTraverseHERover.csv" />
     <Data path="RasGreen1NGF.csv" />
-    <SBML path="BIOMD0000000033_url.xml" />
+    <SBML path="params_perturbed.xml" />
   </References>
   <Networks>
     <Network from_file="True" id="base">
@@ -76,7 +76,16 @@
   </Model>
   <Actions>
     <Optimization initial_cost="True" plot_after="True" plot_before="True">
-      <opt type="Nelder-Mead" xtol="1e-2" />
+      <opt disp="1" maxiter="16" type="levenburg-marquardt" />
     </Optimization>
   </Actions>
+  <saved_files>
+    <base path="/Users/rgutenk/Desktop/code/SloppyCell-devel/Example/PC12/saved_files/base-PC12_-1463996414873392787.bp" />
+    <egfstim100 path="/Users/rgutenk/Desktop/code/SloppyCell-devel/Example/PC12/saved_files/EGFstim100-PC12_2698678219438175874.bp" />
+    <egfstim30 path="/Users/rgutenk/Desktop/code/SloppyCell-devel/Example/PC12/saved_files/EGFstim30-PC12_2186540573346599196.bp" />
+    <ngfstim50 path="/Users/rgutenk/Desktop/code/SloppyCell-devel/Example/PC12/saved_files/NGFstim50-PC12_-3712673338477248512.bp" />
+    <ngfstim100 path="/Users/rgutenk/Desktop/code/SloppyCell-devel/Example/PC12/saved_files/NGFstim100-PC12_-5636913118567625026.bp" />
+    <egfrx50_egfstim100 path="/Users/rgutenk/Desktop/code/SloppyCell-devel/Example/PC12/saved_files/EGFRx50_EGFstim100-PC12_-3696217882363644147.bp" />
+    <optimization path="/Users/rgutenk/Desktop/code/SloppyCell-devel/Example/PC12/saved_files/Optimization-PC12_1550933501546881639.bp" />
+  </saved_files>
 </Scell>
