@@ -1,4 +1,4 @@
 Network,    Time,   RasActive,  SigmaRasActive
-NGFstim50,   3,     1.7,        0.5
+    NGF50,   3,     1.7,        0.5
          ,  10,     1.1,        0.2
          ,  30,     0.6,        0.1
