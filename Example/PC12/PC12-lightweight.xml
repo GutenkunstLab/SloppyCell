@@ -1,0 +1,56 @@
+<Scell name="PC12">
+  <References>
+    <Data path="ErkMekTraverse2EGF.csv" />
+    <Data path="ErkMekTraverse2NGF.csv" />
+    <Data path="Raf1LandrethEGF.csv" />
+    <Data path="Rap1YorkNGF.csv" />
+    <Data path="RasGreen1NGF.csv" />
+    <SBML path="params_perturbed.xml" />
+  </References>
+  <Networks>
+    <Network from_file="True" id="base">
+      <Set_Initial>
+        <var id="EGF" value="0" />
+        <var id="NGF" value="0" />
+      </Set_Initial>
+    </Network>
+    <Network copy="base" id="EGFstim100">
+      <Set_Initial>
+        <var id="EGF" value="10002000" />
+      </Set_Initial>
+    </Network>
+    <Network copy="base" id="NGFstim50">
+      <Set_Initial>
+        <var id="NGF" value="228000" />
+      </Set_Initial>
+    </Network>
+  </Networks>
+  <Scale_Factors>
+    <experiment id="RasGreen1NGF">
+      <var id="RasActive" value="8.33333333e-5" />
+    </experiment>
+    <experiment id="Rap1YorkNGF">
+      <var id="Rap1Active" value="8.3333333e-5" />
+    </experiment>
+  </Scale_Factors>
+  <Model>
+    <experiment id="Raf1LandrethEGF" />
+    <experiment id="ErkMekTraverse2EGF" />
+    <experiment id="RasGreen1NGF" />
+    <experiment id="ErkMekTraverse2NGF" />
+    <experiment id="Rap1YorkNGF" />
+    <network id="EGFstim100" />
+    <network id="NGFstim50" />
+  </Model>
+  <Actions>
+    <Optimization initial_cost="True" plot_after="True" plot_before="True">
+      <opt disp="1" maxiter="16" type="levenburg-marquardt" />
+    </Optimization>
+  </Actions>
+  <saved_files>
+    <base path="/Users/kevinbrown/scratch/Example/PC12/saved_files/base-PC12_-1463996414873392787.bp" />
+    <egfstim100 path="/Users/kevinbrown/scratch/Example/PC12/saved_files/EGFstim100-PC12_2698678219438175874.bp" />
+    <ngfstim50 path="/Users/kevinbrown/scratch/Example/PC12/saved_files/NGFstim50-PC12_-3712673338477248512.bp" />
+    <optimization path="/Users/kevinbrown/scratch/Example/PC12/saved_files/Optimization-PC12_1550933501546881639.bp" />
+  </saved_files>
+</Scell>
