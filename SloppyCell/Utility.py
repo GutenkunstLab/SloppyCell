@@ -1,8 +1,6 @@
-import cPickle
+import pickle
 import logging
 import smtplib
-import sets
-from email.MIMEText import MIMEText
 
 import scipy
 
@@ -11,40 +9,20 @@ from scipy import linspace, logspace
 import random
 import copy
 
-def send_email(to_addr, from_addr=None, subject='', message=''):
-    """
-    Send a plain-text email to a single address.
-    """
-    if from_addr is None:
-        from_addr = to_addr
-
-    # Create a text/plain message
-    msg = MIMEText(message)
-    msg['Subject'] = subject
-    msg['To'], msg['From'] = to_addr, from_addr
-
-    # From the documentation for email... Not sure what it means. :-)
-    ## Send the message via our own SMTP server, but don't include the
-    ## envelope header.
-    s = smtplib.SMTP()
-    s.connect()
-    s.sendmail(from_addr, [to_addr], msg.as_string())
-    s.close()
-
 def save(obj, filename):
     """
     Save an object to a file
     """
-    f = file(filename, 'wb')
-    cPickle.dump(obj, f, 2)
+    f = open(filename, 'wb')
+    pickle.dump(obj, f)
     f.close()
 
 def load(filename):
     """
     Load an object from a file
     """
-    f = file(filename, 'rb')
-    obj = cPickle.load(f)
+    f = open(filename, 'rb')
+    obj = pickle.load(f)
     f.close()
     return obj
 
@@ -144,11 +122,11 @@ def combine_hessians(hesses, key_sets):
 
     # Get a list of all the possible parameter keys
     tot_keys = copy.copy(key_sets[0])
-    keys_seen = sets.Set(tot_keys)
+    keys_seen = set(tot_keys)
     for ks in key_sets[1:]:
         new_keys = [key for key in ks if key not in keys_seen]
         tot_keys.extend(new_keys)
-        keys_seen.union_update(sets.Set(new_keys))
+        keys_seen.union_update(set(new_keys))
 
     # Add all the appropriate hessian elements together
     key_to_index = dict(zip(tot_keys, range(len(tot_keys))))
