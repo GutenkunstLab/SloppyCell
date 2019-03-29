@@ -18,8 +18,8 @@ def sub_for_comps(expr, mapping):
     for out_expr, in_expr in mapping.items():
         out_ast = strip_parse(out_expr)
         if not isinstance(out_ast, Compare):
-            raise ValueError, 'Expression %s to substitute for is not a '\
-                    'comparison.' % out_expr
+            raise ValueError('Expression %s to substitute for is not a '\
+                    'comparison.' % out_expr)
         ast_mapping[ast2str(out_ast)] = strip_parse(in_expr)
 
     ast = _sub_subtrees_for_comps(ast, ast_mapping)
@@ -53,8 +53,8 @@ def sub_for_vars(expr, mapping):
     for out_name, in_expr in mapping.items():
         out_ast = strip_parse(out_name)
         if not isinstance(out_ast, Name):
-            raise ValueError, 'Expression %s to substitute for is not a '\
-                    'variable name.' % out_name
+            raise ValueError('Expression %s to substitute for is not a '\
+                             'variable name.' % out_name)
         ast_mapping[str(out_ast.name)] = strip_parse(in_expr)
 
     ast = _sub_subtrees_for_vars(ast, ast_mapping)
@@ -93,7 +93,7 @@ def sub_for_func(expr, func_name, func_vars, func_expr):
     ast = strip_parse(expr)
     func_name_ast = strip_parse(func_name)
     if not isinstance(func_name_ast, Name):
-        raise ValueError, 'Function name is not a simple name.'
+        raise ValueError('Function name is not a simple name.')
     func_name = func_name_ast.name
 
     func_expr_ast = strip_parse(func_expr)
@@ -109,7 +109,7 @@ def sub_for_func(expr, func_name, func_vars, func_expr):
         func_vars_ast = [strip_parse(var) for var in func_vars]
         for var_ast in func_vars_ast:
             if not isinstance(var_ast, Name):
-                raise ValueError, 'Function variable is not a simple name.'
+                raise ValueError('Function variable is not a simple name.')
         func_var_names = [getattr(var_ast, 'name') for var_ast in func_vars_ast]
 
     ast = _sub_for_func_ast(ast, func_name, func_var_names, func_expr_ast)

@@ -186,7 +186,7 @@ class Trajectory:
 
     def append(self, other):
         if self.key_column != other.key_column:
-            raise ValueError, 'Trajectories in append have different column keys!'
+            raise ValueError('Trajectories in append have different column keys!')
         if self.const_var_values != other.const_var_values:
             logger.warn('Constant variable values differ between appended trajectories!')
 
@@ -211,7 +211,7 @@ class Trajectory:
             # Requesting sensitivity of a constant variable.
             return 0*self.get_times()
         else:
-            raise ValueError, 'Variable %s not found in trajectory.' % str(id)
+            raise ValueError('Variable %s not found in trajectory.' % str(id))
 
     def _get_time_index(self, time, eps=1e-6):
         """
@@ -637,7 +637,7 @@ class Trajectory:
             out_vars = ['time'] + self.dynamicVarKeys
     
         first_line = separator.join(out_vars) + os.linesep
-        f = file(file_name, 'w')
+        f = open(file_name, 'w')
         f.write(first_line)
     
         out_array = []

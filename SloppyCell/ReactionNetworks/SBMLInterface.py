@@ -22,7 +22,7 @@ sbml_version = 3
 
 def toSBMLFile(net, fileName):
     sbmlStr = toSBMLString(net)
-    f = file(fileName, 'w')
+    f = open(fileName, 'w')
     f.write(sbmlStr)
     f.close()
 
@@ -341,7 +341,7 @@ def to_SBML_l2v1(from_name, to_name):
         logger.critical('Error writing to %s' % to_name)
 
 def fromSBMLFile(fileName, id = None, duplicate_rxn_params=False):
-    f = file(fileName, 'r')
+    f = open(fileName, 'r')
     net = fromSBMLString(f.read(), id, duplicate_rxn_params)
     f.close()
     return net

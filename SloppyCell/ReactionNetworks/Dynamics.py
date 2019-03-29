@@ -104,7 +104,7 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
     exception_raised = False
     try:
         int_returns = daeint(**int_args)
-    except Utility.SloppyCellException, X:
+    except Utility.SloppyCellException as X:
         # When an exception happens, we'll try to return all the
         # trajectory we can, thus we don't reraise yet.
         exception_raised = X
@@ -795,7 +795,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                                  redir_output = redirect_msgs,
                                  hmax = global_hmax,
                                  max_timepoints = MAX_TIMEPOINTS)
-        except Utility.SloppyCellException, X:
+        except Utility.SloppyCellException as X:
             logger.warn('Sensitivity integration failed for network %s on '
                         'node %i during optimizable variable %s.'
                         % (net.id, my_rank, opt_var))

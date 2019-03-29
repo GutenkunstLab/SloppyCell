@@ -327,7 +327,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
     #    info[9] = 3
     #    LID = 40 + neq
     else:
-        raise ValueError, 'ineq_constr must be True or False.'
+        raise ValueError('ineq_constr must be True or False.')
 
     # Is it necessary to calculate the initial condition?
     # (i.e., are the initial conditions consistent?)
@@ -426,6 +426,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
         while tcurrent < t[-1]:
             # set the desired output time
             twanted = t[tindex]
+            logger.debug('Integration next interval to {0}'.format(twanted))
             if EVENT_INT_BUG_WORKAROUND:
                 info[3] = 1
                 if tstop and tstop < twanted:

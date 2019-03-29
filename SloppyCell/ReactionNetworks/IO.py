@@ -41,7 +41,7 @@ def net_DOT_file(net, filename = None, size=(7.5,10)):
 
     if filename is None:
         filename = '%s.dot' % net.id
-    f = file(filename, 'w')
+    f = open(filename, 'w')
     f.write(os.linesep.join(lines))
     f.close()
 
@@ -71,7 +71,7 @@ def eqns_TeX_file(net, filename=None, simpleTeX=False, landscape=False):
 
     if filename is None:
         filename = '%s.tex' % net.id
-    f = file(filename, 'w')
+    f = open(filename, 'w')
     f.write(os.linesep.join(lines))
     f.close()
 
@@ -173,7 +173,7 @@ def dynamic_function_from_file(obj, filename):
     
     The filename must be <function_name>.py
     """
-    f = file(filename, 'r')
+    f = open(filename, 'r')
     function_body = f.read()
     f.close()
 
@@ -201,16 +201,16 @@ def output_dynamic_functions(obj, directory = SloppyCell._TEMP_DIR):
         for func in obj._dynamic_funcs:
             body = getattr(obj, '%s_functionBody' % func, None)
             if body is not None:
-                f = file(os.path.join(directory, '%s.py' % func), 'w')
+                f = open(os.path.join(directory, '%s.py' % func), 'w')
                 f.write(getattr(obj, '%s_functionBody' % func))
                 f.close()
     elif isinstance(obj, Network_mod.Network):
         for func, body in obj._dynamic_funcs_python.items():
             if body != None:
-                f = file(os.path.join(directory, '%s.py' % func), 'w')
+                f = open(os.path.join(directory, '%s.py' % func), 'w')
                 f.write(body)
                 f.close()
         c_code = obj.get_c_code()
-        f = file(os.path.join(directory, '%s.c' % obj.get_id()), 'w')
+        f = open(os.path.join(directory, '%s.c' % obj.get_id()), 'w')
         f.write(c_code)
         f.close()

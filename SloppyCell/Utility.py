@@ -107,7 +107,7 @@ class ConstraintViolatedException(SloppyCellException):
         return ('Violated constraint: %s at time %g. Additional info: %s.'
                 %(self.constraint, self.time, self.message))
 
-import Redirector_mod
+from . import Redirector_mod
 Redirector = Redirector_mod.Redirector
 
 def combine_hessians(hesses, key_sets):

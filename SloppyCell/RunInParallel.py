@@ -47,7 +47,7 @@ while my_rank != 0:
             try:
                 result = eval(command)
                 pypar.send(result, 0)
-            except Utility.SloppyCellException, X:
+            except Utility.SloppyCellException as X:
                 pypar.send(X, 0)
     except:
         # Assemble and print a nice traceback

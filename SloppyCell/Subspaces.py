@@ -11,8 +11,8 @@ def subspace_angles(A, B):
     """
     A, B = scipy.asarray(A), scipy.asarray(B)
     if A.shape[0] != B.shape[0]:
-        raise ValueError, 'Input subspaces must live in the same dimensional '\
-                'space.'
+        raise ValueError('Input subspaces must live in the same dimensional '\
+                'space.')
 
     # Get orthogonal bases for our two subspaces.
     QA, QB = scipy.linalg.orth(A), scipy.linalg.orth(B)

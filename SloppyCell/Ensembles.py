@@ -170,13 +170,13 @@ def ensemble_log_params(m, params, hess=None,
 
         try:
             next_F = m.free_energy(next_params, temperature)
-        except Utility.SloppyCellException, X:
+        except Utility.SloppyCellException as X:
             logger.warn('SloppyCellException in free energy evaluation at step '
                         '%i, free energy set to infinity.' % len(ens))
             logger.warn('Parameters tried: %s.' % str(next_params))
             attempt_exceptions += 1
             next_F = scipy.inf
-        except Utility.ConstraintViolatedException, X:
+        except Utility.ConstraintViolatedException as X:
             logger.warn('ConstraintViolatedException in free energy evaluation '
                         'at step %i, free energy set to infinity.' % len(ens))
             logger.warn('Parameters tried: %s.' % str(next_params))
@@ -191,7 +191,7 @@ def ensemble_log_params(m, params, hess=None,
                 accepted = _accept_move_recalc_alg(curr_F, samp_mat, 
                                                    next_F, next_samp_mat, 
                                                    deltaParams, temperature)
-            except Utility.SloppyCellException, X:
+            except Utility.SloppyCellException as X:
                 logger.warn('SloppyCellException in JtJ evaluation at step '
                             '%i, move not accepted.' % len(ens))
                 logger.warn('Parameters tried: %s.' % str(next_params))

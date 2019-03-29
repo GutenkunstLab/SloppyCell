@@ -1,6 +1,6 @@
 from compiler.ast import *
 import copy
-import cPickle
+import pickle
 import logging
 import os
 logger = logging.getLogger('ExprManip.Differentiation')
@@ -40,12 +40,12 @@ def load_derivs(filename):
         return
 
     try:
-        f = file(filename, 'rb')
+        f = open(filename, 'rb')
     except IOError:
         # This failure probably indicates that the file doesn't exist.
         return
     try:
-        __deriv_saved = cPickle.load(f)
+        __deriv_saved = pickle.load(f)
         logger.debug('Loaded chached derivatives from %s.' % filename)
         return
     except:
@@ -65,8 +65,8 @@ def save_derivs(filename):
                     'this Python session (and not reloaded). Not saving '
                     'current, potentially, outdated derivatives cache.')
         return
-    f = file(filename, 'wb')
-    cPickle.dump(__deriv_saved, f, 2)
+    f = open(filename, 'wb')
+    pickle.dump(__deriv_saved, f)
     f.close()
 
 def diff_expr(expr, wrt):

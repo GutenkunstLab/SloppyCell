@@ -28,7 +28,7 @@ class KeyedList(list):
 
     def set_order(self, order):
         if len(order) != len(self):
-            raise ValueError, 'New order is of a different length!'
+            raise ValueError('New order is of a different length!')
 
         oldOrder = copy.copy(self.keyToIndex)
         oldValues = copy.copy(self.values())
@@ -112,7 +112,7 @@ class KeyedList(list):
                 self.set(key, value)
         else:
             if(len(self) != len(other)):
-                raise ValueError, 'Other list not of same length!'
+                raise ValueError('Other list not of same length!')
             for ii in range(len(self)):
                 self[ii] = other[ii]
 

@@ -513,7 +513,7 @@ class Network:
            or id in self.events.keys()\
            or id in self.constraints.keys()\
            or id == self.id:
-            raise ValueError, ('The id %s is already in use!' % id)
+            raise ValueError('The id %s is already in use!' % id)
 
     def set_id(self, id):
         """
@@ -3223,7 +3223,7 @@ class Network:
                         os.unlink('%s.pyd' % module_name)
                     except OSError:
                         pass
-            except ImportError, X:
+            except ImportError as X:
                 # Compiling C failed.
                 logger.warn('Failed to import dynamically compiled C module %s '
                             'for network %s.' % (module_name, self.get_id()))
@@ -3299,7 +3299,7 @@ class Network:
                                              'ReactionNetworks',
                                              'f2py_signatures.pyf')
 
-        pyf_base_fd = file(pyf_base_filename, 'r')
+        pyf_base_fd = open(pyf_base_filename, 'r')
         pyf_base = pyf_base_fd.read()
         
         pyf_base_fd.close()
@@ -3367,7 +3367,7 @@ class Network:
                                           '%s/mtrand.c'%RN_dir],
                                  include_dirs=[RN_dir])
             core.setup(ext_modules = [ext])
-        except SystemExit, X:
+        except SystemExit as X:
             # If we encounter an error, print out STDOUT and STDERR for
             # debugging
             if hide_output:
