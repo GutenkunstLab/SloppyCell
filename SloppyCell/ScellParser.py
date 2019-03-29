@@ -114,7 +114,7 @@ def read_from_file(file_name, output_location=None):
 
         except TypeError as e:
             logger.warn('No sbml reference established, model cannot be made.')
-            print e
+            print(e)
 
         if experiments is not []:
             expt_dict = {}

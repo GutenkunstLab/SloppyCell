@@ -84,7 +84,7 @@ def design_over_chems(chemnames,designchemnames,logprior=1.0e20) :
     best_chem = "None"
     best_time = "None"
     for dchemname in designchemnames :
-        print "On design chemical ", dchemname    
+        print("On design chemical ", dchemname)
         for t in trunc_times :
             sensvect_design = get_sens_vect(dchemname,t)
             # NOTE: assuming a 10% error on the measurement --- use 10% of the 

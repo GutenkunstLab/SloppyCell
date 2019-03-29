@@ -3373,10 +3373,10 @@ class Network:
             if hide_output:
                 stdout = redir_stdout.stop()
                 stderr = redir_stderr.stop()
-                print '***STDOUT***'
-                print stdout
-                print '***STDERR***'
-                print stderr
+                print('***STDOUT***')
+                print(stdout)
+                print('***STDERR***')
+                print(stderr)
         finally:
             # Ensure we always stop redirecting and restor sys.argv
             if hide_output:

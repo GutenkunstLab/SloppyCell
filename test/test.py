@@ -22,20 +22,20 @@ def run_all_tests():
     if not '-v' in sys.argv:
         SloppyCell.Utility.disable_warnings()
     if not SloppyCell.disable_c:
-        print '*' * 80
-        print 'Running tests with C compilation enabled.'
-        print '*' * 80
+        print('*' * 80)
+        print('Running tests with C compilation enabled.')
+        print('*' * 80)
         unittest.TextTestRunner(verbosity=2).run(all_tests)
     SloppyCell.ReactionNetworks.Network_mod.Network.disable_c = True
-    print '*' * 80
-    print 'Running tests with C compilation disabled.'
-    print '*' * 80
+    print('*' * 80)
+    print('Running tests with C compilation disabled.')
+    print('*' * 80)
     unittest.TextTestRunner(verbosity=2).run(all_tests)
 
     for mod in all_test_mods:
         if hasattr(mod, 'message'):
-            print
-            print mod.message
+            print()
+            print(mod.message)
 
 if __name__ == '__main__':
     run_all_tests()

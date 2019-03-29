@@ -791,7 +791,7 @@ class Model:
         self._notify(event = 'hessian element', i = i, j = j, 
                      element = element)
         if verbose: 
-            print 'hessian[%i, %i] = %g' % (i, j, element)
+            print('hessian[%i, %i] = %g' % (i, j, element))
 
         return element
 

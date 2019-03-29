@@ -221,9 +221,9 @@ def plot_model_results(model, expts = None, style='errorbars',
 
                 if plot_trajectories:
                     if traj is None:
-                        print 'No trajectory in calculation %s!' % calcId
-                        print 'The cost must be evaluated before the results',
-                        print 'can be plotted.'
+                        print('No trajectory in calculation %s!' % calcId)
+                        print('The cost must be evaluated before the results')
+                        print('can be plotted.')
                         return
                     scaleFactor = model.GetScaleFactors()[exptId][dataId]
                     result = scaleFactor*traj.getVariableTrajectory(dataId)

@@ -46,7 +46,7 @@ def test():
             scipy.array([ 0.    ,  0.0594,  0.0609,  0.1388,  0.1418,  0.2157,
                          0.2701,  0.337 , 0.3975,  0.4928,  0.6456,  0.9982,  
                          0.9999])
-    print 'Comparison with Bjorck and Golub (1973) example passed.'
+    print('Comparison with Bjorck and Golub (1973) example passed.')
 
     # Example from p 605 of Matrix Computations
     A = [[1,2],[3,4],[5,6]]
@@ -80,5 +80,5 @@ def plot_test():
     gnuplot_command = 'splot "%s" lw 10 t "A", "%s" lw 10 t "B", '\
             '"%s" lw 8 t "U", "%s" lw 4 t "V"' % tuple(file_names)
 
-    print theta * 180/scipy.pi
-    print gnuplot_command
+    print(theta * 180/scipy.pi)
+    print(gnuplot_command)

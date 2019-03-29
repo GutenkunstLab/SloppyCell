@@ -395,7 +395,7 @@ def timeCostEval(mat, p, numEvals=100):
     for ii in range(numEvals):
         Cost = C(p,mat)
     stop = time.time()
-    print "time per eval:", (stop-start)/numEvals
+    print("time per eval:", (stop-start)/numEvals)
     return (stop-start)/numEvals
 
 def timeGammas(listNumGammas, numEvals=1000):

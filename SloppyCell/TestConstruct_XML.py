@@ -317,7 +317,7 @@ def add_reaction(network, action_root, network_dictionary):
                 network.addReaction(kinetic_law, var_id, *pass_list, **attributes)
                 return network
             except Exception as exep:
-                print exep
+                print(exep)
                 logger.warn("Please check that the reaction name is typed correctly")
         except KeyError:
             # No reaction specified
@@ -487,13 +487,13 @@ def construct_ensemble(params, m, result_dictionary, autocorrelate=False, steps=
         pass
 
     Network.full_speed()
-    print 'Beginning ensemble calculation.'
+    print('Beginning ensemble calculation.')
     print(params)
     ens, gs, r = Ensembles.ensemble_log_params(m, params, steps=steps, **kwargs)
 
-    print 'Finished ensemble calculation.'
+    print('Finished ensemble calculation.')
     if autocorrelate:
-        print autocorrelate
+        print(autocorrelate)
         Plotting.figure()
         Plotting.title("Autocorrelation")
         ac = Ensembles.autocorrelation(gs)
@@ -508,7 +508,7 @@ def construct_ensemble(params, m, result_dictionary, autocorrelate=False, steps=
         csv_friendly_ens = asarray(pruned_ens)
         with open(dir_name+"/saved_files/Ensemble_ens_"+str(steps)+".csv", 'wb') as myfile:
             wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-            print params.keys()
+            print(params.keys())
             wr.writerow(params.keys())
             for row in csv_friendly_ens:
                 wr.writerow(row)
@@ -529,7 +529,7 @@ def plot_histograms(pruned_ens, keyed_list, id='all', bins=10, log=True):
     if isinstance(id, list):
         for param in id:
             if param in keyed_list.keys():
-                print "Plotting histogram for %s" % param
+                print("Plotting histogram for %s" % param)
                 param_index = keyed_list.index_by_key(param)
                 fig = figure()
                 fig.suptitle(param, fontweight='bold')
@@ -591,7 +591,7 @@ def plot_variables(pruned_ens=None, net=None, id=None, time_r=65, start=0, point
         if make_figure:
             figure()
 
-        print "Plotting trajectory set for %s" % id
+        print("Plotting trajectory set for %s" % id)
         for quantile in quantiles:
             plot(times, quantile.get_var_traj(id), color)
     return traj_set
@@ -628,7 +628,7 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
         plot_after = False
     if initial_cost:
         initial_cost = m.cost(params)
-        print 'Initial Cost:', initial_cost
+        print('Initial Cost:', initial_cost)
         try:
             if kwargs.pop('plot_before'):
                 initial_plot = Plotting.figure()
@@ -650,14 +650,14 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
             new_params = optimization_dictionary[opt_type](m, new_params, **routine_dict_n)
         optimized_cost = m.cost(new_params)
         params = new_params
-        print 'Optimized cost:', optimized_cost
+        print('Optimized cost:', optimized_cost)
         # print 'Optimized parameters:', params
 
     if plot or plot_after:
         if not optimize:
             optimized_cost = m.cost(params)
-            print 'Optimized cost:', optimized_cost
-            print 'Optimized parameters:', params
+            print('Optimized cost:', optimized_cost)
+            print('Optimized parameters:', params)
         Plotting.figure()
         f=Plotting.plot_model_results(m)
         for thing in f[0]:
@@ -732,8 +732,8 @@ def save_to_temp(obj, file_name, xml_file, node, hash_id, routine="temp_file"):
     else:
         dir_name = os.path.dirname(file_name)
     parent_name = os.path.basename(dir_name)
-    print "Saving " + routine + " to file"
-    print "Output folder: " + dir_name
+    print("Saving " + routine + " to file")
+    print("Output folder: " + dir_name)
     model_name = root.attrib['name']
     save_folder = "/saved_files/" + routine +"-"+model_name+ "_" +str(hash_id)+ ".bp"
 
@@ -828,17 +828,17 @@ def check_to_save(routine_function):
                     save_file = True
                 if "override" in sys.argv:
                     # Allows the user to override the cache to avoid saving or loading
-                    print "Overriding"
+                    print("Overriding")
                     use_file = False
                     save_file = False
                 elif "replace" in sys.argv:
-                    print "replacing"
+                    print("replacing")
                     use_file = False
                     save_file = True
                 if use_file:
                     # User wants to load the object
-                    print 'Successfully loaded %s objects from file' % routine
-                    print saved_file_path
+                    print('Successfully loaded %s objects from file' % routine)
+                    print(saved_file_path)
                     loaded_object = Utility.load(saved_file_path)
                     # Now we call the routine function and pass in the loaded object
                     # We can just return it because we don't have to save anything
@@ -851,7 +851,7 @@ def check_to_save(routine_function):
                         # Todo: Old files don't have to be deleted, and the option to do so can be included
                         try:
                             os.unlink(saved_file_path)
-                            print "Replacing old %s file with new one" % routine
+                            print("Replacing old %s file with new one" % routine)
                         except OSError:
                             pass
             else:
@@ -878,7 +878,7 @@ def check_to_save(routine_function):
         if save_file:
             action_node = hash_node.find(routine.lower())
             if action_node is None:
-                print "Making new node"
+                print("Making new node")
                 action_node = ET.SubElement(hash_node, routine.lower())
             save_to_temp(routine_object, hash_id=hash_id, xml_file=xml_file,
                          file_name=file_name, node=action_node, routine=routine)
@@ -987,7 +987,7 @@ def histogram_r(current_root, result_dictionary, params, **kwargs):
 
 @check_to_save
 def ensemble_traj(current_root, routine_dict, result_dictionary, time_r, net, network_dictionary, **kwargs):
-    print "Graphing trajectories"
+    print("Graphing trajectories")
     try:
         traj_dict = kwargs['loaded_object']
         object_loaded = True
@@ -1469,6 +1469,6 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
                 # except KeyError as e:
                 #     logger.warn("No function associated with action tag %s" % child.tag)
                 #     logger.warn(e)
-        print "All routines complete"
+        print("All routines complete")
 
     time.sleep(2)

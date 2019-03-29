@@ -11,7 +11,7 @@ def print_hess_elements(**args):
         ii = args['i']
         jj = args['j']
 
-        print 'hessian element %i, %i: %g' % (ii, jj, elem)
+        print('hessian element %i, %i: %g' % (ii, jj, elem))
 
 class CostPrinter:
     def __init__(self, skip=1, print_params=False, print_best_params=False):
@@ -29,13 +29,13 @@ class CostPrinter:
                 self.lowest_cost = cost
                 self.best_params = params.copy()
             if self.ii % self.skip == 0:
-                print 'call %i: cost: %g, best so far: %g' % (self.ii, cost, 
-                                                              self.lowest_cost)
+                print('call %i: cost: %g, best so far: %g' % (self.ii, cost, 
+                                                              self.lowest_cost))
                 os.sys.stdout.flush()
                 if self.print_params:
-                    print params
+                    print(params)
                 if self.print_best_params:
-                    print self.best_params
+                    print(self.best_params)
             self.ii += 1
 
     def reset(self):
@@ -45,7 +45,7 @@ class CostPrinter:
 
 def print_all_costs(**args):
     if args['event'] == 'cost':
-        print args['cost']
+        print(args['cost'])
 
 class CostEmailer:
     def __init__(self, interval, from_addr, to_addr):

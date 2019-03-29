@@ -70,11 +70,11 @@ def approx_fprime2(xk,f,epsilon,*args):
 
 def check_grad(func, grad, x0, *args):
     approx_grad = approx_fprime(x0,func,_epsilon,*args)
-    print "Finite difference gradient ", approx_grad
+    print("Finite difference gradient ", approx_grad)
     analytic_grad = grad(x0,*args)
-    print "Analytic gradient ", analytic_grad
+    print("Analytic gradient ", analytic_grad)
     differencenorm = sqrt(sum(approx_grad-analytic_grad)**2)
-    print "Norm of difference is ", differencenorm
+    print("Norm of difference is ", differencenorm)
     return differencenorm 
 
 def approx_fhess_p(x0,p,fprime,epsilon,*args):
@@ -268,10 +268,10 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         res1,costlambda = safe_res(f,x1,args)
         func_calls+=1
         if disp :
-            print 'Iteration number', niters
-            print 'Current cost', currentcost
-            print "Move 1 gives cost of" , costlambda
-            print "Move 2 gives cost of ", costlambdasmaller
+            print('Iteration number', niters)
+            print('Current cost', currentcost)
+            print("Move 1 gives cost of" , costlambda)
+            print("Move 2 gives cost of ", costlambdasmaller)
             #fp = open('LMoutfile','a')
             #fp.write('Iteration number ' + niters.__str__() + '\n')
             #fp.write('Current cost ' + currentcost.__str__() + '\n')
@@ -355,7 +355,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                     while (costmult > currentcost) and (NTrials2 < 10) :
                         NTrials2 = NTrials2 + 1
                         if disp == 1:
-                            print " Decreasing stepsize "
+                            print(" Decreasing stepsize ")
                         move = (.5)**NTrials2*moveold
                         x1 = x + asarray(move)
                         res1,costmult = safe_res(f,x1,args)
@@ -363,7 +363,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
             if (NTrials==10) or (NTrials2==10) :
                 if disp == 1:
-                    print " Failed to converge"
+                    print(" Failed to converge")
                 finish = 1
             else :
                 xprev = x[:]
@@ -405,29 +405,29 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
     if disp :
         if (niters>=maxiter) and (finish != 2) :
-            print " Current function value: %f" % currentcost
-            print " Iterations: %d" % niters
-            print " Function evaluations: %d" % func_calls
-            print " Gradient evaluations: %d" % grad_calls
-            print " Maximum number of iterations exceeded with no convergence "
+            print(" Current function value: %f" % currentcost)
+            print(" Iterations: %d" % niters)
+            print(" Function evaluations: %d" % func_calls)
+            print(" Gradient evaluations: %d" % grad_calls)
+            print(" Maximum number of iterations exceeded with no convergence ")
         if (finish == 2) :
-            print " Optimization terminated successfully."
-            print " Current function value: %f" % currentcost
-            print " Iterations: %d" % niters
-            print " Function evaluations: %d" % func_calls
-            print " Gradient evaluations: %d" % grad_calls
+            print(" Optimization terminated successfully.")
+            print(" Current function value: %f" % currentcost)
+            print(" Iterations: %d" % niters)
+            print(" Function evaluations: %d" % func_calls)
+            print(" Gradient evaluations: %d" % grad_calls)
         if (finish == 3) :
-            print " Optimization aborted: Jacobian contains nan or inf."
-            print " Current function value: %f" % currentcost
-            print " Iterations: %d" % niters
-            print " Function evaluations: %d" % func_calls
-            print " Gradient evaluations: %d" % grad_calls
+            print(" Optimization aborted: Jacobian contains nan or inf.")
+            print(" Current function value: %f" % currentcost)
+            print(" Iterations: %d" % niters)
+            print(" Function evaluations: %d" % func_calls)
+            print(" Gradient evaluations: %d" % grad_calls)
         if (finish == 4) :
-            print " Optimization aborted: Exception in Jacobian calculation."
-            print " Current function value: %f" % currentcost
-            print " Iterations: %d" % niters
-            print " Function evaluations: %d" % func_calls
-            print " Gradient evaluations: %d" % grad_calls
+            print(" Optimization aborted: Exception in Jacobian calculation.")
+            print(" Current function value: %f" % currentcost)
+            print(" Iterations: %d" % niters)
+            print(" Function evaluations: %d" % func_calls)
+            print(" Gradient evaluations: %d" % grad_calls)
 
     if isinstance(xcopy,KeyedList) :
         xcopy.update(x)
@@ -578,10 +578,10 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             costlambda = scipy.inf
         func_calls+=1
         if disp :
-            print 'Iteration number', niters
-            print 'Current cost', currentcost
-            print "Move 1 gives cost of" , costlambda
-            print "Move 2 gives cost of ", costlambdasmaller
+            print('Iteration number', niters)
+            print('Current cost', currentcost)
+            print("Move 1 gives cost of" , costlambda)
+            print("Move 2 gives cost of ", costlambdasmaller)
 
             #fp = open('LMoutfile','a')
             #fp.write('Iteration number ' + niters.__str__() + '\n')
@@ -646,7 +646,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
                     while (costmult > currentcost) and (NTrials2 < 10) :
                         NTrials2 = NTrials2 + 1
                         if disp :
-                            print " Decreasing stepsize "
+                            print(" Decreasing stepsize ")
                         move = (.5)**NTrials2*moveold
                         x1 = x + asarray(moveold)
                         func_calls+=1
@@ -654,7 +654,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
 
             if (NTrials==10) or (NTrials2==10) :
                 if disp :
-                    print " Failed to converge"
+                    print(" Failed to converge")
                 finish = 1
             else :
                 x = x1[:]
@@ -688,17 +688,17 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
 
     if disp :
         if (niters>=maxiter) and (finish != 2) :
-            print "         Current function value: %f" % currentcost
-            print "         Iterations: %d" % niters
-            print "         Function evaluations: %d" % func_calls
-            print "         Gradient evaluations: %d" % grad_calls
-            print " Maximum number of iterations exceeded with no convergence "
+            print("         Current function value: %f" % currentcost)
+            print("         Iterations: %d" % niters)
+            print("         Function evaluations: %d" % func_calls)
+            print("         Gradient evaluations: %d" % grad_calls)
+            print(" Maximum number of iterations exceeded with no convergence ")
         if (finish == 2) :
-            print "Optimization terminated successfully."
-            print "         Current function value: %f" % currentcost
-            print "         Iterations: %d" % niters
-            print "         Function evaluations: %d" % func_calls
-            print "         Gradient evaluations: %d" % grad_calls
+            print("Optimization terminated successfully.")
+            print("         Current function value: %f" % currentcost)
+            print("         Iterations: %d" % niters)
+            print("         Function evaluations: %d" % func_calls)
+            print("         Gradient evaluations: %d" % grad_calls)
 
     if isinstance(xcopy,KeyedList) :
         xcopy.update(x)
@@ -857,8 +857,8 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             costlambda = scipy.inf
         func_calls+=1
         if disp :    
-            print "Cost is ", currentcost
-            print "Iteration is", niters
+            print("Cost is ", currentcost)
+            print("Iteration is", niters)
 
         oldcost = currentcost
         oldres = res
@@ -914,7 +914,7 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
             if (NTrials==100) :
                 if disp :
-                    print " Failed to converge"
+                    print(" Failed to converge")
                 finish = 1
             else :
                 x = x1
@@ -950,17 +950,17 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
     if disp :
         if (niters>=maxiter) and (finish != 2) :
-            print "         Current function value: %f" % currentcost
-            print "         Iterations: %d" % niters
-            print "         Function evaluations: %d" % func_calls
-            print "         Gradient evaluations: %d" % grad_calls
-            print " Maximum number of iterations exceeded with no convergence "
+            print("         Current function value: %f" % currentcost)
+            print("         Iterations: %d" % niters)
+            print("         Function evaluations: %d" % func_calls)
+            print("         Gradient evaluations: %d" % grad_calls)
+            print(" Maximum number of iterations exceeded with no convergence ")
         if (finish == 2) :
-            print "Optimization terminated successfully."
-            print "         Current function value: %f" % currentcost
-            print "         Iterations: %d" % niters
-            print "         Function evaluations: %d" % func_calls
-            print "         Gradient evaluations: %d" % grad_calls
+            print("Optimization terminated successfully.")
+            print("         Current function value: %f" % currentcost)
+            print("         Iterations: %d" % niters)
+            print("         Function evaluations: %d" % func_calls)
+            print("         Gradient evaluations: %d" % grad_calls)
             
     if isinstance(xcopy,KeyedList) :
         xcopy.update(x)
