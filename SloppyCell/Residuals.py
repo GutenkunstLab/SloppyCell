@@ -59,7 +59,7 @@ class Residual:
 
     def Dp(self, predictions, senspredictions, internalVars, internalVarsDerivs,
            params):
-	""" 
+        """ 
         Total derivatives with respect to all parameters of the residual.
 
         Should return a list with the derivatives in the same order as params.
@@ -67,8 +67,8 @@ class Residual:
         XXX: This only works with internvalVars that are indexed like scale
         factors.
         """
-	derivs_wrt_p = []
-	for pname in params.keys():
+        derivs_wrt_p = []
+        for pname in params.keys():
             deriv = 0
 
             # This first term is dres/dy * dy/dp
@@ -97,7 +97,7 @@ class Residual:
 
             derivs_wrt_p.append(deriv)
 
-	return derivs_wrt_p
+        return derivs_wrt_p
 
 class ScaledErrorInFit(Residual):
     def __init__(self, key, depVarKey, calcKey, indVarValue,  depVarMeasurement,
@@ -127,7 +127,7 @@ class ScaledErrorInFit(Residual):
         return {self.calcKey: {self.yKey: {self.xVal: deriv}}}
 
     def dintVars(self, predictions, internalVars, params):
-	raw_pred_val = predictions[self.calcKey][self.yKey][self.xVal]
+        raw_pred_val = predictions[self.calcKey][self.yKey][self.xVal]
         deriv = raw_pred_val / self.ySigma
         return {'scaleFactors': {self.exptKey: {self.yKey: deriv}}}
 
@@ -310,13 +310,13 @@ class ScaledExtremum(Residual):
 
     def Dp(self, predictions, senspredictions, internalVars, internalVarsDerivs,
            params):
-	""" 
+        """ 
         Total derivatives with respect to all parameters of the residual.
 
         Should return a list with the derivatives in the same order as params.
         """
-	derivs_wrt_p = []
-	for pname in params.keys():
+        derivs_wrt_p = []
+        for pname in params.keys():
             deriv = 0
 
             # This first term is dres/dy * dy/dp
@@ -333,4 +333,4 @@ class ScaledExtremum(Residual):
 
             derivs_wrt_p.append(deriv)
 
-	return derivs_wrt_p
+        return derivs_wrt_p
