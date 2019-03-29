@@ -6,7 +6,6 @@ import logging
 logger = logging.getLogger('Model_mod')
 
 import copy
-import sets
 
 import scipy
 
@@ -40,9 +39,9 @@ class Model:
 
         self.calcVals = {}
         self.calcSensitivityVals = {}
-	self.internalVars = {}
+        self.internalVars = {}
         self.internalVarsDerivs = {}
-	self.residuals = KeyedList()
+        self.residuals = KeyedList()
 
         if isinstance(expts, list):
             expts = Collections.ExperimentCollection(expts)
@@ -229,7 +228,7 @@ class Model:
         for obs in self.observers:
             if hasattr(obs, 'reset'):
                 obs.reset()
-	
+
     resDict = res_dict
     # ...
 
@@ -258,9 +257,9 @@ class Model:
         if stepSizeCutoff==None:
             stepSizeCutoff = scipy.sqrt(_double_epsilon_)
             
-	if relativeScale is True:
+        if relativeScale is True:
             eps = epsf * abs(params)
-	else:
+        else:
             eps = epsf * scipy.ones(len(params),scipy.float_)
 
         for i in range(0,len(eps)):
@@ -386,8 +385,8 @@ class Model:
 
         for group in sf_groups:
             # Do any of the variables in this group have fixed scale factors?
-            fixed = sets.Set(group).intersection(sets.Set(fixed_sf.keys()))
-            fixedAt = sets.Set([fixed_sf[var] for var in fixed])
+            fixed = set(group).intersection(set(fixed_sf.keys()))
+            fixedAt = set([fixed_sf[var] for var in fixed])
 
             # We'll need to index the scale factor entropies on the *group*
             # that shares a scale factor, since we only have one entropy per
@@ -411,7 +410,7 @@ class Model:
             # For discrete data
             for calc in exptData:
                 # Pull out the vars we have measured for this calculation
-                for var in sets.Set(group).intersection(sets.Set(exptData[calc].keys())):
+                for var in set(group).intersection(set(exptData[calc].keys())):
                     for indVar, (data, error) in exptData[calc][var].items():
                         theory = self.calcVals[calc][var][indVar]
                         theoryDotData += (theory * data) / error**2
@@ -425,7 +424,7 @@ class Model:
                 uncert_traj = dataset['uncert_traj']
                 interval = dataset['interval']
                 T = interval[1] - interval[0]
-                for var in group.intersection(sets.Set(dataset['vars'])):
+                for var in group.intersection(set(dataset['vars'])):
                     TheorDotT = self._integral_theorytheory(var, theory_traj,
                                                             uncert_traj, 
                                                             interval)
@@ -485,33 +484,33 @@ class Model:
         compute_scale_factorsDerivs() -> dictionary
 
         Returns the scale factor derivatives w.r.t. parameters
-	appropriate for each chemical in each
+        appropriate for each chemical in each
         experiment, given the current parameters. The returned dictionary
         is of the form: internalVarsDerivs['scaleFactors'] \
                 = dict[experiment][chemical][parametername] -> derivative.
         """
 
         self.internalVarsDerivs['scaleFactors'] = {}
-	p = self.GetCalculationCollection().GetParameters()
+        p = self.GetCalculationCollection().GetParameters()
 
-	for exptName, expt in self.GetExperimentCollection().items():
+        for exptName, expt in self.GetExperimentCollection().items():
             self.internalVarsDerivs['scaleFactors'][exptName] = {}
-	    exptData = expt.GetData()
+            exptData = expt.GetData()
 
             # Get the dependent variables measured in this experiment
-            exptDepVars = sets.Set()
+            exptDepVars = {}
             for calc in exptData:
-                exptDepVars.union_update(sets.Set(expt.GetData()[calc].keys()))
+                exptDepVars.union_update(set(expt.GetData()[calc].keys()))
             # Now for the extrema data
             for ds in expt.scaled_extrema_data:
                 exptDepVars.add(ds['var'])
 
             for depVar in exptDepVars:
-		self.internalVarsDerivs['scaleFactors'][exptName][depVar] = {}
-		if depVar in expt.GetFixedScaleFactors():
+                self.internalVarsDerivs['scaleFactors'][exptName][depVar] = {}
+                if depVar in expt.GetFixedScaleFactors():
                     for pname in p.keys():
-		    	self.internalVarsDerivs['scaleFactors'][exptName]\
-                                [depVar][pname] = 0.0
+                        self.internalVarsDerivs['scaleFactors'][exptName]\
+                            [depVar][pname] = 0.0
                     continue
 
                 theoryDotData, theoryDotTheory = 0, 0
@@ -570,11 +569,11 @@ class Model:
                     except ZeroDivisionError:
                         deriv_dict[pname] = 0
 
-	return self.internalVarsDerivs['scaleFactors']
+        return self.internalVarsDerivs['scaleFactors']
 
     def jacobian_log_params_sens(self, log_params):
-    	"""
-	Return a KeyedList of the derivatives of the model residuals w.r.t.
+        """
+        Return a KeyedList of the derivatives of the model residuals w.r.t.
         the lograithms of the parameters parameters.
 
         The method uses the sensitivity integration. As such, it will only
@@ -582,7 +581,7 @@ class Model:
 
         The KeyedList is of the form:
             kl.get(resId) = [dres/dlogp1, dres/dlogp2...]
-	"""
+        """
         params = scipy.exp(log_params)
         j = self.jacobian_sens(params)
         j_log = j.copy()
@@ -591,8 +590,8 @@ class Model:
         return j_log
 
     def jacobian_sens(self, params):
-    	"""
-	Return a KeyedList of the derivatives of the model residuals w.r.t.
+        """
+        Return a KeyedList of the derivatives of the model residuals w.r.t.
         parameters.
 
         The method uses the sensitivity integration. As such, it will only
@@ -600,13 +599,13 @@ class Model:
 
         The KeyedList is of the form:
             kl[resId] = [dres/dp1, dres/dp2...]
-	"""
+        """
         self.params.update(params)
 
         # Calculate sensitivities
-	self.CalculateSensitivitiesForAllDataPoints(params)
-	self.ComputeInternalVariables()
-	self.ComputeInternalVariableDerivs()
+        self.CalculateSensitivitiesForAllDataPoints(params)
+        self.ComputeInternalVariables()
+        self.ComputeInternalVariableDerivs()
 
         # Calculate residual derivatives
         deriv = [(resId, res.Dp(self.calcVals, self.calcSensitivityVals,
@@ -614,12 +613,12 @@ class Model:
                                 self.params))
                  for (resId, res) in self.residuals.items()]
 
-	return KeyedList(deriv)
+        return KeyedList(deriv)
 
     def jacobian_fd(self, params, eps, 
                     relativeScale=False, stepSizeCutoff=None):
-    	"""
-	Return a KeyedList of the derivatives of the model residuals w.r.t.
+        """
+        Return a KeyedList of the derivatives of the model residuals w.r.t.
         parameters.
 
         The method uses finite differences.
@@ -633,62 +632,61 @@ class Model:
         """
         res = self.resDict(params)
 
-	orig_vals = scipy.array(params)
+        orig_vals = scipy.array(params)
 
         if stepSizeCutoff is None:
             stepSizeCutoff = scipy.sqrt(_double_epsilon_)
             
-	if relativeScale:
+        if relativeScale:
             eps_l = scipy.maximum(eps * abs(params), stepSizeCutoff)
-	else:
+        else:
             eps_l = scipy.maximum(eps * scipy.ones(len(params),scipy.float_),
                                   stepSizeCutoff)
 
-	J = KeyedList() # will hold the result
-	for resId in res.keys():
+        J = KeyedList() # will hold the result
+        for resId in res.keys():
             J.set(resId, [])
         # Two-sided finite difference
-	for ii in range(len(params)):
+        for ii in range(len(params)):
             params[ii] = orig_vals[ii] + eps_l[ii]
-	    resPlus = self.resDict(params)
+            resPlus = self.resDict(params)
 
             params[ii] = orig_vals[ii] - eps_l[ii]
             resMinus = self.resDict(params)
 
             params[ii] = orig_vals[ii]
 
-	    for resId in res.keys():
+            for resId in res.keys():
                 res_deriv = (resPlus[resId]-resMinus[resId])/(2.*eps_l[ii])
                 J.get(resId).append(res_deriv)
-	
-	# NOTE: after call to ComputeResidualsWithScaleFactors the Model's
-	# parameters get updated, must reset this:
+
+        # NOTE: after call to ComputeResidualsWithScaleFactors the Model's
+        # parameters get updated, must reset this:
         self.params.update(params)
-	return J
+        return J
 
     def GetJacobian(self,params):
-    	"""
-	GetJacobian(parameters) -> dictionary
+        """
+        GetJacobian(parameters) -> dictionary
 
-	Gets a dictionary of the sensitivities at the time points of
-	the independent variables for the measured dependent variables
-	for each calculation and experiment.
-	Form:
-	dictionary[(experiment,calculation,dependent variable,
-	independent variable)] -> result
+        Gets a dictionary of the sensitivities at the time points of
+        the independent variables for the measured dependent variables
+        for each calculation and experiment.
+        Form:
+        dictionary[(experiment,calculation,dependent variable,
+        independent variable)] -> result
 
-	result is a vector of length number of parameters containing
-	the sensitivity at that time point, in the order of the ordered
-	parameters
-
-	"""
+        result is a vector of length number of parameters containing
+        the sensitivity at that time point, in the order of the ordered
+        parameters
+        """
         return self.jacobian_sens(params)
     
     def Jacobian(self, params, epsf, relativeScale=False, stepSizeCutoff=None):
-    	"""
-	Finite difference the residual dictionary to get a dictionary
-	for the Jacobian. It will be indexed the same as the residuals.
-	Note: epsf is either a scalar or an array.
+        """
+        Finite difference the residual dictionary to get a dictionary
+        for the Jacobian. It will be indexed the same as the residuals.
+        Note: epsf is either a scalar or an array.
         If relativeScale is False then epsf is the stepsize used (it should
         already be multiplied by typicalValues before Jacobian is called)
         If relativeScale is True then epsf is multiplied by params.
@@ -699,40 +697,40 @@ class Model:
                                 relativeScale, stepSizeCutoff)
 
     def GetJandJtJ(self,params):
-	j = self.GetJacobian(params)
-	mn = scipy.zeros((len(params),len(params)),scipy.float_)
+        j = self.GetJacobian(params)
+        mn = scipy.zeros((len(params),len(params)),scipy.float_)
 
-	for paramind in range(0,len(params)):
-	  for paramind1 in range(0,len(params)):
-	    sum = 0.0
-	    for kys in j.keys():
-	      sum = sum + j.get(kys)[paramind]*j.get(kys)[paramind1]
+        for paramind in range(0,len(params)):
+            for paramind1 in range(0,len(params)):
+                sum = 0.0
+                for kys in j.keys():
+                    sum = sum + j.get(kys)[paramind]*j.get(kys)[paramind1]
 
-	    mn[paramind][paramind1] = sum
-    	return j,mn
+            mn[paramind][paramind1] = sum
+        return j,mn
    
     def GetJandJtJInLogParameters(self,params):
-    	# Formula below is exact if you have perfect data. If you don't
-	# have perfect data (residuals != 0) you get an extra term when you
-	# compute d^2(cost)/(dlogp[i]dlogp[j]) which is
-	# sum_resname (residual[resname] * jac[resname][j] * delta_jk * p[k])
-	# but can be ignored when residuals are zeros, and maybe should be
-	# ignored altogether because it can make the Hessian approximation 
+        # Formula below is exact if you have perfect data. If you don't
+        # have perfect data (residuals != 0) you get an extra term when you
+        # compute d^2(cost)/(dlogp[i]dlogp[j]) which is
+        # sum_resname (residual[resname] * jac[resname][j] * delta_jk * p[k])
+        # but can be ignored when residuals are zeros, and maybe should be
+        # ignored altogether because it can make the Hessian approximation 
         # non-positive definite
-	pnolog = scipy.exp(params)	
-	jac, jtj = self.GetJandJtJ(pnolog)
-	for i in range(len(params)):
+        pnolog = scipy.exp(params)
+        jac, jtj = self.GetJandJtJ(pnolog)
+        for i in range(len(params)):
             for j in range(len(params)):
                 jtj[i][j] = jtj[i][j]*pnolog[i]*pnolog[j]
 
-	res = self.resDict(pnolog)	
-	for resname in self.residuals.keys():
+        res = self.resDict(pnolog)
+        for resname in self.residuals.keys():
             for j in range(len(params)):
-               	# extra term --- not including it 
-		# jtj[j][j] += res[resname]*jac[resname][j]*pnolog[j]
+                # extra term --- not including it 
+                # jtj[j][j] += res[resname]*jac[resname][j]*pnolog[j]
                 jac.get(resname)[j] = jac.get(resname)[j]*pnolog[j]
 
-	return jac,jtj
+        return jac,jtj
 
     def hessian_elem(self, func, f0, params, i, j, epsi, epsj,
                      relativeScale, stepSizeCutoff, verbose):
@@ -798,7 +796,7 @@ class Model:
     def hessian(self, params, epsf, relativeScale = True, 
                 stepSizeCutoff = None, jacobian = None, 
                 verbose = False):
-    	"""
+        """
         Returns the hessian of the model.
 
         epsf: Sets the stepsize to try
@@ -811,14 +809,14 @@ class Model:
                 calculated
         """
 
-	nOv = len(params)
+        nOv = len(params)
         if stepSizeCutoff is None:
             stepSizeCutoff = scipy.sqrt(_double_epsilon_)
             
         params = scipy.asarray(params)
-	if relativeScale:
+        if relativeScale:
             eps = epsf * abs(params)
-	else:
+        else:
             eps = epsf * scipy.ones(len(params),scipy.float_)
 
         # Make sure we don't take steps smaller than stepSizeCutoff
@@ -856,12 +854,12 @@ class Model:
                     eps[i] = min(max(factor/abs(jacobian[i]), stepSizeCutoff), 
                                  0.5*abs(params[i]))
 
-	## compute cost at f(x)
-	f0 = self.cost(params)
+        ## compute cost at f(x)
+        f0 = self.cost(params)
 
-	hess = scipy.zeros((nOv, nOv), scipy.float_)
+        hess = scipy.zeros((nOv, nOv), scipy.float_)
 
-	## compute all (numParams*(numParams + 1))/2 unique hessian elements
+        ## compute all (numParams*(numParams + 1))/2 unique hessian elements
         for i in range(nOv):
             for j in range(i, nOv):
                 hess[i][j] = self.hessian_elem(self.cost, f0,
@@ -886,16 +884,16 @@ class Model:
         vebose: If True, a message will be printed with each hessian element
                 calculated
         """
-	nOv = len(params)
+        nOv = len(params)
         if scipy.isscalar(eps):
             eps = scipy.ones(len(params), scipy.float_) * eps
 
-	## compute cost at f(x)
-	f0 = self.cost_log_params(scipy.log(params))
+        ## compute cost at f(x)
+        f0 = self.cost_log_params(scipy.log(params))
 
-	hess = scipy.zeros((nOv, nOv), scipy.float_)
+        hess = scipy.zeros((nOv, nOv), scipy.float_)
 
-	## compute all (numParams*(numParams + 1))/2 unique hessian elements
+        ## compute all (numParams*(numParams + 1))/2 unique hessian elements
         for i in range(nOv):
             for j in range(i, nOv):
                 hess[i][j] = self.hessian_elem(self.cost_log_params, f0,
@@ -914,10 +912,10 @@ class Model:
 
     def CalcHessian(self, params, epsf, relativeScale = True, 
                     stepSizeCutoff = None, jacobian = None, verbose = False):
-    	"""
-	Finite difference the residual dictionary to get a dictionary
-	for the Hessian. It will be indexed the same as the residuals.
-	Note: epsf is either a scalar or an array.
+        """
+        Finite difference the residual dictionary to get a dictionary
+        for the Hessian. It will be indexed the same as the residuals.
+        Note: epsf is either a scalar or an array.
         If relativeScale is False then epsf is the stepsize used (it should
         already be multiplied by typicalValues before Jacobian is called)
         If relativeScale is True then epsf is multiplied by params.
@@ -941,15 +939,15 @@ class Model:
         response -- The response array
         """
         j,h = scipy.asarray(j), scipy.asarray(h)
-	[m,n] = j.shape
-	response = scipy.zeros((m,m),scipy.float_)
-	ident = scipy.eye(m,typecode=scipy.float_)
-	hinv = scipy.linalg.pinv2(h,1e-40)
-	tmp = scipy.dot(hinv,scipy.transpose(j))
-	tmp2 = scipy.dot(j,tmp)
-	response = ident - tmp2
+        [m,n] = j.shape
+        response = scipy.zeros((m,m),scipy.float_)
+        ident = scipy.eye(m,typecode=scipy.float_)
+        hinv = scipy.linalg.pinv2(h,1e-40)
+        tmp = scipy.dot(hinv,scipy.transpose(j))
+        tmp2 = scipy.dot(j,tmp)
+        response = ident - tmp2
 
-	return response
+        return response
 
     def CalcParameterResponseToResidualArray(self,j,h):
         """
@@ -966,12 +964,12 @@ class Model:
         response -- The response array
         """
         j,h = scipy.asarray(j), scipy.asarray(h)
-	[m,n] = j.shape
-	response = scipy.zeros((n,m),scipy.float_)
-	hinv = scipy.linalg.pinv2(h,1e-40)
-	response = -scipy.dot(hinv,scipy.transpose(j))
-
-	return response
+        [m,n] = j.shape
+        response = scipy.zeros((n,m),scipy.float_)
+        hinv = scipy.linalg.pinv2(h,1e-40)
+        response = -scipy.dot(hinv,scipy.transpose(j))
+        
+        return response
         
     ############################################################################
     # Getting/Setting variables below
