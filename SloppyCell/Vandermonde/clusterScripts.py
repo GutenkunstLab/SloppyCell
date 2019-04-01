@@ -29,7 +29,7 @@ def FlattenIt(x, distMat):
     level to correspond to the optimal permutation.
     """
     if isinstance(x, int):
-	return [x]
+        return [x]
     a = FlattenIt(x[0], distMat)
     b = FlattenIt(x[1], distMat)
 #    print a, b
@@ -39,10 +39,10 @@ def FlattenIt(x, distMat):
     d11 = distMat[a[-1],b[-1]]
     dMin = min(d00, d01, d10, d11)
     if d00 == dMin:
-	a.reverse()
+        a.reverse()
     elif d01 == dMin:
-	a.reverse()
-	b.reverse()
+        a.reverse()
+        b.reverse()
     elif d11 == dMin:
         b.reverse()
     a.extend(b)
