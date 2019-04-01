@@ -498,9 +498,9 @@ class Model:
             exptData = expt.GetData()
 
             # Get the dependent variables measured in this experiment
-            exptDepVars = {}
+            exptDepVars = set()
             for calc in exptData:
-                exptDepVars.union_update(set(expt.GetData()[calc].keys()))
+                exptDepVars.update(set(expt.GetData()[calc].keys()))
             # Now for the extrema data
             for ds in expt.scaled_extrema_data:
                 exptDepVars.add(ds['var'])

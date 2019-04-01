@@ -58,9 +58,9 @@ class ExperimentCollection(dict):
                 for depVar in data[calc]:
                     # Using a set is a convenient way to make sure
                     # independent variables aren't repeated
-                    varsByCalc[calc].setdefault(depVar, {})
+                    varsByCalc[calc].setdefault(depVar, set())
                     varsByCalc[calc][depVar].\
-                            union_update(set(data[calc][depVar].keys()))
+                            update(set(data[calc][depVar].keys()))
 
             for period in expt.GetPeriodChecks():
                 calc, depVar = period['calcKey'], period['depVarKey']
@@ -68,8 +68,8 @@ class ExperimentCollection(dict):
                 if calc not in varsByCalc.keys():
                     varsByCalc[calc].setdefault(calc, {})
                 if depVar not in varsByCalc[calc]:
-                    varsByCalc[calc].setdefault(depVar, {})
-                varsByCalc[calc][depVar].union_update([start, start+2.0*period])
+                    varsByCalc[calc].setdefault(depVar, set())
+                varsByCalc[calc][depVar].update([start, start+2.0*period])
 
             for amplitude in expt.GetAmplitudeChecks():
                 calc, depVar = amplitude['calcKey'], amplitude['depVarKey']
@@ -79,8 +79,8 @@ class ExperimentCollection(dict):
                 if calc not in varsByCalc.keys():
                     varsByCalc[calc].setdefault(calc, {})
                 if depVar not in varsByCalc[calc]:
-                    varsByCalc[calc].setdefault(depVar, {})
-                varsByCalc[calc][depVar].union_update([start, start+period,
+                    varsByCalc[calc].setdefault(depVar, set())
+                varsByCalc[calc][depVar].update([start, start+period,
                                                        test, test+period])
 
             for data_set in expt.GetIntegralDataSets():
@@ -156,11 +156,11 @@ class Experiment:
         scale factor.
         """
         # Get the variables measured in this experiment
-        measuredVars = {}
+        measuredVars = set()
         for calcId in self.data:
-            measuredVars.union_update(set(self.data[calcId].keys()))
+            measuredVars.update(set(self.data[calcId].keys()))
         for dataset in self.integral_data:
-            measuredVars.union_update(set(dataset['vars']))
+            measuredVars.update(set(dataset['vars']))
         for dataset in self.scaled_extrema_data:
             measuredVars.add(dataset['var'])
 
