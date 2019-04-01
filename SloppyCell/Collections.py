@@ -1,7 +1,7 @@
 import logging
 logger = logging.getLogger('Collections')
 
-import sets, copy
+import copy
 
 import scipy
 
@@ -58,9 +58,9 @@ class ExperimentCollection(dict):
                 for depVar in data[calc]:
                     # Using a set is a convenient way to make sure
                     # independent variables aren't repeated
-                    varsByCalc[calc].setdefault(depVar, sets.Set())
+                    varsByCalc[calc].setdefault(depVar, {})
                     varsByCalc[calc][depVar].\
-                            union_update(sets.Set(data[calc][depVar].keys()))
+                            union_update(set(data[calc][depVar].keys()))
 
             for period in expt.GetPeriodChecks():
                 calc, depVar = period['calcKey'], period['depVarKey']
@@ -68,7 +68,7 @@ class ExperimentCollection(dict):
                 if calc not in varsByCalc.keys():
                     varsByCalc[calc].setdefault(calc, {})
                 if depVar not in varsByCalc[calc]:
-                    varsByCalc[calc].setdefault(depVar, sets.Set())
+                    varsByCalc[calc].setdefault(depVar, {})
                 varsByCalc[calc][depVar].union_update([start, start+2.0*period])
 
             for amplitude in expt.GetAmplitudeChecks():
@@ -79,7 +79,7 @@ class ExperimentCollection(dict):
                 if calc not in varsByCalc.keys():
                     varsByCalc[calc].setdefault(calc, {})
                 if depVar not in varsByCalc[calc]:
-                    varsByCalc[calc].setdefault(depVar, sets.Set())
+                    varsByCalc[calc].setdefault(depVar, {})
                 varsByCalc[calc][depVar].union_update([start, start+period,
                                                        test, test+period])
 
@@ -142,7 +142,7 @@ class Experiment:
         """
         if isinstance(group, str):
             group = [group]
-        hash_group = sets.Set(group)
+        hash_group = set(group)
         hash_group = list(hash_group)
         list(group).sort()
         hash_group = tuple(group)
@@ -156,11 +156,11 @@ class Experiment:
         scale factor.
         """
         # Get the variables measured in this experiment
-        measuredVars = sets.Set()
+        measuredVars = {}
         for calcId in self.data:
-            measuredVars.union_update(sets.Set(self.data[calcId].keys()))
+            measuredVars.union_update(set(self.data[calcId].keys()))
         for dataset in self.integral_data:
-            measuredVars.union_update(sets.Set(dataset['vars']))
+            measuredVars.union_update(set(dataset['vars']))
         for dataset in self.scaled_extrema_data:
             measuredVars.add(dataset['var'])
 

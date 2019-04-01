@@ -1,10 +1,10 @@
-import OptimizeSumDets as OSD
+from . import OptimizeSumDets as OSD
 try:
     import cluster
 except ImportError:
     pass
-import clusterScripts
-import VdmPairwise as Vdm
+from . import clusterScripts
+from . import VdmPairwise as Vdm
 import scipy
 
 def getPermList(hess):

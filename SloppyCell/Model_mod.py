@@ -13,7 +13,7 @@ import SloppyCell
 import SloppyCell.Residuals as Residuals
 import SloppyCell.Collections as Collections
 import SloppyCell.Utility as Utility
-import KeyedList_mod as KeyedList_mod
+from . import KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
 _double_epsilon_ = scipy.finfo(scipy.float_).eps

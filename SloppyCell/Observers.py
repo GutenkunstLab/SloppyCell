@@ -3,7 +3,7 @@ import time
 
 import scipy
 
-import Utility
+from . import Utility
 
 def print_hess_elements(**args):
     if args['event'] == 'hessian element':

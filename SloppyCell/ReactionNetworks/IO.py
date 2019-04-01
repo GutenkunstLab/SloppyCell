@@ -1,5 +1,4 @@
 import os
-import sets
 
 try:
     import SBMLInterface as SBML

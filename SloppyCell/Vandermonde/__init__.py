@@ -1,3 +1,1 @@
-import decompHess
-import clusterScripts
-import VdmPairwise as Vdm
+from . import decompHess, clusterScripts, VdmPairwise as Vdm
