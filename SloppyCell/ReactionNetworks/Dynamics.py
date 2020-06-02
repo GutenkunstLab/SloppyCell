@@ -18,10 +18,8 @@ import Trajectory_mod
 
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks.Components import event_info
-from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
-if HAVE_PYPAR:
-    import pypar
-
+from SloppyCell import HAVE_MPI, my_rank, my_host, num_procs, comm
+    
 _double_epsilon_ = scipy.finfo(scipy.float_).eps
 _double_tiny_ = scipy.finfo(scipy.float_).tiny
 
@@ -882,7 +880,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         args = {'net':net, 'times':times, 'rtol':rtol, 'fill_traj':fill_traj,
                 'opt_vars':vars_assigned[worker], 'return_derivs':return_derivs,
                 'redir': redirect_msgs}
-        pypar.send((command, args), worker)
+        comm.send((command, args), dest=worker)
 
     logger.debug('Master doing vars %s' % str(vars_assigned[0]))
     try:
@@ -894,7 +892,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         #  replies from all the workers (even if we do nothing with them) so 
         #  that communication stays synchronized.
         for worker in range(1, num_procs):
-            pypar.receive(worker)
+            comm.recv(source=worker)
         raise
 
     # Begin pulling results together...
@@ -925,12 +923,12 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
     exception_raised = None
     for worker in range(1, num_procs):
         logger.debug('Receiving result from worker %i.' % worker)
-        result = pypar.receive(worker)
+        result = comm.recv(source=worker)
         if isinstance(result, Utility.SloppyCellException):
             exception_raised = result
             continue
         if vars_assigned[worker]:
-            _parse_sens_result(result, net, vars_assigned[worker], yout, youtdt, 
+            _parse_sens_result(result, net, vars_assigned[worker], yout, youtdt,
                                events_occurred)
 
     if exception_raised:

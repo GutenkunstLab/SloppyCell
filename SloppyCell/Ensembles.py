@@ -14,9 +14,7 @@ import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 import SloppyCell.Utility as Utility
 
-from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
-if HAVE_PYPAR:
-    import pypar
+from SloppyCell import HAVE_MPI, my_rank, my_host, num_procs, comm
 
 def autocorrelation(series):
     """
@@ -379,12 +377,12 @@ def ensemble_trajs(net, times, ensemble):
     for worker in range(1, num_procs):
         command = 'Ensembles.few_ensemble_trajs(net, times, elements)'
         args = {'net': net, 'times': times, 'elements': elems_assigned[worker]}
-        pypar.send((command, args), worker)
+        comm.send((command, args), dest=worker)
 
     traj_set = few_ensemble_trajs(net, times, elems_assigned[0])
 
     for worker in range(1, num_procs):
-        traj_set.extend(pypar.receive(worker))
+        traj_set.extend(comm.recv(source=worker))
 
     return traj_set
 

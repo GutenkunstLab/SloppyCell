@@ -14,9 +14,7 @@ import scipy.integrate
 
 import Dynamics
 
-from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
-if HAVE_PYPAR:
-    import pypar
+from SloppyCell import HAVE_MPI, my_rank, my_host, num_procs, comm
 
 def apply_func_to_traj(traj, func, only_nonderivs=False):
     """
@@ -194,14 +192,14 @@ def hessian_log_params(sens_traj, data_ids=None, opt_ids=None,
         args = {'sens_traj': worker_traj, 'data_ids': vars_assigned[worker], 
                 'data_sigmas': worker_ds, 'opt_ids': opt_ids,
                 'fixed_sf': fixed_sf}
-        pypar.send((command, args), worker)
+        comm.send((command, args), dest=worker)
 
     hess_dict = compute_sf_LMHessian_conts(sens_traj, vars_assigned[0],
                                            data_sigmas, opt_ids, fixed_sf)
 
     for worker in range(1, num_procs):
         logger.debug('Receiving from worker %i.' % worker)
-        hess_dict.update(pypar.receive(worker))
+        hess_dict.update(comm.recv(source=worker))
 
     hess = scipy.sum(hess_dict.values(), axis=0)
     if return_dict:

@@ -10,8 +10,7 @@ import SloppyCell.Utility as Utility
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
-if SloppyCell.HAVE_PYPAR:
-    import pypar
+from SloppyCell import num_procs, my_rank, my_host, HAVE_MPI, comm
 
 class ExperimentCollection(dict):
     """
@@ -434,7 +433,7 @@ class CalculationCollection(KeyedList):
                 command = 'Network.calculate(net, vars, params)'
                 args = {'net': self.get(calc), 'vars': varsByCalc[calc],
                         'params': self.params}
-                pypar.send((command, args), worker)
+                comm.send((command, args), dest=worker)
 
             # The master does his share here
             calc = calcs_to_do.pop()
@@ -442,13 +441,13 @@ class CalculationCollection(KeyedList):
             #  *always* wait for replies from the workers, even if the master
             #  encounters an exception in his evaluation.
             try:
-                results[calc] = self.get(calc).calculate(varsByCalc[calc], 
+                results[calc] = self.get(calc).calculate(varsByCalc[calc],
                                                          self.params)
             finally:
                 # Collect results from the workers
                 for worker in range(1, len_this_block):
                     logger.debug('Receiving result from worker %i.' % worker)
-                    results[calc_assigned[worker]] = pypar.receive(worker)
+                    results[calc_assigned[worker]] = comm.recv(source=worker)
                 # If the master encounts an exception, we'll break out of the
                 #  function ***here***
 

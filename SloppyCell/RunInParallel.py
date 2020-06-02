@@ -6,9 +6,7 @@ import sys, traceback
 import SloppyCell
 import Collections
 
-from SloppyCell import num_procs, my_rank, my_host, HAVE_PYPAR
-if HAVE_PYPAR:
-    import pypar
+from SloppyCell import num_procs, my_rank, my_host, HAVE_MPI, comm
 
 import SloppyCell.Utility as Utility
 
@@ -22,7 +20,7 @@ class Statement:
 
 while my_rank != 0:
     # Wait for a message
-    message = pypar.receive(source=0)
+    message = comm.recv(source=0)
 
     # If the message is a SystemExit exception, exit the code.
     if isinstance(message, SystemExit):
@@ -46,9 +44,9 @@ while my_rank != 0:
             locals().update(msg_locals)
             try:
                 result = eval(command)
-                pypar.send(result, 0)
+                comm.send(result, dest=0)
             except Utility.SloppyCellException as X:
-                pypar.send(X, 0)
+                comm.send(X, dest=0)
     except:
         # Assemble and print a nice traceback
         tb = traceback.format_exception(sys.exc_type, sys.exc_value, 
@@ -67,7 +65,7 @@ def stop_workers():
     Send all workers the command to exit the program.
     """
     for worker in range(1, num_procs):
-        pypar.send(SystemExit(), worker)
+        comm.send(SystemExit(), dest=worker)
 
 if my_rank == 0:
     import atexit
@@ -78,4 +76,4 @@ def statement_to_all_workers(statement, locals={}):
     Send a Python statement to all workers for execution.
     """
     for worker in range(1, num_procs):
-        pypar.send(Statement(statement, locals), worker)
+        comm.send(Statement(statement, locals), dest=worker)

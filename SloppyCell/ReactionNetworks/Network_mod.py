@@ -31,7 +31,7 @@ ExprManip.load_derivs(os.path.join(SloppyCell._TEMP_DIR, 'diff.pickle'))
 #  but only on the master node.
 if SloppyCell.my_rank == 0:
     import atexit
-    atexit.register(ExprManip.save_derivs, os.path.join(SloppyCell._TEMP_DIR, 
+    atexit.register(ExprManip.save_derivs, os.path.join(SloppyCell._TEMP_DIR,
                                                         'diff.pickle'))
     def rmbuild():
         if os.path.exists('build'):
@@ -926,7 +926,7 @@ class Network:
             self.trajectory = self.integrateStochastic(t, params=params)
             return
 
-        self.trajectory = self.integrate(t, params=params, 
+        self.trajectory = self.integrate(t, params=params,
                                          addTimes=ret_full_traj)
         
     def CalculateSensitivity(self, vars, params):
