@@ -5,6 +5,10 @@ SloppyCell is a software environment for simulation and analysis of biomolecular
 
 SloppyCell was initially developed by Ryan Gutenkunst in the research group of `Jim Sethna <http://sethna.lassp.cornell.edu/>`_. Ryan now has his `own group <http://gutengroup.mcb.arizona.edu>`_, where SloppyCell continues to be developed. Most recently, an XML interface was been developed in collaboration with `Michael Blinov <http://apache.cam.uchc.edu/mblinov/>`_, to facilitate integration with other modeling frameworks, such as `The Virtual Cell <http://vcell.org>`_.
 
+Note
+----
+Recently, there appears to have been a change to Python distutils such that networks cannot be compiled in an imported module. If attempt is made to compile a network in an imported module, SloppyCell will hang.
+
 Features
 --------
 * support for much of the Systems Biology Markup Language (SBML) level 2 version 3

@@ -1,9 +1,7 @@
 from SloppyCell.ReactionNetworks import *
 
 import Nets
-reload(Nets)
 import Experiments as Expts
-import Calculations as Calcs
 
 m = Model([
            Expts.ErkMekTraverse2EGF.expt,
