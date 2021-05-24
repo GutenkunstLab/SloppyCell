@@ -446,7 +446,7 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
                                           rpar, ipar,
                                           jac, psol, rt, nrt)
                 except (ValueError,OverflowError,TypeError,AttributeError,
-                    AssertionError,FloatingPointError,ZeroDivisionError), e:
+                    AssertionError,FloatingPointError,ZeroDivisionError) as e:
                     messages = redir.stop()
                     # report the error message
                     if messages is not None:

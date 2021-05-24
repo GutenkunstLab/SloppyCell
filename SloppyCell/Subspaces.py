@@ -1,3 +1,4 @@
+from __future__ import print_function
 import scipy
 
 def subspace_angles(A, B):

@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 import unittest
 
 from SloppyCell.ReactionNetworks import *
 
-import TestNetwork
+from . import TestNetwork
 base_net = TestNetwork.net.copy('test_logs')
 
 class test_IntegrateWithLogs(unittest.TestCase):

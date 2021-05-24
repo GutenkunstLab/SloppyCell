@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import copy
 import unittest
 
@@ -5,7 +6,7 @@ import scipy
 
 from SloppyCell.ReactionNetworks import *
 import SloppyCell
-import TestNetwork
+from . import TestNetwork
 
 net = TestNetwork.net
 m = copy.deepcopy(TestNetwork.m)

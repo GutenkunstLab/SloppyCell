@@ -5,6 +5,7 @@ Author @Keeyan <keeyan.ghoreshi@uconn.edu>
 
 Controls command line options, input acceptance and output
 """
+from __future__ import print_function
 
 import os
 import sys

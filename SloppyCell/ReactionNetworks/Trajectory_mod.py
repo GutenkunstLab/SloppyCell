@@ -584,7 +584,7 @@ class Trajectory:
 
         if subinterval is not None : # confine things to just one interval
             if subinterval not in local_tcks.keys() :
-                raise "Not a valid subinterval (not in Trajectory.tcks.keys())"
+                raise NameError("Not a valid subinterval (not in Trajectory.tcks.keys())")
             else :
                 sorted_intervals = [[subinterval[0],subinterval[1]]]
                 interval_start_ind = 0

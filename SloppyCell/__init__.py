@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 _VERSION = 'CVS'
 import os
 _TEMP_DIR = os.path.join(os.getcwd(), '.SloppyCell')
@@ -14,7 +15,7 @@ args_to_remove = []
 for arg in sys.argv:
     if arg.startswith('--debugSC'):
         words = arg.split('=')
-        import Utility
+        from . import Utility
         if len(words) == 2:
             Utility.enable_debugging_msgs(words[1])
         else:

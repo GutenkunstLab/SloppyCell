@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import unittest
 import os
 
@@ -5,7 +6,7 @@ import scipy
 
 from SloppyCell.ReactionNetworks import *
 
-from AlgTestNets import algebraic_net_assignment
+from .AlgTestNets import algebraic_net_assignment
 base_net = algebraic_net_assignment.copy()
 
 class test_Misc(unittest.TestCase):

@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 import unittest
 
 import scipy,copy
 from SloppyCell.ReactionNetworks import *
 
-from TestNetwork import net
+from .TestNetwork import net
 net = copy.deepcopy(net)
 net.setInitialVariableValue('A', 1.0)
 net.setInitialVariableValue('B', 2.0)

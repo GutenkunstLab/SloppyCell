@@ -118,8 +118,8 @@ class test_Events(unittest.TestCase):
             net.calculate({'x':times}, params)
         except RuntimeError:
             self.assertTrue("# Noncastable stoichiometry for x->0: '2*x'" in
-                            '%s'%sys.exc_value,
-                            'Raised an unknown RuntimeError: %s'%sys.exc_value)
+                            '%s'%sys.exc_info()[1],
+                            'Raised an unknown RuntimeError: %s'%sys.exc_info()[1])
             err = True
         self.assertTrue(err, 'Failed to raise error with unsupported reaction')
         

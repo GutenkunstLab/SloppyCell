@@ -5,6 +5,8 @@ Author @Keeyan
 
 Runs appropriate functions to test input data and model (XML edition
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 import logging
 from xml.etree import ElementTree as ET
@@ -15,7 +17,7 @@ from SloppyCell.ReactionNetworks import *
 from pylab import *
 import csv
 
-import Utility
+from . import Utility
 
 logger = logging.getLogger('TestConstruct_XML')
 logging.basicConfig()
@@ -628,7 +630,7 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
         plot_after = False
     if initial_cost:
         initial_cost = m.cost(params)
-        print('Initial Cost:', initial_cost)
+        print(('Initial Cost:', initial_cost))
         try:
             if kwargs.pop('plot_before'):
                 initial_plot = Plotting.figure()
@@ -650,14 +652,14 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
             new_params = optimization_dictionary[opt_type](m, new_params, **routine_dict_n)
         optimized_cost = m.cost(new_params)
         params = new_params
-        print('Optimized cost:', optimized_cost)
+        print(('Optimized cost:', optimized_cost))
         # print 'Optimized parameters:', params
 
     if plot or plot_after:
         if not optimize:
             optimized_cost = m.cost(params)
-            print('Optimized cost:', optimized_cost)
-            print('Optimized parameters:', params)
+            print(('Optimized cost:', optimized_cost))
+            print(('Optimized parameters:', params))
         Plotting.figure()
         f=Plotting.plot_model_results(m)
         for thing in f[0]:

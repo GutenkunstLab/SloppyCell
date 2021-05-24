@@ -5,12 +5,14 @@ Author @Keeyan
 
 Parses XML file, creates experiment
 """
+from __future__ import print_function
+from __future__ import absolute_import
 import os
 import csv
 import logging
 from xml.etree import ElementTree as ET
 import pandas as pd
-import TestConstruct_XML
+from . import TestConstruct_XML
 from SloppyCell.ReactionNetworks import *
 
 logger = logging.getLogger('ScellParser')

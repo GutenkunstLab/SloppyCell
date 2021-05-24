@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import unittest
 import os
 
@@ -10,7 +11,7 @@ from SloppyCell.daskr import daeint
 
 # Load the fast reaction example from the SBML semantic test suite.
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
-from AlgTestNets import algebraic_net, algebraic_net_assignment, \
+from .AlgTestNets import algebraic_net, algebraic_net_assignment, \
                          algebraic_net_multi, algebraic_net_under
 tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
 
@@ -62,19 +63,19 @@ class test_AlgebraicRules(unittest.TestCase):
 
         alg_vars = algebraic_net_assignment.algebraicVars
     
-        self.assertEqual(alg_vars.has_key('S1'), True)
-        self.assertEqual(alg_vars.has_key('T'), False)
-        self.assertEqual(alg_vars.has_key('S_sum'), False)
-        self.assertEqual(alg_vars.has_key('Alg_Rule_RHS'), False)
+        self.assertEqual('S1' in alg_vars, True)
+        self.assertEqual('T' in alg_vars, False)
+        self.assertEqual('S_sum' in alg_vars, False)
+        self.assertEqual('Alg_Rule_RHS' in alg_vars, False)
 
         # p_1 is a paramter that was set to be non-constant, but which is
         # implicitly constant because no equations modify it.  We need to check
         # to make sure it's not being identified as an algebraic variable.
-        self.assertEqual(alg_vars.has_key('p_1'), False)
+        self.assertEqual('p_1' in alg_vars, False)
 
         # p_2 is modified by an event assignment, so it should not be identified
         # as an algebraic variable.
-        self.assertEqual(alg_vars.has_key('p_2'), False)
+        self.assertEqual('p_2' in alg_vars, False)
         
 
         # finally, we check to make sure the algebraic variables list is the

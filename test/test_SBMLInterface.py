@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import unittest
 import os
 import copy
@@ -10,7 +11,7 @@ _HAVE_SBML = (hasattr(IO, 'to_SBML_file') and hasattr(IO, 'from_SBML_file'))
 
 # Load the fast reaction example from the SBML semantic test suite.
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
-from AlgTestNets import algebraic_net, algebraic_net_assignment, algebraic_net_multi,\
+from .AlgTestNets import algebraic_net, algebraic_net_assignment, algebraic_net_multi,\
      algebraic_net_andor_events
 tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
 sbml_file = os.path.join('SBML_files','algebraicRules-fastReactionExample-l2.xml')

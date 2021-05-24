@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 import logging
 logger = logging.getLogger('Parallel')
 
 import sys, traceback
 
 import SloppyCell
-import Collections
+from . import Collections
 
 from SloppyCell import num_procs, my_rank, my_host, HAVE_MPI, comm
 
@@ -49,8 +50,8 @@ while my_rank != 0:
                 comm.send(X, dest=0)
     except:
         # Assemble and print a nice traceback
-        tb = traceback.format_exception(sys.exc_type, sys.exc_value, 
-                                        sys.exc_traceback)
+        tb = traceback.format_exception(sys.exc_info()[0], sys.exc_info()[1], 
+                                        sys.exc_info()[2])
         logger.critical(('node %i:'%my_rank).join(tb))
         save_to = '.SloppyCell/node_%i_crash.bp' % my_rank
         logger.critical("node %i: Command being run was: %s."

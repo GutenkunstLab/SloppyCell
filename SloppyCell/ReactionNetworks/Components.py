@@ -130,7 +130,7 @@ class Event:
             elif secondArg == 'time':
                 self.triggeringTime = eval(firstArg)
             else:
-                raise 'Problem in time triggered events'
+                raise NameError('Problem in time triggered events')
 
 class ConstraintEvent(Event):
     def __init__(self, id, trigger, message, name):

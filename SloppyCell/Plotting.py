@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import scipy
 import SloppyCell
 # We've had yet more trouble running in parallel, but these errors were actually
@@ -15,7 +16,7 @@ except RuntimeError:
     # we catch and raise an error we know how to handle
     raise ImportError
 
-import Residuals
+from . import Residuals
 
 basic_colors = ('b', 'g', 'r', 'c', 'm', 'k')
 basic_symbols = ('o', 's', '^', 'v', '<', ">", 'x', 'D', 'h', 'p')
@@ -77,10 +78,10 @@ def plot_eigvals(vals, label=None, offset=0, indicate_neg=True, join=False,
         ax = gca()
 
     if sym is None:
-        sym = vals_cW.next()
+        sym = next(vals_cW)
     if indicate_neg:
         if sym[0] == 'r':
-            sym = vals_cW.next()
+            sym = next(vals_cW)
         if len(negVals) > 0:
             ax.semilogy(negRange+offset, negVals, color = 'r', marker=sym[1],
                         linestyle='', mfc = 'r', zorder=1)

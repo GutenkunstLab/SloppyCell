@@ -1,7 +1,9 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import unittest
 
 from SloppyCell.ReactionNetworks import *
-from TestNetwork import net, m, params
+from .TestNetwork import net, m, params
 
 class test_Plotting(unittest.TestCase):
     def test_data_plot(self):
@@ -27,5 +29,5 @@ if __name__ == '__main__':
     if _HAVE_PLOTTING:
         unittest.main()
     else: 
-        print no_plotting_msg
+        print(no_plotting_msg)
 

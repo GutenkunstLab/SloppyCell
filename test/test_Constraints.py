@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import unittest
 import os
 
@@ -5,7 +6,7 @@ import scipy
 
 from SloppyCell.ReactionNetworks import *
 
-from AlgTestNets import algebraic_net_constraints
+from .AlgTestNets import algebraic_net_constraints
 base_net = algebraic_net_constraints.copy()
 tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
 
@@ -29,7 +30,7 @@ class test_Constraints(unittest.TestCase):
         net = base_net.copy('test')
         try:
             traj = Dynamics.integrate(net, tlist_algebraic_net)
-        except Utility.ConstraintViolatedException, cve:
+        except Utility.ConstraintViolatedException as cve:
             self.assertAlmostEqual(cve.time, 16.436798814)
             self.assertEqual(cve.message, 'X1 is big!')            
 
@@ -47,7 +48,7 @@ class test_Constraints(unittest.TestCase):
 
         try:
             traj = Dynamics.integrate(net, tlist_algebraic_net)
-        except Utility.ConstraintViolatedException, cve:
+        except Utility.ConstraintViolatedException as cve:
             self.assertAlmostEqual(cve.time, 1.0)
 
     def test_constraints_off(self):
@@ -87,7 +88,7 @@ class test_Constraints(unittest.TestCase):
 
         try:
             traj = Dynamics.integrate(net, tlist_algebraic_net)
-        except Utility.ConstraintViolatedException, cve:
+        except Utility.ConstraintViolatedException as cve:
             self.assertAlmostEqual(cve.time, 2.0)
 
     def test_constraints_time_zero(self):
@@ -105,7 +106,7 @@ class test_Constraints(unittest.TestCase):
 
         try:
             traj = Dynamics.integrate(net, tlist_algebraic_net)
-        except Utility.ConstraintViolatedException, cve:
+        except Utility.ConstraintViolatedException as cve:
             self.assertAlmostEqual(cve.time, 0.0)
 
         

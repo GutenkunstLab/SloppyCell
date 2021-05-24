@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 import copy
 import unittest
 
 import scipy
 
-from TestNetwork import net, m, params
+from .TestNetwork import net, m, params
 net = copy.copy(net)
 net.compile()
 net.full_speed()

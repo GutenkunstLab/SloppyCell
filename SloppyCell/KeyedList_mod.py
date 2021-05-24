@@ -117,10 +117,10 @@ class KeyedList(list):
                 self[ii] = other[ii]
 
     def has_key(self, key):
-        return self.keyToIndex.has_key(key)
+        return key in self.keyToIndex
 
     def setdefault(self, key, default=None):
-        if not self.keyToIndex.has_key(key):
+        if key not in self.keyToIndex:
             self.set(key, default)
 
     def values(self):
@@ -148,7 +148,7 @@ class KeyedList(list):
         if not isinstance(other, self.__class__):
             raise TypeError('Can only add another KeyedList to a KeyedList')
         for k,v in other.items():
-            if not self.has_key(k):
+            if k not in self:
                 self.set(k, v)
             else:
                 raise ValueError('Addition would result in duplicated keys.')
@@ -171,7 +171,7 @@ class KeyedList(list):
         raise NotImplementedError
 
     def insert_item(self, index, key, value):
-        if self.has_key(key):
+        if key in self:
             raise ValueError('Insertion would result in duplicated key: %s.'
                              % str(key))
         list.insert(self, index, value)

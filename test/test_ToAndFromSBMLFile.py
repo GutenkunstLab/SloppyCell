@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import copy
 import os
 import unittest
@@ -6,7 +8,7 @@ from SloppyCell.ReactionNetworks import *
 # Check whether we actually have the SBML methods.
 _HAVE_SBML = (hasattr(IO, 'to_SBML_file') and hasattr(IO, 'from_SBML_file'))
 
-from TestNetwork import net
+from .TestNetwork import net
 net = copy.deepcopy(net)
 net.compile()
  
@@ -28,4 +30,4 @@ if __name__ == '__main__':
     if _HAVE_SBML:
         unittest.main()
     else:
-        print no_libsbml_msg
+        print(no_libsbml_msg)
