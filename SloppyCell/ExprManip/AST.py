@@ -1,26 +1,30 @@
-import compiler
-from compiler.ast import *
+from ast import *
 
 TINY = 1e-12
+class Node:
+    def __init__(self, value):
+        self.value = value
+        self.children = []
+        
+    def _node_equal(self, other):
+        """
+        Return whether self and other represent the same expressions.
 
-def _node_equal(self, other):
-    """
-    Return whether self and other represent the same expressions.
-
-    Unfortunately, the Node class in Python 2.3 doesn't define ==, so
-    we need to write our own.
-    """
-    # We're not equal if other isn't a Node, or if other is a different class.
-    if not isinstance(other, Node) or not isinstance(other, self.__class__):
-        return False
-    # Loop through all children, checking whether they are equal
-    for self_child, other_child in zip(self.getChildren(), other.getChildren()):
-        if not self_child == other_child:
+        Unfortunately, the Node class in Python 2.3 doesn't define ==, so
+        we need to write our own.
+        """
+        # We're not equal if other isn't a Node, or if other is a different class.
+        if not isinstance(other, Node) or not isinstance(other, self.__class__):
             return False
-    # If we get here, our two nodes much be equal
-    return True
+        # Loop through all children, checking whether they are equal
+        for self_child, other_child in zip(self.getChildren(), other.getChildren()):
+            if not self_child == other_child:
+                return False
+        # If we get here, our two nodes much be equal
+        return True
 # Add our new equality tester to the Node class.
-Node.__eq__ = _node_equal
+node = Node()
+node.__eq__ = node._node_equal
 
 def strip_parse(expr):
     """
@@ -30,20 +34,20 @@ def strip_parse(expr):
     """
     # The .strip() ignores leading and trailing whitespace, which would 
     #  otherwise give syntax errors.
-    ast = compiler.parse(str(expr).strip())
-    return ast.node.nodes[0].expr
+    tree = parse(str(expr).strip())
+    return  dump(tree)
 
 # This defines the order of operations for the various node types, to determine
 #  whether or not parentheses are necessary.
 _OP_ORDER = {Name: 0,
-             Const: 0,
+             Constant: 0,
              CallFunc: 0,
              Subscript: 0,
              Slice: 0,
              Sliceobj: 0,
              Power: 3,
-             UnarySub: 4,
-             UnaryAdd: 4,
+             USub: 4,
+             UAdd: 4,
              Mul: 5,
              Div: 5,
              Sub: 10,
@@ -59,17 +63,17 @@ _FARTHEST_OUT = Discard(None)
 
 # These are the attributes of each node type that are other nodes.
 _node_attrs = {Name: (),
-               Const: (),
+               Constant: (),
                Add: ('left', 'right'),
                Sub: ('left', 'right'),
-               Mul: ('left', 'right'),
+               Mult: ('left', 'right'),
                Div: ('left', 'right'),
-               CallFunc: ('args',),
-               Power: ('left', 'right'),
-               UnarySub: ('expr',),
-               UnaryAdd: ('expr',),
+               Call: ('args',),
+               Pow: ('left', 'right'),
+               USub: ('expr',),
+               UAdd: ('expr',),
                Slice: ('lower', 'upper'),
-               Sliceobj: ('nodes',),
+               Slice: ('nodes',),
                Subscript: ('subs',),
                Compare: ('expr', 'ops'),
                Not: ('expr',),
@@ -92,7 +96,7 @@ def ast2str(ast, outer = _FARTHEST_OUT, adjust = 0):
     """
     if isinstance(ast, Name):
         out = ast.name
-    elif isinstance(ast, Const):
+    elif isinstance(ast, Constant):
         out = str(ast.value)
     elif isinstance(ast, Add):
         out = '%s + %s' % (ast2str(ast.left, ast),
@@ -100,22 +104,22 @@ def ast2str(ast, outer = _FARTHEST_OUT, adjust = 0):
     elif isinstance(ast, Sub):
         out = '%s - %s' % (ast2str(ast.left, ast),
                            ast2str(ast.right, ast, adjust = TINY))
-    elif isinstance(ast, Mul):
+    elif isinstance(ast, Mult):
         out = '%s*%s' % (ast2str(ast.left, ast),
                            ast2str(ast.right, ast))
     elif isinstance(ast, Div):
         # The adjust ensures proper parentheses for x/(y*z)
         out = '%s/%s' % (ast2str(ast.left, ast),
                            ast2str(ast.right, ast, adjust = TINY))
-    elif isinstance(ast, Power):
+    elif isinstance(ast, Pow):
         # The adjust ensures proper parentheses for (x**y)**z
         out = '%s**%s' % (ast2str(ast.left, ast, adjust = TINY),
                           ast2str(ast.right, ast))
-    elif isinstance(ast, UnarySub):
+    elif isinstance(ast, USub):
         out = '-%s' % ast2str(ast.expr, ast)
-    elif isinstance(ast, UnaryAdd):
+    elif isinstance(ast, UAdd):
         out = '+%s' % ast2str(ast.expr, ast)
-    elif isinstance(ast, CallFunc):
+    elif isinstance(ast, Call):
         args = [ast2str(arg) for arg in ast.args]
         out = '%s(%s)' % (ast2str(ast.node), ', '.join(args))
     elif isinstance(ast, Subscript):
@@ -124,7 +128,7 @@ def ast2str(ast, outer = _FARTHEST_OUT, adjust = 0):
     elif isinstance(ast, Slice):
         out = '%s[%s:%s]' % (ast2str(ast.expr), ast2str(ast.lower), 
                              ast2str(ast.upper))
-    elif isinstance(ast, Sliceobj):
+    elif isinstance(ast, Slice):
         nodes = [ast2str(node) for node in ast.nodes]
         out = ':'.join(nodes)
     elif isinstance(ast, Compare):
@@ -165,29 +169,29 @@ def _collect_num_denom(ast, nums, denoms):
     Append to nums and denoms, respectively, the nodes in the numerator and 
     denominator of an AST.
     """
-    if not (isinstance(ast, Mul) or isinstance(ast, Div)):
+    if not (isinstance(ast, Mult) or isinstance(ast, Div)):
         # If ast is not multiplication or division, just put it in nums.
         nums.append(ast)
         return
 
-    if isinstance(ast.left, Div) or isinstance(ast.left, Mul):
+    if isinstance(ast.left, Div) or isinstance(ast.left, Mult):
         # If the left argument is a multiplication or division, descend into
         #  it, otherwise it is in the numerator.
         _collect_num_denom(ast.left, nums, denoms)
     else:
         nums.append(ast.left)
 
-    if isinstance(ast.right, Div) or isinstance(ast.right, Mul):
+    if isinstance(ast.right, Div) or isinstance(ast.right, Mult):
         # If the left argument is a multiplication or division, descend into
         #  it, otherwise it is in the denominator.
-        if isinstance(ast, Mul):
+        if isinstance(ast, Mult):
             _collect_num_denom(ast.right, nums, denoms)
         elif isinstance(ast, Div):
             # Note that when we descend into the denominator of a Div, we want 
             #  to swap our nums and denoms lists
             _collect_num_denom(ast.right, denoms, nums)
     else:
-        if isinstance(ast, Mul):
+        if isinstance(ast, Mult):
             nums.append(ast.right)
         elif isinstance(ast, Div):
             denoms.append(ast.right)
@@ -228,10 +232,10 @@ def _make_product(terms):
     if terms:
         product = terms[0]
         for term in terms[1:]:
-            product = Mul((product, term))
+            product = Mult((product, term))
         return product 
     else:
-        return Const(1)
+        return Constant(1)
 
 def recurse_down_tree(ast, func, args=()):
     if isinstance(ast, list):
