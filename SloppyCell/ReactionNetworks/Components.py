@@ -1,7 +1,6 @@
 import logging
 logger = logging.getLogger('ReactionNetworks.Components')
 
-import sets
 
 import SloppyCell.ExprManip as ExprManip
 
@@ -119,7 +118,7 @@ class Event:
 
         self.trigger = trigger
 
-        if ExprManip.extract_vars(trigger) == sets.Set(['time']):
+        if ExprManip.extract_vars(trigger) == set(['time']):
             self.timeTriggered = True
             ast = ExprManip.AST.strip_parse(trigger)
             firstArg = ExprManip.AST.ast2str(ast.args[0])

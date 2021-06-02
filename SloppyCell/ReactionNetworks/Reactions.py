@@ -1,4 +1,3 @@
-import sets
 import SloppyCell.ExprManip as ExprManip
 
 class Reaction:
@@ -15,7 +14,7 @@ class Reaction:
         self.name = name
 
         variables = ExprManip.extract_vars(kineticLaw)
-        self.parameters = variables.difference(sets.Set(stoichiometry.keys()))
+        self.parameters = variables.difference(set(stoichiometry.keys()))
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and \

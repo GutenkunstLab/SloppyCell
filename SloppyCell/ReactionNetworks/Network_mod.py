@@ -5,7 +5,6 @@
 from __future__ import division
 
 import copy
-import sets
 import types
 import time
 import os
@@ -38,10 +37,10 @@ if SloppyCell.my_rank == 0:
             shutil.rmtree('build')
     atexit.register(rmbuild)
 
-import Reactions
-from Components import *
-import Dynamics
-import Trajectory_mod
+from SloppyCell.ReactionNetworks import Reactions
+from SloppyCell.ReactionNetworks.Components import *
+from SloppyCell.ReactionNetworks import Dynamics
+from SloppyCell.ReactionNetworks import Trajectory_mod
 
 _double_max_ = scipy.finfo(scipy.float_).max
 _double_tiny_ = scipy.finfo(scipy.float_).tiny
@@ -896,12 +895,12 @@ class Network:
         # Add in the times required by all the variables, then convert back to 
         #  a sorted list.
         # Make sure we start from t = 0
-        t = sets.Set([0])
+        t = set([0])
         ret_full_traj=False
         for var, times in vars.items():
             if var == 'full trajectory':
                 ret_full_traj = True
-                t.union_update(sets.Set(times))
+                t.union_update(set(times))
             elif var.endswith('_maximum') or var.endswith('_minimum'):
                 t1,t2 = times
                 if t1 is not None:
@@ -909,7 +908,7 @@ class Network:
                 if t2 is not None:
                     t.add(t2)
             elif self.variables.has_key(var):
-                t.union_update(sets.Set(times))
+                t.union_update(set(times))
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
                                  % (var, self.get_id()))
@@ -930,7 +929,7 @@ class Network:
                                          addTimes=ret_full_traj)
         
     def CalculateSensitivity(self, vars, params):
-        t = sets.Set([0])
+        t = set([0])
 
         for var,times in vars.items():
             if var.endswith('_maximum') or var.endswith('_minimum'):
@@ -940,7 +939,7 @@ class Network:
                 if t2 is not None:
                     t.add(t2)
             elif self.variables.has_key(var):
-                t.union_update(sets.Set(times))
+                t.union_update(set(times))
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
                                  % (var, self.get_id()))
@@ -1143,7 +1142,7 @@ class Network:
 
     def integrateStochastic(self, times, params=None):
         if self.stochastic['fill_dt'] is not None:
-            times = sets.Set(times)
+            times = set(times)
             times.union_update(scipy.arange(min(times), max(times),
                                             self.stochastic['fill_dt']))
             times = list(times)
@@ -1153,7 +1152,7 @@ class Network:
             self.resetDynamicVariables()
 
         # Add in the event times (only if they don't extend the trajectoy!)
-        times = sets.Set(times)
+        times = set(times)
         times.union_update([_.triggeringTime for _ in self.events
                             if _.triggeringTime<max(times)])
         times = list(times)
@@ -1446,8 +1445,8 @@ class Network:
         changed if a KeyedList or dict is passed in.
         """
         if hasattr(params, 'get'):
-            inBoth = sets.Set(self.optimizableVars.keys())
-            inBoth = inBoth.intersection(sets.Set(params.keys()))
+            inBoth = set(self.optimizableVars.keys())
+            inBoth = inBoth.intersection(set(params.keys()))
             for id in inBoth:
                 self.set_var_ic(id, params.get(id), update_constants=False)
         elif len(params) == len(self.optimizableVars):
@@ -1488,7 +1487,7 @@ class Network:
             self.dynamicVars.getByKey(id).value = \
                     self.evaluate_expr(var.initialValue, 0)
 
-	self.updateAssignedVars(time = 0)
+    self.updateAssignedVars(time = 0)
 
     def set_dyn_var_ics(self, values):
         for ii, id in enumerate(self.dynamicVars.keys()):
@@ -1503,8 +1502,8 @@ class Network:
         self.updateAssignedVars(time)
 
     def updateAssignedVars(self, time):
-        to_get = sets.Set(self.variables.keys())
-        to_get.difference_update(sets.Set(self.assignedVars.keys()))
+        to_get = set(self.variables.keys())
+        to_get.difference_update(set(self.assignedVars.keys()))
         var_vals = [(id, self.get_var_val(id)) for id in to_get]
         var_vals = dict(var_vals)
         var_vals['time'] = time
@@ -1538,7 +1537,7 @@ class Network:
             rateExpr = rxn.kineticLaw
             logger.debug('Parsing reaction %s.' % rxn_id)
 
-	    for reactantId, dReactant in rxn.stoichiometry.items():
+        for reactantId, dReactant in rxn.stoichiometry.items():
                 if self.get_variable(reactantId).is_boundary_condition or\
                    self.get_variable(reactantId).is_constant or\
                    self.assignmentRules.has_key(reactantId):
@@ -2383,7 +2382,7 @@ class Network:
         evars = [] # The extracted dynamic variables each rxn depends upon
         for rxnInd, rxn in enumerate(self.reactions.values()):
             evar = ExprManip.Extraction.extract_vars(rxn.kineticLaw)
-            evar = sets.Set(evar)
+            evar = set(evar)
             while len(evar.intersection(asnKeys)):
                 for asnName in evar.intersection(asnKeys):
                     rule = self.assignmentRules.get(asnName)
@@ -2397,7 +2396,7 @@ class Network:
         for rxnInd, (rxn_id, rxn) in enumerate(self.reactions.items()):
             stch_body.append(repr([int(rxn.stoichiometry.get(_,0))
                                    for _ in self.dynamicVars.keys()])[1:-1])
-            varNames = sets.Set([n
+            varNames = set([n
                                  for n,v in rxn.stoichiometry.items() if v!=0])
             depd = [int(len(evar.intersection(varNames))>0) for evar in evars]
             depd_body.append(repr(depd)[1:-1])
@@ -2960,14 +2959,14 @@ class Network:
         self.constantVarValues = scipy.array(self.constantVarValues)
 
         # Collect all variables that are explicitly in algebraic rules
-        vars_in_alg_rules = sets.Set()
+        vars_in_alg_rules = set()
         for rule in self.algebraicRules:
             vars_in_alg_rules.union_update(ExprManip.extract_vars(rule))
 
         # Now replace all the assigned variables with the variables they
         # actually depend on. This takes a while loop because assigned
         # vars may be functions of other assigned vars.
-        assigned_in_alg =  vars_in_alg_rules.intersection(sets.Set(
+        assigned_in_alg =  vars_in_alg_rules.intersection(set(
                             self.assignedVars.keys()))
         # while there are still assignment variables that we have not
         # expanded in terms of their definitions
@@ -2981,14 +2980,14 @@ class Network:
             # update the list of assignment variables that appear in the
             # algebraic rule
             assigned_in_alg =  vars_in_alg_rules.intersection(
-                sets.Set(self.assignedVars.keys()))
+                set(self.assignedVars.keys()))
 
         # At this point, vars_in_alg_rules should contain all the variables the
         # algebraic rules depend on, including implicit dependencies through
         # assignment rules. Now we filter out all the things we know aren't
         # algebraic vars. First we filter out everything that we already
         # know isn't a dynamic variable.
-        vars_in_alg_rules.intersection_update(sets.Set(self.dynamicVars.keys()))
+        vars_in_alg_rules.intersection_update(set(self.dynamicVars.keys()))
 
         # remove the reaction variables
         for rxn in self.reactions:
@@ -3085,7 +3084,7 @@ class Network:
             #  that function from the rest of the network
 
             # We clear out all the dynamic functions that have been defined.
-            all_dynamic_keys = sets.Set(self._dynamic_funcs_python.keys())
+            all_dynamic_keys = set(self._dynamic_funcs_python.keys())
             all_dynamic_keys.union_update(self._dynamic_funcs_c.keys())
             for dynamic_func in all_dynamic_keys:
                 try:
@@ -3186,7 +3185,7 @@ class Network:
             self._py_func_dict_cache[key] = py_func_dict
             for func_name, body in self._dynamic_funcs_python.items():
                 if body != None:
-                    exec body in self.namespace, locals()
+                    exec(body in self.namespace, locals())
                     py_func_dict[func_name] = locals()[func_name]
 
         # Add all the functions to our Network.
@@ -3400,8 +3399,8 @@ class Network:
             vars_used = ExprManip.extract_vars(input)
 
         # What other assigned variables does input depend on?
-        assigned_used = vars_used.difference(sets.Set([wrt]))
-        assigned_used.intersection_update(sets.Set(self.assignedVars.keys()))
+        assigned_used = vars_used.difference(set([wrt]))
+        assigned_used.intersection_update(set(self.assignedVars.keys()))
         # Do the chain rule for those variables
         for id in assigned_used:
             rule = self.assignmentRules.getByKey(id)
@@ -3411,8 +3410,8 @@ class Network:
                 output += ' + (%s) *(%s)' % (d, d2)
 
         # What other constant variables does input depend on?
-        constant_used = vars_used.difference(sets.Set([wrt]))
-        constant_used.intersection_update(sets.Set(self.constantVars.keys()))
+        constant_used = vars_used.difference(set([wrt]))
+        constant_used.intersection_update(set(self.constantVars.keys()))
         # Do the chain rule for those variables
         for id in constant_used:
             ic = self.get_var_ic(id)
@@ -3589,7 +3588,7 @@ def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
         function_body = getattr(obj, '%s_functionBody' % func)
     # This exec gives the function access to everything defined in in_namespace
     #  and inserts the result into the locals namespace
-    exec function_body in in_namespace, locals()
+    exec(function_body in in_namespace, locals())
     # The call to types.MethodType ensures that we can call the function
     #  as obj.f(...) and get the implicit 'self' argument.
     # locals()[func] just gets the actual function object the exec created.

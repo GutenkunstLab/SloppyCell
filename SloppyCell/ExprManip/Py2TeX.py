@@ -1,11 +1,11 @@
-from compiler.ast import *
+from ast import *
 import os
 
-import AST
+from SloppyCell.ExprManip  import AST
 
 # This is just and istance of Mul to use when we group numerators and 
 #  denominators
-_EMPTY_MUL = Mul((None, None))
+_EMPTY_MUL = MatMult()
 
 def dict2TeX(d, name_dict, lhs_form='%s', split_terms=False, simpleTeX=False):
     lines = []

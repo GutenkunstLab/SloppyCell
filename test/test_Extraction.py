@@ -1,4 +1,3 @@
-import sets
 import unittest
 
 import SloppyCell.ExprManip as ExprManip
@@ -22,7 +21,7 @@ class test_Extraction(unittest.TestCase):
                  ]
 
         for expr, vars in cases:
-            assert ExprManip.extract_vars(expr) == sets.Set(vars)
+            assert ExprManip.extract_vars(expr) == set(vars)
 
     def test_extract_funcs(self):
         cases = [('g(x)', [('g', 1)]),
@@ -41,7 +40,7 @@ class test_Extraction(unittest.TestCase):
                  ]
 
         for expr, funcs in cases:
-            assert ExprManip.extract_funcs(expr) == sets.Set(funcs)
+            assert ExprManip.extract_funcs(expr)(funcs)
 
     def test_extract_comps(self):
         cases = [('x == 3', ['x == 3']),
@@ -52,7 +51,7 @@ class test_Extraction(unittest.TestCase):
 
         for expr, comps in cases:
             result = ExprManip.extract_comps(expr) 
-            assert result == sets.Set(comps)
+            assert result(comps)
 
 suite = unittest.makeSuite(test_Extraction)
 

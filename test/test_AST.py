@@ -1,6 +1,5 @@
-from compiler.ast import *
+from ast import *
 import random
-import sets
 import unittest
 
 from SloppyCell.ExprManip import strip_parse, ast2str
@@ -41,13 +40,13 @@ class test_AST(unittest.TestCase):
                  (strip_parse('1/2*3'), (['1', '3'], ['2'])),
                  (strip_parse('1/(2*3)'), (['1'], ['2', '3'])),
                  (strip_parse('1/(2/3)'), (['1', '3'], ['2'])),
-                 (Mul((Mul((Const(1), Const(2))), Mul((Const(3), Const(4))))),
+                 (MatMult((MatMult((Constant(1), Constant(2))), MatMult((Constant(3), Constant(4))))),
                   (['1', '2', '3', '4'], [])),
-                 (Mul((Mul((Const(1), Const(2))), Div((Const(3), Const(4))))),
+                 (MatMult((MatMult((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
                   (['1', '2', '3'], ['4'])),
-                 (Mul((Div((Const(1), Const(2))), Div((Const(3), Const(4))))),
+                 (MatMult((Div((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
                   (['1', '3'], ['2', '4'])),
-                 (Div((Div((Const(1), Const(2))), Div((Const(3), Const(4))))),
+                 (Div((Div((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
                   (['1', '4'], ['2', '3'])),
                  ]
         for ast, (nums, denoms) in cases: 
@@ -55,8 +54,8 @@ class test_AST(unittest.TestCase):
             AST._collect_num_denom(ast, n, d)
             n = [ast2str(term) for term in n]
             d = [ast2str(term) for term in d]
-            assert sets.Set(nums) == sets.Set(n)
-            assert sets.Set(denoms) == sets.Set(d)
+            assert set(nums) == set(n)
+            assert set(denoms) == set(d)
 
     def test__collect_pos_neg(self):
         cases = [(strip_parse('1'), (['1'], [])),
@@ -65,13 +64,13 @@ class test_AST(unittest.TestCase):
                  (strip_parse('1-(2+3)'), (['1'], ['2', '3'])),
                  (strip_parse('1-(2-3)'), (['1', '3'], ['2'])),
                  (strip_parse('(1-2)-(3-4)'), (['1', '4'], ['2', '3'])),
-                 (Add((Add((Const(1), Const(2))), Add((Const(3), Const(4))))),
+                 (Add((Add((Constant(1), Constant(2))), Add((Constant(3), Constant(4))))),
                   (['1', '2', '3', '4'], [])),
-                 (Add((Add((Const(1), Const(2))), Sub((Const(3), Const(4))))),
+                 (Add((Add((Constant(1), Constant(2))), Sub((Constant(3), Constant(4))))),
                   (['1', '2', '3'], ['4'])),
-                 (Add((Sub((Const(1), Const(2))), Sub((Const(3), Const(4))))),
+                 (Add((Sub((Constant(1), Constant(2))), Sub((Constant(3), Constant(4))))),
                   (['1', '3'], ['2', '4'])),
-                 (Sub((Sub((Const(1), Const(2))), Sub((Const(3), Const(4))))),
+                 (Sub((Sub((Constant(1), Constant(2))), Sub((Constant(3), Constant(4))))),
                   (['1', '4'], ['2', '3'])),
                  ]
         for ast, (poss, negs) in cases: 
@@ -79,8 +78,8 @@ class test_AST(unittest.TestCase):
             AST._collect_pos_neg(ast, p, n)
             p = [ast2str(term) for term in p]
             n = [ast2str(term) for term in n]
-            assert sets.Set(poss) == sets.Set(p)
-            assert sets.Set(negs) == sets.Set(n)
+            assert set(poss) == set(p)
+            assert set(negs) == set(n)
 
 suite = unittest.makeSuite(test_AST)
 

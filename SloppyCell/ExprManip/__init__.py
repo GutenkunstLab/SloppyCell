@@ -1,4 +1,4 @@
-from . import AST, Differentiation, Extraction, Py2TeX, Simplify, Substitution
+from SloppyCell.ExprManip  import AST, Differentiation, Extraction, Py2TeX, Simplify, Substitution
 
 from .AST import strip_parse, ast2str
 from .Differentiation import load_derivs, save_derivs, diff_expr

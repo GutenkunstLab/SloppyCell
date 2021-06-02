@@ -1,9 +1,9 @@
-from compiler.ast import *
+from ast import *
 import copy
 
-import AST
-from AST import strip_parse, ast2str
-import Simplify
+from SloppyCell.ExprManip  import AST
+from SloppyCell.ExprManip.AST import strip_parse, ast2str
+from SloppyCell.ExprManip  import Simplify
 
 def sub_for_comps(expr, mapping):
     """
@@ -120,7 +120,7 @@ def _sub_for_func_ast(ast, func_name, func_vars, func_expr_ast):
     """
     Return an ast with the function func_name substituted out.
     """
-    if isinstance(ast, CallFunc) and ast2str(ast.node) == func_name\
+    if isinstance(ast, Call) and ast2str(ast.node) == func_name\
        and func_vars == '*':
         working_ast = copy.deepcopy(func_expr_ast)
         new_args = [_sub_for_func_ast(arg_ast, func_name, func_vars, 
@@ -128,7 +128,7 @@ def _sub_for_func_ast(ast, func_name, func_vars, func_expr_ast):
         # This subs out the arguments of the original function.
         working_ast.nodes = new_args
         return working_ast
-    if isinstance(ast, CallFunc) and ast2str(ast.node) == func_name\
+    if isinstance(ast, Call) and ast2str(ast.node) == func_name\
        and len(ast.args) == len(func_vars):
         # If our ast is the function we're looking for, we take the ast
         #  for the function expression, substitute for its arguments, and
@@ -155,34 +155,56 @@ def make_c_compatible(expr):
     Replace 'and', 'or', and 'not' with C's '&&', '||', and '!'. This may be
      fragile if the parsing library changes in newer python versions.
     """
-    ast = strip_parse(expr)
-    ast = _make_c_compatible_ast(ast)
-    return ast2str(ast)
+    tree = strip_parse(expr)
+    for node in walk(tree):
+        node = PowForDoubleStar().visit(node)
+        node = ast2str(node)
+    return tree
 
-def _make_c_compatible_ast(ast):
-    if isinstance(ast, Power):
-        ast = CallFunc(Name('pow'), [ast.left, ast.right], None, None)
-        ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
-    elif isinstance(ast, Const) and isinstance(ast.value, int):
-        ast.value = float(ast.value)
-    elif isinstance(ast, Subscript):
-        # These asts correspond to array[blah] and we shouldn't convert these
-        # to floats, so we don't recurse down the tree in this case.
-        pass
-    # We need to subsitute the C logical operators. Unfortunately, they aren't
-    # valid python syntax, so we have to cheat a little, using Compare and Name
-    # nodes abusively. This abuse may not be future-proof... sigh...
-    elif isinstance(ast, And):
-        nodes = AST.recurse_down_tree(ast.nodes, _make_c_compatible_ast)
-        ops = [('&&', node) for node in nodes[1:]]
-        ast = AST.Compare(nodes[0], ops)
-    elif isinstance(ast, Or):
-        nodes = AST.recurse_down_tree(ast.nodes, _make_c_compatible_ast)
-        ops = [('||', node) for node in nodes[1:]]
-        ast = AST.Compare(nodes[0], ops)
-    elif isinstance(ast, Not):
-        expr = AST.recurse_down_tree(ast.expr, _make_c_compatible_ast)
-        ast = AST.Name('!(%s)' % ast2str(expr))
-    else:
-        ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
-    return ast
+class PowForDoubleStar(NodeTransformer):
+    def visit_BinOp(self, node):
+        node.left = self.visit(node.left)
+        node.right = self.visit(node.right)
+
+        if isinstance(node.op, Pow):
+            node = copy_location(
+                       Call(func=Name('pow'),
+                                args=[node.left, node.right],
+                                keywords=[]
+                               ),
+                       node
+                   )
+        return node
+    def visit_Constant(self, node):
+        if isinstance(node, Constant) and isinstance(node.value, int):
+            print("entered here")
+            node.value = float(node.value)
+        return node
+    def visit_And(self, node):
+        if isinstance(node, And):
+            node = copy_location(
+                       Call(func=Name('&&'),
+                                keywords=[]
+                               ),
+                       node
+                   )
+            return node
+    def visit_Or(self, node):
+        if isinstance(node, Or):
+            node = copy_location(
+                       Call(func=Name('||'),
+                                keywords=[]
+                               ),
+                       node
+                   )
+            return node
+    def visit_Or(self, node):
+        if isinstance(node, Or):
+            node = copy_location(
+                       Call(func=Name('!(%s)'),
+                                keywords=[]
+                               ),
+                       node
+                   )
+            return node
+    

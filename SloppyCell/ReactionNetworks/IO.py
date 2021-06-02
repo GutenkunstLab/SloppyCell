@@ -11,8 +11,8 @@ except ImportError:
 import SloppyCell
 from SloppyCell.KeyedList_mod import KeyedList
 import SloppyCell.ExprManip as ExprManip
-import Network_mod
-import Trajectory_mod
+from SloppyCell.ReactionNetworks import Network_mod
+from SloppyCell.ReactionNetworks import Trajectory_mod
 
 def net_DOT_file(net, filename = None, size=(7.5,10)):
     lines = []

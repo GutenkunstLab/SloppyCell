@@ -1,15 +1,13 @@
 """
 Functions for simplifying python math expressions.
 """
-from compiler.ast import *
+from ast import *
 import operator
-import sets
-
-import AST
+from SloppyCell.ExprManip  import AST
 
 # Constants for comparison
-_ZERO = Const(0)
-_ONE = Const(1)
+_ZERO = Constant(0)
+_ONE = Constant(1)
 
 def simplify_expr(expr):
     """
@@ -30,7 +28,7 @@ def _simplify_ast(ast):
         x - x = 0
         --x = x
     """
-    if isinstance(ast, Name) or isinstance(ast, Const):
+    if isinstance(ast, Name) or isinstance(ast, Constant):
         return ast
     elif isinstance(ast, Add) or isinstance(ast, Sub):
         # We collect positive and negative terms and simplify each of them
@@ -40,22 +38,22 @@ def _simplify_ast(ast):
         neg = [_simplify_ast(term) for term in neg]
         
         # We collect and sum the constant values
-        values = [term.value for term in pos if isinstance(term, Const)] +\
-                [-term.value for term in neg if isinstance(term, Const)] 
+        values = [term.value for term in pos if isinstance(term, Constant)] +\
+                [-term.value for term in neg if isinstance(term, Constant)] 
         value = sum(values)
 
         # Remove the constants from our pos and neg lists
-        pos = [term for term in pos if not isinstance(term, Const)]
-        neg = [term for term in neg if not isinstance(term, Const)]
+        pos = [term for term in pos if not isinstance(term, Constant)]
+        neg = [term for term in neg if not isinstance(term, Constant)]
 
         new_pos, new_neg = [], []
         for term in pos:
-            if isinstance(term, UnarySub):
+            if isinstance(term, USub):
                 new_neg.append(term.expr)
             else:
                 new_pos.append(term)
         for term in neg:
-            if isinstance(term, UnarySub):
+            if isinstance(term, USub):
                 new_pos.append(term.expr)
             else:
                 new_neg.append(term)
@@ -63,9 +61,9 @@ def _simplify_ast(ast):
 
         # Append the constant value sum to pos or neg
         if value > 0:
-            pos.append(Const(value))
+            pos.append(Constant(value))
         elif value < 0:
-            neg.append(Const(abs(value)))
+            neg.append(Constant(abs(value)))
 
         # Count the number of occurances of each term.
         term_counts = [(term, pos.count(term) - neg.count(term)) for term in
@@ -89,23 +87,23 @@ def _simplify_ast(ast):
 
         term_counts[str(term)] = (ast_out, 0)
         if abs(count) != 1:
-            ast_out = Mul((Const(abs(count)), ast_out))
+            ast_out = MatMult((Constant(abs(count)), ast_out))
         if count < 0:
-            ast_out = UnarySub(ast_out)
+            ast_out = USub(ast_out)
 
         # And add in all the rest
         for term in (pos+neg)[ii:]:
             term, count = term_counts[str(term)]
             term_counts[str(term)] = (term, 0)
             if abs(count) != 1:
-                term = Mul((Const(abs(count)), term))
+                term = MatMult((Constant(abs(count)), term))
             if count > 0:
                 ast_out = Add((ast_out, term))
             elif count < 0:
                 ast_out = Sub((ast_out, term))
 
         return ast_out
-    elif isinstance(ast, Mul) or isinstance(ast, Div):
+    elif isinstance(ast, MatMult) or isinstance(ast, Div):
         # We collect numerator and denominator terms and simplify each of them
         num, denom = [], []
         AST._collect_num_denom(ast, num, denom)
@@ -113,8 +111,8 @@ def _simplify_ast(ast):
         denom = [_simplify_ast(term) for term in denom]
         
         # We collect and sum the constant values
-        values = [term.value for term in num if isinstance(term, Const)] +\
-                [1./term.value for term in denom if isinstance(term, Const)] 
+        values = [term.value for term in num if isinstance(term, Constant)] +\
+                [1./term.value for term in denom if isinstance(term, Constant)] 
         # This takes the product of all our values
         value = reduce(operator.mul, values + [1])
 
@@ -123,8 +121,8 @@ def _simplify_ast(ast):
             return _ZERO
 
         # Remove the constants from our pos and neg lists
-        num = [term for term in num if not isinstance(term, Const)]
-        denom = [term for term in denom if not isinstance(term, Const)]
+        num = [term for term in num if not isinstance(term, Constant)]
+        denom = [term for term in denom if not isinstance(term, Constant)]
 
         # Here we count all the negative (UnarySub) elements of our expression.
         # We also remove the UnarySubs from their arguments. We'll correct
@@ -132,13 +130,13 @@ def _simplify_ast(ast):
         num_neg = 0
         for list_of_terms in [num, denom]:
             for ii, term in enumerate(list_of_terms):
-                if isinstance(term, UnarySub):
+                if isinstance(term, USub):
                     list_of_terms[ii] = term.expr
                     num_neg += 1
 
         # Append the constant value sum to pos or neg
         if abs(value) != 1:
-            num.append(Const(abs(value)))
+            num.append(Constant(abs(value)))
         if value < 0:
             num_neg += 1
 
@@ -162,7 +160,7 @@ def _simplify_ast(ast):
             #  doesn't get done again.
             term_counts[str(term)] = (term, 0)
             if abs(count) > 1:
-                term = Power((term, Const(abs(count))))
+                term = Pow((term, Constant(abs(count))))
             if count > 0:
                 nums.append(term)
             elif count < 0:
@@ -176,10 +174,10 @@ def _simplify_ast(ast):
             out = Div((out, denom))
 
         if make_neg:
-            out = UnarySub(out)
+            out = USub(out)
 
         return out
-    elif isinstance(ast, Power):
+    elif isinstance(ast, Pow):
         # These cases all have a left and a right, so we group them just to
         #  avoid some code duplication.
         power = _simplify_ast(ast.right)
@@ -191,25 +189,25 @@ def _simplify_ast(ast):
             return _ONE
         if base == _ZERO or base == _ONE or power == _ONE:
             return base
-        elif isinstance(base, Const) and\
-                isinstance(power, Const):
-            return Const(base.value**power.value)
+        elif isinstance(base, Constant) and\
+                isinstance(power, Constant):
+            return Constant(base.value**power.value)
         # Getting here implies that no simplifications are possible, so just
         #  return with simplified arguments
-        return Power((base, power))
-    elif isinstance(ast, UnarySub):
+        return Pow((base, power))
+    elif isinstance(ast, USub):
         simple_expr = _simplify_ast(ast.expr)
-        if isinstance(simple_expr, UnarySub):
+        if isinstance(simple_expr, USub):
             # Case --x
             return _simplify_ast(simple_expr.expr)
-        elif isinstance(simple_expr, Const):
+        elif isinstance(simple_expr, Constant):
             if simple_expr.value == 0:
-                return Const(0)
+                return Constant(0)
             else:
-                return Const(-simple_expr.value)
+                return Constant(-simple_expr.value)
         else:
-            return UnarySub(simple_expr)
-    elif isinstance(ast, UnaryAdd):
+            return USub(simple_expr)
+    elif isinstance(ast, UAdd):
         simple_expr = _simplify_ast(ast.expr)
         return simple_expr
     elif isinstance(ast, list):
@@ -217,7 +215,7 @@ def _simplify_ast(ast):
         return simple_list
     elif isinstance(ast, tuple):
         return tuple(_simplify_ast(list(ast)))
-    elif AST._node_attrs.has_key(ast.__class__):
+    elif ast.__class__ in AST._node_attrs:
         # Handle node types with no special cases.
         for attr_name in AST._node_attrs[ast.__class__]:
             attr = getattr(ast, attr_name)

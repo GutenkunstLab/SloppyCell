@@ -1,7 +1,6 @@
-from compiler.ast import *
-import sets
+from ast import *
 
-import AST
+from SloppyCell.ExprManip  import AST
 
 extract_vars_cache = {}
 
@@ -12,7 +11,7 @@ def extract_comps(expr):
     comps_found = []
     _extract_comps_ast(AST.strip_parse(expr), comps_found)
     comps_found = [AST.ast2str(ast) for ast in comps_found]
-    return sets.Set(comps_found)
+    return set(comps_found)
 
 def _extract_comps_ast(ast, comps_found):
     if isinstance(ast, Compare):
@@ -38,7 +37,7 @@ def extract_vars(expr):
         vars_found = []
         _extract_vars_ast(AST.strip_parse(expr), vars_found)
         vars_found = [AST.ast2str(ast) for ast in vars_found]
-        result = sets.Set(vars_found)
+        result = set(vars_found)
         extract_vars_cache[expr] = result
         return result
 
@@ -60,13 +59,13 @@ def extract_funcs(expr):
     """
     funcs_found = []
     _extract_funcs_ast(AST.strip_parse(expr), funcs_found)
-    return sets.Set(funcs_found)
+    return set.Set(funcs_found)
 
 def _extract_funcs_ast(ast, funcs_found):
     """
     Append ('name', #arg) for each function used in the ast to funcs_found.
     """
-    if isinstance(ast, CallFunc):
+    if isinstance(ast, Call):
         funcs_found.append((AST.ast2str(ast.node), len(ast.args)))
         for node in ast.args:
             _extract_funcs_ast(node, funcs_found)

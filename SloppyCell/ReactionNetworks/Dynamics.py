@@ -4,7 +4,6 @@ Methods for evaluating the dynamics of Network.
 __docformat__ = "restructuredtext en"
 
 import copy
-import sets
 import sys 
 import scipy
 import scipy.optimize
@@ -14,7 +13,7 @@ logger = logging.getLogger('ReactionNetworks.Dynamics')
 
 import SloppyCell.daskr as daskr
 daeint = daskr.daeint
-import Trajectory_mod
+from SloppyCell.ReactionNetworks import Trajectory_mod
 
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks.Components import event_info
