@@ -9,12 +9,31 @@ from SloppyCell.ExprManip  import AST
 _ZERO = Constant(0)
 _ONE = Constant(1)
 
+class Evaluator(NodeTransformer):
+    ops = {
+        Add: '+',
+        Sub: '-',
+        # define more here
+    }
+
+    def visit_BinOp(self, node):
+        self.generic_visit(node)
+        if isinstance(node.left, Num) and isinstance(node.right, Num):
+            value = eval(f'{node.left.n} {self.ops[type(node.op)]} {node.right.n}')
+            return Num(n=value)
+        return node
+
+
 def simplify_expr(expr):
     """
     Return a simplified version of the expression.
     """
-    ast = AST.strip_parse(expr)
-    return AST.ast2str(_simplify_ast(ast))
+    tree = AST.strip_parse(expr)
+    simplify_ast = _simplify_ast(tree)
+    tree = parse('1 + 2 + 3 + x')
+    tree = fix_missing_locations(Evaluator().visit(tree))
+    print(dump(tree))
+    return AST.ast2str(simplify_ast)
 
 def _simplify_ast(ast):
     """
@@ -87,7 +106,7 @@ def _simplify_ast(ast):
 
         term_counts[str(term)] = (ast_out, 0)
         if abs(count) != 1:
-            ast_out = MatMult((Constant(abs(count)), ast_out))
+            ast_out = Mult((Constant(abs(count)), ast_out))
         if count < 0:
             ast_out = USub(ast_out)
 
@@ -96,14 +115,14 @@ def _simplify_ast(ast):
             term, count = term_counts[str(term)]
             term_counts[str(term)] = (term, 0)
             if abs(count) != 1:
-                term = MatMult((Constant(abs(count)), term))
+                term = Mult((Constant(abs(count)), term))
             if count > 0:
                 ast_out = Add((ast_out, term))
             elif count < 0:
                 ast_out = Sub((ast_out, term))
 
         return ast_out
-    elif isinstance(ast, MatMult) or isinstance(ast, Div):
+    elif isinstance(ast, Mult) or isinstance(ast, Div):
         # We collect numerator and denominator terms and simplify each of them
         num, denom = [], []
         AST._collect_num_denom(ast, num, denom)

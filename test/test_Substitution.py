@@ -1,5 +1,4 @@
 import random
-import sets
 import unittest
 
 import SloppyCell.ExprManip as ExprManip
@@ -29,6 +28,7 @@ class test_Substitution(unittest.TestCase):
 
         for expr, out_var, in_expr, answer in cases:
             subbed = ExprManip.sub_for_var(expr, out_var, in_expr)
+            print(subbed)
             assert eval(answer) == eval(subbed)
 
     def test_sub_for_vars(self):

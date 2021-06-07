@@ -156,9 +156,8 @@ def make_c_compatible(expr):
      fragile if the parsing library changes in newer python versions.
     """
     tree = strip_parse(expr)
-    for node in walk(tree):
-        node = PowForDoubleStar().visit(node)
-        node = ast2str(node)
+    tree = PowForDoubleStar().visit(tree)
+    tree = ast2str(tree)
     return tree
 
 class PowForDoubleStar(NodeTransformer):

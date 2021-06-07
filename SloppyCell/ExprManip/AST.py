@@ -27,7 +27,7 @@ class Visitor(NodeVisitor):
             return super().visit(node)
 
     whitelist = (Name,Constant, Call, Subscript, Slice, Slice,Pow,USub,
-                 UAdd,MatMult,Div,Sub,Add,Compare, Not, And, Or, Expr)
+                 UAdd,Mult,Div,Sub,Add,Compare, Not, And, Or, Expr)
     
 def strip_parse(expr):
     """
@@ -51,7 +51,7 @@ _OP_ORDER = {Name: 0,
              Pow: 3,
              USub: 4,
              UAdd: 4,
-             MatMult: 5,
+             Mult: 5,
              Div: 5,
              Sub: 10,
              Add: 10,
@@ -70,7 +70,7 @@ _node_attrs = {Name: (),
                Constant: (),
                Add: ('left', 'right'),
                Sub: ('left', 'right'),
-               MatMult: ('left', 'right'),
+               Mult: ('left', 'right'),
                Div: ('left', 'right'),
                Call: ('args',),
                Pow: ('left', 'right'),
@@ -84,7 +84,56 @@ _node_attrs = {Name: (),
                Or: ('nodes',),
                And: ('nodes',),
                }
+import ast
 
+
+class Visitor(NodeTransformer):
+    def visit_BinOp(self, node):
+        node.left = self.visit(node.left)
+        node.right = self.visit(node.right)
+
+        if isinstance(node.op, Add):
+            node = '%s + %s' % (node.left,
+                           node.right)
+        return node
+
+    def visit_Sub(self, node):
+        print(node)
+        self.generic_visit(node)
+        
+    def visit_Constant(self, node):
+        out = str(node.value)
+        self.generic_visit(node)
+
+    
+
+
+    
+
+    
+
+    
+
+    
+   
+
+   
+
+    
+    
+
+
+
+SOURCE = """
+def hello(msg):
+    a = 21 * 2
+    print(msg, a)
+"""
+
+if __name__ == "__main__":
+    root = ast.parse(SOURCE)
+    visitor = Visitor()
+    visitor.visit(root)
 
 def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
     """
@@ -98,6 +147,7 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
+    return unparse(node)
     if isinstance(node, Name):
         out = node.name
     elif isinstance(node, Constant):
@@ -108,7 +158,7 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
     elif isinstance(node, Sub):
         out = '%s - %s' % (ast2str(node.left, node),
                            ast2str(node.right, node, adjust = TINY))
-    elif isinstance(node, MatMult):
+    elif isinstance(node, Mult):
         out = '%s*%s' % (ast2str(node.left, node),
                            ast2str(node.right, node))
     elif isinstance(node, Div):
@@ -150,7 +200,6 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         out = ' or '.join(nodes)
     elif isinstance(node, Not):
         out = 'not %s' % ast2str(node.expr, node, adjust=TINY)
-    print("out value", out)
     # Ensure parentheses by checking the _OP_ORDER of the outer and inner ASTs
     if _need_parens(outer, node, adjust):
         return out
@@ -174,29 +223,29 @@ def _collect_num_denom(node, nums, denoms):
     Append to nums and denoms, respectively, the nodes in the numerator and 
     denominator of an AST.
     """
-    if not (isinstance(node, MatMult) or isinstance(node, Div)):
+    if not (isinstance(node, Mult) or isinstance(node, Div)):
         # If ast is not multiplication or division, just put it in nums.
         nums.append(node)
         return
 
-    if isinstance(node.left, Div) or isinstance(node.left, MatMult):
+    if isinstance(node.left, Div) or isinstance(node.left, Mult):
         # If the left argument is a multiplication or division, descend into
         #  it, otherwise it is in the numerator.
         _collect_num_denom(node.left, nums, denoms)
     else:
         nums.append(node.left)
 
-    if isinstance(node.right, Div) or isinstance(node.right, MatMult):
+    if isinstance(node.right, Div) or isinstance(node.right, Mult):
         # If the left argument is a multiplication or division, descend into
         #  it, otherwise it is in the denominator.
-        if isinstance(node, MatMult):
+        if isinstance(node, Mult):
             _collect_num_denom(node.left, nums, denoms)
         elif isinstance(node, Div):
             # Note that when we descend into the denominator of a Div, we want 
             #  to swap our nums and denoms lists
             _collect_num_denom(node.right, denoms, nums)
     else:
-        if isinstance(node, MatMult):
+        if isinstance(node, Mult):
             nums.append(node.right)
         elif isinstance(node, Div):
             denoms.append(node.right)
@@ -237,7 +286,7 @@ def _make_product(terms):
     if terms:
         product = terms[0]
         for term in terms[1:]:
-            product = MatMult((product, term))
+            product = Mult((product, term))
         return product 
     else:
         return Constant(1)

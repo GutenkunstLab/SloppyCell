@@ -136,7 +136,7 @@ def _diff_ast(ast, wrt):
         #  lets us use the same code from Add and Sub.
         return ast.__class__((_diff_ast(ast.left, wrt), 
                               _diff_ast(ast.right, wrt)))
-    elif isinstance(ast, MatMult) or isinstance(ast, Div):
+    elif isinstance(ast, Mult) or isinstance(ast, Div):
         # Collect all the numerators and denominators together
         nums, denoms = [], []
         AST._collect_num_denom(ast, nums, denoms)
@@ -154,7 +154,7 @@ def _diff_ast(ast, wrt):
 
         # Derivative of x/y is x'/y + -x*y'/y**2
         term1 = Div((num_d, denom))
-        term2 = Div((MatMult((USub(num), denom_d)), Pow((denom, Constant(2)))))
+        term2 = Div((Mult((USub(num), denom_d)), Pow((denom, Constant(2)))))
         return Add((term1, term2))
 
     elif isinstance(ast, Pow):
@@ -186,7 +186,7 @@ def _diff_ast(ast, wrt):
             for ii, arg in enumerate(args):
                 Substitution._sub_subtrees_for_vars(arg_form_d, 
                                                     {'arg%i'%ii:arg})
-            outs.append(MatMult((arg_form_d, arg_d)))
+            outs.append(Mult((arg_form_d, arg_d)))
 
         # If all arguments had zero deriviative
         if not outs:

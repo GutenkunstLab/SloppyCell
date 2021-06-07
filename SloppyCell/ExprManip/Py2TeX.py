@@ -5,7 +5,7 @@ from SloppyCell.ExprManip  import AST
 
 # This is just and istance of Mul to use when we group numerators and 
 #  denominators
-_EMPTY_MUL = MatMult()
+_EMPTY_MUL = Mult()
 
 def dict2TeX(d, name_dict, lhs_form='%s', split_terms=False, simpleTeX=False):
     lines = []

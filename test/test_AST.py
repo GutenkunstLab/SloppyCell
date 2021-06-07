@@ -2,7 +2,7 @@ from ast import *
 import random
 import unittest
 
-from SloppyCell.ExprManip import strip_parse, ast2str
+from SloppyCell.ExprManip import strip_parse, ast2str, Visitor
 import SloppyCell.ExprManip.AST as AST
 
 x = random.random()
@@ -26,7 +26,7 @@ class test_AST(unittest.TestCase):
                  '(True and not False) or True', 'not (True and False)',
                  'x == x and y == y', 'x - x == 0 or y - x != 0']
         for expr in cases: 
-            run = ast2str(strip_parse(expr))
+            run = unparse(parse(expr))
             orig = eval(expr)
             out = eval(run)
             if orig != 0:
@@ -40,11 +40,11 @@ class test_AST(unittest.TestCase):
                  (strip_parse('1/2*3'), (['1', '3'], ['2'])),
                  (strip_parse('1/(2*3)'), (['1'], ['2', '3'])),
                  (strip_parse('1/(2/3)'), (['1', '3'], ['2'])),
-                 (MatMult((MatMult((Constant(1), Constant(2))), MatMult((Constant(3), Constant(4))))),
+                 (Mult((Mult((Constant(1), Constant(2))), Mult((Constant(3), Constant(4))))),
                   (['1', '2', '3', '4'], [])),
-                 (MatMult((MatMult((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
+                 (Mult((Mult((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
                   (['1', '2', '3'], ['4'])),
-                 (MatMult((Div((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
+                 (Mult((Div((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
                   (['1', '3'], ['2', '4'])),
                  (Div((Div((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
                   (['1', '4'], ['2', '3'])),
