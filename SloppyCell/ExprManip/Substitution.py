@@ -59,16 +59,20 @@ def sub_for_vars(expr, mapping):
 
     ast = _sub_subtrees_for_vars(ast, ast_mapping)
     return ast2str(ast)
-
+    
 def _sub_subtrees_for_vars(ast, ast_mappings):
     """
     For each out_name, in_ast pair in mappings, substitute in_ast for all 
     occurances of the variable named out_name in ast
     """
-    if isinstance(ast, Name) and ast_mappings.has_key(ast2str(ast)):
-        return ast_mappings[ast2str(ast)]
-    ast = AST.recurse_down_tree(ast, _sub_subtrees_for_vars, (ast_mappings,))
+    for node in walk(ast):
+        if isinstance(node, Name) and ast_mappings.has_key(unparse(ast)):
+            node = ast_mappings[unparse(ast)]
     return ast
+    # if isinstance(ast, Name) and ast_mappings.has_key(unparse(ast)):
+    #     return ast_mappings[ast2str(ast)]
+    # ast = AST.recurse_down_tree(ast, _sub_subtrees_for_vars, (ast_mappings,))
+    # return ast
 
 def sub_for_func(expr, func_name, func_vars, func_expr):
     """

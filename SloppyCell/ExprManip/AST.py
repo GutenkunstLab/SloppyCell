@@ -21,13 +21,13 @@ TINY = 1e-12
 # # Add our new equality tester to the Node class.
 # Node = AST
 # Node.__eq1__ = _node_equal
-class Visitor(NodeVisitor):
-    def visit(self, node):
-       if isinstance(node, self.whitelist):
-            return super().visit(node)
+# class Visitor(NodeVisitor):
+#     def visit(self, node):
+#        if isinstance(node, self.whitelist):
+#             return super().visit(node)
 
-    whitelist = (Name,Constant, Call, Subscript, Slice, Slice,Pow,USub,
-                 UAdd,Mult,Div,Sub,Add,Compare, Not, And, Or, Expr)
+#     whitelist = (Name,Constant, Call, Subscript, Slice, Slice,Pow,USub,
+#                  UAdd,Mult,Div,Sub,Add,Compare, Not, And, Or, Expr)
     
 def strip_parse(expr):
     """
@@ -43,7 +43,6 @@ def strip_parse(expr):
 # This defines the order of operations for the various node types, to determine
 #  whether or not parentheses are necessary.
 _OP_ORDER = {Name: 0,
-             Constant: 0,
              Call: 0,
              Subscript: 0,
              Slice: 0,
@@ -67,7 +66,6 @@ _FARTHEST_OUT = Expr(None)
 
 # These are the attributes of each node type that are other nodes.
 _node_attrs = {Name: (),
-               Constant: (),
                Add: ('left', 'right'),
                Sub: ('left', 'right'),
                Mult: ('left', 'right'),
@@ -84,26 +82,26 @@ _node_attrs = {Name: (),
                Or: ('nodes',),
                And: ('nodes',),
                }
-import ast
 
 
-class Visitor(NodeTransformer):
-    def visit_BinOp(self, node):
-        node.left = self.visit(node.left)
-        node.right = self.visit(node.right)
 
-        if isinstance(node.op, Add):
-            node = '%s + %s' % (node.left,
-                           node.right)
-        return node
+# class Visitor(NodeTransformer):
+#     def visit_BinOp(self, node):
+#         node.left = self.visit(node.left)
+#         node.right = self.visit(node.right)
 
-    def visit_Sub(self, node):
-        print(node)
-        self.generic_visit(node)
+#         if isinstance(node.op, Add):
+#             node = '%s + %s' % (node.left,
+#                            node.right)
+#         return node
+
+#     def visit_Sub(self, node):
+#         print(node)
+#         self.generic_visit(node)
         
-    def visit_Constant(self, node):
-        out = str(node.value)
-        self.generic_visit(node)
+#     def visit_Constant(self, node):
+#         out = str(node.value)
+#         self.generic_visit(node)
 
     
 
@@ -130,10 +128,7 @@ def hello(msg):
     print(msg, a)
 """
 
-if __name__ == "__main__":
-    root = ast.parse(SOURCE)
-    visitor = Visitor()
-    visitor.visit(root)
+
 
 def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
     """
