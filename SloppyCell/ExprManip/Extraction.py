@@ -14,18 +14,19 @@ def extract_comps(expr):
     return set(comps_found)
 
 def _extract_comps_ast(ast, comps_found):
-    if isinstance(ast, Compare):
-        comps_found.append(ast)
-        _extract_comps_ast(ast.expr, comps_found)
-        for op, elem in ast.ops:
-            _extract_comps_ast(elem, comps_found)
-    elif isinstance(ast, list) or isinstance(ast, tuple):
-        for elem in ast:
-            _extract_comps_ast(elem, comps_found)
-    elif AST._node_attrs.has_key(ast.__class__):
-        for attr_name in AST._node_attrs[ast.__class__]:
-            attr = getattr(ast, attr_name)
-            _extract_comps_ast(attr, comps_found)
+    for node in walk(ast):
+        if isinstance(node, Compare):
+            comps_found.append(ast)
+            _extract_comps_ast(ast.expr, comps_found)
+            for op, elem in node.ops:
+                _extract_comps_ast(elem, comps_found)
+        elif isinstance(node, list) or isinstance(node, tuple):
+            for elem in ast:
+                _extract_comps_ast(elem, comps_found)
+        elif AST._node_attrs.has_key(ast.__class__):
+            for attr_name in AST._node_attrs[ast.__class__]:
+                attr = getattr(node, attr_name)
+                _extract_comps_ast(attr, comps_found)
 
 def extract_vars(expr):
     """
@@ -45,10 +46,12 @@ def _extract_vars_ast(ast, vars_found):
     """
     Appends the asts of the variables used in ast to vars_found.
     """
-    if isinstance(ast, Name):
-        if ast.name not in ['True', 'False']:
-            vars_found.append(ast)
-    ast = AST.recurse_down_tree(ast, _extract_vars_ast, (vars_found,))
+    nodes = [node for node in walk(ast)]
+    for node in walk(ast):
+        if isinstance(node, Name):
+            if node.id not in ['True', 'False']:
+                vars_found.append(ast)
+    
     return ast
 
 def extract_funcs(expr):
@@ -65,9 +68,10 @@ def _extract_funcs_ast(ast, funcs_found):
     """
     Append ('name', #arg) for each function used in the ast to funcs_found.
     """
-    if isinstance(ast, Call):
-        funcs_found.append((AST.ast2str(ast.node), len(ast.args)))
-        for node in ast.args:
-            _extract_funcs_ast(node, funcs_found)
-    ast = AST.recurse_down_tree(ast, _extract_funcs_ast, (funcs_found,))
+    for node_tree in walk(ast):
+        if isinstance(node_tree, Call):
+            funcs_found.append((AST.ast2str(ast.node), len(node_tree.value.args)))
+            for arg in node_tree.value.args:
+                _extract_funcs_ast(arg, funcs_found)
+    # ast = AST.recurse_down_tree(ast, _extract_funcs_ast, (funcs_found,))
     return ast

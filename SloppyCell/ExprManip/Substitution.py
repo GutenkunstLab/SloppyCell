@@ -17,18 +17,19 @@ def sub_for_comps(expr, mapping):
     ast_mapping = {}
     for out_expr, in_expr in mapping.items():
         out_ast = strip_parse(out_expr)
-        if not isinstance(out_ast, Compare):
+        nodes = [node for node in walk(out_ast)]
+        if not isinstance(nodes[1], Compare):
             raise ValueError('Expression %s to substitute for is not a '\
                     'comparison.' % out_expr)
-        ast_mapping[ast2str(out_ast)] = strip_parse(in_expr)
+        ast_mapping[unparse(out_ast)] = strip_parse(in_expr)
 
     ast = _sub_subtrees_for_comps(ast, ast_mapping)
-    return ast2str(ast)
+    return unparse(ast)
 
 def _sub_subtrees_for_comps(ast, ast_mappings):
-    if isinstance(ast, Compare) and ast_mappings.has_key(ast2str(ast)):
-        return ast_mappings[ast2str(ast)]
-    ast = AST.recurse_down_tree(ast, _sub_subtrees_for_comps, (ast_mappings,))
+    for node in walk(ast):
+        if isinstance(ast, Compare) and ast_mappings.has_key(unparse(ast)):
+            return ast_mappings[unparse(ast)]
     return ast
 
 def sub_for_var(expr, out_name, in_expr):
@@ -52,13 +53,14 @@ def sub_for_vars(expr, mapping):
     ast_mapping = {}
     for out_name, in_expr in mapping.items():
         out_ast = strip_parse(out_name)
+        nodes = [node for node in walk(out_ast)]
         if not isinstance(out_ast, Name):
             raise ValueError('Expression %s to substitute for is not a '\
                              'variable name.' % out_name)
         ast_mapping[str(out_ast.name)] = strip_parse(in_expr)
 
     ast = _sub_subtrees_for_vars(ast, ast_mapping)
-    return ast2str(ast)
+    return unparse(ast)
     
 def _sub_subtrees_for_vars(ast, ast_mappings):
     """
