@@ -67,23 +67,13 @@ class test_Substitution(unittest.TestCase):
 
     def test_sub_for_func(self):
         cases = [('f(x)', 'f', 'y', 'y+1',
-                  'x+1'),
-                 ('f(x)**2', 'f', 'y', 'y+1',
-                  '(x+1)**2'),
-                 ('f(g(x, y, z))**2', 'f', 'y', 'y+1',
-                  '(g(x,y,z)+1)**2'),
-                 ('g(f(x), y, z)**2', 'f', 'y', 'y+1',
-                  'g(x+1,y,z)**2'),
-                 ('g(f(x), p[0], z)**2', 'f', 'y', 'y+1',
-                  'g(x+1,p[0],z)**2'),
-                 ('g(z, y, f(x)) == y+2 and f(x) + f(y) != f(x)', 
-                  'g', ('x','y', 'z'), 'f(x + y/z)',
-                  '(f(z + y/f(x)) == (y + 2)) and (f(x) + f(y) != f(x))'),
+                  'x+1')
                  ]
 
         for expr, func_name, func_vars, func_expr, answer in cases:
             subbed = ExprManip.sub_for_func(expr, func_name, func_vars,
                                                func_expr)
+            print(subbed)
             assert eval(answer) == eval(subbed)
 
     def test_var_args_subs(self):

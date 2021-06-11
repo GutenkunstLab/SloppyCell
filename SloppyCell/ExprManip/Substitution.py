@@ -96,10 +96,13 @@ def sub_for_func(expr, func_name, func_vars, func_expr):
     """
     ast = strip_parse(expr)
     func_name_ast = strip_parse(func_name)
-    if not isinstance(func_name_ast, Name):
+    nodes = [node for node in walk(func_name_ast.body[0])]
+    print(nodes)
+    if not isinstance(nodes[1], Name):
         raise ValueError('Function name is not a simple name.')
-    func_name = func_name_ast.name
-
+    
+    func_name = func_name_ast.body[0].value.id
+    print(func_name)
     func_expr_ast = strip_parse(func_expr)
     # We can strip_parse  the '*', so we special case it here.
     if func_vars == '*':
@@ -110,43 +113,46 @@ def sub_for_func(expr, func_name, func_vars, func_expr):
 
         func_var_names = '*'
     else:
-        func_vars_ast = [strip_parse(var) for var in func_vars]
+        func_vars_ast = [strip_parse(var).body[0].value for var in func_vars]
         for var_ast in func_vars_ast:
             if not isinstance(var_ast, Name):
                 raise ValueError('Function variable is not a simple name.')
-        func_var_names = [getattr(var_ast, 'name') for var_ast in func_vars_ast]
+        func_var_names = [getattr(var_ast, 'id') for var_ast in func_vars_ast]
+        print(func_var_names)
 
     ast = _sub_for_func_ast(ast, func_name, func_var_names, func_expr_ast)
-    simple = Simplify._simplify_ast(ast)
-    return ast2str(simple)
+    # simple = Simplify._simplify_ast(ast)
+    print(ast)
+    return unparse(ast)
 
 def _sub_for_func_ast(ast, func_name, func_vars, func_expr_ast):
     """
     Return an ast with the function func_name substituted out.
     """
-    if isinstance(ast, Call) and ast2str(ast.node) == func_name\
-       and func_vars == '*':
-        working_ast = copy.deepcopy(func_expr_ast)
-        new_args = [_sub_for_func_ast(arg_ast, func_name, func_vars, 
-                                      func_expr_ast) for arg_ast in ast.args]
-        # This subs out the arguments of the original function.
-        working_ast.nodes = new_args
-        return working_ast
-    if isinstance(ast, Call) and ast2str(ast.node) == func_name\
-       and len(ast.args) == len(func_vars):
-        # If our ast is the function we're looking for, we take the ast
-        #  for the function expression, substitute for its arguments, and
-        #  return
-        working_ast = copy.deepcopy(func_expr_ast)
-        mapping = {}
-        for var_name, arg_ast in zip(func_vars, ast.args):
-            subbed_arg_ast = _sub_for_func_ast(arg_ast, func_name, func_vars, 
-                                               func_expr_ast)
-            mapping[var_name] = subbed_arg_ast
-        _sub_subtrees_for_vars(working_ast, mapping)
-        return working_ast
-    ast = AST.recurse_down_tree(ast, _sub_for_func_ast, 
-                                (func_name, func_vars, func_expr_ast,))
+    print(dump(ast), func_name, func_vars, dump(func_expr_ast))
+    for node in walk(ast):
+        print(node)
+        if isinstance(node, Call) and unparse(node) == func_name\
+           and func_vars == '*':
+            working_ast = copy.deepcopy(func_expr_ast)
+            new_args = [_sub_for_func_ast(arg_ast, func_name, func_vars, 
+                                          func_expr_ast) for arg_ast in node.value.args]
+            # This subs out the arguments of the original function.
+            working_ast.node.value.args = new_args
+            return working_ast
+        if isinstance(ast, Call) and unparse(node) == func_name\
+           and len(node.value.args) == len(func_vars):
+            # If our ast is the function we're looking for, we take the ast
+            #  for the function expression, substitute for its arguments, and
+            #  return
+            working_ast = copy.deepcopy(func_expr_ast)
+            mapping = {}
+            for var_name, arg_ast in zip(func_vars, node.value.args):
+                subbed_arg_ast = _sub_for_func_ast(arg_ast, func_name, func_vars, 
+                                                   func_expr_ast)
+                mapping[var_name] = subbed_arg_ast
+            _sub_subtrees_for_vars(working_ast, mapping)
+            return working_ast
     return ast
 
 def make_c_compatible(expr):
