@@ -2,7 +2,7 @@ from ast import *
 import random
 import unittest
 
-from SloppyCell.ExprManip import strip_parse, ast2str, Visitor
+from SloppyCell.ExprManip.AST import strip_parse, ast2str
 import SloppyCell.ExprManip.AST as AST
 
 x = random.random()
@@ -40,14 +40,6 @@ class test_AST(unittest.TestCase):
                  (strip_parse('1/2*3'), (['1', '3'], ['2'])),
                  (strip_parse('1/(2*3)'), (['1'], ['2', '3'])),
                  (strip_parse('1/(2/3)'), (['1', '3'], ['2'])),
-                 (Mult((Mult((Constant(1), Constant(2))), Mult((Constant(3), Constant(4))))),
-                  (['1', '2', '3', '4'], [])),
-                 (Mult((Mult((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
-                  (['1', '2', '3'], ['4'])),
-                 (Mult((Div((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
-                  (['1', '3'], ['2', '4'])),
-                 (Div((Div((Constant(1), Constant(2))), Div((Constant(3), Constant(4))))),
-                  (['1', '4'], ['2', '3'])),
                  ]
         for ast, (nums, denoms) in cases: 
             n, d = [], []
@@ -64,14 +56,6 @@ class test_AST(unittest.TestCase):
                  (strip_parse('1-(2+3)'), (['1'], ['2', '3'])),
                  (strip_parse('1-(2-3)'), (['1', '3'], ['2'])),
                  (strip_parse('(1-2)-(3-4)'), (['1', '4'], ['2', '3'])),
-                 (Add((Add((Constant(1), Constant(2))), Add((Constant(3), Constant(4))))),
-                  (['1', '2', '3', '4'], [])),
-                 (Add((Add((Constant(1), Constant(2))), Sub((Constant(3), Constant(4))))),
-                  (['1', '2', '3'], ['4'])),
-                 (Add((Sub((Constant(1), Constant(2))), Sub((Constant(3), Constant(4))))),
-                  (['1', '3'], ['2', '4'])),
-                 (Sub((Sub((Constant(1), Constant(2))), Sub((Constant(3), Constant(4))))),
-                  (['1', '4'], ['2', '3'])),
                  ]
         for ast, (poss, negs) in cases: 
             p, n = [], []

@@ -9,19 +9,19 @@ from SloppyCell.ExprManip  import AST
 _ZERO = Constant(0)
 _ONE = Constant(1)
 
-class Evaluator(NodeTransformer):
-    ops = {
-        Add: '+',
-        Sub: '-',
-        # define more here
-    }
+# class Evaluator(NodeTransformer):
+#     ops = {
+#         Add: '+',
+#         Sub: '-',
+#         # define more here
+#     }
 
-    def visit_BinOp(self, node):
-        self.generic_visit(node)
-        if isinstance(node.left, Num) and isinstance(node.right, Num):
-            value = eval(f'{node.left.n} {self.ops[type(node.op)]} {node.right.n}')
-            return Num(n=value)
-        return node
+#     def visit_BinOp(self, node):
+#         self.generic_visit(node)
+#         if isinstance(node.left, Num) and isinstance(node.right, Num):
+#             value = eval(f'{node.left.n} {self.ops[type(node.op)]} {node.right.n}')
+#             return Num(n=value)
+#         return node
 
 
 def simplify_expr(expr):
@@ -31,7 +31,7 @@ def simplify_expr(expr):
     tree = AST.strip_parse(expr)
     simplify_ast = _simplify_ast(tree)
     tree = parse('1 + 2 + 3 + x')
-    tree = fix_missing_locations(Evaluator().visit(tree))
+    # tree = fix_missing_locations(Evaluator().visit(tree))
     print(dump(tree))
     return AST.ast2str(simplify_ast)
 
