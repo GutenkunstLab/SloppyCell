@@ -68,22 +68,23 @@ def _collect_pos_neg(ast, poss, negs):
     # The additional twist is handling UnarySubs.
     #
     
-    if not (isinstance(ast, Add) or isinstance(ast, Sub)):
-        poss.append(ast)
+    if not isinstance(ast, BinOp):
+        poss.append(ast.value)
         return
-
-    if isinstance(ast.left, Sub) or isinstance(ast.left, Add):
-        _collect_pos_neg(ast.left, poss, negs)
-    else:
-        poss.append(ast.left)
-
-    if isinstance(ast.right, Sub) or isinstance(ast.right, Add):
-        if isinstance(ast, Add):
-            _collect_pos_neg(ast.right, poss, negs)
-        elif isinstance(ast, Sub):
-            _collect_pos_neg(ast.right, negs, poss)
-    else:
-        if isinstance(ast, Add):
-            poss.append(ast.right)
-        elif isinstance(ast, Sub):
-            negs.append(ast.right)
+    if (isinstance(ast.op, Sub) or isinstance(ast.op, Add)):
+        if isinstance(ast.left, BinOp):
+            _collect_pos_neg(ast.left, poss, negs)
+        else:
+            poss.append(ast.left.value)
+            
+        if isinstance(ast.right, BinOp):
+            if isinstance(ast.op, Add):
+                _collect_pos_neg(ast.right, poss, negs)
+            elif isinstance(ast.op, Sub):
+                _collect_pos_neg(ast.right, negs, poss)
+                
+        else:
+            if isinstance(ast.op, Add):
+                poss.append(ast.right.value)
+            elif isinstance(ast.op, Sub):
+                negs.append(ast.right.value)
