@@ -150,13 +150,13 @@ def _collect_num_denom(ast, nums, denoms):
     denominator of an AST.
     """
     if not isinstance(ast, BinOp):
-        nums.append(ast.value)
+        nums.append(ast)
         return
     if (isinstance(ast.op, Div) or isinstance(ast.op, Mult)):
         if isinstance(ast.left, BinOp):
             _collect_num_denom(ast.left, nums, denoms)
         else:
-            nums.append(ast.left.value)
+            nums.append(ast.left)
             
         if isinstance(ast.right, BinOp):
             if isinstance(ast.op, Div):
@@ -165,9 +165,9 @@ def _collect_num_denom(ast, nums, denoms):
                 _collect_num_denom(ast.left, nums, denoms)
         else:
             if isinstance(ast.op, Div):
-                denoms.append(ast.right.value)
+                denoms.append(ast.right)
             elif isinstance(ast.op, Mult):
-                nums.append(ast.right.value)
+                nums.append(ast.right)
 
 def _collect_pos_neg(ast, poss, negs):
     """
@@ -180,13 +180,13 @@ def _collect_pos_neg(ast, poss, negs):
     #
     
     if not isinstance(ast, BinOp):
-        poss.append(ast.value)
+        poss.append(ast)
         return
     if (isinstance(ast.op, Sub) or isinstance(ast.op, Add)):
         if isinstance(ast.left, BinOp):
             _collect_pos_neg(ast.left, poss, negs)
         else:
-            poss.append(ast.left.value)
+            poss.append(ast.left)
             
         if isinstance(ast.right, BinOp):
             if isinstance(ast.op, Add):
@@ -196,6 +196,20 @@ def _collect_pos_neg(ast, poss, negs):
                 
         else:
             if isinstance(ast.op, Add):
-                poss.append(ast.right.value)
+                poss.append(ast.right)
             elif isinstance(ast.op, Sub):
-                negs.append(ast.right.value)
+                negs.append(ast.right)
+
+
+def _make_product(terms):
+    """
+    Return an AST expressing the product of all the terms.
+    """
+    if terms:
+        product = terms[0]
+        for term in terms[1:]:
+            product = BinOp(left=Name(id=product.id, ctx=Load()), op=Mult(), right=Name(id=term.id, ctx=Load()))
+            # product = Mult((product, term))
+        return product 
+    else:
+        return Constant(value=1)
