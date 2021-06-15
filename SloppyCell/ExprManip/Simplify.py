@@ -110,7 +110,7 @@ def _simplify_ast(ast):
             if abs(count) != 1:
                 term = BinOp(left=Constant(value=abs(count)), op=Mult(), right=Name(id=term.id, ctx=Load()))
             if count > 0:
-                ast_out = BinOp(left=Name(id=ast_out.id, ctx=Load()), op=Add(), right=Name(id=term.id, ctx=Load()))
+                ast_out = BinOp(left=ast_out, op=Add(), right=term)
             elif count < 0:
                 ast_out = BinOp(left=Name(id=ast_out.id, ctx=Load()), op=Sub(), right=Name(id=term.id, ctx=Load()))
         print("ast_out", dump(ast_out))
@@ -211,7 +211,7 @@ def _simplify_ast(ast):
             return Constant(value=base.value**power.value)
         # Getting here implies that no simplifications are possible, so just
         #  return with simplified arguments
-        return BinOp(left=Name(id=base.id, ctx=Load()), op=Pow(), right=Name(id=power.id, ctx=Load()))
+        return BinOp(left=base, op=Pow(), right=power)
     
     elif isinstance(ast, UnaryOp) and isinstance(ast.op, USub):
         simple_expr = _simplify_ast(ast.operand)

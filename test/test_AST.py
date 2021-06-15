@@ -44,10 +44,8 @@ class test_AST(unittest.TestCase):
         for ast, (nums, denoms) in cases: 
             n, d = [], []
             AST._collect_num_denom(ast, n, d)
-            n = [term for term in n]
-            d = [term for term in d]
-            nums = [int(term) for term in nums]
-            denoms = [int(term) for term in denoms]
+            n = [ast2str(term) for term in n]
+            d = [ast2str(term) for term in d]
             assert set(nums) == set(n)
             assert set(denoms) == set(d)
 
@@ -62,10 +60,8 @@ class test_AST(unittest.TestCase):
         for ast, (poss, negs) in cases: 
             p, n = [], []
             AST._collect_pos_neg(ast, p, n)
-            p = [term for term in p]
-            n = [term for term in n]
-            poss = [int(term) for term in poss]
-            negs = [int(term) for term in negs]
+            p = [ast2str(term) for term in p]
+            n = [ast2str(term) for term in n]
             assert set(poss) == set(p)
             assert set(negs) == set(n)
 
