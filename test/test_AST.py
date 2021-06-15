@@ -26,7 +26,7 @@ class test_AST(unittest.TestCase):
                  '(True and not False) or True', 'not (True and False)',
                  'x == x and y == y', 'x - x == 0 or y - x != 0']
         for expr in cases: 
-            run = unparse(parse(expr))
+            run = ast2str(parse(expr))
             orig = eval(expr)
             out = eval(run)
             if orig != 0:
@@ -44,8 +44,10 @@ class test_AST(unittest.TestCase):
         for ast, (nums, denoms) in cases: 
             n, d = [], []
             AST._collect_num_denom(ast, n, d)
-            n = [ast2str(term) for term in n]
-            d = [ast2str(term) for term in d]
+            n = [term for term in n]
+            d = [term for term in d]
+            nums = [int(term) for term in nums]
+            denoms = [int(term) for term in denoms]
             assert set(nums) == set(n)
             assert set(denoms) == set(d)
 
@@ -60,8 +62,10 @@ class test_AST(unittest.TestCase):
         for ast, (poss, negs) in cases: 
             p, n = [], []
             AST._collect_pos_neg(ast, p, n)
-            p = [ast2str(term) for term in p]
-            n = [ast2str(term) for term in n]
+            p = [term for term in p]
+            n = [term for term in n]
+            poss = [int(term) for term in poss]
+            negs = [int(term) for term in negs]
             assert set(poss) == set(p)
             assert set(negs) == set(n)
 

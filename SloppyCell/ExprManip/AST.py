@@ -13,13 +13,124 @@ def strip_parse(expr):
     tree = parse(str(expr).strip())
     return  tree.body[0].value
 
+# This defines the order of operations for the various node types, to determine
+#  whether or not parentheses are necessary.
+_OP_ORDER = {Name: 0,
+             Call: 0,
+             Subscript: 0,
+             Slice: 0,
+             Slice: 0,
+             Pow: 3,
+             USub: 4,
+             UAdd: 4,
+             Mult: 5,
+             Div: 5,
+             Sub: 10,
+             Add: 10,
+             Compare: 11,
+             Not: 11,
+             And: 11,
+             Or: 11,
+             Expr: 100
+            }
+
+# This is just an instance of Discard to use for the default
+_FARTHEST_OUT = Expr(None)
+
+# These are the attributes of each node type that are other nodes.
+_node_attrs = {Name: (),
+               Add: ('left', 'right'),
+               Sub: ('left', 'right'),
+               Mult: ('left', 'right'),
+               Div: ('left', 'right'),
+               Call: ('args',),
+               Pow: ('left', 'right'),
+               USub: ('expr',),
+               UAdd: ('expr',),
+               Slice: ('lower', 'upper'),
+               Slice: ('nodes',),
+               Subscript: ('subs',),
+               Compare: ('expr', 'ops'),
+               Not: ('expr',),
+               Or: ('nodes',),
+               And: ('nodes',),
+               }
 
 def ast2str(ast):
     """
     Return the string representation of an AST.
     """
     return unparse(ast)
-    
+ 
+def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
+    """
+    Return the string representation of an AST.
+    outer: The AST's 'parent' node, used to determine whether or not to 
+        enclose the result in parentheses. The default of _FARTHEST_OUT will
+        never enclose the result in parentheses.
+    adjust: A numerical value to adjust the priority of this ast for
+        particular cases. For example, the denominator of a '/' needs 
+        parentheses in more cases than does the numerator.
+    """
+    return unparse(node)
+    if isinstance(node, Name):
+        out = node.name
+    elif isinstance(node, Constant):
+        out = str(node.value)
+    elif isinstance(node, Add):
+        out = '%s + %s' % (ast2str(node.left, node),
+                           ast2str(node.right, node))
+    elif isinstance(node, Sub):
+        out = '%s - %s' % (ast2str(node.left, node),
+                           ast2str(node.right, node, adjust = TINY))
+    elif isinstance(node, Mult):
+        out = '%s*%s' % (ast2str(node.left, node),
+                           ast2str(node.right, node))
+    elif isinstance(node, Div):
+        # The adjust ensures proper parentheses for x/(y*z)
+        out = '%s/%s' % (ast2str(node.left, node),
+                           ast2str(node.right, node, adjust = TINY))
+    elif isinstance(node, Pow):
+        # The adjust ensures proper parentheses for (x**y)**z
+        out = '%s**%s' % (ast2str(node.left, node, adjust = TINY),
+                          ast2str(node.right, node))
+    elif isinstance(node, USub):
+        out = '-%s' % ast2str(node.expr, node)
+    elif isinstance(node, UAdd):
+        out = '+%s' % ast2str(node.expr, node)
+    elif isinstance(node, Call):
+        args = [ast2str(arg) for arg in node.args]
+        out = '%s(%s)' % (ast2str(node.node), ', '.join(args))
+    elif isinstance(node, Subscript):
+        subs = [ast2str(sub) for sub in node.subs]
+        out = '%s[%s]' % (ast2str(node.expr), ', '.join(subs))
+    elif isinstance(node, Slice):
+        out = '%s[%s:%s]' % (ast2str(node.expr), ast2str(node.lower), 
+                             ast2str(node.upper))
+    elif isinstance(node, Slice):
+        nodes = [ast2str(node) for node in node.nodes]
+        out = ':'.join(nodes)
+    elif isinstance(node, Compare):
+        expr = ast2str(node.expr, node, adjust=6+TINY)
+        out_l = [expr]
+        for op, val in node.ops:
+            out_l.append(op)
+            out_l.append(ast2str(val, node, adjust=6+TINY))
+        out = ' '.join(out_l)
+    elif isinstance(node, And):
+        nodes = [ast2str(node, node, adjust=TINY) for node in node.nodes]
+        out = ' and '.join(nodes)
+    elif isinstance(node, Or):
+        nodes = [ast2str(node, node, adjust=TINY) for node in node.nodes]
+        out = ' or '.join(nodes)
+    elif isinstance(node, Not):
+        out = 'not %s' % ast2str(node.expr, node, adjust=TINY)
+    # Ensure parentheses by checking the _OP_ORDER of the outer and inner ASTs
+    if _need_parens(outer, node, adjust):
+        return out
+    else:
+        return '(%s)' % out
+   
 
 def _need_parens(outer, inner, adjust):
     """
@@ -56,7 +167,7 @@ def _collect_num_denom(ast, nums, denoms):
             if isinstance(ast.op, Div):
                 denoms.append(ast.right.value)
             elif isinstance(ast.op, Mult):
-                nums.append(ast.left.value)
+                nums.append(ast.right.value)
 
 def _collect_pos_neg(ast, poss, negs):
     """

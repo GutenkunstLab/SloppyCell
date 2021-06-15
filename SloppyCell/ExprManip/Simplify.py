@@ -6,8 +6,8 @@ import operator
 from SloppyCell.ExprManip  import AST
 
 # Constants for comparison
-_ZERO = Constant(0)
-_ONE = Constant(1)
+_ZERO = 'Constant(value=0)'
+_ONE = 'Constant(value=1)'
 
 # class Evaluator(NodeTransformer):
 #     ops = {
@@ -30,9 +30,6 @@ def simplify_expr(expr):
     """
     tree = AST.strip_parse(expr)
     simplify_ast = _simplify_ast(tree)
-    tree = parse('1 + 2 + 3 + x')
-    # tree = fix_missing_locations(Evaluator().visit(tree))
-    print(dump(tree))
     return AST.ast2str(simplify_ast)
 
 def _simplify_ast(ast):

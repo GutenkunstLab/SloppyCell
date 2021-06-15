@@ -10,8 +10,8 @@ from SloppyCell.ExprManip.AST import strip_parse
 from SloppyCell.ExprManip import Simplify
 from SloppyCell.ExprManip import Substitution
 
-_ZERO = Constant(0)
-_ONE = Constant(1)
+_ZERO = 'Constant(value=0)'
+_ONE = 'Constant(value=1)'
 
 # Record the version of the Differentiation.py file we loaded.
 __version_loaded = os.path.getmtime(__file__)
