@@ -1,7 +1,25 @@
 from ast import *
 
 TINY = 1e-12
-    
+
+# def _node_equal(self, other):
+#     """
+#     Return whether self and other represent the same expressions.
+#     Unfortunately, the Node class in Python 2.3 doesn't define ==, so
+#     we need to write our own.
+#     """
+#     # We're not equal if other isn't a Node, or if other is a different class.
+#     if not isinstance(other, Node) or not isinstance(other, self.__class__):
+#         return False
+#     # Loop through all children, checking whether they are equal
+#     for self_child, other_child in zip(self.getChildren(), other.getChildren()):
+#         if not self_child == other_child:
+#             return False
+#     # If we get here, our two nodes much be equal
+#     return True
+# Node = AST
+# Node.__eq__ = _node_equal
+ 
 def strip_parse(expr):
     """
     Return an abstract syntax tree (AST) for an expression.
@@ -43,14 +61,14 @@ _node_attrs = {Name: (),
                Sub: ('left', 'right'),
                Mult: ('left', 'right'),
                Div: ('left', 'right'),
-               Call: ('args',),
+               Call: ('func', 'args', 'keywords'),
                Pow: ('left', 'right'),
-               USub: ('expr',),
-               UAdd: ('expr',),
+               USub: ('op', 'operand',),
+               UAdd: ('op', 'operand',),
                Slice: ('lower', 'upper'),
                Slice: ('nodes',),
                Subscript: ('subs',),
-               Compare: ('expr', 'ops'),
+               Compare: ('left', 'ops', 'comparators'),
                Not: ('expr',),
                Or: ('nodes',),
                And: ('nodes',),
@@ -149,7 +167,7 @@ def _collect_num_denom(ast, nums, denoms):
     Append to nums and denoms, respectively, the nodes in the numerator and 
     denominator of an AST.
     """
-    if not isinstance(ast, BinOp):
+    if not (isinstance(ast, BinOp) and  (isinstance(ast.op, Mult) or isinstance(ast.op, Div))):
         nums.append(ast)
         return
     if (isinstance(ast.op, Div) or isinstance(ast.op, Mult)):
@@ -179,12 +197,15 @@ def _collect_pos_neg(ast, poss, negs):
     # The additional twist is handling UnarySubs.
     #
     
-    if not isinstance(ast, BinOp):
+    if not ((isinstance(ast, BinOp) and  (isinstance(ast.op, Sub) or isinstance(ast.op, Add))) or (isinstance(ast, UnaryOp))):
         poss.append(ast)
         return
-    if (isinstance(ast.op, Sub) or isinstance(ast.op, Add)):
+    if (isinstance(ast.op, Sub) or isinstance(ast.op, Add)) and isinstance(ast, BinOp):
         if isinstance(ast.left, BinOp):
+            print("left sided---------", dump(ast.left))
             _collect_pos_neg(ast.left, poss, negs)
+        elif isinstance(ast.left, UnaryOp):
+            _collect_pos_neg(ast.left, poss, negs) 
         else:
             poss.append(ast.left)
             
@@ -193,12 +214,23 @@ def _collect_pos_neg(ast, poss, negs):
                 _collect_pos_neg(ast.right, poss, negs)
             elif isinstance(ast.op, Sub):
                 _collect_pos_neg(ast.right, negs, poss)
-                
+        elif isinstance(ast.right, UnaryOp):
+             _collect_pos_neg(ast.right, negs, poss)      
         else:
             if isinstance(ast.op, Add):
                 poss.append(ast.right)
             elif isinstance(ast.op, Sub):
                 negs.append(ast.right)
+                
+    if isinstance(ast, UnaryOp) and (isinstance(ast.op, USub) or isinstance(ast.op, UAdd)):
+        if isinstance(ast.operand, Constant) or isinstance(ast.operand, Name):
+            if isinstance(ast.op, USub):
+                negs.append(ast.operand)
+            if isinstance(ast.op, UAdd):
+                poss.append(ast.operand)
+            return
+        else:
+            _collect_pos_neg(ast.operand, poss, negs)
 
 
 def _make_product(terms):

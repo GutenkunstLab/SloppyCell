@@ -35,7 +35,7 @@ class test_AST(unittest.TestCase):
                 assert out == 0
 
     def test__collect_num_denom(self):
-        cases = [(strip_parse('1'), (['1'], [])),
+        cases = [(strip_parse('x-x'), (['x - x'], [])),
                  (strip_parse('1/2'), (['1'], ['2'])),
                  (strip_parse('1/2*3'), (['1', '3'], ['2'])),
                  (strip_parse('1/(2*3)'), (['1'], ['2', '3'])),
@@ -44,13 +44,14 @@ class test_AST(unittest.TestCase):
         for ast, (nums, denoms) in cases: 
             n, d = [], []
             AST._collect_num_denom(ast, n, d)
+            print(n, d)
             n = [ast2str(term) for term in n]
             d = [ast2str(term) for term in d]
             assert set(nums) == set(n)
             assert set(denoms) == set(d)
 
     def test__collect_pos_neg(self):
-        cases = [(strip_parse('1'), (['1'], [])),
+        cases = [(strip_parse('-y + z'), (['z'], ['y'])),
                  (strip_parse('1-2'), (['1'], ['2'])),
                  (strip_parse('1-2+3'), (['1', '3'], ['2'])),
                  (strip_parse('1-(2+3)'), (['1'], ['2', '3'])),
