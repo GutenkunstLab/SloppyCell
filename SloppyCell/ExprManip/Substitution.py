@@ -48,33 +48,33 @@ def sub_for_vars(expr, mapping):
     """
     if len(mapping) == 0:
         return expr
-
+    print("exprrrrrrrrrr", expr)
+    print("mapinggggggggggggg", mapping)
     ast = strip_parse(expr)
     ast_mapping = {}
     for out_name, in_expr in mapping.items():
         out_ast = strip_parse(out_name)
-        nodes = [node for node in walk(out_ast)]
         if not isinstance(out_ast, Name):
             raise ValueError('Expression %s to substitute for is not a '\
                              'variable name.' % out_name)
-        ast_mapping[str(out_ast.name)] = strip_parse(in_expr)
-
+        ast_mapping[str(out_ast.id)] = strip_parse(in_expr)
+    print("in mapping", ast_mapping)
     ast = _sub_subtrees_for_vars(ast, ast_mapping)
-    return unparse(ast)
+    return ast2str(ast)
     
 def _sub_subtrees_for_vars(ast, ast_mappings):
     """
     For each out_name, in_ast pair in mappings, substitute in_ast for all 
     occurances of the variable named out_name in ast
     """
-    for node in walk(ast):
-        if isinstance(node, Name) and ast_mappings.has_key(unparse(ast)):
-            node = ast_mappings[unparse(ast)]
+    print("ppppppppppppppppp")
+    print(ast)
+    print(ast_mappings)
+    if isinstance(ast, Name) and ast2str(ast) in ast_mappings:
+        print("here")
+        return ast_mappings[ast2str(ast)]
+    ast = AST.recurse_down_tree(ast, _sub_subtrees_for_vars, (ast_mappings,))
     return ast
-    # if isinstance(ast, Name) and ast_mappings.has_key(unparse(ast)):
-    #     return ast_mappings[ast2str(ast)]
-    # ast = AST.recurse_down_tree(ast, _sub_subtrees_for_vars, (ast_mappings,))
-    # return ast
 
 def sub_for_func(expr, func_name, func_vars, func_expr):
     """

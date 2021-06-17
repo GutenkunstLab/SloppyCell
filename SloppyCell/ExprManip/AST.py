@@ -75,7 +75,7 @@ _node_attrs = {Name: (),
                And: (),
                BoolOp: ('op', 'values'),
                UnaryOp: ('op', 'operand'),
-               BinOp: ('left', 'op', 'right'),
+               BinOp: ('left', 'right'),
                }
 
 def ast2str(ast):
@@ -267,9 +267,10 @@ def recurse_down_tree(ast, func, args=()):
             print("attr", attr)
             print("*argsssssss", *args)
             attr_mod = func(attr, *args)
+            print("after", attr_mod)
             # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
             # print(attr)
             print(attr_mod)
-            # setattr(ast, attr_name, attr_mod)
+            setattr(ast, attr_name, attr_mod)
 
     return ast
