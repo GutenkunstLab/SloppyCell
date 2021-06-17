@@ -57,21 +57,25 @@ _FARTHEST_OUT = Expr(None)
 
 # These are the attributes of each node type that are other nodes.
 _node_attrs = {Name: (),
-               Add: ('left', 'right'),
-               Sub: ('left', 'right'),
-               Mult: ('left', 'right'),
-               Div: ('left', 'right'),
-               Call: ('func', 'args', 'keywords'),
-               Pow: ('left', 'right'),
-               USub: ('op', 'operand',),
-               UAdd: ('op', 'operand',),
+               Add: (),
+               Sub: (),
+               Mult: (),
+               Div: (),
+               Call: ('args', 'keywords'),
+               Pow: (),
+               USub: (),
+               UAdd: (),
                Slice: ('lower', 'upper'),
                Slice: ('nodes',),
                Subscript: ('subs',),
+               Subscript: ('value', 'slice', 'ctx',),
                Compare: ('left', 'ops', 'comparators'),
-               Not: ('expr',),
-               Or: ('nodes',),
-               And: ('nodes',),
+               Not: (),
+               Or: (),
+               And: (),
+               BoolOp: ('op', 'values'),
+               UnaryOp: ('op', 'operand'),
+               BinOp: ('left', 'op', 'right'),
                }
 
 def ast2str(ast):
@@ -245,3 +249,27 @@ def _make_product(terms):
         return product 
     else:
         return Constant(value=1)
+
+
+def recurse_down_tree(ast, func, args=()):
+    print("start",  ast)
+    if isinstance(ast, list):
+        for ii, elem in enumerate(ast):
+            ast[ii] = func(elem, *args)
+    elif isinstance(ast, tuple):
+        ast = tuple(func(list(ast), *args))
+    elif ast.__class__ in _node_attrs:
+        print("class", ast.__class__)
+        print("a", _node_attrs[ast.__class__])
+        for attr_name in _node_attrs[ast.__class__]:
+            print("attr name", attr_name)
+            attr = getattr(ast, attr_name)
+            print("attr", attr)
+            print("*argsssssss", *args)
+            attr_mod = func(attr, *args)
+            # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+            # print(attr)
+            print(attr_mod)
+            # setattr(ast, attr_name, attr_mod)
+
+    return ast
