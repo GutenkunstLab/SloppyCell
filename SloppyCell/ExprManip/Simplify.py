@@ -39,6 +39,11 @@ def _simplify_ast(ast):
         x - x = 0
         --x = x
     """
+    # print(dump(ast))
+    try:
+        print(ast.op)
+    except Exception as e:
+        print("exception", e)
     if isinstance(ast, Name) or isinstance(ast, Constant):
         return ast
     elif isinstance(ast, BinOp) and (isinstance(ast.op, Add) or isinstance(ast.op, Sub)):
@@ -133,8 +138,8 @@ def _simplify_ast(ast):
         AST._collect_num_denom(ast, num, denom)
         num = [_simplify_ast(term) for term in num]
         denom = [_simplify_ast(term) for term in denom]
-        print("num", num)
-        print("denom", denom)
+        print("num1", num)
+        print("denom2", denom)
         # We collect and sum the constant values
         values = [term.value for term in num if isinstance(term, Constant)] +\
                 [1./term.value for term in denom if isinstance(term, Constant)] 
@@ -145,11 +150,13 @@ def _simplify_ast(ast):
         # If our value is 0, the expression is 0
         if not value:
             return _ZERO
-
+        print("num2", num)
+        print("denom2", denom)
         # Remove the constants from our pos and neg lists
         num = [term for term in num if not isinstance(term, Constant)]
         denom = [term for term in denom if not isinstance(term, Constant)]
-
+        print("after", dump(num[0]), dump(num[1]))
+        print("denom", denom)
         # Here we count all the negative (UnarySub) elements of our expression.
         # We also remove the UnarySubs from their arguments. We'll correct
         #  for it at the end.
@@ -169,22 +176,23 @@ def _simplify_ast(ast):
         make_neg = num_neg % 2
 
         # Count the number of occurances of each term.
-        term_counts = [(term, num.count(term) - denom.count(term)) for term in
+        term_counts = [(term, get_count_from_ast(num, term) - get_count_from_ast(denom, term)) for term in
                        num + denom]
+        print("term counts", term_counts)
         # Tricky: We use the str(term) as the key for the dictionary to ensure
         #         that each entry represents a unique term. We also drop terms
         #         that have a total count of 0.
-        term_counts = dict([(str(term), (term, count)) for term, count in 
+        term_counts = dict([(AST.ast2str(term), (term, count)) for term, count in 
                             term_counts])
 
         nums, denoms = [], []
         # We walk through terms in num+denom in order, so we rearrange a little
         #  as possible.
         for term in num+denom:
-            term, count = term_counts[str(term)]
+            term, count = term_counts[AST.ast2str(term)]
             # Once a term has been done, we set its term_counts to 0, so it
             #  doesn't get done again.
-            term_counts[str(term)] = (term, 0)
+            term_counts[AST.ast2str(term)] = (term, 0)
             if abs(count) > 1:
                 term = BinOp(left=term, op=Pow(), right=Constant(value=abs(count)))
                 # term = Pow((term, Constant(abs(count))))
@@ -202,8 +210,8 @@ def _simplify_ast(ast):
             out = BinOp(left=out, op=Div(), right=denom)
 
         if make_neg:
-            out = UnaryOp(op=USub(), operand=Name(id=out.id, ctx=Load()))
-        print("here-----------", out)
+            out = UnaryOp(op=USub(), operand=out)
+        print("here-----------***********************", dump(out))
         return out
     elif isinstance(ast, BinOp) and isinstance(ast.op, Pow):
         # These cases all have a left and a right, so we group them just to
@@ -238,7 +246,7 @@ def _simplify_ast(ast):
                 return Constant(value=-simple_expr.value)
         else:
             return UnaryOp(op=USub(), operand=Name(id=simple_expr.id, ctx=Load()))
-    elif isinstance(ast, UAdd):
+    elif isinstance(ast.op, UAdd):
         simple_expr = _simplify_ast(ast.operand)
         return simple_expr
     elif isinstance(ast, list):

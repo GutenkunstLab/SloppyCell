@@ -54,8 +54,9 @@ class test_Differentiation(unittest.TestCase):
                  ('g(x - y*x + cos(x*z), y, x)' ,'y'),
                  ('g(x*y, x*y**2, y)', 'z')
                  ]
-
+        cases = [ ('x**y', 'x')]
         for expr, wrt in cases: 
+            print("test case&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&", expr)
             d = ExprManip.diff_expr(expr, wrt)
             ad = eval(d)
             fd = self._num_diff(expr, wrt, x=x, y=y, z=z)

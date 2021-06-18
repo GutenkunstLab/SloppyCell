@@ -75,7 +75,7 @@ _node_attrs = {Name: (),
                And: (),
                BoolOp: ('op', 'values'),
                UnaryOp: ('op', 'operand'),
-               BinOp: ('left', 'right'),
+               BinOp: ('left', 'op', 'right'),
                }
 
 def ast2str(ast):
@@ -189,6 +189,7 @@ def _collect_num_denom(ast, nums, denoms):
             if isinstance(ast.op, Div):
                 denoms.append(ast.right)
             elif isinstance(ast.op, Mult):
+                print("here else Nulttttttttttttttttttttttttttt", ast.right)
                 nums.append(ast.right)
 
 def _collect_pos_neg(ast, poss, negs):
@@ -244,7 +245,7 @@ def _make_product(terms):
     if terms:
         product = terms[0]
         for term in terms[1:]:
-            product = BinOp(left=Name(id=product.id, ctx=Load()), op=Mult(), right=Name(id=term.id, ctx=Load()))
+            product = BinOp(left=product, op=Mult(), right=term)
             # product = Mult((product, term))
         return product 
     else:

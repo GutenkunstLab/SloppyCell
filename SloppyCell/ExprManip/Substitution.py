@@ -187,7 +187,7 @@ def _make_c_compatible_ast(ast):
         ops = [('||', node) for node in nodes[1:]]
         ast = AST.Compare(nodes[0], ops)
     elif isinstance(ast.op, Not):
-        expr = AST.recurse_down_tree(ast.expr, _make_c_compatible_ast)
+        expr = AST.recurse_down_tree(ast.operand, _make_c_compatible_ast)
         ast = AST.Name('!(%s)' % ast2str(expr))
     else:
         ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
