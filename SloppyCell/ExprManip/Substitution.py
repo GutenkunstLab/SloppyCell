@@ -17,19 +17,18 @@ def sub_for_comps(expr, mapping):
     ast_mapping = {}
     for out_expr, in_expr in mapping.items():
         out_ast = strip_parse(out_expr)
-        nodes = [node for node in walk(out_ast)]
-        if not isinstance(nodes[1], Compare):
+        if not isinstance(out_ast, Compare):
             raise ValueError('Expression %s to substitute for is not a '\
                     'comparison.' % out_expr)
-        ast_mapping[unparse(out_ast)] = strip_parse(in_expr)
+        ast_mapping[ast2str(out_ast)] = strip_parse(in_expr)
 
     ast = _sub_subtrees_for_comps(ast, ast_mapping)
-    return unparse(ast)
+    return ast2str(ast)
 
 def _sub_subtrees_for_comps(ast, ast_mappings):
-    for node in walk(ast):
-        if isinstance(ast, Compare) and ast_mappings.has_key(unparse(ast)):
-            return ast_mappings[unparse(ast)]
+    if isinstance(ast, Compare) and ast2str(ast) in ast_mappings:
+        return ast_mappings[ast2str(ast)]
+    ast = AST.recurse_down_tree(ast, _sub_subtrees_for_comps, (ast_mappings,))
     return ast
 
 def sub_for_var(expr, out_name, in_expr):
@@ -98,63 +97,57 @@ def sub_for_func(expr, func_name, func_vars, func_expr):
     """
     ast = strip_parse(expr)
     func_name_ast = strip_parse(func_name)
-    nodes = [node for node in walk(func_name_ast.body[0])]
-    print(nodes)
-    if not isinstance(nodes[1], Name):
+    if not isinstance(func_name_ast, Name):
         raise ValueError('Function name is not a simple name.')
-    
-    func_name = func_name_ast.body[0].value.id
-    print(func_name)
+    func_name = func_name_ast.id
+
     func_expr_ast = strip_parse(func_expr)
     # We can strip_parse  the '*', so we special case it here.
     if func_vars == '*':
-        if not hasattr(func_expr_ast, 'nodes'):
+        if not hasattr(func_expr_ast, 'values'):
             raise ValueError("Top-level function in %s does not appear to "
                              "accept variable number of arguments. (It has no "
                              "'nodes' attribute.)" % func_expr)
 
         func_var_names = '*'
     else:
-        func_vars_ast = [strip_parse(var).body[0].value for var in func_vars]
+        func_vars_ast = [strip_parse(var) for var in func_vars]
         for var_ast in func_vars_ast:
             if not isinstance(var_ast, Name):
                 raise ValueError('Function variable is not a simple name.')
         func_var_names = [getattr(var_ast, 'id') for var_ast in func_vars_ast]
-        print(func_var_names)
 
     ast = _sub_for_func_ast(ast, func_name, func_var_names, func_expr_ast)
-    # simple = Simplify._simplify_ast(ast)
-    print(ast)
-    return unparse(ast)
+    simple = Simplify._simplify_ast(ast)
+    return ast2str(simple)
 
 def _sub_for_func_ast(ast, func_name, func_vars, func_expr_ast):
     """
     Return an ast with the function func_name substituted out.
     """
-    print(dump(ast), func_name, func_vars, dump(func_expr_ast))
-    for node in walk(ast):
-        print(node)
-        if isinstance(node, Call) and unparse(node) == func_name\
-           and func_vars == '*':
-            working_ast = copy.deepcopy(func_expr_ast)
-            new_args = [_sub_for_func_ast(arg_ast, func_name, func_vars, 
-                                          func_expr_ast) for arg_ast in node.value.args]
-            # This subs out the arguments of the original function.
-            working_ast.node.value.args = new_args
-            return working_ast
-        if isinstance(ast, Call) and unparse(node) == func_name\
-           and len(node.value.args) == len(func_vars):
-            # If our ast is the function we're looking for, we take the ast
-            #  for the function expression, substitute for its arguments, and
-            #  return
-            working_ast = copy.deepcopy(func_expr_ast)
-            mapping = {}
-            for var_name, arg_ast in zip(func_vars, node.value.args):
-                subbed_arg_ast = _sub_for_func_ast(arg_ast, func_name, func_vars, 
-                                                   func_expr_ast)
-                mapping[var_name] = subbed_arg_ast
-            _sub_subtrees_for_vars(working_ast, mapping)
-            return working_ast
+    if isinstance(ast, Call) and ast2str(ast.func) == func_name\
+       and func_vars == '*':
+        working_ast = copy.deepcopy(func_expr_ast)
+        new_args = [_sub_for_func_ast(arg_ast, func_name, func_vars, 
+                                      func_expr_ast) for arg_ast in ast.args]
+        # This subs out the arguments of the original function.
+        working_ast.values = new_args
+        return working_ast
+    if isinstance(ast, Call) and ast2str(ast.func) == func_name\
+       and len(ast.args) == len(func_vars):
+        # If our ast is the function we're looking for, we take the ast
+        #  for the function expression, substitute for its arguments, and
+        #  return
+        working_ast = copy.deepcopy(func_expr_ast)
+        mapping = {}
+        for var_name, arg_ast in zip(func_vars, ast.args):
+            subbed_arg_ast = _sub_for_func_ast(arg_ast, func_name, func_vars, 
+                                               func_expr_ast)
+            mapping[var_name] = subbed_arg_ast
+        _sub_subtrees_for_vars(working_ast, mapping)
+        return working_ast
+    ast = AST.recurse_down_tree(ast, _sub_for_func_ast, 
+                                (func_name, func_vars, func_expr_ast,))
     return ast
 
 def make_c_compatible(expr):
@@ -167,55 +160,35 @@ def make_c_compatible(expr):
     Replace 'and', 'or', and 'not' with C's '&&', '||', and '!'. This may be
      fragile if the parsing library changes in newer python versions.
     """
-    tree = strip_parse(expr)
-    tree = PowForDoubleStar().visit(tree)
-    tree = ast2str(tree)
-    return tree
-
-class PowForDoubleStar(NodeTransformer):
-    def visit_BinOp(self, node):
-        node.left = self.visit(node.left)
-        node.right = self.visit(node.right)
-
-        if isinstance(node.op, Pow):
-            node = copy_location(
-                       Call(func=Name('pow'),
-                                args=[node.left, node.right],
-                                keywords=[]
-                               ),
-                       node
-                   )
-        return node
-    def visit_Constant(self, node):
-        if isinstance(node, Constant) and isinstance(node.value, int):
-            print("entered here")
-            node.value = float(node.value)
-        return node
-    def visit_And(self, node):
-        if isinstance(node, And):
-            node = copy_location(
-                       Call(func=Name('&&'),
-                                keywords=[]
-                               ),
-                       node
-                   )
-            return node
-    def visit_Or(self, node):
-        if isinstance(node, Or):
-            node = copy_location(
-                       Call(func=Name('||'),
-                                keywords=[]
-                               ),
-                       node
-                   )
-            return node
-    def visit_Or(self, node):
-        if isinstance(node, Or):
-            node = copy_location(
-                       Call(func=Name('!(%s)'),
-                                keywords=[]
-                               ),
-                       node
-                   )
-            return node
-    
+    ast = strip_parse(expr)
+    ast = _make_c_compatible_ast(ast)
+    return ast2str(ast)
+   
+def _make_c_compatible_ast(ast):
+    if isinstance(ast.op, Pow):
+        ast = BinOp(left=ast.left, op=Pow(), right=ast.right)
+        ast = BinOp(left=ast.left, op=Call(Name('pow')), right=ast.right)
+        ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
+    elif isinstance(ast, Constant) and isinstance(ast.value, int):
+        ast.value = float(ast.value)
+    elif isinstance(ast, Subscript):
+        # These asts correspond to array[blah] and we shouldn't convert these
+        # to floats, so we don't recurse down the tree in this case.
+        pass
+    # We need to subsitute the C logical operators. Unfortunately, they aren't
+    # valid python syntax, so we have to cheat a little, using Compare and Name
+    # nodes abusively. This abuse may not be future-proof... sigh...
+    elif isinstance(ast.op, And):
+        nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
+        ops = [('&&', node) for node in nodes[1:]]
+        ast = AST.Compare(nodes[0], ops)
+    elif isinstance(ast.op, Or):
+        nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
+        ops = [('||', node) for node in nodes[1:]]
+        ast = AST.Compare(nodes[0], ops)
+    elif isinstance(ast.op, Not):
+        expr = AST.recurse_down_tree(ast.expr, _make_c_compatible_ast)
+        ast = AST.Name('!(%s)' % ast2str(expr))
+    else:
+        ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
+    return ast

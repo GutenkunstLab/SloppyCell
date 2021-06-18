@@ -39,7 +39,6 @@ def _simplify_ast(ast):
         x - x = 0
         --x = x
     """
-    print(dump(ast))
     if isinstance(ast, Name) or isinstance(ast, Constant):
         return ast
     elif isinstance(ast, BinOp) and (isinstance(ast.op, Add) or isinstance(ast.op, Sub)):
@@ -187,7 +186,7 @@ def _simplify_ast(ast):
             #  doesn't get done again.
             term_counts[str(term)] = (term, 0)
             if abs(count) > 1:
-                term = BinOp(left=Name(id=term.id, ctx=Load()), op=Pow(), right=Constant(value=abs(count)))
+                term = BinOp(left=term, op=Pow(), right=Constant(value=abs(count)))
                 # term = Pow((term, Constant(abs(count))))
             if count > 0:
                 nums.append(term)
@@ -200,7 +199,7 @@ def _simplify_ast(ast):
         if denoms:
             denom = AST._make_product(denoms)
             # out = Div((out, denom))
-            out = BinOp(left=Name(id=out.id, ctx=Load()), op=Div(), right=Name(id=denom.id, ctx=Load()))
+            out = BinOp(left=out, op=Div(), right=denom)
 
         if make_neg:
             out = UnaryOp(op=USub(), operand=Name(id=out.id, ctx=Load()))
