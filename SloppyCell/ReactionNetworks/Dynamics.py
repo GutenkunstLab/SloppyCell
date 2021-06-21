@@ -275,7 +275,7 @@ or False), raise the exception.
         if pendingEvents and min(pendingEvents.keys()) < start:
             raise ValueError('Missed an event!')
         event_buffer = 0
-        while pendingEvents.has_key(start):
+        while start in pendingEvents:
             execution_time = start
             # We need to backtrack to deal with this event...
             event_list = pendingEvents[execution_time]
@@ -579,7 +579,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
 
             # Add this event to the list of events that are supposed to
             # execute.
-            if not pendingEvents.has_key(execution_time):
+            if not execution_time in pendingEvents:
                 pendingEvents[execution_time] = []
             pendingEvents[execution_time].append(holder)
 

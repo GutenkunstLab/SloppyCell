@@ -1,10 +1,8 @@
-import sets
-
 import scipy
 
 import SloppyCell.Plotting
 from SloppyCell.Plotting import *
-import Network_mod
+from SloppyCell.ReactionNetworks import Network_mod
 
 import logging
 logger = logging.getLogger('ReactionNetworks.Plotting')
@@ -366,20 +364,20 @@ def plot_ensemble_results(model, ensemble, expts = None,
                         d = scipy.take(d, order, 0)
                         l = plot(d[:,0], d[:,1], color=color,
                                  linestyle=dash)
-		    lines.append(l)
+            lines.append(l)
 
-                if plot_trajectories:
-                    times = model.get_calcs().get(netId).trajectory.get_times()
-                    mean_vals = scipy.mean(results[exptId][netId][dataId], 0)
-                    std_vals = scipy.std(results[exptId][netId][dataId], 0)
+            if plot_trajectories:
+                times = model.get_calcs().get(netId).trajectory.get_times()
+                mean_vals = scipy.mean(results[exptId][netId][dataId], 0)
+                std_vals = scipy.std(results[exptId][netId][dataId], 0)
 
-                    lower_vals = mean_vals - std_vals
-                    upper_vals = mean_vals + std_vals
+                lower_vals = mean_vals - std_vals
+                upper_vals = mean_vals + std_vals
 
-                    # Plot the polygon
-                    xpts = scipy.concatenate((times, times[::-1]))
-                    ypts = scipy.concatenate((lower_vals, upper_vals[::-1]))
-                    fill(xpts, ypts, fc=color, alpha=0.4)
+                # Plot the polygon
+                xpts = scipy.concatenate((times, times[::-1]))
+                ypts = scipy.concatenate((lower_vals, upper_vals[::-1]))
+                fill(xpts, ypts, fc=color, alpha=0.4)
 
                 # Let's print the pretty name for our variable if we can.
                 name = net.get_component_name(dataId)

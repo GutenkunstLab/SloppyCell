@@ -29,15 +29,19 @@ def strip_parse(expr):
     # The .strip() ignores leading and trailing whitespace, which would 
     #  otherwise give syntax errors.
     tree = parse(str(expr).strip())
+    print("ffffffffffffffffffffffffffffffffffffffffffffffffffffff", dump(tree))
     return  tree.body[0].value
 
 # This defines the order of operations for the various node types, to determine
 #  whether or not parentheses are necessary.
 _OP_ORDER = {Name: 0,
+            Constant: 0,
              Call: 0,
              Subscript: 0,
              Slice: 0,
              Slice: 0,
+             BinOp: 0,
+             UnaryOp: 0,
              Pow: 3,
              USub: 4,
              UAdd: 4,
@@ -173,24 +177,39 @@ def _collect_num_denom(ast, nums, denoms):
     """
     if not (isinstance(ast, BinOp) and  (isinstance(ast.op, Mult) or isinstance(ast.op, Div))):
         nums.append(ast)
+        print("exit", nums, denoms)
         return
-    if (isinstance(ast.op, Div) or isinstance(ast.op, Mult)):
-        if isinstance(ast.left, BinOp):
-            _collect_num_denom(ast.left, nums, denoms)
-        else:
-            nums.append(ast.left)
-            
-        if isinstance(ast.right, BinOp):
-            if isinstance(ast.op, Div):
-                _collect_num_denom(ast.right, denoms, nums)
-            elif isinstance(ast.op, Mult):
-                _collect_num_denom(ast.left, nums, denoms)
-        else:
-            if isinstance(ast.op, Div):
-                denoms.append(ast.right)
-            elif isinstance(ast.op, Mult):
-                print("here else Nulttttttttttttttttttttttttttt", ast.right)
-                nums.append(ast.right)
+    
+    if isinstance(ast.left, BinOp) and (isinstance(ast.left.op, Div) or isinstance(ast.left.op, Mult)):
+        # print("lefttttttttttttttttttttttt dumppppppppp", dump(ast.left))
+        # print("left", nums, denoms)
+        _collect_num_denom(ast.left, nums, denoms)
+        # print("leftttttttttttttttttttttttt", nums, denoms)
+    else:
+        # print("left else condition", nums, denoms)
+        nums.append(ast.left)
+        # print("left else conditionnnnnnnnnnnnnnnnnnnnnnnnnnn", dump(nums[0]), denoms)
+    print("excxxxxxxxxxxxxxxx", dump(ast.right))
+    if isinstance(ast.right, BinOp) and (isinstance(ast.right.op, Div) or isinstance(ast.right.op, Mult)):
+        # print("ffffffffffffffffffff", dump(ast.right))
+        if isinstance(ast.op, Div):
+            # print("right if condition div", nums, denoms)
+            _collect_num_denom(ast.right, denoms, nums)
+            # print("right if condition divvvvvvvvvvvvvvvvvvvvvvvvv", nums, denoms)
+        elif isinstance(ast.op, Mult):
+            print("right if condition mult", nums, denoms)
+            _collect_num_denom(ast.right, nums, denoms)
+            # print("right if condition multttttttttttttttttttttttttttttttt", nums, denoms)
+    else:
+        if isinstance(ast.op, Div):
+            # print("final else", nums, denoms)
+            denoms.append(ast.right)
+            # print("final elseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", nums, denoms)
+        elif isinstance(ast.op, Mult):
+            # print("here else Nulttttttttttttttttttttttttttt", nums, denoms)
+            nums.append(ast.right)
+            # print("here else xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", nums, denoms)
+    
 
 def _collect_pos_neg(ast, poss, negs):
     """
@@ -202,19 +221,18 @@ def _collect_pos_neg(ast, poss, negs):
     # The additional twist is handling UnarySubs.
     #
     
-    if not ((isinstance(ast, BinOp) and  (isinstance(ast.op, Sub) or isinstance(ast.op, Add))) or (isinstance(ast, UnaryOp))):
+    if not ((isinstance(ast, BinOp) and  (isinstance(ast.op, Sub) or isinstance(ast.op, Add))) or (isinstance(ast, UnaryOp) and (isinstance(ast.op,USub) or isinstance(ast.op, UAdd) ))):
         poss.append(ast)
         return
     if (isinstance(ast.op, Sub) or isinstance(ast.op, Add)) and isinstance(ast, BinOp):
-        if isinstance(ast.left, BinOp):
-            print("left sided---------", dump(ast.left))
+        if isinstance(ast.left, BinOp) and (isinstance(ast.left.op, Add) or isinstance(ast.left.op, Sub)):
             _collect_pos_neg(ast.left, poss, negs)
         elif isinstance(ast.left, UnaryOp):
             _collect_pos_neg(ast.left, poss, negs) 
         else:
             poss.append(ast.left)
             
-        if isinstance(ast.right, BinOp):
+        if isinstance(ast.right, BinOp) and (isinstance(ast.right.op, Add) or isinstance(ast.right.op, Sub)):
             if isinstance(ast.op, Add):
                 _collect_pos_neg(ast.right, poss, negs)
             elif isinstance(ast.op, Sub):
@@ -260,18 +278,18 @@ def recurse_down_tree(ast, func, args=()):
     elif isinstance(ast, tuple):
         ast = tuple(func(list(ast), *args))
     elif ast.__class__ in _node_attrs:
-        print("class", ast.__class__)
+        # print("class", ast.args)
         print("a", _node_attrs[ast.__class__])
         for attr_name in _node_attrs[ast.__class__]:
             print("attr name", attr_name)
             attr = getattr(ast, attr_name)
-            print("attr", attr)
-            print("*argsssssss", *args)
+            # print("attr", attr)
+            # print("*argsssssss", *args)
             attr_mod = func(attr, *args)
-            print("after", attr_mod)
+            # print("after", attr_mod)
             # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
             # print(attr)
-            print(attr_mod)
+            # print(attr_mod)
             setattr(ast, attr_name, attr_mod)
 
     return ast

@@ -66,11 +66,11 @@ def _sub_subtrees_for_vars(ast, ast_mappings):
     For each out_name, in_ast pair in mappings, substitute in_ast for all 
     occurances of the variable named out_name in ast
     """
-    print("ppppppppppppppppp")
-    print(ast)
-    print(ast_mappings)
+    # print("ppppppppppppppppp")
+    # print(ast)
+    # print(ast_mappings)
     if isinstance(ast, Name) and ast2str(ast) in ast_mappings:
-        print("here")
+        # print("here")
         return ast_mappings[ast2str(ast)]
     ast = AST.recurse_down_tree(ast, _sub_subtrees_for_vars, (ast_mappings,))
     return ast
@@ -165,10 +165,18 @@ def make_c_compatible(expr):
     return ast2str(ast)
    
 def _make_c_compatible_ast(ast):
-    if isinstance(ast.op, Pow):
-        ast = BinOp(left=ast.left, op=Pow(), right=ast.right)
-        ast = BinOp(left=ast.left, op=Call(Name('pow')), right=ast.right)
+    try:
+        print(dump(ast))
+    except Exception as e:
+        pass
+    if isinstance(ast, BinOp) and isinstance(ast.op, Pow):
+        # ast = Call(func=Name(id='pow', ctx=Load()), args=[ast.left, ast.right])
+        print("here", dump(ast))
+        # ast = BinOp(left=ast.left, op=Pow(), right=ast.right)
+        # ast = BinOp(left=ast.left, op=Call(Name('pow')), right=ast.right)
+        ast = Call(func=Name(id='pow', ctx=Load()), args=[ast.left, ast.right], keywords=[])
         ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
+        print("here", ast)
     elif isinstance(ast, Constant) and isinstance(ast.value, int):
         ast.value = float(ast.value)
     elif isinstance(ast, Subscript):
@@ -178,15 +186,15 @@ def _make_c_compatible_ast(ast):
     # We need to subsitute the C logical operators. Unfortunately, they aren't
     # valid python syntax, so we have to cheat a little, using Compare and Name
     # nodes abusively. This abuse may not be future-proof... sigh...
-    elif isinstance(ast.op, And):
+    elif isinstance(ast, BoolOp) and isinstance(ast.op, And):
         nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
         ops = [('&&', node) for node in nodes[1:]]
         ast = AST.Compare(nodes[0], ops)
-    elif isinstance(ast.op, Or):
+    elif isinstance(ast, BoolOp) and isinstance(ast.op, Or):
         nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
         ops = [('||', node) for node in nodes[1:]]
         ast = AST.Compare(nodes[0], ops)
-    elif isinstance(ast.op, Not):
+    elif isinstance(ast, UnaryOp) and isinstance(ast.op, Not):
         expr = AST.recurse_down_tree(ast.operand, _make_c_compatible_ast)
         ast = AST.Name('!(%s)' % ast2str(expr))
     else:

@@ -579,7 +579,10 @@ class Trajectory:
             time = scipy.asarray([time]) # if a scalar was passed in, convert to an array
         else :
             time = scipy.asarray(time)
+        # print("ccccccccccccccccccccc", self.tcks)
         local_tcks = self.tcks
+        print("tttttttttttttttttttttttttttt", local_tcks)
+        # print("locallllllllllllllllllllllllllll", local_tcks.keys())
         sorted_intervals = scipy.sort(local_tcks.keys(),axis=0)
 
         if subinterval is not None : # confine things to just one interval

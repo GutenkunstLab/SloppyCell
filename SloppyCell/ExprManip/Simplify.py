@@ -17,7 +17,7 @@ def simplify_expr(expr):
     """
     tree = AST.strip_parse(expr)
     simplify_ast = _simplify_ast(tree)
-    print(simplify_ast)
+    # print(simplify_ast)
     return AST.ast2str(simplify_ast)
 
 def get_count_from_ast(ast_list, term):
@@ -41,17 +41,18 @@ def _simplify_ast(ast):
     """
     # print(dump(ast))
     try:
-        print(ast.op)
+        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",dump(ast))
+        print("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",unparse(ast))
     except Exception as e:
         print("exception", e)
     if isinstance(ast, Name) or isinstance(ast, Constant):
         return ast
     elif isinstance(ast, BinOp) and (isinstance(ast.op, Add) or isinstance(ast.op, Sub)):
-        print("addition +++++++++++++++++++++++++++++++++++")
+        # print("addition +++++++++++++++++++++++++++++++++++")
         # We collect positive and negative terms and simplify each of them
         pos, neg = [], []
         AST._collect_pos_neg(ast, pos, neg)
-        print("first ---------------")
+        # print("first ---------------")
         print(pos, neg)
         pos = [_simplify_ast(term) for term in pos]
         neg = [_simplify_ast(term) for term in neg]
@@ -60,7 +61,7 @@ def _simplify_ast(ast):
         values = [term.value for term in pos if isinstance(term, Constant)] +\
                 [-term.value for term in neg if isinstance(term, Constant)] 
         value = sum(values)
-        print("value", value)
+        # print("value", value)
         # Remove the constants from our pos and neg lists
         pos = [term for term in pos if not isinstance(term, Constant)]
         neg = [term for term in neg if not isinstance(term, Constant)]
@@ -70,37 +71,37 @@ def _simplify_ast(ast):
         for term in pos:
             if isinstance(term, UnaryOp):
                 if isinstance(term, USub):
-                    new_neg.append(term.expr)
+                    new_neg.append(term.operand)
             else:
-                print("entered here", term)
+                # print("entered here", term)
                 new_pos.append(term)
         for term in neg:
             if isinstance(term, UnaryOp):
                 if isinstance(term, USub):
-                    new_pos.append(term.expr)
+                    new_pos.append(term.operand)
             else:
-                print("entered here2", term)
+                # print("entered here2", term)
                 new_neg.append(term)
         pos, neg = new_pos, new_neg
-        print("pos1", pos)
-        print("neg1", neg)
+        # print("pos1", pos)
+        # print("neg1", neg)
         # Append the constant value sum to pos or neg
         if value > 0:
             pos.append(Constant(value=value))
         elif value < 0:
             neg.append(Constant(value=abs(value)))
-        print("pos3", pos)
-        print("neg3", neg)
+        # print("pos3", pos)
+        # print("neg3", neg)
         # Count the number of occurances of each term.
         term_counts = [(term, get_count_from_ast(pos, term) - get_count_from_ast(neg, term)) for term in
                        pos + neg]
         # Tricky: We use the str(term) as the key for the dictionary to ensure
         #         that each entry represents a unique term. We also drop terms
         #         that have a total count of 0.
-        print(term_counts)
+        # print(term_counts)
         term_counts = dict([(AST.ast2str(term), (term, count)) for term, count in 
                             term_counts])
-        print("after",term_counts)
+        # print("after",term_counts)
         # We find the first term with non-zero count.
         ii = 0
         for ii, term in enumerate(pos+neg):
@@ -111,7 +112,7 @@ def _simplify_ast(ast):
             # We get here if we don't break out of the loop, implying that
             #  all our terms had count of 0
             return _ZERO
-        print("first", dump(ast_out))
+        # print("first", dump(ast_out))
         term_counts[AST.ast2str(term)] = (ast_out, 0)
         if abs(count) != 1:
             ast_out = BinOp(left=Constant(value=abs(count)), op=Mult(), right=ast_out)
@@ -128,35 +129,39 @@ def _simplify_ast(ast):
                 ast_out = BinOp(left=ast_out, op=Add(), right=term)
             elif count < 0:
                 ast_out = BinOp(left=ast_out, op=Sub(), right=term)
-        print("ast_out", dump(ast_out))
+        # print("ast_out", dump(ast_out))
         return ast_out
     
     elif isinstance(ast, BinOp) and (isinstance(ast.op, Mult) or isinstance(ast.op, Div)):
-        print("entered")
+        # print("entered########################################", unparse(ast))
         # We collect numerator and denominator terms and simplify each of them
         num, denom = [], []
         AST._collect_num_denom(ast, num, denom)
+        # print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+        # print("num", num)
+        # print("denom", denom)
+        # print("first", dump(num[0]), dump(num[1]))
         num = [_simplify_ast(term) for term in num]
         denom = [_simplify_ast(term) for term in denom]
-        print("num1", num)
-        print("denom2", denom)
+        # print("num1", num)
+        # print("denom2", denom)
         # We collect and sum the constant values
         values = [term.value for term in num if isinstance(term, Constant)] +\
                 [1./term.value for term in denom if isinstance(term, Constant)] 
         # This takes the product of all our values
-        print("values before functools", values)
+        # print("values before functools", values)
         value = functools.reduce(operator.mul, values + [1])
-        print("value", value)
+        # print("value", value)
         # If our value is 0, the expression is 0
         if not value:
             return _ZERO
-        print("num2", num)
-        print("denom2", denom)
+        # print("num2", num)
+        # print("denom2", denom)
         # Remove the constants from our pos and neg lists
         num = [term for term in num if not isinstance(term, Constant)]
         denom = [term for term in denom if not isinstance(term, Constant)]
-        print("after", dump(num[0]), dump(num[1]))
-        print("denom", denom)
+        # print("after", dump(num[0]), dump(num[1]))
+        # print("denom", denom)
         # Here we count all the negative (UnarySub) elements of our expression.
         # We also remove the UnarySubs from their arguments. We'll correct
         #  for it at the end.
@@ -164,7 +169,7 @@ def _simplify_ast(ast):
         for list_of_terms in [num, denom]:
             for ii, term in enumerate(list_of_terms):
                 if isinstance(term, USub):
-                    list_of_terms[ii] = term.expr
+                    list_of_terms[ii] = term.operand
                     num_neg += 1
 
         # Append the constant value sum to pos or neg
@@ -174,11 +179,14 @@ def _simplify_ast(ast):
             num_neg += 1
 
         make_neg = num_neg % 2
-
+        # for i in num:
+        #     print("testttttttttttttttttttttttttttttttttttttttttttttttttttt", dump(i))
         # Count the number of occurances of each term.
         term_counts = [(term, get_count_from_ast(num, term) - get_count_from_ast(denom, term)) for term in
                        num + denom]
-        print("term counts", term_counts)
+        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
+        print(term_counts)
+        # print("term counts", term_counts)
         # Tricky: We use the str(term) as the key for the dictionary to ensure
         #         that each entry represents a unique term. We also drop terms
         #         that have a total count of 0.
@@ -211,7 +219,7 @@ def _simplify_ast(ast):
 
         if make_neg:
             out = UnaryOp(op=USub(), operand=out)
-        print("here-----------***********************", dump(out))
+        # print("here-----------***********************", dump(out))
         return out
     elif isinstance(ast, BinOp) and isinstance(ast.op, Pow):
         # These cases all have a left and a right, so we group them just to
@@ -230,8 +238,8 @@ def _simplify_ast(ast):
             return Constant(value=base.value**power.value)
         # Getting here implies that no simplifications are possible, so just
         #  return with simplified arguments
-        print("in power &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-        print(dump(BinOp(left=base, op=Pow(), right=power)))
+        # print("in power &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+        # print(dump(BinOp(left=base, op=Pow(), right=power)))
         return BinOp(left=base, op=Pow(), right=power)
     
     elif isinstance(ast, UnaryOp) and isinstance(ast.op, USub):
@@ -245,8 +253,8 @@ def _simplify_ast(ast):
             else:
                 return Constant(value=-simple_expr.value)
         else:
-            return UnaryOp(op=USub(), operand=Name(id=simple_expr.id, ctx=Load()))
-    elif isinstance(ast.op, UAdd):
+            return UnaryOp(op=USub(), operand=simple_expr)
+    elif isinstance(ast, UnaryOp) and isinstance(ast.op, UAdd):
         simple_expr = _simplify_ast(ast.operand)
         return simple_expr
     elif isinstance(ast, list):
@@ -255,18 +263,18 @@ def _simplify_ast(ast):
     elif isinstance(ast, tuple):
         return tuple(_simplify_ast(list(ast)))
     elif ast.__class__ in AST._node_attrs:
-        print("}}}}}}}}}}}}}}}}}}}}}}}}}}}}")
+        # print("}}}}}}}}}}}}}}}}}}}}}}}}}}}}")
         # Handle node types with no special cases.
         for attr_name in AST._node_attrs[ast.__class__]:
-            print("hhhhheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-            print(attr_name)
+            # print("hhhhheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+            # print(attr_name)
             attr = getattr(ast, attr_name)
-            print("attribute name", attr)
+            # print("attribute name", attr)
             if isinstance(attr, list):
                 for ii, elem in enumerate(attr):
-                    print("before -----------------------------------------", ii, elem)
+                    # print("before -----------------------------------------", ii, elem)
                     attr[ii] = _simplify_ast(elem)
-                    print("after--------------------------------------", attr[ii])
+                    # print("after--------------------------------------", attr[ii])
             else:
                 setattr(ast, attr_name, _simplify_ast(attr))
         return ast

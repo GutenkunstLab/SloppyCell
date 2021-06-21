@@ -62,6 +62,7 @@ def extract_vars(expr):
         return extract_vars_cache[expr]
     except KeyError:
         vars_found = []
+        print("expression", expr)
         _extract_vars_ast(AST.strip_parse(expr), vars_found)
         print("deeeeeeeeeeeeeeeeeeee", vars_found)
         vars_found = [AST.ast2str(ast) for ast in vars_found]

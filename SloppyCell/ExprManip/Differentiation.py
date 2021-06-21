@@ -126,7 +126,7 @@ def _diff_ast(ast, wrt):
     # For now, the strategy is to return the most general forms, and let 
     #  the simplifier take care of the special cases.
     if isinstance(ast, Name):
-        print("hereeeeeee first", dump(ast), wrt)
+        # print("hereeeeeee first", dump(ast), wrt)
         if ast.id == wrt:
             return _ONE
         else:
@@ -134,13 +134,13 @@ def _diff_ast(ast, wrt):
     elif isinstance(ast, Constant):
         return _ZERO
     elif isinstance(ast, BinOp) and (isinstance(ast.op, Add) or isinstance(ast.op, Sub)):
-        print("entered here instance", dump(ast))
+        # print("entered here instance", dump(ast))
         # Just take the derivative of the arguments. The call to ast.__class__
         #  lets us use the same code from Add and Sub.
-        print("class", ast.__class__, dump(ast.left))
+        # print("class", ast.__class__, dump(ast.left))
         return (BinOp(left=_diff_ast(ast.left, wrt), op=ast.op, right=_diff_ast(ast.right, wrt)))
     elif isinstance(ast, BinOp) and (isinstance(ast.op, Mult) or isinstance(ast.op, Div)):
-        print("inside product", ast, wrt)
+        # print("inside product", ast, wrt)
         # Collect all the numerators and denominators together
         nums, denoms = [], []
         AST._collect_num_denom(ast, nums, denoms)
@@ -162,23 +162,23 @@ def _diff_ast(ast, wrt):
         return BinOp(left=term1, op=Add(), right=term2)
 
     elif isinstance(ast, BinOp) and isinstance(ast.op, Pow):
-        print("entered here", wrt, dump(ast))
+        # print("entered here", wrt, dump(ast))
         # Use the derivative of the 'pow' function
         ast = Call(func=Name(id='pow', ctx=Load()), args=[ast.left, ast.right])
         # ast =  BinOp(left=ast.left, op=Call(Name('pow')), right=ast.right)
-        print("after pow", dump(ast))
+        # print("after pow", dump(ast))
         return _diff_ast(ast, wrt)
 
     elif isinstance(ast, Call):
-        print("entered Call", dump(ast))
+        # print("entered Call", dump(ast))
         func_name = AST.ast2str(ast.func)
         args = ast.args
-        print("func_name", func_name)
-        print("args", args)
+        # print("func_name", func_name)
+        # print("args", args)
         args_d = [_diff_ast(arg, wrt) for arg in args]
 
         if (func_name, len(args)) in _KNOWN_FUNCS:
-            print("pow is a known func *************************", _KNOWN_FUNCS[(func_name, len(args))])
+            # print("pow is a known func *************************", _KNOWN_FUNCS[(func_name, len(args))])
             form = copy.deepcopy(_KNOWN_FUNCS[(func_name, len(args))])
         else:
             # If this isn't a known function, our form is
@@ -189,8 +189,8 @@ def _diff_ast(ast, wrt):
 
         # We build up the terms in our derivative
         #  f_0(x,y)*x' + f_1(x,y)*y', etc.
-        print("args_d", dump(args_d[0]), dump(args_d[1]))
-        print("form value", dump(form[0]), dump(form[1]))
+        # print("args_d", dump(args_d[0]), dump(args_d[1]))
+        # print("form value", dump(form[0]), dump(form[1]))
         outs = []
         for arg_d, arg_form_d in zip(args_d, form):
             # We skip arguments with 0 derivative
@@ -202,8 +202,8 @@ def _diff_ast(ast, wrt):
                                                     {'arg%i'%ii:arg})
             outs.append(BinOp(left=arg_form_d, op=Mult(), right=arg_d))
             # outs.append(Mul((arg_form_d, arg_d)))
-        print("outs9999999999999999999999999999999999999999999999999999999999", outs)
-        print(dump(outs[0]), wrt)
+        # print("outs9999999999999999999999999999999999999999999999999999999999", outs)
+        # print(dump(outs[0]), wrt)
         # If all arguments had zero deriviative
         if not outs:
             return _ZERO
@@ -212,14 +212,14 @@ def _diff_ast(ast, wrt):
             ret = outs[0]
             for term in outs[1:]:
                 ret = BinOp(left=ret, op=Add(), right=term)
-            print("return", ret)
+            # print("return", ret)
             return ret
 
-    elif isinstance(ast.op, USub):
-        return UnaryOp(op=USub(), operand=_diff_ast(ast.expr, wrt))
+    elif isinstance(ast, UnaryOp) and isinstance(ast.op, USub):
+        return UnaryOp(op=USub(), operand=_diff_ast(ast.operand, wrt))
         # return USub(_diff_ast(ast.expr, wrt))
 
-    elif isinstance(ast.op, UAdd):
+    elif isinstance(ast, UnaryOp) and isinstance(ast.op, UAdd):
         return UnaryOp(op=UAdd(), operand=_diff_ast(ast.operand, wrt))
         # return UAdd(_diff_ast(ast.expr, wrt))
 

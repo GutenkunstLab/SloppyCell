@@ -54,10 +54,11 @@ class test_Differentiation(unittest.TestCase):
                  ('g(x - y*x + cos(x*z), y, x)' ,'y'),
                  ('g(x*y, x*y**2, y)', 'z')
                  ]
-        cases = [ ('x**y', 'x')]
+        cases1 = [  ('g(x - y*x + cos(x*z), y**z, x - 14*z)' ,'y')]
         for expr, wrt in cases: 
-            print("test case&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&", expr)
+            print("test case&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&", expr)
             d = ExprManip.diff_expr(expr, wrt)
+            print("llllllllllllllllllllllllllllllllllll", d)
             ad = eval(d)
             fd = self._num_diff(expr, wrt, x=x, y=y, z=z)
             # We test that our numeric and analytic derivatives differ by less

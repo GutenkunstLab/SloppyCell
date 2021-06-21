@@ -421,9 +421,9 @@ class Network:
         # XXX: I'm a little unhappy with this because option (2) breaks the
         #      pattern that the first argument is the id
         if isinstance(id, str):
-            rxn = apply(Reactions.Reaction, (id,) + args, kwargs)
+            rxn = Reactions.Reaction(*(id,) + args, **kwargs)
         else:
-            rxn = apply(id, args, kwargs)
+            rxn = id(*args, **kwargs)
 
         self._checkIdUniqueness(rxn.id)
         self.reactions.set(rxn.id, rxn)
@@ -900,7 +900,7 @@ class Network:
         for var, times in vars.items():
             if var == 'full trajectory':
                 ret_full_traj = True
-                t.union_update(set(times))
+                t.update(set(times))
             elif var.endswith('_maximum') or var.endswith('_minimum'):
                 t1,t2 = times
                 if t1 is not None:
@@ -908,7 +908,7 @@ class Network:
                 if t2 is not None:
                     t.add(t2)
             elif self.variables.has_key(var):
-                t.union_update(set(times))
+                t.update(set(times))
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
                                  % (var, self.get_id()))
@@ -1487,7 +1487,7 @@ class Network:
             self.dynamicVars.getByKey(id).value = \
                     self.evaluate_expr(var.initialValue, 0)
 
-    self.updateAssignedVars(time = 0)
+        self.updateAssignedVars(time = 0)
 
     def set_dyn_var_ics(self, values):
         for ii, id in enumerate(self.dynamicVars.keys()):
@@ -2366,15 +2366,15 @@ class Network:
         for index, name in enumerate(self.assignedVars.keys()):
             mapping[name] = 'av[%i]'%index
         
-        class Parse(ExprManip.AST.compiler.visitor.ASTVisitor):
+        class Parse(ExprManip.AST.NodeVisitor):
             def __call__(slf,s,c=True):
                 if c: s = ExprManip.make_c_compatible(s)
                 ast = ExprManip.strip_parse(s)
-                ExprManip.AST.compiler.walk(ast, slf)
+                ExprManip.AST.walk(ast)
                 return ExprManip.ast2str(ast)
 
             def visitName(slf,node,*args):
-                if mapping.has_key(node.name): node.name=mapping[node.name]
+                if mapping.has_key(node.id): node.id=mapping[node.id]
         parse = Parse()
         
         # Find the stoichiometry and reaction dependencies
@@ -2387,7 +2387,7 @@ class Network:
                 for asnName in evar.intersection(asnKeys):
                     rule = self.assignmentRules.get(asnName)
                     evar.remove(asnName)
-                    evar.union_update( \
+                    evar.update( \
                         ExprManip.Extraction.extract_vars(rule))
             evars.append(evar)
 
@@ -3085,7 +3085,7 @@ class Network:
 
             # We clear out all the dynamic functions that have been defined.
             all_dynamic_keys = set(self._dynamic_funcs_python.keys())
-            all_dynamic_keys.union_update(self._dynamic_funcs_c.keys())
+            all_dynamic_keys.update(self._dynamic_funcs_c.keys())
             for dynamic_func in all_dynamic_keys:
                 try:
                     delattr(self, dynamic_func)
@@ -3185,7 +3185,7 @@ class Network:
             self._py_func_dict_cache[key] = py_func_dict
             for func_name, body in self._dynamic_funcs_python.items():
                 if body != None:
-                    exec(body in self.namespace, locals())
+                    exec(body, self.namespace, locals())
                     py_func_dict[func_name] = locals()[func_name]
 
         # Add all the functions to our Network.
@@ -3283,7 +3283,7 @@ class Network:
 
 
         # Write the C code to a file.
-        c_fd = open('%s.c' % mod_name, 'wb')
+        c_fd = open('%s.c' % mod_name, 'w')
         c_fd.write(c_code)
         c_fd.close()
 
@@ -3588,11 +3588,11 @@ def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
         function_body = getattr(obj, '%s_functionBody' % func)
     # This exec gives the function access to everything defined in in_namespace
     #  and inserts the result into the locals namespace
-    exec(function_body in in_namespace, locals())
+    exec(function_body, in_namespace, locals())
     # The call to types.MethodType ensures that we can call the function
     #  as obj.f(...) and get the implicit 'self' argument.
     # locals()[func] just gets the actual function object the exec created.
     #  Note that this this does depend on the _functionBody using a def
     #  with the proper name.
     setattr(obj, func, 
-            types.MethodType(locals()[func], obj, obj.__class__))
+            types.MethodType(locals()[func], obj))
