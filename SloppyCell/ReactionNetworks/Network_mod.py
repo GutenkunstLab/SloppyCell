@@ -907,7 +907,7 @@ class Network:
                     t.add(t1)
                 if t2 is not None:
                     t.add(t2)
-            elif self.variables.has_key(var):
+            elif var in self.variables:
                 t.update(set(times))
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
@@ -938,8 +938,8 @@ class Network:
                     t.add(t1)
                 if t2 is not None:
                     t.add(t2)
-            elif self.variables.has_key(var):
-                t.union_update(set(times))
+            elif var in self.variables:
+                t.update(set(times))
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
                                  % (var, self.get_id()))
@@ -1002,7 +1002,7 @@ class Network:
                 # set up events to tag potential extrema, this will use those.
                 curr_vals = self.get_var_vals()
 
-                isDynamicVar = self.dynamicVars.has_key(var)
+                isDynamicVar = var in self.dynamicVars
                 if isDynamicVar:
                     dynVarIndex = self.dynamicVars.index_by_key(var)
 
@@ -1143,7 +1143,7 @@ class Network:
     def integrateStochastic(self, times, params=None):
         if self.stochastic['fill_dt'] is not None:
             times = set(times)
-            times.union_update(scipy.arange(min(times), max(times),
+            times.update(scipy.arange(min(times), max(times),
                                             self.stochastic['fill_dt']))
             times = list(times)
             times.sort()
@@ -1153,7 +1153,7 @@ class Network:
 
         # Add in the event times (only if they don't extend the trajectoy!)
         times = set(times)
-        times.union_update([_.triggeringTime for _ in self.events
+        times.upadate([_.triggeringTime for _ in self.events
                             if _.triggeringTime<max(times)])
         times = list(times)
         times.sort()
@@ -1236,6 +1236,7 @@ class Network:
         Runs through expr and replaces all piecewise expressions by the
         clause that is currently active.
         """
+        print("gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")
         if not expr.count('piecewise('):
             return expr
         funcs_used = ExprManip.extract_funcs(expr)
@@ -1532,12 +1533,12 @@ class Network:
     def _makeDiffEqRHS(self):
         logger.debug('Making diff equation rhs')
         diff_eq_terms = {}
-
+       
         for rxn_id, rxn in self.reactions.items():
             rateExpr = rxn.kineticLaw
             logger.debug('Parsing reaction %s.' % rxn_id)
-
-        for reactantId, dReactant in rxn.stoichiometry.items():
+            for reactantId, dReactant in rxn.stoichiometry.items():
+                print("qqqqqqqqqqqqqqqqqqqqqqqq", rxn.stoichiometry.items())
                 if self.get_variable(reactantId).is_boundary_condition or\
                    self.get_variable(reactantId).is_constant or\
                    self.assignmentRules.has_key(reactantId):
@@ -2961,7 +2962,7 @@ class Network:
         # Collect all variables that are explicitly in algebraic rules
         vars_in_alg_rules = set()
         for rule in self.algebraicRules:
-            vars_in_alg_rules.union_update(ExprManip.extract_vars(rule))
+            vars_in_alg_rules.update(ExprManip.extract_vars(rule))
 
         # Now replace all the assigned variables with the variables they
         # actually depend on. This takes a while loop because assigned
@@ -2974,7 +2975,7 @@ class Network:
             # Replace that assigned_var with the variables it depends on
             # in the running list of algebraic rules
             for assigned_var in assigned_in_alg:
-                vars_in_alg_rules.union_update(ExprManip.extract_vars(
+                vars_in_alg_rules.update(ExprManip.extract_vars(
                     self.assignmentRules.get(assigned_var)))
                 vars_in_alg_rules.remove(assigned_var)
             # update the list of assignment variables that appear in the

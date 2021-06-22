@@ -47,8 +47,8 @@ def sub_for_vars(expr, mapping):
     """
     if len(mapping) == 0:
         return expr
-    print("exprrrrrrrrrr", expr)
-    print("mapinggggggggggggg", mapping)
+    # print("exprrrrrrrrrr", expr)
+    # print("mapinggggggggggggg", mapping)
     ast = strip_parse(expr)
     ast_mapping = {}
     for out_name, in_expr in mapping.items():
@@ -57,7 +57,7 @@ def sub_for_vars(expr, mapping):
             raise ValueError('Expression %s to substitute for is not a '\
                              'variable name.' % out_name)
         ast_mapping[str(out_ast.id)] = strip_parse(in_expr)
-    print("in mapping", ast_mapping)
+    # print("in mapping", ast_mapping)
     ast = _sub_subtrees_for_vars(ast, ast_mapping)
     return ast2str(ast)
     
@@ -161,7 +161,12 @@ def make_c_compatible(expr):
      fragile if the parsing library changes in newer python versions.
     """
     ast = strip_parse(expr)
+    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    print(ast)
     ast = _make_c_compatible_ast(ast)
+    # print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
+    # print(dump(ast))
+    print(ast)
     return ast2str(ast)
    
 def _make_c_compatible_ast(ast):
@@ -169,14 +174,15 @@ def _make_c_compatible_ast(ast):
         print(dump(ast))
     except Exception as e:
         pass
+    # print(dump(ast))
     if isinstance(ast, BinOp) and isinstance(ast.op, Pow):
         # ast = Call(func=Name(id='pow', ctx=Load()), args=[ast.left, ast.right])
-        print("here", dump(ast))
+        # print("here", dump(ast))
         # ast = BinOp(left=ast.left, op=Pow(), right=ast.right)
         # ast = BinOp(left=ast.left, op=Call(Name('pow')), right=ast.right)
         ast = Call(func=Name(id='pow', ctx=Load()), args=[ast.left, ast.right], keywords=[])
         ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
-        print("here", ast)
+        # print("here", ast)
     elif isinstance(ast, Constant) and isinstance(ast.value, int):
         ast.value = float(ast.value)
     elif isinstance(ast, Subscript):
@@ -188,8 +194,17 @@ def _make_c_compatible_ast(ast):
     # nodes abusively. This abuse may not be future-proof... sigh...
     elif isinstance(ast, BoolOp) and isinstance(ast.op, And):
         nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
+        print("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj")
+        try:
+            print(dump(nodes[0]), dump(nodes[1]))
+        except Exception as e:
+            pass
         ops = [('&&', node) for node in nodes[1:]]
-        ast = AST.Compare(nodes[0], ops)
+        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
+        print(ops)
+        # Compare(left=Name(id='a', ctx=Load()), ops=[Gt()], comparators=[Name(id='b', ctx=Load())])
+        ast = AST.Compare(left=nodes[0], ops=['&&'], comparators=nodes[1:])
+        # ast = Compare(left=nodes[0], ops)
     elif isinstance(ast, BoolOp) and isinstance(ast.op, Or):
         nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
         ops = [('||', node) for node in nodes[1:]]
@@ -198,5 +213,9 @@ def _make_c_compatible_ast(ast):
         expr = AST.recurse_down_tree(ast.operand, _make_c_compatible_ast)
         ast = AST.Name('!(%s)' % ast2str(expr))
     else:
+        print("lllllllllllllllllllllllllllllllllllllllllllll")
+        print(ast)
         ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
+        print("afterrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+        print(ast)
     return ast

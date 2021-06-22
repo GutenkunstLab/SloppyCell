@@ -50,7 +50,7 @@ class KeyedList(list):
     def __delitem__(self, index):
         list.__delitem__(self, index)
         del self.storedKeys[index]
-        for key, ii in self.keyToIndex.items():
+        for key, ii in list(self.keyToIndex.items()):
             if ii > index:
                 self.keyToIndex[key] -= 1
             elif ii == index:

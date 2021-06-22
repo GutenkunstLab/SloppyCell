@@ -6,7 +6,7 @@ import scipy
 
 from SloppyCell.ReactionNetworks import *
 import SloppyCell
-from . import TestNetwork
+import TestNetwork
 
 net = TestNetwork.net
 m = copy.deepcopy(TestNetwork.m)

@@ -207,6 +207,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     # get the initial state, time, and derivative.
     start = times[0]
     IC = net.getDynamicVarValues()
+    
     # We start with ypIC equal to typ_vals so that we get the correct scale.
     typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
     ypIC = scipy.array(typ_vals)
@@ -216,6 +217,9 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                         net._dynamic_var_algebraic, rtol, atol,
                         net.constantVarValues, net, 
                         redirect_msgs=redirect_msgs)
+    # print("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
+    # print(IC)
+    # print(ypIC)
 
     """
 
@@ -231,6 +235,9 @@ or False), raise the exception.
     if use_constraints == True:
         net.updateVariablesFromDynamicVars(values=IC, time=start)
         for con_id, constraint in net.constraints.items():
+            # print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+            print(con_id)
+            print(constraint)
             result = net.evaluate_expr(constraint.trigger)
             if result == False:
                 raise Utility.ConstraintViolatedException(start,
@@ -248,7 +255,9 @@ or False), raise the exception.
     #  isn't wrapped up in a lambda...
     res_func = net.res_function
     root_func = net.root_func
-
+    print("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
+    print(res_func)
+    print(root_func)
     # events_occured will hold event_info objects that describe the events
     #  in detail.
     # te, ye, and ie are the times, dynamic variable values, and indices
@@ -331,7 +340,7 @@ or False), raise the exception.
                 # requested timepoints.
                 nextEventTime = scipy.inf
                 pendingEventTimes = pendingEvents.keys()
-                pendingEventTimes.remove(execution_time)
+                list(pendingEventTimes).remove(execution_time)
                 if pendingEventTimes:
                     nextEventTime = min(pendingEventTimes)
                 else:
@@ -376,7 +385,8 @@ or False), raise the exception.
 
             # Update the root state after all listed events have excecuted.
             root_after = root_func(start, IC, ypIC, constants)
-
+            print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+            print(root_after)
             # Check for chained events/constraints
             crossing_dirs = root_after - root_before
             event_just_fired = fired_events(net, start, IC, ypIC, 
@@ -464,7 +474,7 @@ or False), raise the exception.
         # make sure we don't miss data times by adding them in.
         # The set usage ensures that we don't end up with duplicates
         filtered_times = [tout[i] for i in range(0,len(tout),reduce_space)]
-        filtered_times = sets.Set(filtered_times)
+        filtered_times = set(filtered_times)
         filtered_times.union_update(times)
         filtered_times = scipy.sort(list(filtered_times))
 

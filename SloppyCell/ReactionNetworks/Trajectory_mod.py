@@ -6,7 +6,7 @@ logger = logging.getLogger('RxnNets.Trajectory_mod')
 import os
 import copy
 import types
-
+import numpy
 import scipy
 import scipy.interpolate
 
@@ -246,6 +246,7 @@ class Trajectory:
         stored time is greater than a fraction eps of the trajectory length.
         """
         index = self._get_time_index(time, eps)
+        print("index", index)
         return self.get_var_val_index(var_id, index)
 
     def get_var_vals_index(self, index):
@@ -575,15 +576,15 @@ class Trajectory:
               to an event time, which often has two trajectory values associated
               with it.
         """
-        if scipy.isscalar(time) :
-            time = scipy.asarray([time]) # if a scalar was passed in, convert to an array
+        if numpy.isscalar(time) :
+            time = numpy.asarray([time]) # if a scalar was passed in, convert to an array
         else :
-            time = scipy.asarray(time)
+            time = numpy.asarray(time)
         # print("ccccccccccccccccccccc", self.tcks)
         local_tcks = self.tcks
         print("tttttttttttttttttttttttttttt", local_tcks)
         # print("locallllllllllllllllllllllllllll", local_tcks.keys())
-        sorted_intervals = scipy.sort(local_tcks.keys(),axis=0)
+        sorted_intervals = numpy.sort(local_tcks.keys(),axis=0)
 
         if subinterval is not None : # confine things to just one interval
             if subinterval not in local_tcks.keys() :

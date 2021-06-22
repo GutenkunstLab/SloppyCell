@@ -4,7 +4,7 @@ import unittest
 
 import scipy
 
-from .TestNetwork import net, m, params
+from TestNetwork import net, m, params
 net = copy.copy(net)
 net.compile()
 net.full_speed()

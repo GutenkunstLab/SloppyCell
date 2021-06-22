@@ -436,7 +436,7 @@ class CalculationCollection(KeyedList):
                 comm.send((command, args), dest=worker)
 
             # The master does his share here
-            calc = calcs_to_do.pop()
+            calc = list(calcs_to_do).pop()
             # We use the finally statement because we want to ensure that we
             #  *always* wait for replies from the workers, even if the master
             #  encounters an exception in his evaluation.

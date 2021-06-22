@@ -5,7 +5,7 @@ import scipy
 
 from SloppyCell.ReactionNetworks import *
 
-from .AlgTestNets import algebraic_net
+from AlgTestNets import algebraic_net
 tlist = scipy.array([0] + [0.8*x for x in range(1, 51)])
 
 class test_IntegrateWithoutDerivatives(unittest.TestCase):

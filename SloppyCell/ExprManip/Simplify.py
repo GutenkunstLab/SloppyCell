@@ -40,11 +40,11 @@ def _simplify_ast(ast):
         --x = x
     """
     # print(dump(ast))
-    try:
-        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",dump(ast))
-        print("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",unparse(ast))
-    except Exception as e:
-        print("exception", e)
+    # try:
+    #     # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",dump(ast))
+    #     # print("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",unparse(ast))
+    # except Exception as e:
+    #     # print("exception", e)
     if isinstance(ast, Name) or isinstance(ast, Constant):
         return ast
     elif isinstance(ast, BinOp) and (isinstance(ast.op, Add) or isinstance(ast.op, Sub)):
@@ -53,7 +53,7 @@ def _simplify_ast(ast):
         pos, neg = [], []
         AST._collect_pos_neg(ast, pos, neg)
         # print("first ---------------")
-        print(pos, neg)
+        # print(pos, neg)
         pos = [_simplify_ast(term) for term in pos]
         neg = [_simplify_ast(term) for term in neg]
         
@@ -184,8 +184,8 @@ def _simplify_ast(ast):
         # Count the number of occurances of each term.
         term_counts = [(term, get_count_from_ast(num, term) - get_count_from_ast(denom, term)) for term in
                        num + denom]
-        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
-        print(term_counts)
+        # print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
+        # print(term_counts)
         # print("term counts", term_counts)
         # Tricky: We use the str(term) as the key for the dictionary to ensure
         #         that each entry represents a unique term. We also drop terms

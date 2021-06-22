@@ -4,7 +4,7 @@ import os
 
 from SloppyCell.ReactionNetworks import *
 
-from . import AlgTestNets
+import AlgTestNets
 base_net = AlgTestNets.algebraic_net_assignment.copy()
 base_net.remove_component('event0')
 base_net.set_var_constant('k1', False)

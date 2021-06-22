@@ -12,7 +12,7 @@ from SloppyCell.daskr import daeint
 
 # Load the fast reaction example from the SBML semantic test suite.
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
-from .AlgTestNets import algebraic_net, algebraic_net_manual
+from AlgTestNets import algebraic_net, algebraic_net_manual
 
 tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
 

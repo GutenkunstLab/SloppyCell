@@ -6,7 +6,7 @@ import scipy
 
 from SloppyCell.ReactionNetworks import *
 
-from .AlgTestNets import algebraic_net_constraints
+from AlgTestNets import algebraic_net_constraints
 base_net = algebraic_net_constraints.copy()
 tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
 

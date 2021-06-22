@@ -3,7 +3,7 @@ import unittest
 
 from SloppyCell.ReactionNetworks import *
 
-from . import TestNetwork
+import TestNetwork
 
 class test_PiecewiseDynamics(unittest.TestCase):
     #XXX: Assignment rules currently not supported. To do so, add a vector

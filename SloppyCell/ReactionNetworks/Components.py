@@ -123,7 +123,9 @@ class Event:
             ast = ExprManip.AST.strip_parse(trigger)
             firstArg = ExprManip.AST.ast2str(ast.args[0])
             secondArg = ExprManip.AST.ast2str(ast.args[1])
-
+            print("ccccccccccccccccccccccccccccccccccccccccccccccccccc")
+            print(firstArg)
+            print(secondArg)
             if firstArg == 'time':
                 self.triggeringTime = eval(secondArg)
             elif secondArg == 'time':

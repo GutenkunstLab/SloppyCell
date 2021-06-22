@@ -3,7 +3,7 @@ import unittest
 
 from SloppyCell.ReactionNetworks import *
 
-from . import TestNetwork
+import TestNetwork
 base_net = TestNetwork.net.copy('test_logs')
 
 class test_IntegrateWithLogs(unittest.TestCase):

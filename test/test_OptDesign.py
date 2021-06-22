@@ -6,8 +6,9 @@ import scipy
 
 from SloppyCell.ReactionNetworks import *
 import SloppyCell
-from . import TestNetwork
-import SloppyCell.ReactionNetworks.OptDesign as OD
+import TestNetwork
+from SloppyCell.ReactionNetworks import OptDesign as OD
+# import SloppyCell.ReactionNetworks.OptDesign as OD
 import os
 import SloppyCell.Utility
 save = SloppyCell.Utility.save

@@ -983,7 +983,7 @@ class Model:
             for calcKey, calcData in exptData.items():
                 for depVarKey, depVarData in calcData.items():
                     sortedData = depVarData.items()
-                    sortedData.sort()
+                    sorted(sortedData)
                     for indVar, (value, uncert) in sortedData:
                         resName = (exptKey, calcKey, depVarKey, indVar)
                         res = Residuals.ScaledErrorInFit(resName, depVarKey,

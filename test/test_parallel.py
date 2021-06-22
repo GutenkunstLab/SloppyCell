@@ -7,7 +7,7 @@ import copy, scipy, unittest
 
 from SloppyCell.ReactionNetworks import *
 
-from . import TestNetwork
+import TestNetwork
 m2 = copy.deepcopy(TestNetwork.m2)
 params = m2.get_params()
 

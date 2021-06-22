@@ -6,7 +6,7 @@ import scipy
 
 from SloppyCell.ReactionNetworks import *
 import SloppyCell
-from . import TestNetwork
+import TestNetwork
 import SloppyCell.lmopt as lmopt
 import os
 

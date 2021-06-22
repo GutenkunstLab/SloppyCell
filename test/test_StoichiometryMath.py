@@ -10,7 +10,7 @@ redir=Utility.Redirector()
 
 # Load the stoichiometryMathML example from the SBML semantic test suite.
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
-from .StoichTestNets import stoichMath_net
+from StoichTestNets import stoichMath_net
 
 tlist_stoichMath_net = scipy.array([0] + [0.04*x for x in range(1, 51)])
 

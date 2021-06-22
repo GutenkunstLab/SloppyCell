@@ -3,6 +3,7 @@ import unittest
 import os
 
 import scipy
+import numpy
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks import *
 import SloppyCell.daskr
@@ -11,15 +12,16 @@ from SloppyCell.daskr import daeint
 
 # Load the fast reaction example from the SBML semantic test suite.
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
-from .AlgTestNets import algebraic_net, algebraic_net_assignment, \
+from AlgTestNets import algebraic_net, algebraic_net_assignment, \
                          algebraic_net_multi, algebraic_net_under
-tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
+tlist_algebraic_net = numpy.array([0] + [0.8*x for x in range(1, 51)])
 
 class test_AlgebraicRules(unittest.TestCase):
     def test_basic(self):
         """ Basic test of Algebraic Rules """
         algebraic_traj = Dynamics.integrate(algebraic_net, tlist_algebraic_net)
-
+        print("heeeeeeeeeeeeeeee")
+        print(algebraic_traj)
         self.assertAlmostEqual(algebraic_traj.get_var_val('X0',4.8), 
                                0.618783392, 5)
         self.assertAlmostEqual(algebraic_traj.get_var_val('X1',21.6), 
