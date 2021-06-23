@@ -38,10 +38,10 @@ _OP_ORDER = {Name: 0,
             Constant: 0,
              Call: 0,
              Subscript: 0,
-             Slice: 0,
-             Slice: 0,
-             BinOp: 0,
+             BinOp: 2,
              UnaryOp: 0,
+             Slice: 0,
+             Slice: 0,
              Pow: 3,
              USub: 4,
              UAdd: 4,
@@ -105,6 +105,7 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
     # return unparse(node)
     if isinstance(node, Name):
         out = node.id
+        print("o1111111111111", out)
     elif isinstance(node, Constant):
         out = str(node.value)
     elif isinstance(node, BinOp) and isinstance(node.op, Add):
@@ -124,6 +125,7 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         # The adjust ensures proper parentheses for (x**y)**z
         out = '%s**%s' % (ast2str(node.left, node, adjust = TINY),
                           ast2str(node.right, node))
+        print("out22222222222222222222222", out)
     elif isinstance(node, UnaryOp) and isinstance(node.op, USub):
         out = '-%s' % ast2str(node.operand, node)
     elif isinstance(node, UnaryOp) and isinstance(node.op, UAdd):
@@ -144,23 +146,32 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         nodes = [ast2str(node) for node in node.nodes]
         out = ':'.join(nodes)
     elif isinstance(node, Compare):
-        print(unparse(node))
+        out = unparse(node)
+        print("llllllllllllllllllllllllllllllllllllllllll")
+        print(out)
+        # expr = ast2str(ast.expr, ast, adjust=6+TINY)
         expr = ast2str(node.left, node, adjust=6+TINY)
         out_l = [expr]
-        print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
-        print(node.ops)
-        # for op, val in node.ops:
-        out_l.append(node.ops)
-        out_l.append(ast2str(node.comparators, node, adjust=6+TINY))
+        q= {"Eq": "==", "NotEq": "!=", "Lt": "<", "Gt": ">", "GtE": ">=", "LtE": "<="}
+        for i in range(len(node.ops)):
+            if isinstance(node.ops[i], str):
+                out_l.append((node.ops[i]))
+            else:
+                out_l.append(q[node.ops[i].__class__.__name__])
+                
+            out_l.append(ast2str(node.comparators[i], node, adjust=6+TINY))
         out = ' '.join(out_l)
-    elif isinstance(node, And):
-        nodes = [ast2str(node, node, adjust=TINY) for node in node.nodes]
+    elif isinstance(node, BoolOp) and isinstance(node.op, And):
+        nodes = [ast2str(node, node, adjust=TINY) for node in node.values]
         out = ' and '.join(nodes)
-    elif isinstance(node, Or):
-        nodes = [ast2str(node, node, adjust=TINY) for node in node.nodes]
+    elif isinstance(node, BoolOp) and  isinstance(node.op, Or):
+        nodes = [ast2str(node, node, adjust=TINY) for node in node.values]
         out = ' or '.join(nodes)
-    elif isinstance(node, Not):
+    elif isinstance(node, UnaryOp) and isinstance(node.op, Not):
         out = 'not %s' % ast2str(node.operand, node, adjust=TINY)
+    else:
+        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
+        print(dump(node))
     # Ensure parentheses by checking the _OP_ORDER of the outer and inner ASTs
     if _need_parens(outer, node, adjust):
         return out
@@ -178,7 +189,12 @@ def _need_parens(outer, inner, adjust):
         parentheses in more cases than does the numerator.
     """
     # print(outer, inner, adjust)
+    # try:
+    print("here", outer, inner)
     return _OP_ORDER[outer.__class__] >= _OP_ORDER[inner.__class__] + adjust
+    # except Exception as e:
+    #     return False
+        
 
 def _collect_num_denom(ast, nums, denoms):
     """

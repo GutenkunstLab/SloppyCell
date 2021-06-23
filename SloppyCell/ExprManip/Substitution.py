@@ -168,7 +168,7 @@ def make_c_compatible(expr):
     # print(dump(ast))
     print(ast)
     return ast2str(ast)
-   
+ 
 def _make_c_compatible_ast(ast):
     try:
         print(dump(ast))
@@ -194,28 +194,31 @@ def _make_c_compatible_ast(ast):
     # nodes abusively. This abuse may not be future-proof... sigh...
     elif isinstance(ast, BoolOp) and isinstance(ast.op, And):
         nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
-        print("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj")
-        try:
-            print(dump(nodes[0]), dump(nodes[1]))
-        except Exception as e:
-            pass
         ops = [('&&', node) for node in nodes[1:]]
-        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
-        print(ops)
-        # Compare(left=Name(id='a', ctx=Load()), ops=[Gt()], comparators=[Name(id='b', ctx=Load())])
-        ast = AST.Compare(left=nodes[0], ops=['&&'], comparators=nodes[1:])
-        # ast = Compare(left=nodes[0], ops)
+        ops_1 = []
+        c = []
+        for k, v in ops:
+            ops_1.append(k)
+            c.append(v)
+            
+        ast = Call(nodes[0], ops_1, c)
     elif isinstance(ast, BoolOp) and isinstance(ast.op, Or):
         nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
         ops = [('||', node) for node in nodes[1:]]
-        ast = AST.Compare(nodes[0], ops)
+        ops_1 = []
+        c = []
+        for k, v in ops:
+            ops_1.append(k)
+            c.append(v)
+            
+        ast = AST.Compare(nodes[0], ops_1, c)
     elif isinstance(ast, UnaryOp) and isinstance(ast.op, Not):
         expr = AST.recurse_down_tree(ast.operand, _make_c_compatible_ast)
-        ast = AST.Name('!(%s)' % ast2str(expr))
+        ast = AST.Name(id='!(%s)' % ast2str(expr))
     else:
-        print("lllllllllllllllllllllllllllllllllllllllllllll")
+        # print("lllllllllllllllllllllllllllllllllllllllllllll")
         print(ast)
         ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
-        print("afterrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
-        print(ast)
+        # print("afterrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+        # print(ast)
     return ast

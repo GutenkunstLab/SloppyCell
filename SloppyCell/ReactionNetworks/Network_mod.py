@@ -1248,7 +1248,7 @@ class Network:
         return expr
     
     def _sub_for_piecewise_ast(self, ast, time):
-        if isinstance(ast, ExprManip.AST.CallFunc)\
+        if isinstance(ast, ExprManip.AST.Call)\
            and ExprManip.ast2str(ast.node) == 'piecewise':
             # If our ast is a piecewise function
             conditions = [cond for cond in ast.args[1::2]]
