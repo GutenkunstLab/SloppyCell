@@ -236,9 +236,10 @@ or False), raise the exception.
         net.updateVariablesFromDynamicVars(values=IC, time=start)
         for con_id, constraint in net.constraints.items():
             # print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-            print(con_id)
-            print(constraint)
+            # print(con_id)
+            # print(constraint)
             result = net.evaluate_expr(constraint.trigger)
+           
             if result == False:
                 raise Utility.ConstraintViolatedException(start,
                                                  constraint.trigger,
@@ -250,14 +251,13 @@ or False), raise the exception.
     yout = scipy.zeros((0, len(IC)), scipy.float_)
     youtdt = scipy.zeros((0, len(IC)), scipy.float_)
     tout = []
-
     # For some reason, the F2Py wrapper for ddaskr seems to fail if this
     #  isn't wrapped up in a lambda...
     res_func = net.res_function
     root_func = net.root_func
-    print("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
-    print(res_func)
-    print(root_func)
+    # print("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
+    # print(res_func)
+    # print(root_func)
     # events_occured will hold event_info objects that describe the events
     #  in detail.
     # te, ye, and ie are the times, dynamic variable values, and indices
@@ -334,7 +334,7 @@ or False), raise the exception.
                 holder.y_post_exec = copy.copy(IC)
                 holder.yp_post_exec = copy.copy(ypIC)
                 event_buffer = max(event_buffer, holder.event.buffer)
-
+               
             if event_buffer:
                 # Ensure that we don't event_buffer past any
                 # requested timepoints.
@@ -364,10 +364,11 @@ or False), raise the exception.
                                            redirect_msgs=redirect_msgs,
                                            calculate_ic = False,
                                            var_types=net._dynamic_var_algebraic)
-
+                
                 exception_raised, yout_this, tout_this, youtdt_this,\
                       t_root_this, y_root_this, i_root_this = outputs
-
+                # print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+                # print(outputs)
                 yout = scipy.concatenate((yout, yout_this))
                 youtdt = scipy.concatenate((youtdt, youtdt_this))
                 tout.extend(tout_this)
@@ -385,8 +386,8 @@ or False), raise the exception.
 
             # Update the root state after all listed events have excecuted.
             root_after = root_func(start, IC, ypIC, constants)
-            print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
-            print(root_after)
+            # print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+            # print(root_after)
             # Check for chained events/constraints
             crossing_dirs = root_after - root_before
             event_just_fired = fired_events(net, start, IC, ypIC, 
@@ -740,7 +741,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         if executed_events and min(executed_events.keys()) < current_time:
             raise ValueError('Missed an event execution in sensitivity '
                              'integration!')
-        if executed_events.has_key(current_time):
+        if current_time in executed_events:
             event_list = executed_events[current_time]
             for holder in event_list:
                 logger.debug('Executing event at time %f.' % current_time)
@@ -825,7 +826,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
 
         if fired_events and min(fired_events.keys()) < current_time:
             raise ValueError('Missed event firing in sensitivity integration!')
-        if fired_events.has_key(current_time):
+        if current_time in fired_events:
             logger.debug('Firing event at time %f.' % current_time)
             event_list = fired_events[current_time]
             while event_list:

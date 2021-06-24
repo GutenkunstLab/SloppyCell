@@ -23,9 +23,9 @@ class test_Simplify(unittest.TestCase):
                  ]
         # cases = ['x/y == x/y']
         for expr in cases: 
-            print("entered here -------------------", expr)
+            # print("entered here -------------------", expr)
             simplified = ExprManip.simplify_expr(expr)
-            print("simplified", simplified)
+            # print("simplified", simplified)
             orig = eval(expr)
             simp = eval(simplified)
             if orig != 0:

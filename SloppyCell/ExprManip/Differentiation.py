@@ -195,7 +195,7 @@ def _diff_ast(ast, wrt):
         for arg_d, arg_form_d in zip(args_d, form):
             # We skip arguments with 0 derivative
             if arg_d == _ZERO:
-                print("for zero derivative")
+                # print("for zero derivative")
                 continue
             for ii, arg in enumerate(args):
                 Substitution._sub_subtrees_for_vars(arg_form_d, 

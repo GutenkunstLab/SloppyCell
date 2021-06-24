@@ -161,19 +161,19 @@ def make_c_compatible(expr):
      fragile if the parsing library changes in newer python versions.
     """
     ast = strip_parse(expr)
-    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-    print(ast)
+    # print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    # print(ast)
     ast = _make_c_compatible_ast(ast)
     # print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
     # print(dump(ast))
-    print(ast)
+    # print(ast)
     return ast2str(ast)
  
 def _make_c_compatible_ast(ast):
-    try:
-        print(dump(ast))
-    except Exception as e:
-        pass
+    # try:
+    #     print(dump(ast))
+    # except Exception as e:
+    #     pass
     # print(dump(ast))
     if isinstance(ast, BinOp) and isinstance(ast.op, Pow):
         # ast = Call(func=Name(id='pow', ctx=Load()), args=[ast.left, ast.right])
@@ -201,7 +201,7 @@ def _make_c_compatible_ast(ast):
             ops_1.append(k)
             c.append(v)
             
-        ast = Call(nodes[0], ops_1, c)
+        ast = Compare(nodes[0], ops_1, c)
     elif isinstance(ast, BoolOp) and isinstance(ast.op, Or):
         nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
         ops = [('||', node) for node in nodes[1:]]
@@ -217,7 +217,7 @@ def _make_c_compatible_ast(ast):
         ast = AST.Name(id='!(%s)' % ast2str(expr))
     else:
         # print("lllllllllllllllllllllllllllllllllllllllllllll")
-        print(ast)
+        # print(ast)
         ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
         # print("afterrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
         # print(ast)

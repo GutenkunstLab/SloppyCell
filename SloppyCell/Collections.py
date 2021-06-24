@@ -68,6 +68,8 @@ class ExperimentCollection(dict):
                     varsByCalc[calc].setdefault(calc, {})
                 if depVar not in varsByCalc[calc]:
                     varsByCalc[calc].setdefault(depVar, set())
+                # print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
+                # print(type(varsByCalc))
                 varsByCalc[calc][depVar].update([start, start+2.0*period])
 
             for amplitude in expt.GetAmplitudeChecks():
@@ -95,13 +97,16 @@ class ExperimentCollection(dict):
                 elif ds['type'] == 'min': 
                     called = ds['var'] + '_minimum'
                 varsByCalc[calc][called] = (ds['minTime'], ds['maxTime'])
-                
+        # print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzeeeeeeeeeeeeeeeeeeeeeelllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll")
         # But I convert the sets back to sorted lists before returning
+        import math
+        # print(varsByCalc)
         for calc in varsByCalc:
             for depVar in varsByCalc[calc]:
                 varsByCalc[calc][depVar] = list(varsByCalc[calc][depVar])
-                varsByCalc[calc][depVar].sort()
-
+                varsByCalc[calc][depVar] = sorted(varsByCalc[calc][depVar], key=lambda x: x if x is not None else -math.inf)
+        # print("qzzzzzzzzzzzzzzzzzzzzzz")
+        # print(varsByCalc)
         return varsByCalc
 
     def GetData(self):

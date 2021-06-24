@@ -79,6 +79,10 @@ class KeyedList(list):
     # Methods for manipulating by key.
     #
     def set(self, key, value):
+        # print("keeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+        # print(key)
+        # print("valueeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+        # print(value)
         try:
             self[self.keyToIndex[key]] = value
         except KeyError:

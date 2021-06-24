@@ -333,6 +333,7 @@ class Network:
         """
         event = Event(id, trigger, event_assignments, delay, name,
                       buffer)
+        print("eeeeeeeeeeeeeeeeeeeeeeee", event)
         self._checkIdUniqueness(event.id)
         self.events.set(event.id, event)
 
@@ -487,7 +488,7 @@ class Network:
                      self.algebraicRules]
         for complist in complists:
             # If the id is in a list and has a non-empty name
-            if complist.has_key(id):
+            if id in complist:
                 complist.remove_by_key(id)
 
         if not self._manualCrossReferences_flag:
@@ -606,7 +607,7 @@ class Network:
                     struct.unpack('i', os.urandom(struct.calcsize('i')))[0])
             except: pass
 
-            seed = int(seed % sys.maxint)
+            seed = int(seed % sys.maxsize)
             
         if rmsd==None:
             rmsd = _double_max_
@@ -897,10 +898,12 @@ class Network:
         # Make sure we start from t = 0
         t = set([0])
         ret_full_traj=False
+        print("ggggggggggggggggggg")
+        print(vars)
         for var, times in vars.items():
             if var == 'full trajectory':
                 ret_full_traj = True
-                t.update(set(times))
+                t|=set(times)
             elif var.endswith('_maximum') or var.endswith('_minimum'):
                 t1,t2 = times
                 if t1 is not None:
@@ -908,7 +911,7 @@ class Network:
                 if t2 is not None:
                     t.add(t2)
             elif var in self.variables:
-                t.update(set(times))
+                t|=set(times)
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
                                  % (var, self.get_id()))
@@ -939,7 +942,7 @@ class Network:
                 if t2 is not None:
                     t.add(t2)
             elif var in self.variables:
-                t.update(set(times))
+                t|=set(times)
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
                                  % (var, self.get_id()))
@@ -1143,8 +1146,7 @@ class Network:
     def integrateStochastic(self, times, params=None):
         if self.stochastic['fill_dt'] is not None:
             times = set(times)
-            times.update(scipy.arange(min(times), max(times),
-                                            self.stochastic['fill_dt']))
+            times|=set(scipy.arange(min(times), max(times),self.stochastic['fill_dt']))
             times = list(times)
             times.sort()
 
@@ -1153,7 +1155,7 @@ class Network:
 
         # Add in the event times (only if they don't extend the trajectoy!)
         times = set(times)
-        times.upadate([_.triggeringTime for _ in self.events
+        times|=set([_.triggeringTime for _ in self.events
                             if _.triggeringTime<max(times)])
         times = list(times)
         times.sort()
@@ -1236,10 +1238,13 @@ class Network:
         Runs through expr and replaces all piecewise expressions by the
         clause that is currently active.
         """
-        print("gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")
+        # print("entered hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+        # print(expr)
         if not expr.count('piecewise('):
             return expr
         funcs_used = ExprManip.extract_funcs(expr)
+        # print("funcs used")
+        # print(funcs_used)
         for func, args in funcs_used:
             if func == 'piecewise':
                 ast = ExprManip.strip_parse(expr)
@@ -1249,7 +1254,7 @@ class Network:
     
     def _sub_for_piecewise_ast(self, ast, time):
         if isinstance(ast, ExprManip.AST.Call)\
-           and ExprManip.ast2str(ast.node) == 'piecewise':
+           and ExprManip.ast2str(ast.func) == 'piecewise':
             # If our ast is a piecewise function
             conditions = [cond for cond in ast.args[1::2]]
             clauses = [clause for clause in ast.args[:-1:2]]
@@ -1283,12 +1288,16 @@ class Network:
         Evaluate the given expression using the current values of the network
         variables.
         """
+        # print("aaaaaaaaaaaaaaaaa")
+        # print(time)
+        # print(var_vals)
         try:
             return float(expr)
         except ValueError:
             # We create a local_namespace to evaluate the expression in that
             #  maps variable ids to their current values
             expr = self._sub_for_piecewise(expr, time)
+            # print("exprmmmmmmmmmmmmmmmm", expr)
             if var_vals is None:
                 vars_used = ExprManip.extract_vars(expr)
                 var_vals = [(id, self.get_var_val(id)) for id in vars_used
@@ -1298,6 +1307,8 @@ class Network:
             local_namespace = var_vals
             local_namespace.update(self.namespace)
             # We strip whitespace, just for convenience
+            # print("gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")
+            # print(eval(expr.strip(), local_namespace, {}))
             return eval(expr.strip(), local_namespace, {})
 
     #
@@ -1538,7 +1549,7 @@ class Network:
             rateExpr = rxn.kineticLaw
             logger.debug('Parsing reaction %s.' % rxn_id)
             for reactantId, dReactant in rxn.stoichiometry.items():
-                print("qqqqqqqqqqqqqqqqqqqqqqqq", rxn.stoichiometry.items())
+                # print("qqqqqqqqqqqqqqqqqqqqqqqq", rxn.stoichiometry.items())
                 if self.get_variable(reactantId).is_boundary_condition or\
                    self.get_variable(reactantId).is_constant or\
                    self.assignmentRules.has_key(reactantId):
@@ -2370,12 +2381,14 @@ class Network:
         class Parse(ExprManip.AST.NodeVisitor):
             def __call__(slf,s,c=True):
                 if c: s = ExprManip.make_c_compatible(s)
+                # print("quikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
+                # print(s)
                 ast = ExprManip.strip_parse(s)
                 ExprManip.AST.walk(ast)
                 return ExprManip.ast2str(ast)
 
             def visitName(slf,node,*args):
-                if mapping.has_key(node.id): node.id=mapping[node.id]
+                if node.id in mapping: node.id=mapping[node.id]
         parse = Parse()
         
         # Find the stoichiometry and reaction dependencies
@@ -2388,7 +2401,7 @@ class Network:
                 for asnName in evar.intersection(asnKeys):
                     rule = self.assignmentRules.get(asnName)
                     evar.remove(asnName)
-                    evar.update( \
+                    evar|=set( \
                         ExprManip.Extraction.extract_vars(rule))
             evars.append(evar)
 
@@ -2648,11 +2661,11 @@ class Network:
         if len(ast.ops) != 1:
             raise ValueError('Comparison has more than one operation in '
                              'clause %s!' % trigger)
-        lhs = ExprManip.ast2str(ast.expr)
-        rhs = ExprManip.ast2str(ast.ops[0][1])
-        if ast.ops[0][0] in ['>', '>=']:
+        lhs = ExprManip.ast2str(ast.left)
+        rhs = ExprManip.ast2str(ast.comparators[0])
+        if ast.ops[0].__class__.__name__ in ['Gt', 'GtE']:
             return '%s - %s' % (lhs, rhs)
-        elif ast.ops[0][0] in ['<', '<=']:
+        elif ast.ops[0].__class__.__name__ in ['Lt', 'LtE']:
             return '-%s + %s' % (lhs, rhs)
         else:
             raise ValueError('Comparison %s in triggering clause is not '
@@ -2827,7 +2840,7 @@ class Network:
         
         # Now compute the sensitivity of each of our new values
         for y_ii, y_id in enumerate(self.dynamicVars.keys()):
-            if not event.event_assignments.has_key(y_id):
+            if y_id not in event.event_assignments:
                 # This is the index of y's sensitivity in the sensitivity array
                 index_in_y = y_ii + N_dv
                 # dy_dp after the event of course begins equal to the current
@@ -2962,7 +2975,7 @@ class Network:
         # Collect all variables that are explicitly in algebraic rules
         vars_in_alg_rules = set()
         for rule in self.algebraicRules:
-            vars_in_alg_rules.update(ExprManip.extract_vars(rule))
+            vars_in_alg_rules|=set(ExprManip.extract_vars(rule))
 
         # Now replace all the assigned variables with the variables they
         # actually depend on. This takes a while loop because assigned
@@ -2975,7 +2988,7 @@ class Network:
             # Replace that assigned_var with the variables it depends on
             # in the running list of algebraic rules
             for assigned_var in assigned_in_alg:
-                vars_in_alg_rules.update(ExprManip.extract_vars(
+                vars_in_alg_rules|=set(ExprManip.extract_vars(
                     self.assignmentRules.get(assigned_var)))
                 vars_in_alg_rules.remove(assigned_var)
             # update the list of assignment variables that appear in the
@@ -3086,7 +3099,7 @@ class Network:
 
             # We clear out all the dynamic functions that have been defined.
             all_dynamic_keys = set(self._dynamic_funcs_python.keys())
-            all_dynamic_keys.update(self._dynamic_funcs_c.keys())
+            all_dynamic_keys|= set(self._dynamic_funcs_c.keys())
             for dynamic_func in all_dynamic_keys:
                 try:
                     delattr(self, dynamic_func)
@@ -3372,11 +3385,11 @@ class Network:
             # debugging
             if hide_output:
                 stdout = redir_stdout.stop()
-                stderr = redir_stderr.stop()
-                print('***STDOUT***')
-                print(stdout)
-                print('***STDERR***')
-                print(stderr)
+                # stderr = redir_stderr.stop()
+                # print('***STDOUT***')
+                # print(stdout)
+                # print('***STDERR***')
+                # print(stderr)
         finally:
             # Ensure we always stop redirecting and restor sys.argv
             if hide_output:

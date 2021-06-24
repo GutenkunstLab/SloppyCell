@@ -185,6 +185,8 @@ class Model:
         """
         Return the cost (1/2 chisq) of the model
         """
+        # print("gggggggoooooooooooooooooooooooooooooooooooooooffffffffffffffffffffff")
+        # print(params)
         return self._evaluate(params)[2]
 
     def cost_log_params(self, log_params):
@@ -335,7 +337,9 @@ class Model:
 
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
         self.calcVals = self.GetCalculationCollection().Calculate(varsByCalc, 
-                                                                  params)
+                                                           params)
+        # print("wwwwwwwwwwwwwwwwwwwwwwwww")
+        # print(self.calcVals)
         return self.calcVals
 
     def CalculateSensitivitiesForAllDataPoints(self, params):

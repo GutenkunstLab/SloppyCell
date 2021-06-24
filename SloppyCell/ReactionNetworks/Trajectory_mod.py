@@ -463,6 +463,7 @@ class Trajectory:
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
     def _sub_var_names(self, input):
+        print("inputllllllllllllllllllllllllllllllllllllllllllllll", input)
         mapping_dict = {}
         for id in ExprManip.extract_vars(input):
                 # convert it back to something key_column will recognize
@@ -582,7 +583,7 @@ class Trajectory:
             time = numpy.asarray(time)
         # print("ccccccccccccccccccccc", self.tcks)
         local_tcks = self.tcks
-        print("tttttttttttttttttttttttttttt", local_tcks)
+        # print("tttttttttttttttttttttttttttt", local_tcks)
         # print("locallllllllllllllllllllllllllll", local_tcks.keys())
         sorted_intervals = numpy.sort(local_tcks.keys(),axis=0)
 

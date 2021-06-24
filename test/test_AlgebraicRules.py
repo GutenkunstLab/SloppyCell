@@ -20,8 +20,8 @@ class test_AlgebraicRules(unittest.TestCase):
     def test_basic(self):
         """ Basic test of Algebraic Rules """
         algebraic_traj = Dynamics.integrate(algebraic_net, tlist_algebraic_net)
-        print("heeeeeeeeeeeeeeee")
-        print(algebraic_traj)
+        # print("heeeeeeeeeeeeeeee")
+        # print(algebraic_traj)
         self.assertAlmostEqual(algebraic_traj.get_var_val('X0',4.8), 
                                0.618783392, 5)
         self.assertAlmostEqual(algebraic_traj.get_var_val('X1',21.6), 

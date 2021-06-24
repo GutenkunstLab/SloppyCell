@@ -28,9 +28,9 @@ class test_Substitution(unittest.TestCase):
         cases1 = [ ('x + 1', 'x', 'y', 
                   'y + 1')]
         for expr, out_var, in_expr, answer in cases:
-            print("entered",expr, out_var, in_expr )
+            # print("entered",expr, out_var, in_expr )
             subbed = ExprManip.sub_for_var(expr, out_var, in_expr)
-            print(subbed)
+            # print(subbed)
             assert eval(answer) == eval(subbed)
 
     def test_sub_for_vars(self):
