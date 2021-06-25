@@ -82,11 +82,13 @@ def diff_expr(expr, wrt):
 
     ast = AST.strip_parse(expr)
     deriv = _diff_ast(ast, wrt)
-    # print("deriv", dump(deriv))
+    # print("deriv", unparse(deriv))
     deriv = Simplify._simplify_ast(deriv)
+    # print("drivvvvvvvvvvvvvvvvvvvvvvvvvvvv")
     deriv  = AST.ast2str(deriv)
     __deriv_saved[key] = deriv
     logger.debug('Computed result %s.' % deriv)
+    # print(deriv)
     return deriv
 
 # This dictionary stores how to differentiate various functions. The keys are 

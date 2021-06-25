@@ -338,8 +338,8 @@ class Model:
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
         self.calcVals = self.GetCalculationCollection().Calculate(varsByCalc, 
                                                            params)
-        # print("wwwwwwwwwwwwwwwwwwwwwwwww")
-        # print(self.calcVals)
+        print("wwwwwwwwwwwwwwwwwwwwwwwww")
+        print(self.calcVals)
         return self.calcVals
 
     def CalculateSensitivitiesForAllDataPoints(self, params):
@@ -353,9 +353,13 @@ class Model:
                    [independent variabled][parameter] -> sensitivity.
         """
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
+        print("senissssssssssssssssssssssssssss")
+        print(varsByCalc)
         self.calcVals, self.calcSensitivityVals =\
                 self.GetCalculationCollection().CalculateSensitivity(varsByCalc,
                                                                      params)
+        # print("senissssssssssssssssssssssssssss")
+        # print(self.calcSensitivityVals)
         return self.calcSensitivityVals
 
     def ComputeInternalVariables(self, T=1):
@@ -606,7 +610,8 @@ class Model:
             kl[resId] = [dres/dp1, dres/dp2...]
         """
         self.params.update(params)
-
+        print("paramssssssssssssssssssssssss")
+        # print(self.params)
         # Calculate sensitivities
         self.CalculateSensitivitiesForAllDataPoints(params)
         self.ComputeInternalVariables()
@@ -617,7 +622,7 @@ class Model:
                                 self.internalVars, self.internalVarsDerivs,
                                 self.params))
                  for (resId, res) in self.residuals.items()]
-
+        print(KeyedList(deriv))
         return KeyedList(deriv)
 
     def jacobian_fd(self, params, eps, 

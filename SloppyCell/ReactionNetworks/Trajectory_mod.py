@@ -47,7 +47,7 @@ class Trajectory:
                  empty=False, const_vals=None):
         if empty:
             return
-
+        print("kkkkkkkkkkkkkklllllllllllllllllllllllllllllllllll")
         if key_column is not None:
             self.key_column = key_column
         else:
@@ -294,6 +294,7 @@ class Trajectory:
         return self.get_dynvar_vals_index(index)
 
     def _make__assignment(self, net):
+        # print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", len(net.assignmentRules))
         functionBody = ['def _assignment(self, values, times, start, end):']
 
         for id in self.const_var_values.keys():
@@ -309,10 +310,11 @@ class Trajectory:
                 functionBody.append('%s = %s' % (lhs, rhs))
         else:
             functionBody.append('pass')
-
+        # print("functionbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", functionBody)
         return '\n\t'.join(functionBody) + '\n'
 
     def _make__sens_assignment(self, net):
+        print("jenssssssssssssssssssssssssssssssssssssssssssss")
         functionBody = ['def _sens_assignment(self, values, times, start, end):'
                         ]
 
@@ -322,33 +324,38 @@ class Trajectory:
 
         if len(net.assignmentRules) > 0:
             for id, rule in net.assignmentRules.items():
+                # print("heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+                # print(id)
+                # print(rule)
                 #rule = net.substituteFunctionDefinitions(rule)
                 derivWRTdv = {}
                 for wrtId in net.dynamicVars.keys():
                     deriv = net.takeDerivative(rule, wrtId)
                     if deriv != '0':
                         derivWRTdv[wrtId] = deriv
+            print("keys----------------------")
+            print(net.optimizableVars.keys())
+            for optId in net.optimizableVars.keys():
+                print(id, optId)
+                lhs = self._sub_var_names('%s__derivWRT__%s' % (id,optId))
+                rhs = []
+                # get derivative of assigned variable w.r.t.
+                #  dynamic variables
+                for wrtId, deriv in derivWRTdv.items():
+                    rhs.append('(%s) * %s__derivWRT__%s' %
+                                (deriv, wrtId, optId))
 
-        for optId in net.optimizableVars.keys():
-            lhs = self._sub_var_names('%s__derivWRT__%s' % (id,optId))
-            rhs = []
-            # get derivative of assigned variable w.r.t.
-            #  dynamic variables
-            for wrtId, deriv in derivWRTdv.items():
-                rhs.append('(%s) * %s__derivWRT__%s' %
-                            (deriv, wrtId, optId))
+                # now partial derivative w.r.t. optId
+                derivWRTp = net.takeDerivative(rule, optId)
+                if derivWRTp != '0':
+                    rhs.append(derivWRTp)
 
-            # now partial derivative w.r.t. optId
-            derivWRTp = net.takeDerivative(rule, optId)
-            if derivWRTp != '0':
-                rhs.append(derivWRTp)
-
-                if rhs:
-                    rhs = ' + '.join(rhs)
-                    rhs = self._sub_var_names(rhs)
-                    functionBody.append('%s = %s' % (lhs, rhs))
-            else:
-                functionBody.append('pass')
+                    if rhs:
+                        rhs = ' + '.join(rhs)
+                        rhs = self._sub_var_names(rhs)
+                        functionBody.append('%s = %s' % (lhs, rhs))
+        else:
+            functionBody.append('pass')
 
         return '\n\t'.join(functionBody) + '\n'
 
@@ -463,7 +470,7 @@ class Trajectory:
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
     def _sub_var_names(self, input):
-        print("inputllllllllllllllllllllllllllllllllllllllllllllll", input)
+        # print("inputllllllllllllllllllllllllllllllllllllllllllllll", input)
         mapping_dict = {}
         for id in ExprManip.extract_vars(input):
                 # convert it back to something key_column will recognize
@@ -490,7 +497,7 @@ class Trajectory:
                 raise 'Problem with idname %s in Trajectory._sub_var_names' % id
             mapping_dict[id] = mapping
 
-            input = ExprManip.sub_for_vars(input, mapping_dict)
+        input = ExprManip.sub_for_vars(input, mapping_dict)
 
         return input
 
@@ -577,15 +584,15 @@ class Trajectory:
               to an event time, which often has two trajectory values associated
               with it.
         """
-        if numpy.isscalar(time) :
-            time = numpy.asarray([time]) # if a scalar was passed in, convert to an array
+        if scipy.isscalar(time) :
+            time = scipy.asarray([time]) # if a scalar was passed in, convert to an array
         else :
-            time = numpy.asarray(time)
+            time = scipy.asarray(time)
         # print("ccccccccccccccccccccc", self.tcks)
         local_tcks = self.tcks
         # print("tttttttttttttttttttttttttttt", local_tcks)
         # print("locallllllllllllllllllllllllllll", local_tcks.keys())
-        sorted_intervals = numpy.sort(local_tcks.keys(),axis=0)
+        sorted_intervals = scipy.sort(local_tcks.keys(),axis=0)
 
         if subinterval is not None : # confine things to just one interval
             if subinterval not in local_tcks.keys() :

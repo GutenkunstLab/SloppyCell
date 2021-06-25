@@ -217,9 +217,9 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                         net._dynamic_var_algebraic, rtol, atol,
                         net.constantVarValues, net, 
                         redirect_msgs=redirect_msgs)
-    # print("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
-    # print(IC)
-    # print(ypIC)
+    print("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
+    print(IC)
+    print(ypIC)
 
     """
 
@@ -868,7 +868,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
                           fill_traj=False, return_derivs=False,
                           redirect_msgs=True):
     logger.debug('Entering integrate_sens on node %i' % my_rank)
-
+    print("cutettttttttttttttttttttttttttttttttttttttttttt")
     times = scipy.array(times)
     net.compile()
     if times[0] == 0:
@@ -882,6 +882,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
                             for node in range(num_procs)])
 
     # Send out jobs for workers
+    print("processors", num_procs)
     for worker in range(1, num_procs):
         logger.debug('Sending to worker %i: %s' % (worker, 
                                                    str(vars_assigned[worker])))

@@ -133,7 +133,8 @@ class Network:
             diff_math = ExprManip.diff_expr(math, wrt)
             func = 'lambda %s: %s' % (var_str, diff_math)
             _common_func_strs.set(deriv_id, func)
-
+    # print("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu")
+    # print(_common_func_strs)
     # Now add the C versions.
     _common_func_strs_c = KeyedList()
     _common_prototypes_c = KeyedList()
@@ -147,29 +148,43 @@ class Network:
         c_body = os.linesep.join(c_body)
         _common_prototypes_c.set(id, 'double %s(%s);' % (id, var_str_c))
         _common_func_strs_c.set(id, c_body)
+        # print("varsssssssssssssssssssssssssssssssssssssss")
+        # print(vars)
         for ii, wrt in enumerate(vars):
-            deriv_id = '%s_%i' % (id, ii)
+            deriv_id = "%s_%i" % (id, ii)
+            # print("c compaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+            # print(math)
             diff_math = ExprManip.diff_expr(math, wrt)
+            # print("c compaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+            # print(ExprManip.make_c_compatible(diff_math))
             c_body = []
-            c_body.append('double %s(%s){' % (deriv_id, var_str_c))
-            c_body.append('return %s;' % ExprManip.make_c_compatible(diff_math))
-            c_body.append('}')
+            c_body.append("double %s(%s){" % (deriv_id, var_str_c))
+            c_body.append("return %s;" % ExprManip.make_c_compatible(diff_math))
+            c_body.append("}")
             c_body = os.linesep.join(c_body)
-            _common_prototypes_c.set(deriv_id,'double %s(%s);' % (deriv_id, 
+            _common_prototypes_c.set(deriv_id, "double %s(%s);" % (deriv_id, 
                                                                   var_str_c))
             _common_func_strs_c.set(deriv_id, c_body)
-
+            # print("lllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooo")
+            # print(deriv_id, c_body)
     # Also do the logical functions. These don't have derivatives.
     for id, vars, math in _logical_comp_func_defs:
         # and_func and or_func are special-cased, because the SBML versions can
         # take multiple arguments.
         if id == 'and_func':
+            # print("and_funcccccccccccccccccccccccccccccc")
             func = 'lambda *x: reduce(operator.and_, x)'
         elif id == 'or_func':
+            # print("or_funcccccccccccccccccccccccccccccccc")
             func = 'lambda *x: reduce(operator.or_, x)'
         else:
+            # print("elseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
             var_str = ','.join(vars)
             func = 'lambda %s: %s' % (var_str, math)
+        # print("idddddddddddddddddddddddddddddddddddddddddddddd")
+        # print(id)
+        # print(vars)
+        # print(math)
         _common_func_strs.set(id, func)
 
     # These are the strings we eval to create the extra functions our
@@ -898,8 +913,8 @@ class Network:
         # Make sure we start from t = 0
         t = set([0])
         ret_full_traj=False
-        print("ggggggggggggggggggg")
-        print(vars)
+        # print("ggggggggggggggggggg")
+        # print(vars)
         for var, times in vars.items():
             if var == 'full trajectory':
                 ret_full_traj = True
@@ -910,7 +925,7 @@ class Network:
                     t.add(t1)
                 if t2 is not None:
                     t.add(t2)
-            elif var in self.variables:
+            elif self.variables.has_key(var):
                 t|=set(times)
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
@@ -933,15 +948,22 @@ class Network:
         
     def CalculateSensitivity(self, vars, params):
         t = set([0])
-
+        print("in 9622222222222222222222")
+        print(type(self.variables))
+        print(vars)
+        print(params)
         for var,times in vars.items():
+            print("mmmmmmmmm")
+            print(var in self.variables)
+            print(times)
             if var.endswith('_maximum') or var.endswith('_minimum'):
                 t1,t2 = times
                 if t1 is not None:
                     t.add(t1)
                 if t2 is not None:
                     t.add(t2)
-            elif var in self.variables:
+            elif self.variables.has_key(var):
+                print("entered here")
                 t|=set(times)
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
@@ -949,7 +971,7 @@ class Network:
 
         t = list(t)
         t.sort()
-
+        
         self.ddv_dpTrajectory = self.integrateSensitivity(t,params=params, 
                                                           addTimes=True)
         self.trajectory = self.ddv_dpTrajectory

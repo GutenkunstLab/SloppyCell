@@ -21,11 +21,12 @@ class test_Simplify(unittest.TestCase):
                  '(-2)**2', '-2**2', 'x/y == x/y', 'not True', 'x/x + y/y == 2',
                  '3 + 4 > 6', '3 + (4 > 6)',
                  ]
-        # cases = ['x/y == x/y']
+        cases = ['2.0*exp(xIC)*1 + exp(xIC)*0']
         for expr in cases: 
-            # print("entered here -------------------", expr)
+            print("entered here -------------------", expr)
             simplified = ExprManip.simplify_expr(expr)
             # print("simplified", simplified)
+            print(simplified)
             orig = eval(expr)
             simp = eval(simplified)
             if orig != 0:

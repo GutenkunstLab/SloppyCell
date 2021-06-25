@@ -53,10 +53,11 @@ def _simplify_ast(ast):
         pos, neg = [], []
         AST._collect_pos_neg(ast, pos, neg)
         # print("first ---------------")
-        # print(pos, neg)
+       
         pos = [_simplify_ast(term) for term in pos]
         neg = [_simplify_ast(term) for term in neg]
-        
+        # print("+++++++++++++++++++++++++++++++++")
+        # print(dump(pos[0]), dump(pos[1]))
         # We collect and sum the constant values
         values = [term.value for term in pos if isinstance(term, Constant)] +\
                 [-term.value for term in neg if isinstance(term, Constant)] 
@@ -70,14 +71,14 @@ def _simplify_ast(ast):
         new_pos, new_neg = [], []
         for term in pos:
             if isinstance(term, UnaryOp):
-                if isinstance(term, USub):
+                if isinstance(term.op, USub):
                     new_neg.append(term.operand)
             else:
                 # print("entered here", term)
                 new_pos.append(term)
         for term in neg:
             if isinstance(term, UnaryOp):
-                if isinstance(term, USub):
+                if isinstance(term.op, USub):
                     new_pos.append(term.operand)
             else:
                 # print("entered here2", term)
@@ -85,6 +86,7 @@ def _simplify_ast(ast):
         pos, neg = new_pos, new_neg
         # print("pos1", pos)
         # print("neg1", neg)
+        # print(dump(pos[0]), dump(pos[1]))
         # Append the constant value sum to pos or neg
         if value > 0:
             pos.append(Constant(value=value))
@@ -168,7 +170,7 @@ def _simplify_ast(ast):
         num_neg = 0
         for list_of_terms in [num, denom]:
             for ii, term in enumerate(list_of_terms):
-                if isinstance(term, USub):
+                if isinstance(term, UnaryOp) and isinstance(term.op, USub):
                     list_of_terms[ii] = term.operand
                     num_neg += 1
 
