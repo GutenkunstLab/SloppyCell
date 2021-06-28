@@ -23,6 +23,8 @@ class test_OptDesign(unittest.TestCase):
         """Test that the functions in OptDesign work correctly"""
         save(p,'TNparams')
         j,jtj = m.GetJandJtJInLogParameters(p)
+        print("test case")
+        print(j, jtj)
         save(jtj,'TNjtj')
         # Make the nensitivity trajectory for this network and save
         # it in 'TNsenstraj'

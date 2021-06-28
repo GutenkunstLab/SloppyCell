@@ -27,7 +27,7 @@ def toSBMLFile(net, fileName):
     f.close()
 
 def SBMLtoDOT(sbmlFileName, dotFileName):
-    raise DeprecationWarning, 'SBMLtoDOT has been deprecated. Instead, use IO.net_DOT_file(net, filename)'
+    raise DeprecationWarning('SBMLtoDOT has been deprecated. Instead, use IO.net_DOT_file(net, filename')
 
 def formula_to_py(ast):
     formula = libsbml.formulaToString(ast)
@@ -414,7 +414,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         uniprot_ids = set([entry[1:].split('"')[0]
                            for entry in xml_text.split('uniprot')[1:]])
 
-	rn.addSpecies(id = id, compartment = compartment,
+    rn.addSpecies(id = id, compartment = compartment,
                       initialConcentration = iC,
                       isConstant = isConstant,
                       is_boundary_condition = isBC,

@@ -39,7 +39,7 @@ class ExperimentCollection(dict):
         self[expt.GetName()] = expt
 
     def GetVarsByCalc(self):
-        print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+        # print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
         """
         GetIndVarsByCalc() -> dictionary
 
@@ -50,10 +50,10 @@ class ExperimentCollection(dict):
                                          variables
         """
         varsByCalc = {}
-        print(self.values)
+        # print(self.values)
         for expt in self.values():
             data = expt.GetData()
-            print(data)
+            # print(data)
             for calc in data:
                 varsByCalc.setdefault(calc, {})
                 for depVar in data[calc]:
@@ -62,8 +62,8 @@ class ExperimentCollection(dict):
                     varsByCalc[calc].setdefault(depVar, set())
                     varsByCalc[calc][depVar].\
                             update(set(data[calc][depVar].keys()))
-            print("after 1st for")
-            print(varsByCalc)
+            # print("after 1st for")
+            # print(varsByCalc)
             for period in expt.GetPeriodChecks():
                 calc, depVar = period['calcKey'], period['depVarKey']
                 start, period = period['startTime'], period['period']
@@ -100,8 +100,8 @@ class ExperimentCollection(dict):
                 elif ds['type'] == 'min': 
                     called = ds['var'] + '_minimum'
                 varsByCalc[calc][called] = (ds['minTime'], ds['maxTime'])
-        print(varsByCalc)
-        print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzeeeeeeeeeeeeeeeeeeeeeelllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll")
+        # print(varsByCalc)
+        # print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzeeeeeeeeeeeeeeeeeeeeeelllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll")
         # But I convert the sets back to sorted lists before returning
         import math
         # print(varsByCalc)
@@ -109,8 +109,8 @@ class ExperimentCollection(dict):
             for depVar in varsByCalc[calc]:
                 varsByCalc[calc][depVar] = list(varsByCalc[calc][depVar])
                 varsByCalc[calc][depVar] = sorted(varsByCalc[calc][depVar], key=lambda x: x if x is not None else -math.inf)
-        print("qzzzzzzzzzzzzzzzzzzzzzz")
-        print(varsByCalc)
+        # print("qzzzzzzzzzzzzzzzzzzzzzz")
+        # print(varsByCalc)
         return varsByCalc
 
     def GetData(self):
@@ -421,6 +421,8 @@ class CalculationCollection(KeyedList):
         The return dictionary is of the form:
             dictionary[calc name][dep var][ind var] = result
         """
+        # print("params in collections")
+        # print(params)
         if params is not None:
             self.params.update(params)
 
@@ -479,19 +481,19 @@ class CalculationCollection(KeyedList):
         The return dictionary is of the form:
             dictionary[calc name][dep var][ind var][param] = result
         """
-        print("entered here")
+        # print("entered here")
         if params is not None :
             self.params.update(params)
 		
         calcSensVals, calcVals = {}, {}
-        print("before future")
-        print(varsByCalc.items())
+        # print("before future")
+        # print(varsByCalc.items())
         for (calcName, vars) in varsByCalc.items():
             calc = self.get(calcName)
             vars = varsByCalc[calcName]
             calcPOrder = calc.GetParameters().keys()
-            print("futureeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-            print(varsByCalc[calcName])
+            # print("futureeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+            # print(varsByCalc[calcName])
             calc.CalculateSensitivity(varsByCalc[calcName], self.params)
             calcSensVals[calcName] = calc.GetSensitivityResult(vars)
             calcVals[calcName] = calc.GetResult(vars)

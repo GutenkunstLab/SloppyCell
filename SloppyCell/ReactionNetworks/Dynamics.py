@@ -187,7 +187,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                        False at any time.
     """
     logger.debug('Integrating network %s.' % net.get_id())
-
+    print("insde integrateeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
     if params is not None:
         net.update_optimizable_vars(params)
     constants = net.constantVarValues
@@ -209,6 +209,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     IC = net.getDynamicVarValues()
     
     # We start with ypIC equal to typ_vals so that we get the correct scale.
+    
     typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
     ypIC = scipy.array(typ_vals)
     # This calculates the yprime ICs and also ensures that values for our
@@ -429,7 +430,6 @@ or False), raise the exception.
         else:
             curTimes = scipy.compress(times > start, times)
             curTimes = scipy.concatenate(([start], curTimes))
-
         outputs = integrate_tidbit(net, res_func, _ddaskr_jac, 
                                    root_func=root_func, 
                                    IC=IC, yp0=ypIC, curTimes=curTimes, 
@@ -932,6 +932,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
     #  return in exception_raised. We'll reraise that exception after getting
     #  replies from all the workers.
     exception_raised = None
+    
     for worker in range(1, num_procs):
         logger.debug('Receiving result from worker %i.' % worker)
         result = comm.recv(source=worker)
@@ -944,7 +945,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
 
     if exception_raised:
         raise exception_raised
-
+    
     ddv_dpTrajectory = Trajectory_mod.Trajectory(net, is_sens=True, 
                                                  holds_dt=return_derivs)
     if return_derivs:

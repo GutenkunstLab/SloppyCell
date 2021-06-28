@@ -14,7 +14,7 @@ import SloppyCell
 import SloppyCell.Residuals as Residuals
 import SloppyCell.Collections as Collections
 import SloppyCell.Utility as Utility
-from . import KeyedList_mod as KeyedList_mod
+import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
 _double_epsilon_ = scipy.finfo(scipy.float_).eps
@@ -185,8 +185,8 @@ class Model:
         """
         Return the cost (1/2 chisq) of the model
         """
-        # print("gggggggoooooooooooooooooooooooooooooooooooooooffffffffffffffffffffff")
-        # print(params)
+        print("gggggggoooooooooooooooooooooooooooooooooooooooffffffffffffffffffffff")
+        print(params)
         return self._evaluate(params)[2]
 
     def cost_log_params(self, log_params):
@@ -290,7 +290,8 @@ class Model:
         ReactionNetworks.
         """
         self.params.update(params)
-
+        # print("params in model_mod")
+        # print(params)
         # The cost is 0.5 * sum(res**2), 
         # so the gradient is sum(res * dres_dp)
 
@@ -338,8 +339,8 @@ class Model:
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
         self.calcVals = self.GetCalculationCollection().Calculate(varsByCalc, 
                                                            params)
-        print("wwwwwwwwwwwwwwwwwwwwwwwww")
-        print(self.calcVals)
+        # print("wwwwwwwwwwwwwwwwwwwwwwwww")
+        # print(self.calcVals)
         return self.calcVals
 
     def CalculateSensitivitiesForAllDataPoints(self, params):
@@ -353,8 +354,8 @@ class Model:
                    [independent variabled][parameter] -> sensitivity.
         """
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
-        print("senissssssssssssssssssssssssssss")
-        print(varsByCalc)
+        # print("senissssssssssssssssssssssssssss")
+        # print(varsByCalc)
         self.calcVals, self.calcSensitivityVals =\
                 self.GetCalculationCollection().CalculateSensitivity(varsByCalc,
                                                                      params)
@@ -610,7 +611,7 @@ class Model:
             kl[resId] = [dres/dp1, dres/dp2...]
         """
         self.params.update(params)
-        print("paramssssssssssssssssssssssss")
+        # print("paramssssssssssssssssssssssss")
         # print(self.params)
         # Calculate sensitivities
         self.CalculateSensitivitiesForAllDataPoints(params)
@@ -622,7 +623,7 @@ class Model:
                                 self.internalVars, self.internalVarsDerivs,
                                 self.params))
                  for (resId, res) in self.residuals.items()]
-        print(KeyedList(deriv))
+        # print(KeyedList(deriv))
         return KeyedList(deriv)
 
     def jacobian_fd(self, params, eps, 

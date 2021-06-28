@@ -703,6 +703,7 @@ class Network:
         (s1)
         s1 -- New state found (period and conditions defined same as input)
         """
+        # print("limitssssssssssssssssssssssssssssssssssssss")
         if self.periodic['rel']:
             rmsd = lambda _s1, _s2: \
                    scipy.sqrt(scipy.average(((_s1-_s2) / \
@@ -728,6 +729,7 @@ class Network:
         
         # Find the trajectory
         max_time = b * tau0 * float(self.periodic['level'])
+        # print("a thousdang ds wisjwwwwwwwwwwwwwwwwwww")
         self.trajectory = self.integrate([0.,max_time], params, addTimes = True)
         self.trajectory.build_interpolated_traj()
         ev_inter_traj = self.trajectory.evaluate_interpolated_traj
@@ -913,8 +915,8 @@ class Network:
         # Make sure we start from t = 0
         t = set([0])
         ret_full_traj=False
-        # print("ggggggggggggggggggg")
-        # print(vars)
+        print("ggggggggggggggggggg")
+        print(params)
         for var, times in vars.items():
             if var == 'full trajectory':
                 ret_full_traj = True
@@ -934,7 +936,10 @@ class Network:
         # This takes care of the normal data points
         t = list(t)
         t.sort()
-
+        print("value of t")
+        print(t)
+        print(params)
+        print(ret_full_traj)
         if hasattr(self, 'periodic'):
             self._find_limit_cycle(params)
             if self.periodic['period'] > max(t):
@@ -942,7 +947,7 @@ class Network:
         elif hasattr(self, 'stochastic'):
             self.trajectory = self.integrateStochastic(t, params=params)
             return
-
+        print("lommmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
         self.trajectory = self.integrate(t, params=params,
                                          addTimes=ret_full_traj)
         
@@ -953,9 +958,9 @@ class Network:
         print(vars)
         print(params)
         for var,times in vars.items():
-            print("mmmmmmmmm")
-            print(var in self.variables)
-            print(times)
+            # print("mmmmmmmmm")
+            # print(var in self.variables)
+            # print(times)
             if var.endswith('_maximum') or var.endswith('_minimum'):
                 t1,t2 = times
                 if t1 is not None:
@@ -963,7 +968,7 @@ class Network:
                 if t2 is not None:
                     t.add(t2)
             elif self.variables.has_key(var):
-                print("entered here")
+                # print("entered here")
                 t|=set(times)
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
@@ -974,6 +979,7 @@ class Network:
         
         self.ddv_dpTrajectory = self.integrateSensitivity(t,params=params, 
                                                           addTimes=True)
+        
         self.trajectory = self.ddv_dpTrajectory
 
     def GetName(self):
@@ -1026,8 +1032,10 @@ class Network:
                 # full_speed the trajectory can be very sparse. If the user has
                 # set up events to tag potential extrema, this will use those.
                 curr_vals = self.get_var_vals()
-
-                isDynamicVar = var in self.dynamicVars
+                print("dynaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                print(self.dynamicVars)
+                print(var)
+                isDynamicVar = self.dynamicVars.has_key(var)
                 if isDynamicVar:
                     dynVarIndex = self.dynamicVars.index_by_key(var)
 
@@ -1152,6 +1160,7 @@ class Network:
 
     def integrate(self, times, params=None, returnEvents=False, addTimes=True,
                   rtol = None):
+        print("function integrateeeeeeeeeeeeeeeeeeeeeeeee")
         if self.add_tail_times or addTimes:
             times = scipy.concatenate((times, [1.05*times[-1]]))
         return Dynamics.integrate(self, times, params=params, 
@@ -1162,6 +1171,7 @@ class Network:
                              rtol=None):
         if self.add_tail_times:
             times = scipy.concatenate((times, [1.05*times[-1]]))
+        
         return Dynamics.integrate_sensitivity(self, times, params, rtol,
                                               fill_traj=self.add_int_times)
 
@@ -3241,11 +3251,15 @@ class Network:
             # Regenerate if needed.
             # Write C to file.
             module_name = self.output_c(curr_c_code)
+            # self.run_distutils(module_name, hide_output=True)
             try:
                 # Run distutils on the C. This may raise an exception if the command
                 # fails.
+                print("module nameeeeeeeeeeeeee")
+                print(module_name)
                 self.run_distutils(module_name, hide_output=True)
                 c_module = __import__(module_name)
+                
                 if del_c_files:
                     os.unlink('%s.pyf' % module_name)
                     os.unlink('%s.c' % module_name)
@@ -3259,6 +3273,7 @@ class Network:
                     except OSError:
                         pass
             except ImportError as X:
+                print("entered import erorr c compilation faileddddddddddddddddddddddddddddddddd")
                 # Compiling C failed.
                 logger.warn('Failed to import dynamically compiled C module %s '
                             'for network %s.' % (module_name, self.get_id()))
@@ -3381,6 +3396,8 @@ class Network:
         #  redirecting output if there's an exection in running f2py
         oldargv = sys.argv
         try:
+            print("in run distiutilssssssssssssssssssssssssssssss")
+            print(hide_output)
             if hide_output:
                 # Redirect STDOUT and STDERR, to hide them if there's no
                 # problem.
@@ -3396,11 +3413,13 @@ class Network:
             # See https://stackoverflow.com/questions/2850971/directly-call-distutils-or-setuptools-setup-function-with-command-name-optio
             sys.argv =  ['%s_setup.py'%mod_name, 'build_ext',
                          '--inplace']
+            print(sys.argv)
             RN_dir = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
             ext = core.Extension(name=mod_name,
                                  sources=['%s.c'%mod_name, '%s.pyf'%mod_name,
                                           '%s/mtrand.c'%RN_dir],
                                  include_dirs=[RN_dir])
+            print("entered didttttuooooooooooooooooooooooooooooooooooooooooooo")
             core.setup(ext_modules = [ext])
         except SystemExit as X:
             # If we encounter an error, print out STDOUT and STDERR for
@@ -3430,7 +3449,8 @@ class Network:
         Does the chain rule through assigned variables.
         """
         output = ExprManip.diff_expr(input, wrt)
-
+        print("outputttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt")
+        print(output)
         if vars_used is None:
             vars_used = ExprManip.extract_vars(input)
 

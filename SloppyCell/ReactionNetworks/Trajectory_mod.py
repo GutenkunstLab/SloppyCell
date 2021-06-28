@@ -92,6 +92,7 @@ class Trajectory:
         # We make a copy of the Network's namespace.
         self._func_strs = copy.copy(net._func_strs)
         self.namespace = copy.copy(self._common_namespace)
+       
         for func_id, func_str in self._func_strs.items():
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
@@ -103,6 +104,7 @@ class Trajectory:
                 (self._assignment_functionBody,
                  self._sens_assignment_functionBody) = \
                         self._known_function_bodies[ii]
+                print("entered breaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
                 break
         else:
             # We didn't find our our structure, so we have to make the function
@@ -321,6 +323,7 @@ class Trajectory:
         for id in self.const_var_values.keys():
             functionBody.append("%s = self.const_var_values.get('%s')" % 
                                 (id, id))
+        print("kuuuuuuuuuuuuubdfbdbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
 
         if len(net.assignmentRules) > 0:
             for id, rule in net.assignmentRules.items():

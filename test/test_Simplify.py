@@ -23,10 +23,10 @@ class test_Simplify(unittest.TestCase):
                  ]
         cases = ['2.0*exp(xIC)*1 + exp(xIC)*0']
         for expr in cases: 
-            print("entered here -------------------", expr)
+            # print("entered here -------------------", expr)
             simplified = ExprManip.simplify_expr(expr)
             # print("simplified", simplified)
-            print(simplified)
+            # print(simplified)
             orig = eval(expr)
             simp = eval(simplified)
             if orig != 0:
