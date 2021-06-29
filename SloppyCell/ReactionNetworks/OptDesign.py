@@ -29,7 +29,7 @@ def setup(paramfile,calcobject,senstrajfile,jtjfile) :
     NOTE: The derivatives computed for J^tJ need to be with respect
     to the *log* of the parameters
     """
-    import OptDesign as v
+    import SloppyCell.ReactionNetworks.OptDesign as v
     v.curp = load(paramfile)
     v.jtj = load(jtjfile)
     v.clc = calcobject 
@@ -66,6 +66,7 @@ def make_sens_traj(calcobject,params,times,senstrajfilename):
     Note that if times is very finely spaced, the 
     sensitivity trajectory will need a lot of storage space """
     senstraj = Dynamics.integrate_sensitivity(calcobject, times, params, 1.0e-6)
+    print("in senstranhhhhhhhhhhhhhhhhh",type(senstraj))
     save(senstraj,senstrajfilename)
 
 def design_over_chems(chemnames,designchemnames,logprior=1.0e20) :

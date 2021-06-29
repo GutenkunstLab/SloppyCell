@@ -377,10 +377,13 @@ class Trajectory:
         for ii, id in enumerate(self.dynamicVarKeys):
             self.values[-numAdded:, self.key_column.get(id)] =\
                     odeint_array[:, ii]
-
+        print("entered assignment hereeeeeeeeeeeeeee")
+        print(self.values)
+        print(self.timepoints)
+        print(-numAdded)
         self._assignment(self.values, self.timepoints, -numAdded, None)
         if holds_dt :
-            for ii, id in enumerate(self.dynamicVarKeys) :
+            for ii, id in enumerate(self.dynamicVarKeys):
                 self.values[-numAdded:, self.key_column.get((id,'time'))] = \
                     odeint_array[:,ii+len(self.dynamicVarKeys)]
 

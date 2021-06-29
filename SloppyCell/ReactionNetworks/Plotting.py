@@ -203,7 +203,7 @@ def plot_model_results(model, expts = None, style='errorbars',
             dataByCalc.setdefault(ds['calcKey'], {})
             dataByCalc[ds['calcKey']].setdefault(ds['var'], {})
         # We sort the calculation names for easier comparison across plots
-        sortedCalcIds = dataByCalc.keys()
+        sortedCalcIds = list(dataByCalc.keys())
         sortedCalcIds.sort()
         for calcId in sortedCalcIds:
             # Pull the trajectory from that calculation, defaulting to None
@@ -215,7 +215,7 @@ def plot_model_results(model, expts = None, style='errorbars',
                 #  list.
                 if (data_to_plot is not None) and (dataId not in data_to_plot):
                     continue
-                color, sym, dash = cW.next()
+                color, sym, dash = next(cW)
 
                 if plot_trajectories:
                     if traj is None:

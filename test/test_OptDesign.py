@@ -4,11 +4,11 @@ import unittest
 
 import scipy
 
-from SloppyCell.ReactionNetworks import *
-import SloppyCell
+# from SloppyCell.ReactionNetworks import *
+# import SloppyCell
 import TestNetwork
-from SloppyCell.ReactionNetworks import OptDesign as OD
-# import SloppyCell.ReactionNetworks.OptDesign as OD
+# from SloppyCell.ReactionNetworks import OptDesign as OD
+import SloppyCell.ReactionNetworks.OptDesign as OD
 import os
 import SloppyCell.Utility
 save = SloppyCell.Utility.save
@@ -21,11 +21,15 @@ p = m.params.__copy__()
 class test_OptDesign(unittest.TestCase):
     def test_OptDesign_funcs(self):
         """Test that the functions in OptDesign work correctly"""
+        print("type of p.................", type(p))
+        print(p)
         save(p,'TNparams')
         j,jtj = m.GetJandJtJInLogParameters(p)
-        print("test case")
+        print("test caselllllllllllllllllllllllllllllllllllllllll")
         print(j, jtj)
         save(jtj,'TNjtj')
+        print("testcaaaaaaaaaaaaaaaaaaaaaaaa")
+        print(type(j), type(jtj))
         # Make the nensitivity trajectory for this network and save
         # it in 'TNsenstraj'
         times = scipy.linspace(0, 2.6, 100)

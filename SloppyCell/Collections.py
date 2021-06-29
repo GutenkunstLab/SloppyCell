@@ -421,14 +421,16 @@ class CalculationCollection(KeyedList):
         The return dictionary is of the form:
             dictionary[calc name][dep var][ind var] = result
         """
-        # print("params in collections")
-        # print(params)
+        print("varsByCalcvarsByCalcvarsByCalcvarsByCalcvarsByCalcvarsByCalcvarsByCalc")
+        print(varsByCalc)
         if params is not None:
             self.params.update(params)
 
         results = {}
 
-        calcs_to_do = varsByCalc.keys()
+        calcs_to_do = list(varsByCalc.keys())
+        print("cccccccccccccccccccccccccccccccccccccccccccccccccccccccc")
+        print(calcs_to_do)
         # Record which calculation each node is doing
         calc_assigned = {}
         while calcs_to_do:
@@ -437,6 +439,7 @@ class CalculationCollection(KeyedList):
             len_this_block = min(SloppyCell.num_procs, len(calcs_to_do))
 
             for worker in range(1, len_this_block):
+                print("print calccccccccccccccccccccc", calcs_to_do)
                 calc = calcs_to_do.pop()
                 calc_assigned[worker] = calc
                 logger.debug('Assigning calculation %s to worker %i.'
@@ -447,7 +450,9 @@ class CalculationCollection(KeyedList):
                 comm.send((command, args), dest=worker)
 
             # The master does his share here
-            calc = list(calcs_to_do).pop()
+            print("calcs to do", calcs_to_do)
+            calc = calcs_to_do.pop()
+            # print
             # We use the finally statement because we want to ensure that we
             #  *always* wait for replies from the workers, even if the master
             #  encounters an exception in his evaluation.

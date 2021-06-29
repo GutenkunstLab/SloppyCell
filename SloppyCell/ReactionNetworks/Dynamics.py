@@ -1140,7 +1140,7 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
 
         # Now plug those values into the current y
         y[var_types == -1] = sln
-
+    print("in this worllddddddddddddddddddddddddddddddddddddddddddddddd")
     # The non-algebraic variable yprimes come straight from the residuals
     yp_non_alg = net.res_function(time, y, y*0, constants)[var_types == 1]
     yp[var_types == 1] = yp_non_alg

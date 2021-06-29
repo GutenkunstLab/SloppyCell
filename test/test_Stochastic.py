@@ -62,7 +62,7 @@ class test_Events(unittest.TestCase):
                             params)
 
         total = res['x'][0.0]+res['y'][0.0]
-        resTimes = res['x'].keys()
+        resTimes = list(res['x'].keys())
         resTimes.sort()
         for t in resTimes:
             self.assertAlmostEqual(res['x'][t]+res['y'][t], total, 6,

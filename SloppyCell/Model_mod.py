@@ -718,6 +718,9 @@ class Model:
                     sum = sum + j.get(kys)[paramind]*j.get(kys)[paramind1]
 
             mn[paramind][paramind1] = sum
+        print("in get J and JtJ")
+        print(type(j))
+        print(type(mn))
         return j,mn
    
     def GetJandJtJInLogParameters(self,params):
@@ -992,8 +995,8 @@ class Model:
             exptData = expt.GetData()
             for calcKey, calcData in exptData.items():
                 for depVarKey, depVarData in calcData.items():
-                    sortedData = depVarData.items()
-                    sorted(sortedData)
+                    sortedData = list(depVarData.items())
+                    sortedData.sort()
                     for indVar, (value, uncert) in sortedData:
                         resName = (exptKey, calcKey, depVarKey, indVar)
                         res = Residuals.ScaledErrorInFit(resName, depVarKey,

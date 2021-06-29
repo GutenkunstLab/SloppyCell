@@ -3449,8 +3449,8 @@ class Network:
         Does the chain rule through assigned variables.
         """
         output = ExprManip.diff_expr(input, wrt)
-        print("outputttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt")
-        print(output)
+        # print("outputttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt")
+        # print(output)
         if vars_used is None:
             vars_used = ExprManip.extract_vars(input)
 
