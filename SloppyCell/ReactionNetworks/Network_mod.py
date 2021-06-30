@@ -1223,6 +1223,14 @@ class Network:
         t, tInd = 0.0, 0
         while t < times[-1]:
             # Get the next chunk
+            print("hereeee iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
+            print(self.stochastic['seed'])
+            print(self.stochastic['reseed'])
+            print(t)
+            print(type(dv[0]))
+            print(type(cv))
+            print(self.stochastic['rmsd'])
+            print(times[tInd])
             t, dv, tout, dvout = self.integrate_stochastic_tidbit(
                 self.stochastic['seed'], self.stochastic['reseed'],
                 t, dv, cv, self.stochastic['rmsd'], times[tInd])

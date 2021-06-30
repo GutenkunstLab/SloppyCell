@@ -159,7 +159,7 @@ class KeyedList(list):
                 raise ValueError('Addition would result in duplicated keys.')
         return self
 
-    def extend(self, other):
+    def extend_keylist(self, other):
         self += other
 
     def __imul__(self, factor):

@@ -25,10 +25,8 @@ class test_OptDesign(unittest.TestCase):
         print(p)
         save(p,'TNparams')
         j,jtj = m.GetJandJtJInLogParameters(p)
-        print("test caselllllllllllllllllllllllllllllllllllllllll")
         print(j, jtj)
         save(jtj,'TNjtj')
-        print("testcaaaaaaaaaaaaaaaaaaaaaaaa")
         print(type(j), type(jtj))
         # Make the nensitivity trajectory for this network and save
         # it in 'TNsenstraj'

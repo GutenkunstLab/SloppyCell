@@ -1,8 +1,6 @@
 import pickle
 import logging
 import smtplib
-import pickle
-
 import scipy
 
 from scipy import linspace, logspace
@@ -14,18 +12,11 @@ def save(obj, filename):
     """
     Save an object to a file
     """
-    import pickle
     print("obj in saveeeeeeeeeeeeeeeee")
     print(obj)
     f = open(filename, 'wb')
     pickle.dump(obj, f)
     f.close()
-    f1 = open(filename, 'rb')
-   
-    obj = pickle.load(f1)
-    print("objecttttttttttttttttt")
-    print(obj)
-    f1.close()
 
 def load(filename):
     """
@@ -33,8 +24,9 @@ def load(filename):
     """
     print("in piccccccccccccccccccccccccccccccccccccccccccccccc")
     f = open(filename, 'rb')
+    print("pickle...............")
+    print(pickle.load)
     obj = pickle.load(f)
-    
     print("objecttttttttttttttttt")
     print(obj)
     f.close()
@@ -141,7 +133,7 @@ def combine_hessians(hesses, key_sets):
         new_keys = [key for key in ks if key not in keys_seen]
         print("new keyssssssssssssssssssss")
         print(type(new_keys))
-        tot_keys.extend(new_keys)
+        tot_keys.extend_keylist(new_keys)
         keys_seen|=set(new_keys)
 
     # Add all the appropriate hessian elements together
