@@ -187,7 +187,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                        False at any time.
     """
     logger.debug('Integrating network %s.' % net.get_id())
-    print("insde integrateeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
     if params is not None:
         net.update_optimizable_vars(params)
     constants = net.constantVarValues
@@ -218,9 +217,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                         net._dynamic_var_algebraic, rtol, atol,
                         net.constantVarValues, net, 
                         redirect_msgs=redirect_msgs)
-    print("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
-    print(IC)
-    print(ypIC)
 
     """
 
@@ -236,9 +232,6 @@ or False), raise the exception.
     if use_constraints == True:
         net.updateVariablesFromDynamicVars(values=IC, time=start)
         for con_id, constraint in net.constraints.items():
-            # print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-            # print(con_id)
-            # print(constraint)
             result = net.evaluate_expr(constraint.trigger)
            
             if result == False:
@@ -256,9 +249,6 @@ or False), raise the exception.
     #  isn't wrapped up in a lambda...
     res_func = net.res_function
     root_func = net.root_func
-    # print("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
-    # print(res_func)
-    # print(root_func)
     # events_occured will hold event_info objects that describe the events
     #  in detail.
     # te, ye, and ie are the times, dynamic variable values, and indices
@@ -368,8 +358,6 @@ or False), raise the exception.
                 
                 exception_raised, yout_this, tout_this, youtdt_this,\
                       t_root_this, y_root_this, i_root_this = outputs
-                # print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-                # print(outputs)
                 yout = scipy.concatenate((yout, yout_this))
                 youtdt = scipy.concatenate((youtdt, youtdt_this))
                 tout.extend(tout_this)
@@ -387,8 +375,6 @@ or False), raise the exception.
 
             # Update the root state after all listed events have excecuted.
             root_after = root_func(start, IC, ypIC, constants)
-            # print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
-            # print(root_after)
             # Check for chained events/constraints
             crossing_dirs = root_after - root_before
             event_just_fired = fired_events(net, start, IC, ypIC, 
@@ -868,7 +854,6 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
                           fill_traj=False, return_derivs=False,
                           redirect_msgs=True):
     logger.debug('Entering integrate_sens on node %i' % my_rank)
-    print("cutettttttttttttttttttttttttttttttttttttttttttt")
     times = scipy.array(times)
     net.compile()
     if times[0] == 0:
@@ -882,7 +867,6 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
                             for node in range(num_procs)])
 
     # Send out jobs for workers
-    print("processors", num_procs)
     for worker in range(1, num_procs):
         logger.debug('Sending to worker %i: %s' % (worker, 
                                                    str(vars_assigned[worker])))
@@ -1140,7 +1124,6 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
 
         # Now plug those values into the current y
         y[var_types == -1] = sln
-    print("in this worllddddddddddddddddddddddddddddddddddddddddddddddd")
     # The non-algebraic variable yprimes come straight from the residuals
     yp_non_alg = net.res_function(time, y, y*0, constants)[var_types == 1]
     yp[var_types == 1] = yp_non_alg

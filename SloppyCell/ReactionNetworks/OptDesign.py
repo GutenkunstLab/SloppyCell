@@ -66,7 +66,6 @@ def make_sens_traj(calcobject,params,times,senstrajfilename):
     Note that if times is very finely spaced, the 
     sensitivity trajectory will need a lot of storage space """
     senstraj = Dynamics.integrate_sensitivity(calcobject, times, params, 1.0e-6)
-    print("in senstranhhhhhhhhhhhhhhhhh",type(senstraj))
     save(senstraj,senstrajfilename)
 
 def design_over_chems(chemnames,designchemnames,logprior=1.0e20) :

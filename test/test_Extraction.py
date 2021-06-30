@@ -21,7 +21,6 @@ class test_Extraction(unittest.TestCase):
                  ]
         cases1 = [('f(x)', ['x'])]
         for expr, vars in cases:
-            # print("------------------", expr)
             assert ExprManip.extract_vars(expr) == set(vars)
 
     def test_extract_funcs(self):
@@ -51,12 +50,7 @@ class test_Extraction(unittest.TestCase):
                  ]
         cases1 = [('x < 3 + (y > 4)', ['x < 3 + (y > 4)', 'y > 4'])]
         for expr, comps in cases:
-            # print(expr)
             result = ExprManip.extract_comps(expr) 
-            # print("result", result)
-            # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-            # print((result))
-            # print((comps))
             assert result == set(comps)
 
 suite = unittest.makeSuite(test_Extraction)

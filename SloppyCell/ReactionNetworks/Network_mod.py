@@ -133,8 +133,6 @@ class Network:
             diff_math = ExprManip.diff_expr(math, wrt)
             func = 'lambda %s: %s' % (var_str, diff_math)
             _common_func_strs.set(deriv_id, func)
-    # print("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu")
-    # print(_common_func_strs)
     # Now add the C versions.
     _common_func_strs_c = KeyedList()
     _common_prototypes_c = KeyedList()
@@ -148,15 +146,9 @@ class Network:
         c_body = os.linesep.join(c_body)
         _common_prototypes_c.set(id, 'double %s(%s);' % (id, var_str_c))
         _common_func_strs_c.set(id, c_body)
-        # print("varsssssssssssssssssssssssssssssssssssssss")
-        # print(vars)
         for ii, wrt in enumerate(vars):
             deriv_id = "%s_%i" % (id, ii)
-            # print("c compaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-            # print(math)
             diff_math = ExprManip.diff_expr(math, wrt)
-            # print("c compaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-            # print(ExprManip.make_c_compatible(diff_math))
             c_body = []
             c_body.append("double %s(%s){" % (deriv_id, var_str_c))
             c_body.append("return %s;" % ExprManip.make_c_compatible(diff_math))
@@ -165,26 +157,17 @@ class Network:
             _common_prototypes_c.set(deriv_id, "double %s(%s);" % (deriv_id, 
                                                                   var_str_c))
             _common_func_strs_c.set(deriv_id, c_body)
-            # print("lllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooo")
-            # print(deriv_id, c_body)
     # Also do the logical functions. These don't have derivatives.
     for id, vars, math in _logical_comp_func_defs:
         # and_func and or_func are special-cased, because the SBML versions can
         # take multiple arguments.
         if id == 'and_func':
-            # print("and_funcccccccccccccccccccccccccccccc")
             func = 'lambda *x: reduce(operator.and_, x)'
         elif id == 'or_func':
-            # print("or_funcccccccccccccccccccccccccccccccc")
             func = 'lambda *x: reduce(operator.or_, x)'
         else:
-            # print("elseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
             var_str = ','.join(vars)
             func = 'lambda %s: %s' % (var_str, math)
-        # print("idddddddddddddddddddddddddddddddddddddddddddddd")
-        # print(id)
-        # print(vars)
-        # print(math)
         _common_func_strs.set(id, func)
 
     # These are the strings we eval to create the extra functions our
@@ -348,7 +331,6 @@ class Network:
         """
         event = Event(id, trigger, event_assignments, delay, name,
                       buffer)
-        print("eeeeeeeeeeeeeeeeeeeeeeee", event)
         self._checkIdUniqueness(event.id)
         self.events.set(event.id, event)
 
@@ -703,7 +685,6 @@ class Network:
         (s1)
         s1 -- New state found (period and conditions defined same as input)
         """
-        # print("limitssssssssssssssssssssssssssssssssssssss")
         if self.periodic['rel']:
             rmsd = lambda _s1, _s2: \
                    scipy.sqrt(scipy.average(((_s1-_s2) / \
@@ -729,7 +710,6 @@ class Network:
         
         # Find the trajectory
         max_time = b * tau0 * float(self.periodic['level'])
-        # print("a thousdang ds wisjwwwwwwwwwwwwwwwwwww")
         self.trajectory = self.integrate([0.,max_time], params, addTimes = True)
         self.trajectory.build_interpolated_traj()
         ev_inter_traj = self.trajectory.evaluate_interpolated_traj
@@ -915,8 +895,6 @@ class Network:
         # Make sure we start from t = 0
         t = set([0])
         ret_full_traj=False
-        print("ggggggggggggggggggg")
-        print(params)
         for var, times in vars.items():
             if var == 'full trajectory':
                 ret_full_traj = True
@@ -936,10 +914,6 @@ class Network:
         # This takes care of the normal data points
         t = list(t)
         t.sort()
-        print("value of t")
-        print(t)
-        print(params)
-        print(ret_full_traj)
         if hasattr(self, 'periodic'):
             self._find_limit_cycle(params)
             if self.periodic['period'] > max(t):
@@ -947,20 +921,12 @@ class Network:
         elif hasattr(self, 'stochastic'):
             self.trajectory = self.integrateStochastic(t, params=params)
             return
-        print("lommmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
         self.trajectory = self.integrate(t, params=params,
                                          addTimes=ret_full_traj)
         
     def CalculateSensitivity(self, vars, params):
         t = set([0])
-        print("in 9622222222222222222222")
-        print(type(self.variables))
-        print(vars)
-        print(params)
         for var,times in vars.items():
-            # print("mmmmmmmmm")
-            # print(var in self.variables)
-            # print(times)
             if var.endswith('_maximum') or var.endswith('_minimum'):
                 t1,t2 = times
                 if t1 is not None:
@@ -968,7 +934,6 @@ class Network:
                 if t2 is not None:
                     t.add(t2)
             elif self.variables.has_key(var):
-                # print("entered here")
                 t|=set(times)
             else:
                 raise ValueError('Unknown variable %s requested from network %s'
@@ -1032,9 +997,6 @@ class Network:
                 # full_speed the trajectory can be very sparse. If the user has
                 # set up events to tag potential extrema, this will use those.
                 curr_vals = self.get_var_vals()
-                print("dynaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-                print(self.dynamicVars)
-                print(var)
                 isDynamicVar = self.dynamicVars.has_key(var)
                 if isDynamicVar:
                     dynVarIndex = self.dynamicVars.index_by_key(var)
@@ -1160,7 +1122,6 @@ class Network:
 
     def integrate(self, times, params=None, returnEvents=False, addTimes=True,
                   rtol = None):
-        print("function integrateeeeeeeeeeeeeeeeeeeeeeeee")
         if self.add_tail_times or addTimes:
             times = scipy.concatenate((times, [1.05*times[-1]]))
         return Dynamics.integrate(self, times, params=params, 
@@ -1223,14 +1184,6 @@ class Network:
         t, tInd = 0.0, 0
         while t < times[-1]:
             # Get the next chunk
-            print("hereeee iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
-            print(self.stochastic['seed'])
-            print(self.stochastic['reseed'])
-            print(t)
-            print(type(dv[0]))
-            print(type(cv))
-            print(self.stochastic['rmsd'])
-            print(times[tInd])
             t, dv, tout, dvout = self.integrate_stochastic_tidbit(
                 self.stochastic['seed'], self.stochastic['reseed'],
                 t, dv, cv, self.stochastic['rmsd'], times[tInd])
@@ -1278,13 +1231,9 @@ class Network:
         Runs through expr and replaces all piecewise expressions by the
         clause that is currently active.
         """
-        # print("entered hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-        # print(expr)
         if not expr.count('piecewise('):
             return expr
         funcs_used = ExprManip.extract_funcs(expr)
-        # print("funcs used")
-        # print(funcs_used)
         for func, args in funcs_used:
             if func == 'piecewise':
                 ast = ExprManip.strip_parse(expr)
@@ -1328,16 +1277,12 @@ class Network:
         Evaluate the given expression using the current values of the network
         variables.
         """
-        # print("aaaaaaaaaaaaaaaaa")
-        # print(time)
-        # print(var_vals)
         try:
             return float(expr)
         except ValueError:
             # We create a local_namespace to evaluate the expression in that
             #  maps variable ids to their current values
             expr = self._sub_for_piecewise(expr, time)
-            # print("exprmmmmmmmmmmmmmmmm", expr)
             if var_vals is None:
                 vars_used = ExprManip.extract_vars(expr)
                 var_vals = [(id, self.get_var_val(id)) for id in vars_used
@@ -1347,8 +1292,6 @@ class Network:
             local_namespace = var_vals
             local_namespace.update(self.namespace)
             # We strip whitespace, just for convenience
-            # print("gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")
-            # print(eval(expr.strip(), local_namespace, {}))
             return eval(expr.strip(), local_namespace, {})
 
     #
@@ -1589,7 +1532,6 @@ class Network:
             rateExpr = rxn.kineticLaw
             logger.debug('Parsing reaction %s.' % rxn_id)
             for reactantId, dReactant in rxn.stoichiometry.items():
-                # print("qqqqqqqqqqqqqqqqqqqqqqqq", rxn.stoichiometry.items())
                 if self.get_variable(reactantId).is_boundary_condition or\
                    self.get_variable(reactantId).is_constant or\
                    self.assignmentRules.has_key(reactantId):
@@ -2421,8 +2363,6 @@ class Network:
         class Parse(ExprManip.AST.NodeVisitor):
             def __call__(slf,s,c=True):
                 if c: s = ExprManip.make_c_compatible(s)
-                # print("quikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
-                # print(s)
                 ast = ExprManip.strip_parse(s)
                 ExprManip.AST.walk(ast)
                 return ExprManip.ast2str(ast)
@@ -3263,8 +3203,6 @@ class Network:
             try:
                 # Run distutils on the C. This may raise an exception if the command
                 # fails.
-                print("module nameeeeeeeeeeeeee")
-                print(module_name)
                 self.run_distutils(module_name, hide_output=True)
                 c_module = __import__(module_name)
                 
@@ -3281,7 +3219,6 @@ class Network:
                     except OSError:
                         pass
             except ImportError as X:
-                print("entered import erorr c compilation faileddddddddddddddddddddddddddddddddd")
                 # Compiling C failed.
                 logger.warn('Failed to import dynamically compiled C module %s '
                             'for network %s.' % (module_name, self.get_id()))
@@ -3404,8 +3341,6 @@ class Network:
         #  redirecting output if there's an exection in running f2py
         oldargv = sys.argv
         try:
-            print("in run distiutilssssssssssssssssssssssssssssss")
-            print(hide_output)
             if hide_output:
                 # Redirect STDOUT and STDERR, to hide them if there's no
                 # problem.
@@ -3421,13 +3356,11 @@ class Network:
             # See https://stackoverflow.com/questions/2850971/directly-call-distutils-or-setuptools-setup-function-with-command-name-optio
             sys.argv =  ['%s_setup.py'%mod_name, 'build_ext',
                          '--inplace']
-            print(sys.argv)
             RN_dir = os.path.join(SloppyCell.__path__[0], 'ReactionNetworks')
             ext = core.Extension(name=mod_name,
                                  sources=['%s.c'%mod_name, '%s.pyf'%mod_name,
                                           '%s/mtrand.c'%RN_dir],
                                  include_dirs=[RN_dir])
-            print("entered didttttuooooooooooooooooooooooooooooooooooooooooooo")
             core.setup(ext_modules = [ext])
         except SystemExit as X:
             # If we encounter an error, print out STDOUT and STDERR for
@@ -3457,8 +3390,6 @@ class Network:
         Does the chain rule through assigned variables.
         """
         output = ExprManip.diff_expr(input, wrt)
-        # print("outputttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt")
-        # print(output)
         if vars_used is None:
             vars_used = ExprManip.extract_vars(input)
 

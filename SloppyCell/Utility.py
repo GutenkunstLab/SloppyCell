@@ -12,8 +12,6 @@ def save(obj, filename):
     """
     Save an object to a file
     """
-    print("obj in saveeeeeeeeeeeeeeeee")
-    print(obj)
     f = open(filename, 'wb')
     pickle.dump(obj, f)
     f.close()
@@ -22,13 +20,8 @@ def load(filename):
     """
     Load an object from a file
     """
-    print("in piccccccccccccccccccccccccccccccccccccccccccccccc")
     f = open(filename, 'rb')
-    print("pickle...............")
-    print(pickle.load)
     obj = pickle.load(f)
-    print("objecttttttttttttttttt")
-    print(obj)
     f.close()
     return obj
 
@@ -131,8 +124,6 @@ def combine_hessians(hesses, key_sets):
     keys_seen = set(tot_keys)
     for ks in key_sets[1:]:
         new_keys = [key for key in ks if key not in keys_seen]
-        print("new keyssssssssssssssssssss")
-        print(type(new_keys))
         tot_keys.extend_keylist(new_keys)
         keys_seen|=set(new_keys)
 

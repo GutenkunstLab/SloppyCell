@@ -11,7 +11,6 @@ def extract_comps(expr):
     comps_found = []
     _extract_comps_ast(AST.strip_parse(expr), comps_found)
     comps_found = [AST.ast2str(ast) for ast in comps_found]
-    # print("here ---", comps_found)
     return set(comps_found)
 
 def _extract_comps_ast(ast, comps_found):
@@ -62,13 +61,9 @@ def extract_vars(expr):
         return extract_vars_cache[expr]
     except KeyError:
         vars_found = []
-        # print("expression", expr)
         _extract_vars_ast(AST.strip_parse(expr), vars_found)
-        # print("deeeeeeeeeeeeeeeeeeee", vars_found)
         vars_found = [AST.ast2str(ast) for ast in vars_found]
-        # print("qqqqqqqqqqqqqqqqqqqq", vars_found)
         result = set(vars_found)
-        # print("resuly",result)
         extract_vars_cache[expr] = result
         return result
 
@@ -76,12 +71,9 @@ def _extract_vars_ast(ast, vars_found):
     """
     Appends the asts of the variables used in ast to vars_found.
     """
-    # print("aaaaaaaaaaaaaaaaaa", ast, vars_found)
     if isinstance(ast, Name):
         if ast.id not in ['True', 'False']:
-            # print("hereEEEEEEEEEEEEEEEEE", ast)
             vars_found.append(ast)
-            # print("hhhhhhhhhh", vars_found)
     ast = AST.recurse_down_tree(ast, _extract_vars_ast, (vars_found,))
     return ast
 

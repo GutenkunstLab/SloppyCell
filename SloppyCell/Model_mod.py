@@ -185,8 +185,6 @@ class Model:
         """
         Return the cost (1/2 chisq) of the model
         """
-        print("gggggggoooooooooooooooooooooooooooooooooooooooffffffffffffffffffffff")
-        print(params)
         return self._evaluate(params)[2]
 
     def cost_log_params(self, log_params):
@@ -290,8 +288,6 @@ class Model:
         ReactionNetworks.
         """
         self.params.update(params)
-        # print("params in model_mod")
-        # print(params)
         # The cost is 0.5 * sum(res**2), 
         # so the gradient is sum(res * dres_dp)
 
@@ -339,8 +335,6 @@ class Model:
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
         self.calcVals = self.GetCalculationCollection().Calculate(varsByCalc, 
                                                            params)
-        # print("wwwwwwwwwwwwwwwwwwwwwwwww")
-        # print(self.calcVals)
         return self.calcVals
 
     def CalculateSensitivitiesForAllDataPoints(self, params):
@@ -354,13 +348,9 @@ class Model:
                    [independent variabled][parameter] -> sensitivity.
         """
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
-        # print("senissssssssssssssssssssssssssss")
-        # print(varsByCalc)
         self.calcVals, self.calcSensitivityVals =\
                 self.GetCalculationCollection().CalculateSensitivity(varsByCalc,
                                                                      params)
-        # print("senissssssssssssssssssssssssssss")
-        # print(self.calcSensitivityVals)
         return self.calcSensitivityVals
 
     def ComputeInternalVariables(self, T=1):
@@ -611,8 +601,6 @@ class Model:
             kl[resId] = [dres/dp1, dres/dp2...]
         """
         self.params.update(params)
-        # print("paramssssssssssssssssssssssss")
-        # print(self.params)
         # Calculate sensitivities
         self.CalculateSensitivitiesForAllDataPoints(params)
         self.ComputeInternalVariables()
@@ -623,7 +611,6 @@ class Model:
                                 self.internalVars, self.internalVarsDerivs,
                                 self.params))
                  for (resId, res) in self.residuals.items()]
-        # print(KeyedList(deriv))
         return KeyedList(deriv)
 
     def jacobian_fd(self, params, eps, 
@@ -718,9 +705,6 @@ class Model:
                     sum = sum + j.get(kys)[paramind]*j.get(kys)[paramind1]
 
             mn[paramind][paramind1] = sum
-        print("in get J and JtJ")
-        print(type(j))
-        print(type(mn))
         return j,mn
    
     def GetJandJtJInLogParameters(self,params):

@@ -47,7 +47,6 @@ class Trajectory:
                  empty=False, const_vals=None):
         if empty:
             return
-        print("kkkkkkkkkkkkkklllllllllllllllllllllllllllllllllll")
         if key_column is not None:
             self.key_column = key_column
         else:
@@ -104,7 +103,6 @@ class Trajectory:
                 (self._assignment_functionBody,
                  self._sens_assignment_functionBody) = \
                         self._known_function_bodies[ii]
-                print("entered breaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
                 break
         else:
             # We didn't find our our structure, so we have to make the function
@@ -248,7 +246,6 @@ class Trajectory:
         stored time is greater than a fraction eps of the trajectory length.
         """
         index = self._get_time_index(time, eps)
-        print("index", index)
         return self.get_var_val_index(var_id, index)
 
     def get_var_vals_index(self, index):
@@ -296,7 +293,6 @@ class Trajectory:
         return self.get_dynvar_vals_index(index)
 
     def _make__assignment(self, net):
-        # print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", len(net.assignmentRules))
         functionBody = ['def _assignment(self, values, times, start, end):']
 
         for id in self.const_var_values.keys():
@@ -312,34 +308,25 @@ class Trajectory:
                 functionBody.append('%s = %s' % (lhs, rhs))
         else:
             functionBody.append('pass')
-        # print("functionbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", functionBody)
         return '\n\t'.join(functionBody) + '\n'
 
     def _make__sens_assignment(self, net):
-        print("jenssssssssssssssssssssssssssssssssssssssssssss")
         functionBody = ['def _sens_assignment(self, values, times, start, end):'
                         ]
 
         for id in self.const_var_values.keys():
             functionBody.append("%s = self.const_var_values.get('%s')" % 
                                 (id, id))
-        print("kuuuuuuuuuuuuubdfbdbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
 
         if len(net.assignmentRules) > 0:
             for id, rule in net.assignmentRules.items():
-                # print("heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-                # print(id)
-                # print(rule)
                 #rule = net.substituteFunctionDefinitions(rule)
                 derivWRTdv = {}
                 for wrtId in net.dynamicVars.keys():
                     deriv = net.takeDerivative(rule, wrtId)
                     if deriv != '0':
                         derivWRTdv[wrtId] = deriv
-            print("keys----------------------")
-            print(net.optimizableVars.keys())
             for optId in net.optimizableVars.keys():
-                print(id, optId)
                 lhs = self._sub_var_names('%s__derivWRT__%s' % (id,optId))
                 rhs = []
                 # get derivative of assigned variable w.r.t.
@@ -377,10 +364,6 @@ class Trajectory:
         for ii, id in enumerate(self.dynamicVarKeys):
             self.values[-numAdded:, self.key_column.get(id)] =\
                     odeint_array[:, ii]
-        print("entered assignment hereeeeeeeeeeeeeee")
-        print(self.values)
-        print(self.timepoints)
-        print(-numAdded)
         self._assignment(self.values, self.timepoints, -numAdded, None)
         if holds_dt :
             for ii, id in enumerate(self.dynamicVarKeys):
@@ -476,7 +459,6 @@ class Trajectory:
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
     def _sub_var_names(self, input):
-        # print("inputllllllllllllllllllllllllllllllllllllllllllllll", input)
         mapping_dict = {}
         for id in ExprManip.extract_vars(input):
                 # convert it back to something key_column will recognize
@@ -594,10 +576,7 @@ class Trajectory:
             time = scipy.asarray([time]) # if a scalar was passed in, convert to an array
         else :
             time = scipy.asarray(time)
-        # print("ccccccccccccccccccccc", self.tcks)
         local_tcks = self.tcks
-        # print("tttttttttttttttttttttttttttt", local_tcks)
-        # print("locallllllllllllllllllllllllllll", local_tcks.keys())
         sorted_intervals = scipy.sort(local_tcks.keys(),axis=0)
 
         if subinterval is not None : # confine things to just one interval

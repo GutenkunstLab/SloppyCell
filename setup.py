@@ -1,6 +1,5 @@
 import setuptools
 import numpy.distutils.core as core
-print("sloppycell setuppppppppppppppppppppppppppppppppp")
 daskr = core.Extension(name = 'SloppyCell._daskr',
                        sources = ['SloppyCell/daskr.pyf',
                                   'ddaskr/ddaskr.c',

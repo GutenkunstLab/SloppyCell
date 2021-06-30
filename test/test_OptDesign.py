@@ -21,13 +21,9 @@ p = m.params.__copy__()
 class test_OptDesign(unittest.TestCase):
     def test_OptDesign_funcs(self):
         """Test that the functions in OptDesign work correctly"""
-        print("type of p.................", type(p))
-        print(p)
         save(p,'TNparams')
         j,jtj = m.GetJandJtJInLogParameters(p)
-        print(j, jtj)
         save(jtj,'TNjtj')
-        print(type(j), type(jtj))
         # Make the nensitivity trajectory for this network and save
         # it in 'TNsenstraj'
         times = scipy.linspace(0, 2.6, 100)

@@ -29,7 +29,6 @@ def strip_parse(expr):
     # The .strip() ignores leading and trailing whitespace, which would 
     #  otherwise give syntax errors.
     tree = parse(str(expr).strip())
-    # print("ffffffffffffffffffffffffffffffffffffffffffffffffffffff", dump(tree))
     return  tree.body[0].value
 
 # This defines the order of operations for the various node types, to determine
@@ -84,8 +83,6 @@ def ast2str(ast):
     """
     Return the string representation of an AST.
     """
-    # print("entered")
-    # print(ast)
     return unparse(ast)
  
 def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
@@ -98,12 +95,8 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
-    # print("entereddddddddddddddddddddddddddddddddddddddddddddddddddd")
-    # print(dump(node))
-    # return unparse(node)
     if isinstance(node, Name):
         out = node.id
-        # print("o1111111111111", out)
     elif isinstance(node, Constant):
         out = str(node.value)
     elif isinstance(node, BinOp) and isinstance(node.op, Add):
@@ -120,39 +113,29 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         out = '%s/%s' % (ast2str(node.left, node),
                            ast2str(node.right, node, adjust = TINY))
     elif isinstance(node, BinOp) and isinstance(node.op, Pow):
-        # print("powwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww")
-        # print(dump(node))
         # The adjust ensures proper parentheses for (x**y)**z
         out = '%s**%s' % (ast2str(node.left, node, adjust = TINY),
                           ast2str(node.right, node))
-        # print("out22222222222222222222222", out)
     elif isinstance(node, UnaryOp) and isinstance(node.op, USub):
         out = '-%s' % ast2str(node.operand, node)
     elif isinstance(node, UnaryOp) and isinstance(node.op, UAdd):
         out = '+%s' % ast2str(node.operand, node)
     elif isinstance(node, Call):
-        # print("oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo", dump(node))
         args = [ast2str(arg) for arg in node.args]
         out = '%s(%s)' % (ast2str(node.func), ', '.join(args))
     elif isinstance(node, Subscript):
-        # print("ttttttttttttttttttttttttttttttttttttttttttttttttt")
         if isinstance(node.slice, Tuple):
             subs = [ast2str(sub) for sub in node.slice.elts]
         else:
             subs = ast2str(node.slice)
         out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
     elif isinstance(node, Slice):
-        # print("nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", dump(node))
         out = '%s:%s' % (ast2str(node.lower), 
                              ast2str(node.upper))
     elif isinstance(node, ExtSlice):
         nodes = [ast2str(node) for node in node.nodes]
         out = ':'.join(nodes)
     elif isinstance(node, Compare):
-        # out = unparse(node)
-        # print("llllllllllllllllllllllllllllllllllllllllll")
-        # print(out)
-        # expr = ast2str(ast.expr, ast, adjust=6+TINY)
         expr = ast2str(node.left, node, adjust=6+TINY)
         out_l = [expr]
         q= {"Eq": "==", "NotEq": "!=", "Lt": "<", "Gt": ">", "GtE": ">=", "LtE": "<="}
@@ -172,18 +155,10 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         out = ' or '.join(nodes)
     elif isinstance(node, UnaryOp) and isinstance(node.op, Not):
         out = 'not %s' % ast2str(node.operand, node, adjust=TINY)
-    # else:
-    #     print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
-    #     print(dump(node))
     # Ensure parentheses by checking the _OP_ORDER of the outer and inner ASTs
     if _need_parens(outer, node, adjust):
-    # and not (isinstance(outer, BinOp) or isinstance(outer, UnaryOp)):
-        # print("out1111111111111111111111111")
-        # print(out)
         return out
     else:
-        # print("outtttttttttttt")
-        # print(out)
         return '(%s)' % out
    
 
@@ -196,9 +171,7 @@ def _need_parens(outer, inner, adjust):
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
-    # print(outer, inner, adjust)
     try:
-        # print("here", outer, inner)
         return _OP_ORDER[outer.__class__] >= _OP_ORDER[inner.__class__] + adjust
     except Exception as e:
         return False
@@ -211,38 +184,22 @@ def _collect_num_denom(ast, nums, denoms):
     """
     if not (isinstance(ast, BinOp) and  (isinstance(ast.op, Mult) or isinstance(ast.op, Div))):
         nums.append(ast)
-        # print("exit", nums, denoms)
         return
     
     if isinstance(ast.left, BinOp) and (isinstance(ast.left.op, Div) or isinstance(ast.left.op, Mult)):
-        # print("lefttttttttttttttttttttttt dumppppppppp", dump(ast.left))
-        # print("left", nums, denoms)
         _collect_num_denom(ast.left, nums, denoms)
-        # print("leftttttttttttttttttttttttt", nums, denoms)
     else:
-        # print("left else condition", nums, denoms)
         nums.append(ast.left)
-        # print("left else conditionnnnnnnnnnnnnnnnnnnnnnnnnnn", dump(nums[0]), denoms)
-    # print("excxxxxxxxxxxxxxxx", dump(ast.right))
     if isinstance(ast.right, BinOp) and (isinstance(ast.right.op, Div) or isinstance(ast.right.op, Mult)):
-        # print("ffffffffffffffffffff", dump(ast.right))
         if isinstance(ast.op, Div):
-            # print("right if condition div", nums, denoms)
             _collect_num_denom(ast.right, denoms, nums)
-            # print("right if condition divvvvvvvvvvvvvvvvvvvvvvvvv", nums, denoms)
         elif isinstance(ast.op, Mult):
-            # print("right if condition mult", nums, denoms)
             _collect_num_denom(ast.right, nums, denoms)
-            # print("right if condition multttttttttttttttttttttttttttttttt", nums, denoms)
     else:
         if isinstance(ast.op, Div):
-            # print("final else", nums, denoms)
             denoms.append(ast.right)
-            # print("final elseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", nums, denoms)
         elif isinstance(ast.op, Mult):
-            # print("here else Nulttttttttttttttttttttttttttt", nums, denoms)
             nums.append(ast.right)
-            # print("here else xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", nums, denoms)
     
 
 def _collect_pos_neg(ast, poss, negs):
@@ -298,32 +255,21 @@ def _make_product(terms):
         product = terms[0]
         for term in terms[1:]:
             product = BinOp(left=product, op=Mult(), right=term)
-            # product = Mult((product, term))
         return product 
     else:
         return Constant(value=1)
 
 
 def recurse_down_tree(ast, func, args=()):
-    # print("start",  ast)
     if isinstance(ast, list):
         for ii, elem in enumerate(ast):
             ast[ii] = func(elem, *args)
     elif isinstance(ast, tuple):
         ast = tuple(func(list(ast), *args))
     elif ast.__class__ in _node_attrs:
-        # print("class", ast.args)
-        # print("a", _node_attrs[ast.__class__])
         for attr_name in _node_attrs[ast.__class__]:
-            # print("attr name", attr_name)
             attr = getattr(ast, attr_name)
-            # print("attr", attr)
-            # print("*argsssssss", *args)
             attr_mod = func(attr, *args)
-            # print("after", attr_mod)
-            # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-            # print(attr)
-            # print(attr_mod)
             setattr(ast, attr_name, attr_mod)
 
     return ast

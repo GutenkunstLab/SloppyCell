@@ -121,10 +121,6 @@ class test_SensitivityEvents(unittest.TestCase):
         net.add_event('event 1', 'and_func(lt(X0, 0.8), gt(T, 0.3))', 
                       {'k1': 'piecewise(X0**Keq, gt(X0,T), X0/T + Keq)'})
         sens_traj, traj_central, traj_plus = do_sens_and_fd(net)
-        print("finallllllllllllllllllllllllllllll")
-        print(sens_traj)
-        print(traj_central)
-        print(traj_plus)
         self.assert_over_all_vars(sens_traj, traj_central, traj_plus)
 
 

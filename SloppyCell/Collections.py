@@ -39,7 +39,6 @@ class ExperimentCollection(dict):
         self[expt.GetName()] = expt
 
     def GetVarsByCalc(self):
-        # print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
         """
         GetIndVarsByCalc() -> dictionary
 
@@ -50,10 +49,8 @@ class ExperimentCollection(dict):
                                          variables
         """
         varsByCalc = {}
-        # print(self.values)
         for expt in self.values():
             data = expt.GetData()
-            # print(data)
             for calc in data:
                 varsByCalc.setdefault(calc, {})
                 for depVar in data[calc]:
@@ -62,8 +59,6 @@ class ExperimentCollection(dict):
                     varsByCalc[calc].setdefault(depVar, set())
                     varsByCalc[calc][depVar].\
                             update(set(data[calc][depVar].keys()))
-            # print("after 1st for")
-            # print(varsByCalc)
             for period in expt.GetPeriodChecks():
                 calc, depVar = period['calcKey'], period['depVarKey']
                 start, period = period['startTime'], period['period']
@@ -71,8 +66,6 @@ class ExperimentCollection(dict):
                     varsByCalc[calc].setdefault(calc, {})
                 if depVar not in varsByCalc[calc]:
                     varsByCalc[calc].setdefault(depVar, set())
-                # print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
-                # print(type(varsByCalc))
                 varsByCalc[calc][depVar].update([start, start+2.0*period])
 
             for amplitude in expt.GetAmplitudeChecks():
@@ -100,17 +93,11 @@ class ExperimentCollection(dict):
                 elif ds['type'] == 'min': 
                     called = ds['var'] + '_minimum'
                 varsByCalc[calc][called] = (ds['minTime'], ds['maxTime'])
-        # print(varsByCalc)
-        # print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzeeeeeeeeeeeeeeeeeeeeeelllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll")
-        # But I convert the sets back to sorted lists before returning
         import math
-        # print(varsByCalc)
         for calc in varsByCalc:
             for depVar in varsByCalc[calc]:
                 varsByCalc[calc][depVar] = list(varsByCalc[calc][depVar])
                 varsByCalc[calc][depVar] = sorted(varsByCalc[calc][depVar], key=lambda x: x if x is not None else -math.inf)
-        # print("qzzzzzzzzzzzzzzzzzzzzzz")
-        # print(varsByCalc)
         return varsByCalc
 
     def GetData(self):
@@ -421,16 +408,12 @@ class CalculationCollection(KeyedList):
         The return dictionary is of the form:
             dictionary[calc name][dep var][ind var] = result
         """
-        print("varsByCalcvarsByCalcvarsByCalcvarsByCalcvarsByCalcvarsByCalcvarsByCalc")
-        print(varsByCalc)
         if params is not None:
             self.params.update(params)
 
         results = {}
 
         calcs_to_do = list(varsByCalc.keys())
-        print("cccccccccccccccccccccccccccccccccccccccccccccccccccccccc")
-        print(calcs_to_do)
         # Record which calculation each node is doing
         calc_assigned = {}
         while calcs_to_do:
@@ -439,7 +422,6 @@ class CalculationCollection(KeyedList):
             len_this_block = min(SloppyCell.num_procs, len(calcs_to_do))
 
             for worker in range(1, len_this_block):
-                print("print calccccccccccccccccccccc", calcs_to_do)
                 calc = calcs_to_do.pop()
                 calc_assigned[worker] = calc
                 logger.debug('Assigning calculation %s to worker %i.'
@@ -450,7 +432,6 @@ class CalculationCollection(KeyedList):
                 comm.send((command, args), dest=worker)
 
             # The master does his share here
-            print("calcs to do", calcs_to_do)
             calc = calcs_to_do.pop()
             # print
             # We use the finally statement because we want to ensure that we
@@ -486,25 +467,17 @@ class CalculationCollection(KeyedList):
         The return dictionary is of the form:
             dictionary[calc name][dep var][ind var][param] = result
         """
-        # print("entered here")
         if params is not None :
             self.params.update(params)
 		
         calcSensVals, calcVals = {}, {}
-        # print("before future")
-        # print(varsByCalc.items())
         for (calcName, vars) in varsByCalc.items():
             calc = self.get(calcName)
             vars = varsByCalc[calcName]
             calcPOrder = calc.GetParameters().keys()
-            # print("futureeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-            # print(varsByCalc[calcName])
             calc.CalculateSensitivity(varsByCalc[calcName], self.params)
             calcSensVals[calcName] = calc.GetSensitivityResult(vars)
             calcVals[calcName] = calc.GetResult(vars)
-        # print("in return")
-        # print(calcVals)
-        # print(calcSensVals)
         return calcVals, calcSensVals
 
     def GetParameters(self):

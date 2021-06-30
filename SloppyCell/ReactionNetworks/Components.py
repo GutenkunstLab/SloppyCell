@@ -104,7 +104,6 @@ class Event:
         return not (self == other)
         
     def parseTrigger(self, trigger):
-        # print("in parseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
         if '<' in trigger or '>' in trigger or '=' in trigger:
             raise ValueError('Event triggers must use the functions gt and lt, '
                              'rather than the symbols > and <. For example, '
@@ -122,12 +121,8 @@ class Event:
         if ExprManip.extract_vars(trigger) == set(['time']):
             self.timeTriggered = True
             ast = ExprManip.AST.strip_parse(trigger)
-            print("ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp")
             firstArg = ExprManip.AST.ast2str(ast.args[0])
             secondArg = ExprManip.AST.ast2str(ast.args[1])
-            # print("ccccccccccccccccccccccccccccccccccccccccccccccccccc")
-            # print(firstArg)
-            # print(secondArg)
             if firstArg == 'time':
                 self.triggeringTime = eval(secondArg)
             elif secondArg == 'time':
