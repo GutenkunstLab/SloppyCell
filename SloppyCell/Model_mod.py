@@ -706,7 +706,7 @@ class Model:
                 for kys in j.keys():
                     sum = sum + j.get(kys)[paramind]*j.get(kys)[paramind1]
 
-            mn[paramind][paramind1] = sum
+                mn[paramind][paramind1] = sum
         return j,mn
    
     def GetJandJtJInLogParameters(self,params):
