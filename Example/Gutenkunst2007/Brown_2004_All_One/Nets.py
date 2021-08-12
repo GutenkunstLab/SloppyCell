@@ -2,7 +2,7 @@ from SloppyCell.ReactionNetworks import *
 
 # Load the network from the XML file
 net = IO.from_SBML_file('BIOMD0000000033.xml')
-for var in net.variables.keys():
+for var in list(net.variables.keys()):
     # Set all typical values to 1.
     net.set_var_typical_val(var, 1.0)
     # Set all non-zero ICs to 1.

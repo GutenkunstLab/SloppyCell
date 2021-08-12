@@ -2,6 +2,7 @@
 Model class that unites theory with data.
 """
 from __future__ import print_function
+from __future__ import absolute_import
 
 import logging
 logger = logging.getLogger('Model_mod')
@@ -10,11 +11,11 @@ import copy
 
 import scipy
 
-import SloppyCell
-import SloppyCell.Residuals as Residuals
-import SloppyCell.Collections as Collections
-import SloppyCell.Utility as Utility
-import SloppyCell.KeyedList_mod as KeyedList_mod
+from . import SloppyCell
+from . import SloppyCell.Residuals as Residuals
+from . import SloppyCell.Collections as Collections
+from . import SloppyCell.Utility as Utility
+from . import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
 _double_epsilon_ = scipy.finfo(scipy.float_).eps

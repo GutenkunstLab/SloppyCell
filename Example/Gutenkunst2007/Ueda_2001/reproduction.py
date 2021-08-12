@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from SloppyCell.ReactionNetworks import *
 
 from Nets import *
@@ -19,20 +21,20 @@ maxP = max(traj1.get_var_traj('Perm'))
 maxC = max(traj1.get_var_traj('Clkm'))
 Plotting.figure(2)
 Plotting.subplot(2,2,1)
-Plotting.plot(traj1.get_times(), traj1.get_var_traj('Perm')/maxP)
-Plotting.plot(traj1.get_times(), traj1.get_var_traj('Clkm')/maxC)
+Plotting.plot(traj1.get_times(), old_div(traj1.get_var_traj('Perm'),maxP))
+Plotting.plot(traj1.get_times(), old_div(traj1.get_var_traj('Clkm'),maxC))
 Plotting.axis([0, 72, 0, 1.5])
 Plotting.subplot(2,2,2)
-Plotting.plot(traj2.get_times(), traj2.get_var_traj('Perm')/maxP)
-Plotting.plot(traj2.get_times(), traj2.get_var_traj('Clkm')/maxC)
+Plotting.plot(traj2.get_times(), old_div(traj2.get_var_traj('Perm'),maxP))
+Plotting.plot(traj2.get_times(), old_div(traj2.get_var_traj('Clkm'),maxC))
 Plotting.axis([0, 72, 0, 1.5])
 Plotting.subplot(2,2,3)
-Plotting.plot(traj3.get_times(), traj3.get_var_traj('Perm')/maxP)
-Plotting.plot(traj3.get_times(), traj3.get_var_traj('Clkm')/maxC)
+Plotting.plot(traj3.get_times(), old_div(traj3.get_var_traj('Perm'),maxP))
+Plotting.plot(traj3.get_times(), old_div(traj3.get_var_traj('Clkm'),maxC))
 Plotting.axis([0, 72, 0, 1.5])
 Plotting.subplot(2,2,4)
-Plotting.plot(traj4.get_times(), traj4.get_var_traj('Perm')/maxP)
-Plotting.plot(traj4.get_times(), traj4.get_var_traj('Clkm')/maxC)
+Plotting.plot(traj4.get_times(), old_div(traj4.get_var_traj('Perm'),maxP))
+Plotting.plot(traj4.get_times(), old_div(traj4.get_var_traj('Clkm'),maxC))
 Plotting.axis([0, 72, 0, 1.5])
 
 traj5 = Dynamics.integrate(cper, [0, 72])

@@ -1,6 +1,7 @@
 """
 Plot Fig. 5
 """
+from builtins import range
 from numpy import *
 from SloppyCell.ReactionNetworks import *
 import example_net, example_expt
@@ -225,7 +226,7 @@ for gprojs in all_gprojs:
 for ii in range(1,4):
     ax = pyplot.subplot2grid((4,6), (ii,4), colspan=2)
     # Trick to get pairs of 1-2, 1-3, 2-3
-    indices = range(1,4)
+    indices = list(range(1,4))
     del indices[3-ii]
     for ii in range(all_projs.shape[0]):
         ax.plot(all_projs[ii,:,-indices[0]], all_projs[ii,:,-indices[1]], 

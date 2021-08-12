@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from builtins import range
+from builtins import object
 import logging
 logger = logging.getLogger('Parallel')
 
@@ -11,7 +13,7 @@ from SloppyCell import num_procs, my_rank, my_host, HAVE_MPI, comm
 
 import SloppyCell.Utility as Utility
 
-class Statement:
+class Statement(object):
     """
     Class for sending Python statements to workers.
     """

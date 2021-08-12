@@ -1,4 +1,7 @@
-from ast import *
+from __future__ import absolute_import
+from builtins import zip
+from builtins import range
+from .ast import *
 import copy
 import pickle
 import logging
@@ -113,7 +116,7 @@ _KNOWN_FUNCS = {('acos', 1): ('1/sqrt(1-arg0**2)',),
                 ('min', 2): ('arg0<=arg1', 'arg0>arg1'),
                 ('max', 2): ('arg0>=arg1', 'arg0<arg1')
                 }
-for key, terms in _KNOWN_FUNCS.items():
+for key, terms in list(_KNOWN_FUNCS.items()):
     _KNOWN_FUNCS[key] = [strip_parse(term) for term in terms]
 
 def _diff_ast(ast, wrt):

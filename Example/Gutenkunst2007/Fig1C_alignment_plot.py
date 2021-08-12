@@ -1,3 +1,8 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import os
 
 import scipy
@@ -10,7 +15,7 @@ import Common
 Plotting.figure(figsize=(3.1,4))
 
 for model_ii, (model, temp, temp) in enumerate(Common.model_list):
-    print model
+    print(model)
     # Load the hessian
     h = scipy.io.read_array(os.path.join(model, 'hessian.dat'))
     k = [item.strip() for item
@@ -20,7 +25,7 @@ for model_ii, (model, temp, temp) in enumerate(Common.model_list):
 
     ii = -1
     while e[ii] == 0:
-        non_zero_indices = scipy.compress(v[:,ii], range(len(v)))
+        non_zero_indices = scipy.compress(v[:,ii], list(range(len(v))))
         elems = [k[jj] for jj in non_zero_indices]
         print ('0 eigenvalue at index %i. '
                'Non-zero components of vector are %s' % (ii, str(elems)))
@@ -39,14 +44,14 @@ for model_ii, (model, temp, temp) in enumerate(Common.model_list):
     pruned_h = h[indices,:]
     pruned_h = pruned_h[:,indices]
     P = scipy.diag(scipy.linalg.inv(pruned_h))
-    I = 1/scipy.diag(pruned_h)
-    yy = scipy.sort(scipy.sqrt(abs(I/P)))
+    I = old_div(1,scipy.diag(pruned_h))
+    yy = scipy.sort(scipy.sqrt(abs(old_div(I,P))))
     yy = scipy.concatenate((scipy.ones(default_ones), yy))
     # In once case, numerical noise gives us an apparent I/P > 1, which is
     # non-sensical. We manually make the fix here.
     yy = scipy.minimum(1, yy)
 
-    width = (234/len(e))**0.25 * 0.25
+    width = (old_div(234,len(e)))**0.25 * 0.25
     l = Plotting.plot_eigval_spectrum(yy, offset = 0.15+model_ii, 
                                       widths=0.7, lw=width)
 
@@ -64,7 +69,7 @@ for l in ax.get_xticklines():
 ax.set_xlim(0, model_ii+1)
 
 ax.set_yscale('log',subsy=[])
-ticks = range(-3, 1)
+ticks = list(range(-3, 1))
 ax.set_yticks([10**ii for ii in ticks])
 import matplotlib.lines
 for l in ax.get_yticklines():

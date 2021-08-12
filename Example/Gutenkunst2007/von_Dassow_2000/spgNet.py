@@ -1,3 +1,4 @@
+from builtins import range
 from SloppyCell.ReactionNetworks import *
 
 # This file was distributed with Ingenue
@@ -61,7 +62,7 @@ while True:
                     net.add_species(id, comp_id, name = name)
     ii += 1
 
-for comp_id in net.compartments.keys():
+for comp_id in list(net.compartments.keys()):
     net.set_var_constant('B_%s' % comp_id, True)
 
 ii = begin_params + 1
@@ -78,7 +79,7 @@ while True:
     ii += 1
 
 # Create all the appropriate parameter names
-for param_id in net.parameters.keys():
+for param_id in list(net.parameters.keys()):
     if param_id == 'K_PTC_HH':
         name = r'k_{PTCHH}'
     elif param_id.startswith('K_'):
@@ -117,7 +118,7 @@ while True:
     elif line.startswith('&BackgroundLevel'):
         spec_id = line.split()[1]
         value = float(line.split()[2])
-        for var_id in net.species.keys():
+        for var_id in list(net.species.keys()):
             if var_id.startswith(spec_id):
                 net.set_var_ic(var_id, value)
 
@@ -125,8 +126,8 @@ while True:
         spec_id = lines[ii + 1].split()[1]
         value = float(lines[ii + 2].split()[1])
         column = int(lines[ii + 3].split()[1])
-        cell_id = net.compartments.keys()[column]
-        for var_id in net.species.keys():
+        cell_id = list(net.compartments.keys())[column]
+        for var_id in list(net.species.keys()):
             if var_id.startswith(spec_id) and var_id.count(cell_id):
                 net.set_var_ic(var_id, value)
         ii += 3
@@ -138,9 +139,9 @@ net.add_func_def('psi', ['X', 'k_X', 'v_X'], '1 - phi(X, k_X, v_X)',
                  name = r'\psi')
 
 def presented_by_neighbors(net, comp_id, spec_id):
-    ii = net.compartments.keys().index(comp_id)
-    next = net.compartments.keys()[(ii + 1) % len(net.compartments)]
-    prev = net.compartments.keys()[(ii - 1) % len(net.compartments)]
+    ii = list(net.compartments.keys()).index(comp_id)
+    next = list(net.compartments.keys())[(ii + 1) % len(net.compartments)]
+    prev = list(net.compartments.keys())[(ii - 1) % len(net.compartments)]
     terms = ['%s_%s_side_3' % (spec_id, comp_id),
              '%s_%s_side_4' % (spec_id, next),
              '%s_%s_side_5' % (spec_id, next),
@@ -155,9 +156,9 @@ def total_in_cell(net, comp_id, spec_id):
     return '+'.join(terms)
 
 def opposite_side(net, comp_id, side_jj, spec_id):
-    ii = net.compartments.keys().index(comp_id)
-    next = net.compartments.keys()[(ii + 1) % len(net.compartments)]
-    prev = net.compartments.keys()[(ii - 1) % len(net.compartments)]
+    ii = list(net.compartments.keys()).index(comp_id)
+    next = list(net.compartments.keys())[(ii + 1) % len(net.compartments)]
+    prev = list(net.compartments.keys())[(ii - 1) % len(net.compartments)]
     if side_jj in [1, 2]:
         cell_id = next
     elif side_jj in [0, 3]:

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pickle
 import logging
 import smtplib
@@ -106,8 +107,8 @@ class ConstraintViolatedException(SloppyCellException):
         return ('Violated constraint: %s at time %g. Additional info: %s.'
                 %(self.constraint, self.time, self.message))
 
-import SloppyCell.Redirector_mod as Redirector_mod
-Redirector = Redirector_mod.Redirector
+import SloppyCell.Redirector_mod
+Redirector =  SloppyCell.Redirector_mod.Redirector
 
 def combine_hessians(hesses, key_sets):
     """

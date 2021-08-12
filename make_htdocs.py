@@ -1,3 +1,4 @@
+from __future__ import print_function
 #
 # This script makes the htdocs directory for SloppyCell.
 #
@@ -97,5 +98,5 @@ os.system('chmod -R a+rx htdocs')
 
 # Use this command to copy things up to SourceForge.
 upload_command = 'scp -r $HOME/%s/SloppyCell/htdocs jepetto@shell.sf.net:/home/groups/s/sl/sloppycell/.' % TEMP
-print 'To upload the site to SourceForge, use scp like: %s' % upload_command
-print 'Use your username in place of jepetto.'
+print('To upload the site to SourceForge, use scp like: %s' % upload_command)
+print('Use your username in place of jepetto.')

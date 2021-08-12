@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 import logging
 logger = logging.getLogger('daskr')
 
 import scipy
 
-import SloppyCell._daskr as _daskr
-import SloppyCell.Utility as Utility
+from . import SloppyCell._daskr as _daskr
+from . import SloppyCell.Utility as Utility
 
 # we won't need the psol function, but it's a required argument for DDASKR,
 # so I'm defining a dummy function here. if the user does not pass a jac

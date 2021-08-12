@@ -5,15 +5,15 @@ net.compile()
 
 # Add some useful things for plotting
 net.add_parameter('total_active_Rap1')
-to_sum = [k for k in net.species.keys() if k.count('Rap1_GTP')]
+to_sum = [k for k in list(net.species.keys()) if k.count('Rap1_GTP')]
 net.add_assignment_rule('total_active_Rap1', ' + '.join(to_sum))
 
 net.add_parameter('total_active_Ras')
-to_sum = [k for k in net.species.keys() if k.count('Ras_GTP')]
+to_sum = [k for k in list(net.species.keys()) if k.count('Ras_GTP')]
 net.add_assignment_rule('total_active_Ras', ' + '.join(to_sum))
 
 net.add_parameter('total_active_ERK')
-to_sum = [k for k in net.species.keys() if k.count('ppERK')]
+to_sum = [k for k in list(net.species.keys()) if k.count('ppERK')]
 net.add_assignment_rule('total_active_ERK', ' + '.join(to_sum))
 
 # SBML file is for 10 ng/ml EGF

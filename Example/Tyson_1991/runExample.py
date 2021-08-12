@@ -1,3 +1,4 @@
+from __future__ import print_function
 import scipy
 from SloppyCell.ReactionNetworks import *
 
@@ -46,7 +47,7 @@ from Expts import *
 m = Model([expt1], [base_net, growth_net])
 params = m.get_params()
 
-print 'Initial cost:', m.cost(params)
+print('Initial cost:', m.cost(params))
 Plotting.figure(2)
 Plotting.plot_model_results(m, loc='upper right')
 Plotting.title('Before fitting')
@@ -58,7 +59,7 @@ Plotting.title('Before fitting')
 #  with 95% probility, between val/100 and val * 100.
 # (These are quite tight priors. Real applications (with more constraining data)
 #  will probably want looser priors.)
-for id, val in params.items():
+for id, val in list(params.items()):
     m.AddResidual(Residuals.PriorInLog('prior_on_%s' % id, id, scipy.log(val), 
                                        scipy.log(10)))
 
@@ -76,7 +77,7 @@ Utility.save(params, 'min_params.bp')
 
 params = Utility.load('min_params.bp')
 
-print 'Final cost:', m.cost(params)
+print('Final cost:', m.cost(params))
 Plotting.figure(3)
 Plotting.plot_model_results(m, loc='upper right')
 Plotting.title('After fitting')
@@ -95,7 +96,7 @@ evals, evects = Utility.eig(hess)
 Plotting.figure(4)
 Plotting.plot_eigvals(evals)
 Plotting.figure(5)
-Plotting.plot_eigvect(evects[:,0], params.keys())
+Plotting.plot_eigvect(evects[:,0], list(params.keys()))
 
 # Now we'll build an ensemble of parameters.
 # Make sure we run at full speed
@@ -121,7 +122,7 @@ ac = Ensembles.autocorrelation(ens_costs)
 Plotting.plot(ac)
 Plotting.savefig('autocorr.pdf')
 
-print "Ensemble has %i members. Acceptance ratio was %f." % (len(ens), ratio)
+print("Ensemble has %i members. Acceptance ratio was %f." % (len(ens), ratio))
 
 # Let's make a prediction. How well does our data constrain the behavior of
 #  growth_net?

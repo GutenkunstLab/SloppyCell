@@ -1,7 +1,10 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import str
 import os
 
 try:
-    import SBMLInterface as SBML
+    from . import SBMLInterface as SBML
     to_SBML_file = SBML.toSBMLFile
     from_SBML_file = SBML.fromSBMLFile
 except ImportError:
@@ -19,14 +22,14 @@ def net_DOT_file(net, filename = None, size=(7.5,10)):
     lines.append('digraph "%s" {' % net.id)
     lines.append('\tsize="'+str(size)+'!"')
     lines.append('\tratio=fill')
-    for id in net.species.keys():
+    for id in list(net.species.keys()):
         lines.append('\t"%s"[color=black]' % net.get_component_name(id))
 
     lines.append('')
-    for reac_id, rxn in net.reactions.items():
+    for reac_id, rxn in list(net.reactions.items()):
         rxn_name = net.get_component_name(reac_id)
         lines.append('\t"%s"[shape=box][color=red]' % rxn_name)
-        for rid, stoich in rxn.stoichiometry.items():
+        for rid, stoich in list(rxn.stoichiometry.items()):
             rname = net.get_component_name(rid)
             if stoich > 0:
                 lines.append('\t\t"%s" -> "%s";' % (rxn_name, rname))
@@ -84,19 +87,19 @@ def _net_eqns_to_TeX(net, simpleTeX=False):
     """
     # Build up our name_dict. We wrap variables in a mathrm
     name_dict = dict([(id, r'\mathrm{%s}' % net.get_component_name(id, True))
-                      for id in net.variables.keys()] + 
+                      for id in list(net.variables.keys())] + 
                      [(id, net.get_component_name(id, True))
-                       for id in net.functionDefinitions.keys()])
+                       for id in list(net.functionDefinitions.keys())])
     # Species get wrapped in [ ]
     species_dict = dict([(id, r'\left[\mathrm{%s}\right]'
                           % net.get_component_name(id, True))
-                         for id in net.species.keys()])
+                         for id in list(net.species.keys())])
     name_dict.update(species_dict)
 
     outputs = []
     if net.functionDefinitions:
         func_KL = KeyedList()
-        for func_id, func in net.functionDefinitions.items():
+        for func_id, func in list(net.functionDefinitions.items()):
             lhs = '%s(%s)' % (func_id, r','.join(func.variables))
             func_KL.set(lhs, func.math)
         funcs_str = ExprManip.Py2TeX.dict2TeX(func_KL, name_dict, 
@@ -132,7 +135,7 @@ def _net_eqns_to_TeX(net, simpleTeX=False):
             trigger_str = ExprManip.Py2TeX.expr2TeX(e.trigger, name_dict)
             outputs.append(r'Trigger: $%s$' % trigger_str)
             
-            for id, result in e.event_assignments.items():
+            for id, result in list(e.event_assignments.items()):
                 outputs.append(r'\begin{itemize}')
                 id_str = ExprManip.Py2TeX.expr2TeX(id, name_dict)
                 rule_str = ExprManip.Py2TeX.expr2TeX(str(result), name_dict)
@@ -148,7 +151,7 @@ def _net_eqns_to_TeX(net, simpleTeX=False):
         params = net.GetParameters()
         outputs.append(r'\begin{longtable}{|r|l|}')
         outputs.append(r'\hline')
-        for id, value in params.items():
+        for id, value in list(params.items()):
             id_str = ExprManip.Py2TeX.expr2TeX(id, name_dict)
             value_str = ExprManip.Py2TeX.expr2TeX(str(value), name_dict)
             outputs.append(r'$%s$& $%s$\\' % (id_str, value_str))
@@ -204,7 +207,7 @@ def output_dynamic_functions(obj, directory = SloppyCell._TEMP_DIR):
                 f.write(getattr(obj, '%s_functionBody' % func))
                 f.close()
     elif isinstance(obj, Network_mod.Network):
-        for func, body in obj._dynamic_funcs_python.items():
+        for func, body in list(obj._dynamic_funcs_python.items()):
             if body != None:
                 f = open(os.path.join(directory, '%s.py' % func), 'w')
                 f.write(body)

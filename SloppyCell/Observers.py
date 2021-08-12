@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import str
+from builtins import object
 import os
 import time
 
@@ -14,7 +16,7 @@ def print_hess_elements(**args):
 
         print('hessian element %i, %i: %g' % (ii, jj, elem))
 
-class CostPrinter:
+class CostPrinter(object):
     def __init__(self, skip=1, print_params=False, print_best_params=False):
         self.skip = skip
         self.print_params = print_params
@@ -48,7 +50,7 @@ def print_all_costs(**args):
     if args['event'] == 'cost':
         print(args['cost'])
 
-class CostEmailer:
+class CostEmailer(object):
     def __init__(self, interval, from_addr, to_addr):
         self.interval = interval
         self.from_addr, self.to_addr = from_addr, to_addr

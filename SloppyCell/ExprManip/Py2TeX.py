@@ -1,4 +1,6 @@
-from ast import *
+from __future__ import absolute_import
+from builtins import str
+from .ast import *
 import os
 
 from SloppyCell.ExprManip  import AST
@@ -9,7 +11,7 @@ _EMPTY_MUL = BinOp(left=Constant(value=None), op=Mult(), right=Constant(value=No
 
 def dict2TeX(d, name_dict, lhs_form='%s', split_terms=False, simpleTeX=False):
     lines = []
-    for lhs, rhs in d.items():
+    for lhs, rhs in list(d.items()):
         if split_terms:
             ast = AST.strip_parse(rhs)
             pos, neg = [], []

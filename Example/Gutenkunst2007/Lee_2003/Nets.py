@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import scipy
 
 from SloppyCell.ReactionNetworks import *
@@ -10,7 +12,7 @@ from LeeNet import net
 net.set_var_ic('W', 0)
 traj1 = Dynamics.integrate(net, [0, 1e5], rtol=1e-12)
 unstimulated = net.copy('unstimulated')
-for var in unstimulated.dynamicVars.keys():
+for var in list(unstimulated.dynamicVars.keys()):
     if not isinstance(net.get_var_ic(var), str):
         unstimulated.set_var_ic(var, traj1.get_var_val_index(var, -1))
 
@@ -74,8 +76,8 @@ fig6b.set_var_ic('v14', fig6a.get_var_ic('v14')*5)
 fig6b.set_var_ic('k15', fig6a.get_var_ic('k15')*5)
 
 fig6c = fig6a.copy('transient_c')
-fig6c.set_var_ic('v14', fig6a.get_var_ic('v14')/5)
-fig6c.set_var_ic('k15', fig6a.get_var_ic('k15')/5)
+fig6c.set_var_ic('v14', old_div(fig6a.get_var_ic('v14'),5))
+fig6c.set_var_ic('k15', old_div(fig6a.get_var_ic('k15'),5))
 
 
 networks = [fig2a, fig2b, fig2c, fig2d, fig2e, fig6a, fig6b, fig6c]

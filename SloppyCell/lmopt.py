@@ -10,14 +10,15 @@ fmin_lmNoJ : Levenberg Marquardt using a cost function instead of
 fmin_lm_scale : scale invariant Levenberg Marquardt
 
 """
+from __future__ import absolute_import
 import scipy
 from scipy import absolute, sqrt, asarray, zeros, mat, transpose, ones, dot, sum
 import scipy.linalg
 import copy
-import SloppyCell.Utility
+from . import SloppyCell.Utility
 save = SloppyCell.Utility.save # module that provides pickled save
 
-import SloppyCell.KeyedList_mod as KeyedList_mod
+from . import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
 abs = absolute

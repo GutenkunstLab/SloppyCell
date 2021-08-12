@@ -3,8 +3,7 @@ import glob
 import unittest
 import sys
 
-import SloppyCell
-import SloppyCell.Utility
+from SloppyCell import Utility
 from SloppyCell.ReactionNetworks  import Network_mod 
 
 def run_all_tests():

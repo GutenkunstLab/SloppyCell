@@ -1,3 +1,4 @@
+from __future__ import print_function
 from pylab import *                                                            # (@\label{whatever is inside these special 'at-parens comments' is visible to LaTeX}\label{code:import_start}@)
 from scipy import *
 from SloppyCell.ReactionNetworks import *                                      # (@\label{code:import_end}@)
@@ -16,10 +17,10 @@ m.AddResidual(res)
 res = Residuals.PriorInLog('tao_prior', 'tao', log(4), log(sqrt(4)))
 m.AddResidual(res)                                                             # (@\label{code:prior_end}@)
 
-print 'Initial cost:', m.cost(params)                                          # (@\label{code:initial_cost}@)
+print('Initial cost:', m.cost(params))                                          # (@\label{code:initial_cost}@)
 params = Optimization.fmin_lm_log_params(m, params, maxiter=20, disp=False)    # (@\label{code:lm_opt}@)
-print 'Optimized cost:', m.cost(params)
-print 'Optimized parameters:', params
+print('Optimized cost:', m.cost(params))
+print('Optimized parameters:', params)
 
 # Plot our optimal fit.
 figure()
@@ -29,9 +30,9 @@ savefig('model_results.pdf')
 j = m.jacobian_log_params_sens(log(params))                                    # (@\label{code:j_calc}@)
 jtj = dot(transpose(j), j)                                                     # (@\label{code:jtj}@)
 
-print 'Beginning ensemble calculation.'
+print('Beginning ensemble calculation.')
 ens, gs, r = Ensembles.ensemble_log_params(m, asarray(params), jtj, steps=7500)# (@\label{code:ens_gen}@)
-print 'Finished ensemble calculation.'
+print('Finished ensemble calculation.')
 
 pruned_ens = asarray(ens[::25])                                                # (@\label{code:prune}@)
 

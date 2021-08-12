@@ -1,6 +1,7 @@
+from builtins import object
 import SloppyCell.ExprManip as ExprManip
 
-class Reaction:
+class Reaction(object):
     def __init__(self, id, stoichiometry, kineticLaw = '', name = '',
                  reactant_stoichiometry = None, product_stoichiometry = None):
         self.id = id
@@ -40,7 +41,7 @@ class Reaction:
         """
         self.stoichiometry[species] = stoich
         if self.reactant_stoichiometry != None and self.product_stoichiometry != None:
-            if species in self.reactant_stoichiometry.keys():
+            if species in list(self.reactant_stoichiometry.keys()):
                 del self.reactant_stoichiometry[species]
             self.product_stoichiometry[species] = [stoich]
 

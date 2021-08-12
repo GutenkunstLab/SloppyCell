@@ -1,3 +1,8 @@
+from __future__ import division
+from builtins import zip
+from builtins import map
+from builtins import range
+from past.utils import old_div
 from SloppyCell.ReactionNetworks import *
 
 from Nets import *
@@ -8,7 +13,7 @@ from Nets import *
 #
 
 x0 = 0.1
-thresh = lambda x: (x/x0)**3/(1+(x/x0)**3)
+thresh = lambda x: old_div((old_div(x,x0))**3,(1+(old_div(x,x0))**3))
 
 for ii, (net, t) in enumerate(zip(networks, int_times)):
     traj = Dynamics.integrate(net, [0, 1000])
@@ -25,7 +30,7 @@ for ii, (net, t) in enumerate(zip(networks, int_times)):
     Plotting.legend(loc='center right')
     Plotting.title('Stretched %s: score %f' % (net.get_id(), 
                                                param_scores[net_num]))
-    Plotting.yticks(map(thresh, ticks), map(str, ticks))
+    Plotting.yticks(list(map(thresh, ticks)), list(map(str, ticks)))
     Plotting.hlines([thresh(0.1)], 0, 1000, 'k--')
 
     Plotting.subplot(3, 1, 2)
@@ -34,7 +39,7 @@ for ii, (net, t) in enumerate(zip(networks, int_times)):
                       label = spec_id)
     Plotting.axis([0, 1000, 0, 1])
     Plotting.legend(loc='center right')
-    Plotting.yticks(map(thresh, ticks), map(str, ticks))
+    Plotting.yticks(list(map(thresh, ticks)), list(map(str, ticks)))
     Plotting.hlines([thresh(0.1)], 0, 1000, 'k--')
 
     Plotting.subplot(3, 1, 3)
@@ -43,5 +48,5 @@ for ii, (net, t) in enumerate(zip(networks, int_times)):
                       label = spec_id)
     Plotting.axis([0, 1000, 0, 1])
     Plotting.legend(loc='center right')
-    Plotting.yticks(map(thresh, ticks), map(str, ticks))
+    Plotting.yticks(list(map(thresh, ticks)), list(map(str, ticks)))
     Plotting.hlines([thresh(0.1)], 0, 1000, 'k--')

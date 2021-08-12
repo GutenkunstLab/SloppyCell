@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from __future__ import division
+from past.utils import old_div
 import unittest
 import os
 
@@ -34,7 +36,7 @@ class test_SensitivityEvents(unittest.TestCase):
         for dyn_var in sens_traj.dynamicVarKeys:
             y_plus = traj_plus.get_var_traj(dyn_var)
             y_central = traj_central.get_var_traj(dyn_var)
-            diff_sens = (y_plus-y_central)/eps
+            diff_sens = old_div((y_plus-y_central),eps)
 
             sens_val = sens_traj.get_var_val_index((dyn_var, opt_var), -1)
             self.assertAlmostEqual(diff_sens[-1], sens_val, 4, 

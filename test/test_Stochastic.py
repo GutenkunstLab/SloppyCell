@@ -83,7 +83,7 @@ class test_Events(unittest.TestCase):
         net = base_net.copy('test_Network')
 
         # No Reactions
-        for key in net.reactions.keys():
+        for key in list(net.reactions.keys()):
             net.remove_component(key)
         passed(net, 'no reactions')
         net.addReaction('y->0', kineticLaw='-B*y', stoichiometry={'y':-1})

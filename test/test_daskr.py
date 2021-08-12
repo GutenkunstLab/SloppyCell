@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import unittest 
 
 import scipy
@@ -145,7 +148,7 @@ k = 1e-12
 
 def non_neg_func(y,t):
     ydot = scipy.zeros(1, scipy.float_)
-    ydot[0] = -y[0]/(k+y[0])
+    ydot[0] = old_div(-y[0],(k+y[0]))
     return ydot
 
 def non_neg_res_func(t, y, yprime, ires):
