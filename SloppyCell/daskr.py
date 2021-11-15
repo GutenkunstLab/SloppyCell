@@ -4,8 +4,8 @@ logger = logging.getLogger('daskr')
 
 import scipy
 
-from . import SloppyCell._daskr as _daskr
-from . import SloppyCell.Utility as Utility
+import SloppyCell._daskr as _daskr
+import SloppyCell.Utility as Utility
 
 # we won't need the psol function, but it's a required argument for DDASKR,
 # so I'm defining a dummy function here. if the user does not pass a jac

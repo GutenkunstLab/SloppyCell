@@ -11,11 +11,11 @@ import copy
 
 import scipy
 
-from . import SloppyCell
-from . import SloppyCell.Residuals as Residuals
-from . import SloppyCell.Collections as Collections
-from . import SloppyCell.Utility as Utility
-from . import SloppyCell.KeyedList_mod as KeyedList_mod
+import SloppyCell
+import SloppyCell.Residuals as Residuals
+import SloppyCell.Collections as Collections
+import SloppyCell.Utility as Utility
+import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
 _double_epsilon_ = scipy.finfo(scipy.float_).eps

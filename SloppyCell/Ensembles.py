@@ -11,11 +11,11 @@ import scipy.linalg
 import scipy.stats
 import scipy.fftpack
 
-from . import SloppyCell.KeyedList_mod as KeyedList_mod
+import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
-from . import SloppyCell.Utility as Utility
+import SloppyCell.Utility as Utility
 
-from .SloppyCell import HAVE_MPI, my_rank, my_host, num_procs, comm
+from SloppyCell import HAVE_MPI, my_rank, my_host, num_procs, comm
 
 def autocorrelation(series):
     """
@@ -354,7 +354,7 @@ def traj_ensemble_stats(traj_set):
     return mean_traj, std_traj
 
 def few_ensemble_trajs(net, times, elements):
-    from . import SloppyCell.ReactionNetworks.Dynamics as Dynamics
+    import SloppyCell.ReactionNetworks.Dynamics as Dynamics
     traj_set = []
     for params in elements:
         try:

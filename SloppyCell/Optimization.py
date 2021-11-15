@@ -7,8 +7,8 @@ logger = logging.getLogger('Optimization')
 
 import scipy
 
-from . import SloppyCell.KeyedList_mod as KeyedList_mod
-from . import SloppyCell.Utility as Utility
+import SloppyCell.KeyedList_mod as KeyedList_mod
+import SloppyCell.Utility as Utility
 KeyedList = KeyedList_mod.KeyedList
 
 def fmin_powell_log_params(m, params, *args, **kwargs):
@@ -114,7 +114,7 @@ def fmin_xform(m, params, xforms, invforms, *args, **kwargs):
     else:
         return pmin
 
-from . import SloppyCell.lmopt as lmopt
+import SloppyCell.lmopt as lmopt
 def fmin_lm_log_params(m, params, *args, **kwargs):
     """
     Minimize the cost of a model using Levenberg-Marquadt in terms of log 

@@ -6,12 +6,12 @@ import copy
 
 import scipy
 
-from . import SloppyCell
-from . import SloppyCell.Utility as Utility
-from . import SloppyCell.KeyedList_mod as KeyedList_mod
+import SloppyCell
+import SloppyCell.Utility as Utility
+import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
-from .SloppyCell import num_procs, my_rank, my_host, HAVE_MPI, comm
+from SloppyCell import num_procs, my_rank, my_host, HAVE_MPI, comm
 
 class ExperimentCollection(dict):
     """
@@ -226,7 +226,7 @@ class Experiment:
             #  that u = 0 corresponds to B_best. This ensures that the
             #  integration doesn't miss the (possibly sharp) peak there.
             try:
-                from . import SloppyCell.misc_c
+                import SloppyCell.misc_c
                 integrand = SloppyCell.misc_c.log_gaussian_prior_integrand
             except ImportError:
                 logger.warn('Falling back to python integrand on log gaussian '
