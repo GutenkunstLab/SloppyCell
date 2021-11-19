@@ -19,7 +19,7 @@ p2 = KeyedList([('n', 2),
                 ('V9', 1.25),
                 ('V10', 1.25),
                 ])
-for id, value in p2.items():
+for id, value in list(p2.items()):
     net2.set_var_ic(id, value)
 
 networks = [net1, net2]

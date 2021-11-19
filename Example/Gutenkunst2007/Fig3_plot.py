@@ -1,3 +1,8 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 import os
 
 import scipy
@@ -16,13 +21,13 @@ Plotting.gcf().set_facecolor('w')
 Plotting.axes([0, 0, 1, 1])
 
 for model_ii, (model, N_c, N_s) in enumerate(Common.model_list):
-    print model
+    print(model)
     h = scipy.io.read_array(os.path.join(model, 'hessian.dat'))
 
     e, v = Utility.eig(h)
     
     N_d = pts_per_param * h.shape[0]
-    h *= N_d/(f**2 * N_c * N_s)
+    h *= old_div(N_d,(f**2 * N_c * N_s))
 
     # There is one case where a parameter has no effect in the quadratic
     #  approximation. To account for this, we count rows of the hessian that
@@ -49,11 +54,11 @@ for model_ii, (model, N_c, N_s) in enumerate(Common.model_list):
     yy = scipy.where(interval_size > 1e5, 1e5, interval_size)
 
     bins = [0, .1, 1, 10, 100, scipy.inf]
-    left_add = 0.1 + model_ii/9*(len(bins)+0.25)
+    left_add = 0.1 + old_div(model_ii,9)*(len(bins)+0.25)
     left = scipy.arange(len(bins) - 1) + left_add
     height = []
     for bottom, top in zip(bins[:-1], bins[1:]):
-        height.append(scipy.sum((bottom < yy) & (yy < top))/(1.0*h.shape[0]))
+        height.append(old_div(scipy.sum((bottom < yy) & (yy < top)),(1.0*h.shape[0])))
     bottom = 10-(model_ii%9) * 1.4
     Plotting.bar(left, height, width=1.0, bottom = bottom)
     label = model + ' (%i)' % h.shape[0]

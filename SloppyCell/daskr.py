@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import logging
 logger = logging.getLogger('daskr')
 
@@ -98,38 +99,31 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
             max_steps=500, rpar=None, hmax=None, max_timepoints=scipy.inf):
     """Integrate a system of ordinary differential algebraic equations with or
     without events.
-
     Description:
-
       Solve a system of ordinary differential algebraic equations using the
       FORTRAN library DDASKR.
       
       Uses the backward differentiation formulas of orders one through five
       to solve a system of the form G(T,Y,Y') = 0 where Y can be a vector.
-
       Values for Y and Y' at the initial time must be given as input.  These
       values should be consistent, that is, if t0, y0, yp0 are the given
       initial values, they should satisfy G(t0,y0,yp0) = 0.  However, if
       consistent values are not known, in many cases you can have DDASKR
       solve for them if the appropriate option in the info array is set.
-
       Normally, DDASKR solves the system from some intial t0 to a specified
       tout.  This wrapper takes a list of times t as input, and then solves
       the system for the range of times.  In the interval mode of operation,
       only the solution values at time points in t will be returned.
       Intermediate results can also be obtained easily by specifying info(3).
-
       While integrating the given DAE system, DDASKR also searches for roots
       of the given constraint functions Ri(T,Y,Y') given by RT. If DDASKR
       detects a sign change in any Ri(T,Y,Y'), it will return the intermediate
       value of T and Y for which Ri(T,Y,Y') = 0.
-
       Caution: If some Ri has a root at or very near the initial time, DDASKR
       may fail to find it, or may find extraneous roots there, because it does
       not yet have a sufficient history of the solution.
       
     Inputs:
-
       res  -- res(t, y, ...) computes the residual function for the
               differential/algebraic system to be solved.
       t    -- a sequence of time points for which to solve for y.  The intial 
@@ -192,7 +186,6 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
               down.
          
     Outputs:  (yout, tout, ypout, t_root, y_root, i_root)
-
       yout -- the numerically calculated list of solution points corresponding
               to the times in tout.
       tout -- the list of time points corresponding to yout.

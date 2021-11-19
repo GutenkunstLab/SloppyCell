@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import scipy
 
 def subspace_angles(A, B):
@@ -31,12 +35,12 @@ def test():
 
     A = scipy.zeros((m, p), scipy.Float)
     for col in range(p):
-        A[col*(m/p):(col+1)*(m/p), col:col+1] = scipy.ones((m/p, 1))
-    A *= 1/scipy.sqrt(m/p)
+        A[col*(old_div(m,p)):(col+1)*(old_div(m,p)), col:col+1] = scipy.ones((old_div(m,p), 1))
+    A *= old_div(1,scipy.sqrt(old_div(m,p)))
 
     B = scipy.zeros((m, p), scipy.Complex)
     for col in range(0, p):
-        B[:, col:col+1] = scipy.transpose(scipy.mat((-1 + 2j*scipy.arange(m)/(m+1))**col))
+        B[:, col:col+1] = scipy.transpose(scipy.mat((-1 + old_div(2j*scipy.arange(m),(m+1)))**col))
 
     theta, U, V = subspace_angles(A, B)
     assert scipy.round(scipy.cos(theta), 4) == \
@@ -70,7 +74,7 @@ def plot_test():
         lines = []
         for column in scipy.transpose(vects):
             column = scipy.asarray(column)
-            normalized = column/scipy.sqrt(scipy.dot(column, column))
+            normalized = old_div(column,scipy.sqrt(scipy.dot(column, column)))
             lines.append(' '.join([str(0) for elem in column]))
             lines.append(' '.join([str(elem) for elem in normalized]))
             lines.append('')
@@ -81,5 +85,5 @@ def plot_test():
     gnuplot_command = 'splot "%s" lw 10 t "A", "%s" lw 10 t "B", '\
             '"%s" lw 8 t "U", "%s" lw 4 t "V"' % tuple(file_names)
 
-    print(theta * 180/scipy.pi)
+    print(old_div(theta * 180,scipy.pi))
     print(gnuplot_command)

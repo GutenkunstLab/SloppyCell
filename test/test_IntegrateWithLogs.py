@@ -12,7 +12,7 @@ class test_IntegrateWithLogs(unittest.TestCase):
         traj = Dynamics.integrate(net, [0, 10])
         net.integrateWithLogs = True
         log_traj = Dynamics.integrate(net, [0, 10])
-        for var in net.variables.keys():
+        for var in list(net.variables.keys()):
             norm_val = traj.get_var_val_index(var, -1)
             log_val = log_traj.get_var_val_index(var, -1)
             self.assertAlmostEqual(norm_val, log_val, 5, 'Failed for %s.' % var)
@@ -23,7 +23,7 @@ class test_IntegrateWithLogs(unittest.TestCase):
         traj = Dynamics.integrate(net, [0, 10])
         net.integrateWithLogs = True
         log_traj = Dynamics.integrate(net, [0, 10])
-        for var in net.variables.keys():
+        for var in list(net.variables.keys()):
             norm_val = traj.get_var_val_index(var, -1)
             log_val = log_traj.get_var_val_index(var, -1)
             self.assertAlmostEqual(norm_val, log_val, 5, 'Failed for %s.' % var)
@@ -34,8 +34,8 @@ class test_IntegrateWithLogs(unittest.TestCase):
         traj = Dynamics.integrate_sensitivity(net, [0, 10], rtol=1e-9)
         net.integrateWithLogs = True
         log_traj = Dynamics.integrate_sensitivity(net, [0, 10], rtol=1e-9)
-        for dyn_var in net.dynamicVars.keys():
-            for opt_var in net.optimizableVars.keys():
+        for dyn_var in list(net.dynamicVars.keys()):
+            for opt_var in list(net.optimizableVars.keys()):
                 norm_val = traj.get_var_val_index((dyn_var, opt_var), -1)
                 log_val = log_traj.get_var_val_index((dyn_var, opt_var), -1)
                 msg = 'Failed for (%s, %s) %f v %f'\

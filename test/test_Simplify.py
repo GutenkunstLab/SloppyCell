@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from ast import *
 import random
 import unittest
@@ -27,7 +29,7 @@ class test_Simplify(unittest.TestCase):
             orig = eval(expr)
             simp = eval(simplified)
             if orig != 0:
-                assert abs(orig - simp)/(0.5 * (orig + simp)) < 1e-6
+                assert old_div(abs(orig - simp),(0.5 * (orig + simp))) < 1e-6
             else:
                 assert simp == 0
 

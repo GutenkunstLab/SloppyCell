@@ -1,6 +1,7 @@
 """
 Functions for simplifying python math expressions.
 """
+from __future__ import absolute_import
 from ast import *
 import operator
 from SloppyCell.ExprManip  import AST

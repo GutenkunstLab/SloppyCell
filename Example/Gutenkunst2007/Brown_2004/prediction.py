@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 import scipy
 
 from SloppyCell.ReactionNetworks import *
@@ -29,15 +32,15 @@ lower, upper = Ensembles.traj_ensemble_quantiles(traj_set,
 Utility.save((lower, upper), 'Fig.4.all.trajs.bp')
 # We have to re-arrange things to plot the nice shaded regions.
 xpts = scipy.concatenate((times, times[::-1]))
-yy_low = lower.get_var_traj('ErkActive')/net.get_var_ic('ErkInactive')
-yy_up = upper.get_var_traj('ErkActive')/net.get_var_ic('ErkInactive')
+yy_low = old_div(lower.get_var_traj('ErkActive'),net.get_var_ic('ErkInactive'))
+yy_up = old_div(upper.get_var_traj('ErkActive'),net.get_var_ic('ErkInactive'))
 ypts_all = scipy.concatenate((yy_low, yy_up[::-1]))
 
 # This makes the figures for all the parameters.
 # To make the figure in the main text (without the collective fit bounds), use
 #  for param_id in ['kpRaf1']
-for param_id in params.keys():
-    print param_id
+for param_id in list(params.keys()):
+    print(param_id)
     Plotting.figure(figsize=(2,1.5))
     # These parameters don't matter for this prediction
     if param_id.count('PI3K') or param_id.count('Akt') or param_id.count('C3G')\
@@ -63,8 +66,8 @@ for param_id in params.keys():
     if param_id == 'kpRaf1':
         Utility.save((lower, upper), 'Fig.4.missing.one.trajs.bp')
 
-    yy_low = lower.get_var_traj('ErkActive')/net.get_var_ic('ErkInactive')
-    yy_up = upper.get_var_traj('ErkActive')/net.get_var_ic('ErkInactive')
+    yy_low = old_div(lower.get_var_traj('ErkActive'),net.get_var_ic('ErkInactive'))
+    yy_up = old_div(upper.get_var_traj('ErkActive'),net.get_var_ic('ErkInactive'))
     ypts_miss = scipy.concatenate((yy_low, yy_up[::-1]))
 
     # Plot the bounds

@@ -1,3 +1,4 @@
+from builtins import next
 import scipy
 
 from SloppyCell.ReactionNetworks import *
@@ -22,16 +23,16 @@ for line in lineiter:
 
 
         # Skip the blank and Score info
-        score_line = lineiter.next()
+        score_line = next(lineiter)
         words = score_line.strip().split()
         param_scores.append(float(words[1]))
 
-        line = lineiter.next()
-        line = lineiter.next()
+        line = next(lineiter)
+        line = next(lineiter)
         while not line.startswith('&endFPARS'):
             words = line.strip().split()
             params.set(words[0][1:], float(words[1]))
-            line = lineiter.next()
+            line = next(lineiter)
         param_sets.append(params)
 param_scores = scipy.asarray(param_scores)
 

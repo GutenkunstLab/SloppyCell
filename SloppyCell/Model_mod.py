@@ -2,6 +2,7 @@
 Model class that unites theory with data.
 """
 from __future__ import print_function
+from __future__ import absolute_import
 
 import logging
 logger = logging.getLogger('Model_mod')

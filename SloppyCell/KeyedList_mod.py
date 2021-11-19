@@ -1,6 +1,10 @@
 """
 Holds the KeyedList class.
 """
+from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import range
 import copy
 import os
 
@@ -12,7 +16,7 @@ class KeyedList(list):
         self.storedKeys = []
 
         if hasattr(arg1, 'items'):
-            items = arg1.items()
+            items = list(arg1.items())
         else:
             items = arg1
 
@@ -31,7 +35,7 @@ class KeyedList(list):
             raise ValueError('New order is of a different length!')
 
         oldOrder = copy.copy(self.keyToIndex)
-        oldValues = copy.copy(self.values())
+        oldValues = copy.copy(list(self.values()))
         self.storedKeys = []
         for (index, key) in enumerate(order):
             self.keyToIndex[key] = index
@@ -41,7 +45,7 @@ class KeyedList(list):
     setOrder = set_order
 
     def reverse(self):
-        self.set_order(self.keys()[::-1])
+        self.set_order(list(self.keys())[::-1])
 
     def del_by_key(self, key):
         index = self.index_by_key(key)
@@ -66,13 +70,13 @@ class KeyedList(list):
 
     def __copy__(self):
         instance = self.__new__(self.__class__)
-        instance.__init__(self.items())
+        instance.__init__(list(self.items()))
         return instance
 
     def __deepcopy__(self, memo):
         # XXX: Not handling recursion here
         instance = self.__new__(self.__class__)
-        instance.__init__(copy.deepcopy(self.items()))
+        instance.__init__(copy.deepcopy(list(self.items())))
         return instance
 
     #
@@ -112,7 +116,7 @@ class KeyedList(list):
 
     def update(self, other):
         if isinstance(other, dict) or isinstance(other, KeyedList):
-            for key, value in other.items():
+            for key, value in list(other.items()):
                 self.set(key, value)
         else:
             if(len(self) != len(other)):
@@ -131,14 +135,14 @@ class KeyedList(list):
         return self[:]
 
     def items(self):
-        return zip(self.keys(), self.values())
+        return list(zip(list(self.keys()), list(self.values())))
 
     def __repr__(self):
-        return 'KeyedList(%s)' % repr(self.items())
+        return 'KeyedList(%s)' % repr(list(self.items()))
 
     def __str__(self):
         return os.linesep.join(['['] + 
-                               [str(tup) + ',' for tup in self.items()] + [']'])
+                               [str(tup) + ',' for tup in list(self.items())] + [']'])
 
     #
     # list methods not supported
@@ -149,10 +153,10 @@ class KeyedList(list):
         return new_kl
 
     def __iadd__(self, other):
-        print("otheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeer", type(other))
+        print(("otheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeer", type(other)))
         if not isinstance(other, self.__class__):
             raise TypeError('Can only add another KeyedList to a KeyedList')
-        for k,v in other.items():
+        for k,v in list(other.items()):
             if k not in self:
                 self.set(k, v)
             else:
@@ -181,7 +185,7 @@ class KeyedList(list):
                              % str(key))
         list.insert(self, index, value)
         self.storedKeys.insert(index, key)
-        for k, ii in self.keyToIndex.items():
+        for k, ii in list(self.keyToIndex.items()):
             if ii >= index:
                 self.keyToIndex[k] += 1
         self.keyToIndex[key] = index
@@ -211,7 +215,7 @@ class KeyedList(list):
         """
         Sort based on key of each entry
         """
-        keys = self.keys()
+        keys = list(self.keys())
         keys.sort()
         self.set_order(keys)
 
@@ -219,7 +223,7 @@ class KeyedList(list):
         """
         Sort based on value of each entry
         """
-        decorated = zip(self.values(), self.keys())
+        decorated = list(zip(list(self.values()), list(self.keys())))
         decorated.sort()
         sorted_keys = [k for (v,k) in decorated]
         self.set_order(sorted_keys)

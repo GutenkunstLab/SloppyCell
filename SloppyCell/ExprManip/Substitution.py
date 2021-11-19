@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from builtins import zip
+from builtins import str
 from ast import *
 import copy
 
@@ -15,7 +18,7 @@ def sub_for_comps(expr, mapping):
 
     ast = strip_parse(expr)
     ast_mapping = {}
-    for out_expr, in_expr in mapping.items():
+    for out_expr, in_expr in list(mapping.items()):
         out_ast = strip_parse(out_expr)
         if not isinstance(out_ast, Compare):
             raise ValueError('Expression %s to substitute for is not a '\
@@ -49,7 +52,7 @@ def sub_for_vars(expr, mapping):
         return expr
     ast = strip_parse(expr)
     ast_mapping = {}
-    for out_name, in_expr in mapping.items():
+    for out_name, in_expr in list(mapping.items()):
         out_ast = strip_parse(out_name)
         if not isinstance(out_ast, Name):
             raise ValueError('Expression %s to substitute for is not a '\

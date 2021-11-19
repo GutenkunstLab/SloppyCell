@@ -1,6 +1,10 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import scipy
 
-class Residual:
+class Residual(object):
     def __init__(self, key):
         self.key = key
 
@@ -68,14 +72,14 @@ class Residual:
         factors.
         """
         derivs_wrt_p = []
-        for pname in params.keys():
+        for pname in list(params.keys()):
             deriv = 0
 
             # This first term is dres/dy * dy/dp
             dres_dy = self.dy(predictions, internalVars, params)
-            for calcKey in dres_dy.keys():
-                for yKey in dres_dy[calcKey].keys():
-                    for xVal in dres_dy[calcKey][yKey].keys():
+            for calcKey in list(dres_dy.keys()):
+                for yKey in list(dres_dy[calcKey].keys()):
+                    for xVal in list(dres_dy[calcKey][yKey].keys()):
                         dres_dy_this = dres_dy[calcKey][yKey][xVal]
                         # We default to 0 if parameter not in senspredictions. 
                         # (It may not be involved in a given calculation.)
@@ -84,9 +88,9 @@ class Residual:
 
             # This term is dres/dintVar * dintVar/dp
             dres_dintVars = self.dintVars(predictions, internalVars, params)
-            for intVar_type in dres_dintVars.keys():
-                for exptKey in dres_dintVars[intVar_type].keys():
-                    for yKey in dres_dintVars[intVar_type][exptKey].keys():
+            for intVar_type in list(dres_dintVars.keys()):
+                for exptKey in list(dres_dintVars[intVar_type].keys()):
+                    for yKey in list(dres_dintVars[intVar_type][exptKey].keys()):
                         dres_dintVar_this = dres_dintVars[intVar_type][exptKey][yKey]
                         dintVar_dp_this = internalVarsDerivs[intVar_type][exptKey][yKey][pname]
                         deriv += dres_dintVar_this * dintVar_dp_this
@@ -116,19 +120,19 @@ class ScaledErrorInFit(Residual):
     def GetValue(self, predictions, internalVars, params):
         scale_factor = internalVars['scaleFactors'][self.exptKey][self.yKey]
         raw_pred_val = predictions[self.calcKey][self.yKey][self.xVal]
-        return (scale_factor * raw_pred_val - self.yMeas)/self.ySigma
+        return old_div((scale_factor * raw_pred_val - self.yMeas),self.ySigma)
 
     def dp(self, predictions, internalVars, params):
         return {}
 
     def dy(self, predictions, internalVars, params):
         scale_factor = internalVars['scaleFactors'][self.exptKey][self.yKey]
-        deriv = scale_factor / self.ySigma
+        deriv = old_div(scale_factor, self.ySigma)
         return {self.calcKey: {self.yKey: {self.xVal: deriv}}}
 
     def dintVars(self, predictions, internalVars, params):
         raw_pred_val = predictions[self.calcKey][self.yKey][self.xVal]
-        deriv = raw_pred_val / self.ySigma
+        deriv = old_div(raw_pred_val, self.ySigma)
         return {'scaleFactors': {self.exptKey: {self.yKey: deriv}}}
 
 class PriorInLog(Residual):
@@ -139,7 +143,7 @@ class PriorInLog(Residual):
         self.sigmaLogPVal = sigmaLogPVal
 
     def GetValue(self, predictions, internalVars, params):
-        return (scipy.log(params.get(self.pKey)) - self.logPVal) / self.sigmaLogPVal
+        return old_div((scipy.log(params.get(self.pKey)) - self.logPVal), self.sigmaLogPVal)
 
     def dp(self, predictions, internalVars, params):
         return {self.pKey: 1./(params.get(self.pKey) * self.sigmaLogPVal)}
@@ -158,7 +162,7 @@ class Prior(Residual):
         self.sigmaPVal = sigmaPVal
 
     def GetValue(self, predictions, internalVars, params):
-        return (params.get(self.pKey) - self.pVal) / self.sigmaPVal
+        return old_div((params.get(self.pKey) - self.pVal), self.sigmaPVal)
 
     def dp(self, predictions, internalVars, params):
         return {self.pKey: 1./self.sigmaPVal}
@@ -186,7 +190,7 @@ class PeriodCheckResidual(Residual):
     def GetValue(self, predictions, internalVars, params):
         # Find the period
         traj = predictions[self.cKey][self.yKey]
-        times = traj.keys()
+        times = list(traj.keys())
         times.sort()
 
         maximums=[]
@@ -200,14 +204,14 @@ class PeriodCheckResidual(Residual):
                 (a,b,c)=scipy.dot(scipy.linalg.inv([[t1**2,t1,1],
                                                     [t2**2,t2,1],
                                                     [t3**2,t3,1]]),[y1,y2,y3])
-                maximums.append(-b/2/a)
+                maximums.append(old_div(old_div(-b,2),a))
 
         if len(maximums)<2: 
             theoryVal = 2*self.yMeas
         else: 
             theoryVal = maximums[1] - maximums[0]
 
-        return (theoryVal - self.yMeas)/self.ySigma
+        return old_div((theoryVal - self.yMeas),self.ySigma)
 
 class AmplitudeCheckResidual(Residual):
     def __init__(self, key, calcKey, depVarKey, indVarValue0, indVarValue1, period,
@@ -226,15 +230,15 @@ class AmplitudeCheckResidual(Residual):
         return {self.cKey: {self.yKey: [self.xVal, self.xVal+self.period, self.xTestVal, self.xTestVal+self.period]}}
 
     def GetValue(self, predictions, internalVars, params):
-        times = predictions[self.cKey][self.yKey].keys()
-        if self.exptKey in internalVars['scaleFactors'].keys() \
-               and self.yKey in internalVars['scaleFactors'][self.exptKey].keys():
+        times = list(predictions[self.cKey][self.yKey].keys())
+        if self.exptKey in list(internalVars['scaleFactors'].keys()) \
+               and self.yKey in list(internalVars['scaleFactors'][self.exptKey].keys()):
             scale_factor = internalVars['scaleFactors'][self.exptKey][self.yKey]
         else:
             scale_factor = 1.0
 
         # Get the indices of the points to use and integrate the areas
-        times = predictions[self.cKey][self.yKey].keys()
+        times = list(predictions[self.cKey][self.yKey].keys())
         times.sort()
         startIndex,endStartIndex = times.index(self.xVal), times.index(self.xVal+self.period)
         testIndex,endTestIndex = times.index(self.xTestVal), times.index(self.xTestVal+self.period)
@@ -251,7 +255,7 @@ class AmplitudeCheckResidual(Residual):
             y.append(scale_factor*predictions[self.cKey][self.yKey][t])
         theoryVal = scipy.integrate.simps(y,x)
 
-        return (theoryVal - measVal)/self.ySigma
+        return old_div((theoryVal - measVal),self.ySigma)
 
 class IntegralDataResidual(Residual):
     def __init__(self, name, var, exptKey, calc, traj, uncert_traj, interval):
@@ -273,12 +277,12 @@ class IntegralDataResidual(Residual):
             theory = theory_traj.evaluate_interpolated_traj(var, t)
             data = data_traj.evaluate_interpolated_traj(var, t)
             uncert = uncert_traj.evaluate_interpolated_traj(var, t)
-            return (sf*theory - data)**2/uncert**2
+            return old_div((sf*theory - data)**2,uncert**2)
         val, error = scipy.integrate.quad(integrand,
                                           self.interval[0], self.interval[1],
                                           limit = int(1e5))
         T = self.interval[1] - self.interval[0]
-        return scipy.sqrt(val/T)
+        return scipy.sqrt(old_div(val,T))
 
 class ScaledExtremum(Residual):
     def __init__(self, key, var, calcKey, val,
@@ -306,7 +310,7 @@ class ScaledExtremum(Residual):
         # We store the last time result for use in plotting.
         self.last_time_result, raw_pred_val = \
                 predictions[self.calcKey][self.yKey][self.minTime,self.maxTime]
-        return (scale_factor * raw_pred_val - self.yMeas)/self.ySigma
+        return old_div((scale_factor * raw_pred_val - self.yMeas),self.ySigma)
 
     def Dp(self, predictions, senspredictions, internalVars, internalVarsDerivs,
            params):
@@ -316,18 +320,18 @@ class ScaledExtremum(Residual):
         Should return a list with the derivatives in the same order as params.
         """
         derivs_wrt_p = []
-        for pname in params.keys():
+        for pname in list(params.keys()):
             deriv = 0
 
             # This first term is dres/dy * dy/dp
             scale_factor = internalVars['scaleFactors'][self.exptKey][self.var]
-            dres_dy = scale_factor / self.ySigma
+            dres_dy = old_div(scale_factor, self.ySigma)
             dy_dp = senspredictions[self.calcKey][self.yKey][self.minTime,self.maxTime].get(pname, 0)
             deriv += dres_dy * dy_dp
 
             # This term is dres/dscale_factor* dscale_factor/dp
             raw_pred_val = predictions[self.calcKey][self.yKey][self.minTime,self.maxTime][1]
-            dres_dsf = raw_pred_val / self.ySigma
+            dres_dsf = old_div(raw_pred_val, self.ySigma)
             dsf_dp = internalVarsDerivs['scaleFactors'][self.exptKey][self.var][pname]
             deriv += dres_dsf * dsf_dp
 

@@ -1,5 +1,6 @@
 from __future__ import nested_scopes
 from __future__ import print_function
+from __future__ import absolute_import
 # Levenberg Marquardt minimization routines
 """
 fmin_lm  : standard Levenberg Marquardt

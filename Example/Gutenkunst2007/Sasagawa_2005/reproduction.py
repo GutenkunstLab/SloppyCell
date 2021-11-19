@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from SloppyCell.ReactionNetworks import *
 
 from Nets import *
@@ -27,11 +29,11 @@ Plotting.figure(8)
 Plotting.clf()
 traj_EGF1pt5_60_ramp
 Plotting.plot(traj_EGF1pt5_60_ramp.get_times()/60., 
-              100*traj_EGF1pt5_60_ramp.get_var_traj('total_active_ERK')/net.get_var_ic('ERK'))
+              old_div(100*traj_EGF1pt5_60_ramp.get_var_traj('total_active_ERK'),net.get_var_ic('ERK')))
 Plotting.axis([0, 60, 0, 100])
 
 Plotting.figure(9)
 Plotting.clf()
 Plotting.plot(traj_NGF1pt5_60_ramp.get_times()/60., 
-              100*traj_NGF1pt5_60_ramp.get_var_traj('total_active_ERK')/net.get_var_ic('ERK'))
+              old_div(100*traj_NGF1pt5_60_ramp.get_var_traj('total_active_ERK'),net.get_var_ic('ERK')))
 Plotting.axis([0, 60, 0, 100])

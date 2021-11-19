@@ -1,6 +1,11 @@
 """
 Methods for evaluating the dynamics of Network.
 """
+from __future__ import division
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __docformat__ = "restructuredtext en"
 
 import copy
@@ -57,7 +62,7 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
     N_dyn_var = len(net.dynamicVars)
 
     if net.integrateWithLogs:
-        yp0 = yp0/IC
+        yp0 = old_div(yp0,IC)
         IC = scipy.log(IC)
 
         res_func = net.res_function_logdv
@@ -143,7 +148,7 @@ def generate_tolerances(net, rtol, atol=None):
     # typical values going negative.
     if (scipy.isscalar(atol) or atol==None):
         typ_vals = [abs(net.get_var_typical_val(id))
-                    for id in net.dynamicVars.keys()]
+                    for id in list(net.dynamicVars.keys())]
         atol = rtol * scipy.asarray(typ_vals)
         if global_atol:
             atol = scipy.minimum(atol, global_atol)
@@ -209,7 +214,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     
     # We start with ypIC equal to typ_vals so that we get the correct scale.
     
-    typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
+    typ_vals = [net.get_var_typical_val(id) for id in list(net.dynamicVars.keys())]
     ypIC = scipy.array(typ_vals)
     # This calculates the yprime ICs and also ensures that values for our
     #  algebraic variables are all consistent.
@@ -231,7 +236,7 @@ or False), raise the exception.
     # check that constraints are not violated at t=0
     if use_constraints == True:
         net.updateVariablesFromDynamicVars(values=IC, time=start)
-        for con_id, constraint in net.constraints.items():
+        for con_id, constraint in list(net.constraints.items()):
             result = net.evaluate_expr(constraint.trigger)
            
             if result == False:
@@ -330,7 +335,7 @@ or False), raise the exception.
                 # Ensure that we don't event_buffer past any
                 # requested timepoints.
                 nextEventTime = scipy.inf
-                pendingEventTimes = pendingEvents.keys()
+                pendingEventTimes = list(pendingEvents.keys())
                 list(pendingEventTimes).remove(execution_time)
                 if pendingEventTimes:
                     nextEventTime = min(pendingEventTimes)
@@ -520,7 +525,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
     # results.
     # Note that we might have more than one event firing at the same time.
 
-    for event_index, dire_cross in zip(range(num_events), crossing_dirs):
+    for event_index, dire_cross in zip(list(range(num_events)), crossing_dirs):
         # dire_cross is the direction of the event crossing.  If it's
         # 1 that means Ri changed from negative to positive.  In that case
         # we need to record the event. Note that num_events runs over the
@@ -672,7 +677,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     rtol_for_sens = scipy.concatenate((rtol, rtol))
     # Absolute tolerances depend on the typical value of the optimizable
     # variable
-    atol_for_sens = atol/abs(net.get_var_typical_val(opt_var))
+    atol_for_sens = old_div(atol,abs(net.get_var_typical_val(opt_var)))
     atol_for_sens = scipy.concatenate((atol, atol_for_sens))
 
     # The passed-in normal trajectory tells us what times we need to return,
@@ -700,7 +705,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     rpar = scipy.concatenate((net.constantVarValues, [opt_var_index+0.1]))
 
     # Our intial guess for ypIC will be based on the typical values
-    typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]*2
+    typ_vals = [net.get_var_typical_val(id) for id in list(net.dynamicVars.keys())]*2
     ypIC = scipy.array(typ_vals, dtype=float)
     ypIC[N_dyn_vars:] /= net.get_var_ic(opt_var)
 
@@ -863,7 +868,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         net.update_optimizable_vars(params)
 
     # Assigned variables to process on each node.
-    vars_assigned = dict([(node, net.optimizableVars.keys()[node::num_procs]) 
+    vars_assigned = dict([(node, list(net.optimizableVars.keys())[node::num_procs]) 
                             for node in range(num_procs)])
 
     # Send out jobs for workers
@@ -994,7 +999,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
         # To transform sigma_x to sigma_log_x, we divide by x. We can set
         #  our sigma_log_x use to be the mean of what our xtol would yield
         #  for each chemical.
-        xtol = scipy.mean(xtol/dv0)
+        xtol = scipy.mean(old_div(xtol,dv0))
     else:
         def func(y):
             return net.res_function(time, y, zeros, consts)
@@ -1091,7 +1096,7 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
     N_alg = scipy.sum(var_types == -1)
 
     dv_typ_vals = scipy.asarray([net.get_var_typical_val(id)
-                                 for id in net.dynamicVars.keys()])
+                                 for id in list(net.dynamicVars.keys())])
 
     if N_alg:
         # First we calculate a consistent set of algebraic variable values

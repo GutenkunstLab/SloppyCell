@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 from . import OptimizeSumDets as OSD
 try:
     import cluster
@@ -11,7 +14,7 @@ def getPermList(hess):
     Dmat = Vdm.calcDmat(hess)
     lambdaMat, r2Mat =  Vdm.getLambdaR2(hess,Dmat)
     ctMat, dtMat = Vdm.calcR2mat_Terms(hess, lambdaMat)
-    clHess = cluster.HierarchicalClustering(range(len(hess)), lambda x,y: clusterScripts.getDist(x,y,r2Mat/dtMat))
+    clHess = cluster.HierarchicalClustering(list(range(len(hess))), lambda x,y: clusterScripts.getDist(x,y,old_div(r2Mat,dtMat)))
     clHess.getlevel(0.1)
-    permList = clusterScripts.FlattenIt(clHess.topo(),r2Mat/dtMat)
+    permList = clusterScripts.FlattenIt(clHess.topo(),old_div(r2Mat,dtMat))
     return permList

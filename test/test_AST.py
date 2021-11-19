@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 from ast import *
 import random
 import unittest
@@ -26,12 +29,14 @@ class test_AST(unittest.TestCase):
                  '(True and not False) or True', 'not (True and False)',
                  'x == x and y == y', 'x - x == 0 or y - x != 0']
         cases1 = ['x**(-y + z)']
-        for expr in cases: 
-            run = ast2str(parse(expr).body[0].value)
+        for expr in cases:
+            print(expr)
+            p = parse(expr).body[0].value
+            run = ast2str(p)
             orig = eval(expr)
             out = eval(run)
             if orig != 0:
-                assert abs(orig - out)/(0.5 * (orig + out)) < 1e-6
+                assert old_div(abs(orig - out),(0.5 * (orig + out))) < 1e-6
             else:
                 assert out == 0
 

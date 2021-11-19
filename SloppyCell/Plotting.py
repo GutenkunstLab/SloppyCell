@@ -1,4 +1,9 @@
 from __future__ import absolute_import
+from __future__ import division
+from builtins import next
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 import scipy
 import SloppyCell
 # We've had yet more trouble running in parallel, but these errors were actually
@@ -70,9 +75,9 @@ def plot_eigvals(vals, label=None, offset=0, indicate_neg=True, join=False,
         current interactive axes are used.
     """
     posVals = abs(scipy.compress(scipy.real(vals) > 0, vals))
-    posRange = scipy.compress(scipy.real(vals) > 0, range(len(vals)))
+    posRange = scipy.compress(scipy.real(vals) > 0, list(range(len(vals))))
     negVals = abs(scipy.compress(scipy.real(vals) < 0, vals))
-    negRange = scipy.compress(scipy.real(vals) < 0, range(len(vals)))
+    negRange = scipy.compress(scipy.real(vals) < 0, list(range(len(vals))))
 
     if ax is None:
         ax = gca()
@@ -144,13 +149,13 @@ def plot_eigvect(vect, labels=None, bottom=0, num_label=5, label_offset=0.15):
     max_index = scipy.argmax(abs(vect))
     if vect[max_index] < 0:
         vect = -vect
-    bar(scipy.arange(len(vect)) - 0.4, vect/scipy.linalg.norm(vect), 
+    bar(scipy.arange(len(vect)) - 0.4, old_div(vect,scipy.linalg.norm(vect)), 
         bottom=bottom)
     a = list(axis())
     a[0:2] = [-.03*len(vect) - 0.4, (len(vect) - 1)*1.03 + 0.4]
 
     if labels is not None:
-        mags = zip(abs(vect), range(len(vect)), vect)
+        mags = list(zip(abs(vect), list(range(len(vect))), vect))
         mags.sort()
         mags.reverse()
         for mag, index, val in mags[:num_label]:
@@ -176,7 +181,7 @@ def plot_priors(model,priorIDs=None,params=None,sameScale=False):
         params=model.get_params()
     residuals = model.GetResiduals()
     if priorIDs is None:
-        priorIDs = residuals.keys()
+        priorIDs = list(residuals.keys())
 
     priorVals=[]
     priorErrs=[]

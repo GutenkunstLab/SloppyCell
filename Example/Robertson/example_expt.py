@@ -1,3 +1,4 @@
+from builtins import zip
 import numpy
 from SloppyCell.ReactionNetworks import *
 import example_net

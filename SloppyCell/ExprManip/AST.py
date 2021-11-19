@@ -1,4 +1,8 @@
-from ast import *
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from ast import parse, Name, Constant, Call, Subscript, Slice, Pow, USub, UAdd, Mult, Div, Sub, Add, Compare, Not, And, Or, BoolOp, UnaryOp, BinOp, Expr, ExtSlice, Num, Tuple
 
 TINY = 1e-12
 
@@ -37,7 +41,6 @@ _OP_ORDER = {Name: 0,
             Constant: 0,
              Call: 0,
              Subscript: 0,
-             Slice: 0,
              Slice: 0,
              Pow: 3,
              USub: 4,
@@ -79,11 +82,11 @@ _node_attrs = {Name: (),
                BinOp: ('left', 'op', 'right'),
                }
 
-def ast2str(ast):
-    """
-    Return the string representation of an AST.
-    """
-    return unparse(ast)
+# def ast2str(ast):
+#     """
+#     Return the string representation of an AST.
+#     """
+#     return unparse(ast)
  
 def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
     """
@@ -95,10 +98,13 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
+    # print("Here")
     if isinstance(node, Name):
         out = node.id
     elif isinstance(node, Constant):
         out = str(node.value)
+    elif isinstance(node, Num):
+        out = str(node.n)
     elif isinstance(node, BinOp) and isinstance(node.op, Add):
         out = '%s + %s' % (ast2str(node.left, node),
                            ast2str(node.right, node))
@@ -155,6 +161,9 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         out = ' or '.join(nodes)
     elif isinstance(node, UnaryOp) and isinstance(node.op, Not):
         out = 'not %s' % ast2str(node.operand, node, adjust=TINY)
+    else:
+        out = node
+        # print(node)
     # Ensure parentheses by checking the _OP_ORDER of the outer and inner ASTs
     if _need_parens(outer, node, adjust):
         return out
