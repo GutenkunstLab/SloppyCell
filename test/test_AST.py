@@ -29,9 +29,11 @@ class test_AST(unittest.TestCase):
                  '(True and not False) or True', 'not (True and False)',
                  'x == x and y == y', 'x - x == 0 or y - x != 0']
         cases1 = ['x**(-y + z)']
-        for expr in cases:
+        for expr in cases1:
             print(expr)
             p = parse(expr).body[0].value
+            print("converted", ast2str(p))
+            print("original", expr)
             run = ast2str(p)
             orig = eval(expr)
             out = eval(run)
@@ -47,11 +49,16 @@ class test_AST(unittest.TestCase):
                  (strip_parse('1/(2*3)'), (['1'], ['2', '3'])),
                  (strip_parse('1/(2/3)'), (['1', '3'], ['2'])),
                  ]
-        for ast, (nums, denoms) in cases: 
+        cases1 = [(strip_parse('x-x'), (['x - x'], [])),
+                 ]
+        for ast, (nums, denoms) in cases1: 
             n, d = [], []
             AST._collect_num_denom(ast, n, d)
             n = [ast2str(term) for term in n]
             d = [ast2str(term) for term in d]
+            print(ast)
+            print("numerator", nums,n)
+            print("denominator", denoms,d)
             assert set(nums) == set(n)
             assert set(denoms) == set(d)
 

@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from builtins import str
 from builtins import range
 from ast import parse, Name, Constant, Call, Subscript, Slice, Pow, USub, UAdd, Mult, Div, Sub, Add, Compare, Not, And, Or, BoolOp, UnaryOp, BinOp, Expr, ExtSlice, Num, Tuple
+from typing import BinaryIO
 
 TINY = 1e-12
 
@@ -37,7 +38,7 @@ def strip_parse(expr):
 
 # This defines the order of operations for the various node types, to determine
 #  whether or not parentheses are necessary.
-_OP_ORDER = {Name: 0,
+_OP_ORDER = {Name: 0.5,
             Constant: 0,
              Call: 0,
              Subscript: 0,
@@ -53,7 +54,9 @@ _OP_ORDER = {Name: 0,
              Not: 11,
              And: 11,
              Or: 11,
-             Expr: 100
+             Expr: 100,
+             BinOp: 1,
+             UnaryOp: 1,
             }
 
 # This is just an instance of Discard to use for the default
@@ -181,6 +184,8 @@ def _need_parens(outer, inner, adjust):
         parentheses in more cases than does the numerator.
     """
     try:
+        print("outer", outer)
+        print("inner", inner)
         return _OP_ORDER[outer.__class__] >= _OP_ORDER[inner.__class__] + adjust
     except Exception as e:
         return False
