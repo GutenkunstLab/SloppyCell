@@ -12,6 +12,7 @@ def extract_comps(expr):
     """
     comps_found = []
     _extract_comps_ast(AST.strip_parse(expr), comps_found)
+    print("entered hereeeeeeee in extract compsssssssssssssssssss")
     comps_found = [AST.ast2str(ast) for ast in comps_found]
     return set(comps_found)
 

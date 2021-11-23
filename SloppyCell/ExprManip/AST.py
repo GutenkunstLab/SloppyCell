@@ -101,7 +101,7 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
-    # print("Here")
+    print("Hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", node)
     if isinstance(node, Name):
         out = node.id
     elif isinstance(node, Constant):
@@ -142,7 +142,8 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         out = '%s:%s' % (ast2str(node.lower), 
                              ast2str(node.upper))
     elif isinstance(node, ExtSlice):
-        nodes = [ast2str(node) for node in node.nodes]
+        # print("for companddddddddddddddddddddddddddddddddd", node)
+        nodes = [ast2str(node) for node in node.dims]
         out = ':'.join(nodes)
     elif isinstance(node, Compare):
         expr = ast2str(node.left, node, adjust=6+TINY)
@@ -184,8 +185,8 @@ def _need_parens(outer, inner, adjust):
         parentheses in more cases than does the numerator.
     """
     try:
-        print("outer", outer)
-        print("inner", inner)
+        # print("outer", outer)
+        # print("inner", inner)
         return _OP_ORDER[outer.__class__] >= _OP_ORDER[inner.__class__] + adjust
     except Exception as e:
         return False
