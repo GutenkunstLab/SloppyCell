@@ -28,10 +28,13 @@ class test_AST(unittest.TestCase):
                  'True and False or True', 'True or False', 
                  '(True and not False) or True', 'not (True and False)',
                  'x == x and y == y', 'x - x == 0 or y - x != 0']
-        cases1 = ['x**(-y + z)']
+        start = 2
+        end = 3
+        cases1 = ['x[start:end,4]']
         for expr in cases1:
-            print(expr)
+            # print(expr)
             p = parse(expr).body[0].value
+            print("ppppppp",p)
             print("converted", ast2str(p))
             print("original", expr)
             run = ast2str(p)

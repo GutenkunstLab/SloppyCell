@@ -33,6 +33,7 @@ def strip_parse(expr):
     """
     # The .strip() ignores leading and trailing whitespace, which would 
     #  otherwise give syntax errors.
+    print("entered here expression",expr)
     tree = parse(str(expr).strip())
     return  tree.body[0].value
 
@@ -101,7 +102,7 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
-    print("Hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", node)
+    print("node", node)
     if isinstance(node, Name):
         out = node.id
     elif isinstance(node, Constant):
@@ -135,16 +136,25 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
     elif isinstance(node, Subscript):
         if isinstance(node.slice, Tuple):
             subs = [ast2str(sub) for sub in node.slice.elts]
+            out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
+        elif isinstance(node.slice, ExtSlice):
+            # subs = ast2str(node.slice)
+            out = ast2str(node.value) + ast2str(node.slice)  
         else:
             subs = ast2str(node.slice)
-        out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
+            out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
     elif isinstance(node, Slice):
         out = '%s:%s' % (ast2str(node.lower), 
                              ast2str(node.upper))
     elif isinstance(node, ExtSlice):
+        seq = iter(node.dims)
+        nodes = []
         # print("for companddddddddddddddddddddddddddddddddd", node)
-        nodes = [ast2str(node) for node in node.dims]
-        out = ':'.join(nodes)
+        nodes.append(ast2str(next(seq)))
+        out1 = ':'.join(nodes)
+        out2 = ast2str(next(seq))
+        out3 = ', '.join(out2)
+        out = '%s[%s]' % (out1, ','+ast2str(out3))
     elif isinstance(node, Compare):
         expr = ast2str(node.left, node, adjust=6+TINY)
         out_l = [expr]
