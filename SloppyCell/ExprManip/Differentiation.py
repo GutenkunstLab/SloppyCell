@@ -164,11 +164,13 @@ def _diff_ast(ast, wrt):
     elif isinstance(ast, BinOp) and isinstance(ast.op, Pow):
         # Use the derivative of the 'pow' function
         ast = Call(func=Name(id='pow', ctx=Load()), args=[ast.left, ast.right])
+        print("ast", ast)
         return _diff_ast(ast, wrt)
 
     elif isinstance(ast, Call):
         func_name = AST.ast2str(ast.func)
         args = ast.args
+        print("args", args)
         args_d = [_diff_ast(arg, wrt) for arg in args]
 
         if (func_name, len(args)) in _KNOWN_FUNCS:

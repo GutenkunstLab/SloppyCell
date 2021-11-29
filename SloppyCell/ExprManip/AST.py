@@ -139,9 +139,15 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
             out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
         elif isinstance(node.slice, ExtSlice):
             # subs = ast2str(node.slice)
-            out = ast2str(node.value) + ast2str(node.slice)  
+            out1 = ast2str(node.value)
+            out2 = ast2str(node.slice)
+            if out2[0] == '(':
+                out2 = out2[1:-1]
+            out = '%s[%s]' % (out1, out2)
+            print("finalllllllllllll",out1, out2,out)
         else:
             subs = ast2str(node.slice)
+            print("subs",subs)
             out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
     elif isinstance(node, Slice):
         out = '%s:%s' % (ast2str(node.lower), 
@@ -150,11 +156,16 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         seq = iter(node.dims)
         nodes = []
         # print("for companddddddddddddddddddddddddddddddddd", node)
-        nodes.append(ast2str(next(seq)))
-        out1 = ':'.join(nodes)
-        out2 = ast2str(next(seq))
-        out3 = ', '.join(out2)
-        out = '%s[%s]' % (out1, ','+ast2str(out3))
+        out1 = ast2str(next(seq))
+        print(nodes)
+        # out1 = ''.join(nodes)
+        out2 = ast2str(next(seq).value)
+        
+        print("out1111111111111111111111111",out1)
+        print("out22222222222222222222222",out2)
+        # out3 = ', '.join(out2)
+        out = out1 + ',' + out2
+        print("oooooooooooooooo",out)
     elif isinstance(node, Compare):
         expr = ast2str(node.left, node, adjust=6+TINY)
         out_l = [expr]

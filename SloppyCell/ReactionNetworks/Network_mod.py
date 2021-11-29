@@ -3158,6 +3158,7 @@ class Network(object):
                                   self.get_var_ic(id))
             else:
                 var_struct[id] = (var.is_constant, var.is_optimizable)
+                print("var struct", var_struct)
 
         return structure
 
@@ -3397,6 +3398,7 @@ class Network(object):
         output = ExprManip.diff_expr(input, wrt)
         if vars_used is None:
             vars_used = ExprManip.extract_vars(input)
+            print("vars_used", vars_used)
 
         # What other assigned variables does input depend on?
         assigned_used = vars_used.difference(set([wrt]))
@@ -3404,9 +3406,11 @@ class Network(object):
         # Do the chain rule for those variables
         for id in assigned_used:
             rule = self.assignmentRules.getByKey(id)
+            print("rule", rule)
             d2 = self.takeDerivative(rule, wrt, simplify=False)
             if d2 != '0':
                 d = ExprManip.diff_expr(input, id)
+                print("diff",d)
                 output += ' + (%s) *(%s)' % (d, d2)
 
         # What other constant variables does input depend on?
@@ -3503,11 +3507,11 @@ class Network(object):
     def get_eqn_structure(self):
         # This was used to interface with PyDSTool.
         out = {}
-        out['odes'] = dict(list(self.diff_eq_rhs.items()))
-        out['functions'] = {}
-        for func_id, func_def in list(self.functionDefinitions.items()):
-            vars = ', '.join(func_def.variables)
-            out['functions']['%s(%s)' % (func_id, vars)] = func_def.math
+        # out['odes'] = dict(list(self.diff_eq_rhs.items()))
+        # out['functions'] = {}
+        # for func_id, func_def in list(self.functionDefinitions.items()):
+        #     vars = ', '.join(func_def.variables)
+        #     out['functions']['%s(%s)' % (func_id, vars)] = func_def.math
         out['parameters'] = dict([(id, var.value) for (id, var) 
                                   in list(self.constantVars.items())])
         out['assignments'] = dict(list(self.assignmentRules.items()))

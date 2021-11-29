@@ -30,8 +30,8 @@ class test_AST(unittest.TestCase):
                  'x == x and y == y', 'x - x == 0 or y - x != 0']
         start = 2
         end = 3
-        cases1 = ['x[start:end,4]']
-        for expr in cases1:
+        # cases1 = ['x[start:end,4]']
+        for expr in cases:
             # print(expr)
             p = parse(expr).body[0].value
             print("ppppppp",p)
