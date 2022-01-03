@@ -15,17 +15,18 @@ g = lambda x, y, z: x**4 * y**6 * z**5
 
 class test_Simplify(unittest.TestCase):
     def test_simplify_expr(self):
-        cases = ['x', 'x+y', 'x-y', 'x*y', 'x/y', 'x**y', '-x', 'x**-y',
-                 'x**(-y + z)', 'f(x)', 'g(x,y,z)', 'x**(y**z)', 
-                 '(x**y)**z', 'x**y**z', 'x - (x+y)', '(x+y) - z',
-                 'g(x-0+2, y**2 - 0**0, z*y + x/1)', 'x/x', 'x/y',
-                 '(x-x)/z', 'x**2 - y/z', 'x+1-1+2-3-x', '0+1*1', 'x-x+y', 
-                 '(-2)**2', '-2**2', 'x/y == x/y', 'not True', 'x/x + y/y == 2',
-                 '3 + 4 > 6', '3 + (4 > 6)',
-                 ]
-        cases = ['2.0*exp(xIC)*1 + exp(xIC)*0']
+        # cases = ['x', 'x+y', 'x-y', 'x*y', 'x/y', 'x**y', '-x', 'x**-y',
+        #          'x**(-y + z)', 'f(x)', 'g(x,y,z)', 'x**(y**z)', 
+        #          '(x**y)**z', 'x**y**z', 'x - (x+y)', '(x+y) - z',
+        #          'g(x-0+2, y**2 - 0**0, z*y + x/1)', 'x/x', 'x/y',
+        #          '(x-x)/z', 'x**2 - y/z', 'x+1-1+2-3-x', '0+1*1', 'x-x+y', 
+        #          '(-2)**2', '-2**2', 'x/y == x/y', 'not True', 'x/x + y/y == 2',
+        #          '3 + 4 > 6', '3 + (4 > 6)',
+        #          ]
+        cases = ['x**(-y + z)']
         for expr in cases: 
             simplified = ExprManip.simplify_expr(expr)
+            print("simplified", simplified)
             orig = eval(expr)
             simp = eval(simplified)
             if orig != 0:
