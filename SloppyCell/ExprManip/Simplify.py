@@ -39,6 +39,7 @@ def _simplify_ast(ast):
         x - x = 0
         --x = x
     """
+    print("inside simplify", ast)
     if isinstance(ast, Name) or isinstance(ast, Constant):
         return ast
     elif isinstance(ast, BinOp) and (isinstance(ast.op, Add) or isinstance(ast.op, Sub)):

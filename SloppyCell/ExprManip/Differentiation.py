@@ -84,6 +84,7 @@ def diff_expr(expr, wrt):
         return deriv
 
     ast = AST.strip_parse(expr)
+    print("afterrrrr", ast)
     deriv = _diff_ast(ast, wrt)
     deriv = Simplify._simplify_ast(deriv)
     print("exprrrrrrrrrrrrrrrrrrrrrrrrrrr", expr)

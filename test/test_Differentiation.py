@@ -56,11 +56,13 @@ class test_Differentiation(unittest.TestCase):
                  ('g(x - y*x + cos(x*z), y, x)' ,'y'),
                  ('g(x*y, x*y**2, y)', 'z')
                  ]
-        cases1 = [  ('g(x - y*x + cos(x*z), y**z, x - 14*z)' ,'y')]
-        for expr, wrt in cases: 
+        cases1 = [  ('x**y' ,'x')]
+        for expr, wrt in cases1: 
             d = ExprManip.diff_expr(expr, wrt)
+            print("differen", d)
             ad = eval(d)
             fd = self._num_diff(expr, wrt, x=x, y=y, z=z)
+            print("fd", fd)
             # We test that our numeric and analytic derivatives differ by less
             #  than 0.1%
             if ad != 0:
