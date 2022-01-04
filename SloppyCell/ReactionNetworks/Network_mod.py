@@ -2364,10 +2364,11 @@ class Network(object):
         for index, name in enumerate(self.assignedVars.keys()):
             mapping[name] = 'av[%i]'%index
         
-        class Parse(ExprManip.AST.NodeVisitor):
+        class Parse(ExprManip.AST):
             def __call__(slf,s,c=True):
                 if c: s = ExprManip.make_c_compatible(s)
                 ast = ExprManip.strip_parse(s)
+                print(ast)
                 ExprManip.AST.walk(ast)
                 return ExprManip.ast2str(ast)
 

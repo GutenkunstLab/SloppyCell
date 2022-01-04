@@ -86,7 +86,7 @@ def _simplify_ast(ast):
         #         that have a total count of 0.
         term_counts = dict([(AST.ast2str(term), (term, count)) for term, count in 
                             term_counts])
-        print("negs", neg)
+        print("negsssssssssssssssssssssssssssssssssssssssssssssssssssssssssss", neg)
         print("posi", pos)
         print("term_count", term_counts)
         # We find the first term with non-zero count.
@@ -194,8 +194,7 @@ def _simplify_ast(ast):
         power = _simplify_ast(ast.right)
         base = _simplify_ast(ast.left)
         print("ast left", ast.left)
-        print("power", power)
-        print("vase", base)
+        
         if power == _ZERO:
             # Anything, including 0, to the 0th power is 1, so this
             #  test should come first
@@ -205,6 +204,9 @@ def _simplify_ast(ast):
         elif isinstance(base, Constant) and\
                 isinstance(power, Constant):
             return Constant(value=base.value**power.value)
+        print("entered here in simplify astttttttttttttttttttttttttttttttttttttttttttttttt")
+        print("power", power)
+        print("vase", base)
         # Getting here implies that no simplifications are possible, so just
         #  return with simplified arguments
         return BinOp(left=base, op=Pow(), right=power)

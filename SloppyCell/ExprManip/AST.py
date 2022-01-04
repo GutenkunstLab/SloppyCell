@@ -39,7 +39,7 @@ def strip_parse(expr):
 
 # This defines the order of operations for the various node types, to determine
 #  whether or not parentheses are necessary.
-_OP_ORDER = {Name: 0.5,
+_OP_ORDER = {Name: 0,
             Constant: 0,
              Call: 0,
              Subscript: 0,
@@ -56,8 +56,8 @@ _OP_ORDER = {Name: 0.5,
              And: 11,
              Or: 11,
              Expr: 100,
-             BinOp: 1,
-             UnaryOp: 1,
+            #  BinOp: 0,
+            #  UnaryOp: 0,
             }
 
 # This is just an instance of Discard to use for the default
