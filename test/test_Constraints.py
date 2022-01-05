@@ -64,9 +64,10 @@ class test_Constraints(unittest.TestCase):
         traj = Dynamics.integrate(net, tlist_algebraic_net, use_constraints=False)
 
         event_indeces = [net.events.index_by_key('event1'),net.events.index_by_key('event2')]
-
+        print("event indices", event_indeces)
         (te,ye,ie) = traj.event_info
-
+        print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
+        print(te,ye,ie)
         for e_ind in event_indeces:
             self.assertEqual(True, e_ind in ie)
         for t1, t2 in zip(te, [13.30131485,
