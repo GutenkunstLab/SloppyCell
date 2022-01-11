@@ -102,7 +102,7 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
-    print("node", node)
+    print("nodein ast2str yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy", node)
     if isinstance(node, Name):
         out = node.id
     elif isinstance(node, Constant):
@@ -138,6 +138,7 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
             subs = [ast2str(sub) for sub in node.slice.elts]
             out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
         elif isinstance(node.slice, ExtSlice):
+            print("slice errrorrrrrrrrrrrrrrrrrrrrrr", node.slice)
             # subs = ast2str(node.slice)
             out1 = ast2str(node.value)
             out2 = ast2str(node.slice)

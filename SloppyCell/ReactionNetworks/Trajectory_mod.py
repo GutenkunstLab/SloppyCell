@@ -306,6 +306,7 @@ class Trajectory(object):
 
     def _make__assignment(self, net):
         functionBody = ['def _assignment(self, values, times, start, end):']
+        print("functionbodyyyyyyyyyyyyyyyy", functionBody)
 
         for id in list(self.const_var_values.keys()):
             functionBody.append("%s = self.const_var_values.get('%s')" % 
