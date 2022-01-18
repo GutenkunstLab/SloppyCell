@@ -3589,15 +3589,15 @@ def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
     """
     try:
         function_body = obj._dynamic_funcs_python.get(func)
-        print("function body", function_body)
+        # print("function body", function_body)
     except (KeyError, AttributeError):
         function_body = getattr(obj, '%s_functionBody' % func)
     # This exec gives the function access to everything defined in in_namespace
     #  and inserts the result into the locals namespace
     exec(function_body, in_namespace, locals())
-    print("function_body", function_body)
-    print("in_namespace", in_namespace)
-    print("locals", locals())
+    # print("function_body", function_body)
+    # print("in_namespace", in_namespace)
+    # print("locals", locals())
     # The call to types.MethodType ensures that we can call the function
     #  as obj.f(...) and get the implicit 'self' argument.
     # locals()[func] just gets the actual function object the exec created.
