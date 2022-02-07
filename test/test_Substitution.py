@@ -1,5 +1,4 @@
 import random
-import sets
 import unittest
 
 import SloppyCell.ExprManip as ExprManip
@@ -26,7 +25,8 @@ class test_Substitution(unittest.TestCase):
                  ('g(x, y, f(z)) != y+2 and z == y', 'z', 'y',
                   '(g(x, y, f(y)) != (y + 2)) and (y == y)'),
                  ]
-
+        cases1 = [ ('x + 1', 'x', 'y', 
+                  'y + 1')]
         for expr, out_var, in_expr, answer in cases:
             subbed = ExprManip.sub_for_var(expr, out_var, in_expr)
             assert eval(answer) == eval(subbed)

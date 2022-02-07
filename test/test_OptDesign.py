@@ -1,11 +1,13 @@
+from __future__ import absolute_import
 import copy
 import unittest
 
 import scipy
 
-from SloppyCell.ReactionNetworks import *
-import SloppyCell
+# from SloppyCell.ReactionNetworks import *
+# import SloppyCell
 import TestNetwork
+# from SloppyCell.ReactionNetworks import OptDesign as OD
 import SloppyCell.ReactionNetworks.OptDesign as OD
 import os
 import SloppyCell.Utility

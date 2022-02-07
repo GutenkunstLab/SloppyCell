@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import division
+from past.utils import old_div
 import unittest
 
 import scipy
@@ -25,14 +28,13 @@ class test_TimeDerivs(unittest.TestCase):
                                                   return_derivs=True)
 
         x_vals = Traj.get_var_traj('x')
-        x_vals_deriv = scipy.diff(x_vals)/scipy.diff(Traj.get_times())
-        relerror = scipy.linalg.norm(x_vals_deriv-Traj.get_var_traj(('x','time'))[:-1])/scipy.linalg.norm(x_vals_deriv)
+        x_vals_deriv = old_div(scipy.diff(x_vals),scipy.diff(Traj.get_times()))
+        relerror = old_div(scipy.linalg.norm(x_vals_deriv-Traj.get_var_traj(('x','time'))[:-1]),scipy.linalg.norm(x_vals_deriv))
 
         x_vals_wrtA = sensTraj.get_var_traj(('x','A'))
-        x_vals_wrtA_deriv = scipy.diff(x_vals_wrtA)/scipy.diff(sensTraj.get_times())
+        x_vals_wrtA_deriv = old_div(scipy.diff(x_vals_wrtA),scipy.diff(sensTraj.get_times()))
 
-        relerror2 = scipy.linalg.norm(x_vals_wrtA_deriv-sensTraj.get_var_traj(('x','A','time'))[:-1])\
-                    /scipy.linalg.norm(x_vals_wrtA_deriv)
+        relerror2 = old_div(scipy.linalg.norm(x_vals_wrtA_deriv-sensTraj.get_var_traj(('x','A','time'))[:-1]),scipy.linalg.norm(x_vals_wrtA_deriv))
 
         self.assertAlmostEqual(relerror, 0.0, 5, 'Failed on time deriv of x '
                                'in Traj')

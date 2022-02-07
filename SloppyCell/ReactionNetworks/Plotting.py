@@ -1,10 +1,15 @@
-import sets
-
+from __future__ import print_function
+from __future__ import division
+from builtins import next
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import scipy
 
 import SloppyCell.Plotting
 from SloppyCell.Plotting import *
-import Network_mod
+from SloppyCell.ReactionNetworks import Network_mod
 
 import logging
 logger = logging.getLogger('ReactionNetworks.Plotting')
@@ -17,11 +22,11 @@ def PlotEigenvectors(eigVects, net = None, title = None):
         if jj == 0 and title is not None:
             title(title)
 
-        bar(range(nOv), eigVects[:,jj]/scipy.linalg.norm(eigVects[:,jj]))
+        bar(list(range(nOv)), old_div(eigVects[:,jj],scipy.linalg.norm(eigVects[:,jj])))
         axis([-1, nOv] + axis()[2:])
 
         if net is not None:
-            mags = zip(abs(eigVects[:,jj]), range(nOv), eigVects[:,jj])
+            mags = list(zip(abs(eigVects[:,jj]), list(range(nOv)), eigVects[:,jj]))
             mags.sort()
             mags.reverse()
             for mag, index, val in mags[:5]:
@@ -53,7 +58,7 @@ def plotStateSpaceTrajectoriesForVariables(traj, id1, id2, thresholds = None):
 
 def plotTrajectoriesForVariables(traj, ids = None, showLegend = True):
     if ids is None:
-        ids = traj.net.variables.keys()
+        ids = list(traj.net.variables.keys())
 
     cW = ColorWheel()
 
@@ -79,7 +84,7 @@ def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=
         dataByCalc = model.exptColl[exptName].GetData()
         for calc in dataByCalc:
             chemsNeededByCalc.setdefault(calc, [])
-            for chem in dataByCalc[calc].keys():
+            for chem in list(dataByCalc[calc].keys()):
                 chemsNeededByCalc[calc].append(chem)
                 thisMaxTime = max(dataByCalc[calc][chem].keys()) 
                 if thisMaxTime > maxTime:
@@ -102,15 +107,15 @@ def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=
         dataByCalc = expt.GetData()
         for calc in dataByCalc:
             for chem in dataByCalc[calc]:
-                color, sym, dash = cW.next()
+                color, sym, dash = next(cW)
 
                 if with_data:
-                    for time, (data, error) in dataByCalc[calc][chem].items()[::skip]:
+                    for time, (data, error) in list(dataByCalc[calc][chem].items())[::skip]:
                         errorbar(time, data, yerr=error, color=color,
                                  mfc = color, marker=sym,
                                  ecolor=color, capsize=6)
 
-                predicted = scipy.array(calcVals[calc][chem].items())
+                predicted = scipy.array(list(calcVals[calc][chem].items()))
                 order = scipy.argsort(predicted[:,0])
                 predicted = scipy.take(predicted, order)
                 predicted[:,1] = predicted[:,1] *\
@@ -133,11 +138,11 @@ def PlotDataForExperiments(model, experiments, skip = 1):
         dataByCalc = expt.GetData()
         for calc in dataByCalc:
             for chem in dataByCalc[calc]:
-                color, sym, dash = cW.next()
-                d = scipy.zeros((len(dataByCalc[calc][chem].values()[::skip]),
+                color, sym, dash = next(cW)
+                d = scipy.zeros((len(list(dataByCalc[calc][chem].values())[::skip]),
                                             3), scipy.Float)
                 for ii, (time, (data, error))\
-                        in enumerate(dataByCalc[calc][chem].items()[::skip]):
+                        in enumerate(list(dataByCalc[calc][chem].items())[::skip]):
                     d[ii] = [time, data, error]
 
                 errorbar(d[:,0], d[:,1], yerr=d[:,2], color=color,
@@ -196,7 +201,7 @@ def plot_model_results(model, expts = None, style='errorbars',
     cW = ColorWheel()
     
     if expts is None:
-        expts = exptColl.keys()
+        expts = list(exptColl.keys())
 
     for exptId in expts:
         expt = exptColl[exptId]
@@ -205,19 +210,19 @@ def plot_model_results(model, expts = None, style='errorbars',
             dataByCalc.setdefault(ds['calcKey'], {})
             dataByCalc[ds['calcKey']].setdefault(ds['var'], {})
         # We sort the calculation names for easier comparison across plots
-        sortedCalcIds = dataByCalc.keys()
+        sortedCalcIds = list(dataByCalc.keys())
         sortedCalcIds.sort()
         for calcId in sortedCalcIds:
             # Pull the trajectory from that calculation, defaulting to None
             #  if it doesn't exist.
             net = calcColl.get(calcId)
             traj = getattr(net, 'trajectory', None)
-            for dataId, dataDict in dataByCalc[calcId].items():
+            for dataId, dataDict in list(dataByCalc[calcId].items()):
                 # Skip this variable if it's not amongst our data_to_plot
                 #  list.
                 if (data_to_plot is not None) and (dataId not in data_to_plot):
                     continue
-                color, sym, dash = cW.next()
+                color, sym, dash = next(cW)
 
                 if plot_trajectories:
                     if traj is None:
@@ -240,7 +245,7 @@ def plot_model_results(model, expts = None, style='errorbars',
                 if plot_data and dataDict:
                     # Pull the data out of the dictionary and into an array
                     d = scipy.array([[t, v, e] for (t, (v, e))
-                                     in dataDict.items()])
+                                     in list(dataDict.items())])
                     if style is 'errorbars':
                         l = errorbar(d[:,0], d[:,1], yerr=d[:,2], color=color,
                                      mfc = color, linestyle='', marker=sym,
@@ -306,7 +311,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
     nets = model.get_calcs()
 
     if expts is None:
-        expts = exptColl.keys()
+        expts = list(exptColl.keys())
 
     lines, labels = [], []
     cW = ColorWheel()
@@ -314,7 +319,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
     Network_mod.Network.pretty_plotting()
     model.cost(ensemble[0])
     timepoints = {}
-    for netId, net in nets.items():
+    for netId, net in list(nets.items()):
         traj = getattr(net, 'trajectory', None)
         if traj is not None:
             net.times_to_add = scipy.linspace(traj.timepoints[0], 
@@ -329,13 +334,13 @@ def plot_ensemble_results(model, ensemble, expts = None,
             expt = exptColl[exptId]
             results.setdefault(exptId, {})
             dataByCalc = expt.GetData()
-            for netId in dataByCalc.keys():
+            for netId in list(dataByCalc.keys()):
                 results[exptId].setdefault(netId, {})
                 # Pull the trajectory from that calculation, defaulting to None
                 #  if it doesn't exist.
                 net = nets.get(netId)
                 traj = net.trajectory
-                for dataId in dataByCalc[netId].keys():
+                for dataId in list(dataByCalc[netId].keys()):
                     results[exptId][netId].setdefault(dataId, [])
 
                     scaleFactor = model.GetScaleFactors()[exptId][dataId]
@@ -346,16 +351,16 @@ def plot_ensemble_results(model, ensemble, expts = None,
         expt = exptColl[exptId]
         dataByCalc = expt.GetData()
         # We sort the calculation names for easier comparison across plots
-        sortedCalcIds = dataByCalc.keys()
+        sortedCalcIds = list(dataByCalc.keys())
         sortedCalcIds.sort()
         for netId in sortedCalcIds:
-            for dataId, dataDict in dataByCalc[netId].items():
-                color, sym, dash = cW.next()
+            for dataId, dataDict in list(dataByCalc[netId].items()):
+                color, sym, dash = next(cW)
 
                 if plot_data:
                     # Pull the data out of the dictionary and into an array
                     d = scipy.array([[t, v, e] for (t, (v, e))
-                                     in dataDict.items()])
+                                     in list(dataDict.items())])
                     if style is 'errorbars':
                         l = errorbar(d[:,0], d[:,1], yerr=d[:,2], fmt='o', 
                                      color=color, markerfacecolor=color,
@@ -366,32 +371,32 @@ def plot_ensemble_results(model, ensemble, expts = None,
                         d = scipy.take(d, order, 0)
                         l = plot(d[:,0], d[:,1], color=color,
                                  linestyle=dash)
-		    lines.append(l)
+            lines.append(l)
 
-                if plot_trajectories:
-                    times = model.get_calcs().get(netId).trajectory.get_times()
-                    mean_vals = scipy.mean(results[exptId][netId][dataId], 0)
-                    std_vals = scipy.std(results[exptId][netId][dataId], 0)
+            if plot_trajectories:
+                times = model.get_calcs().get(netId).trajectory.get_times()
+                mean_vals = scipy.mean(results[exptId][netId][dataId], 0)
+                std_vals = scipy.std(results[exptId][netId][dataId], 0)
 
-                    lower_vals = mean_vals - std_vals
-                    upper_vals = mean_vals + std_vals
+                lower_vals = mean_vals - std_vals
+                upper_vals = mean_vals + std_vals
 
-                    # Plot the polygon
-                    xpts = scipy.concatenate((times, times[::-1]))
-                    ypts = scipy.concatenate((lower_vals, upper_vals[::-1]))
-                    fill(xpts, ypts, fc=color, alpha=0.4)
+                # Plot the polygon
+                xpts = scipy.concatenate((times, times[::-1]))
+                ypts = scipy.concatenate((lower_vals, upper_vals[::-1]))
+                fill(xpts, ypts, fc=color, alpha=0.4)
 
                 # Let's print the pretty name for our variable if we can.
                 name = net.get_component_name(dataId)
                 labels.append('%s in %s for %s' % (name, netId, exptId))
 
-    for netId, net in nets.items():
+    for netId, net in list(nets.items()):
         del net.times_to_add
 
     if show_legend:
         legend(lines, labels, loc=loc)
 
-    for net in nets.values():
+    for net in list(nets.values()):
         net.times_to_add = None
 
     return lines, labels
@@ -412,7 +417,7 @@ def plot_trajectory(traj, vars = None,
     cW = ColorWheel(symbols=None)
     lines, labels = [], []
     for id in vars:
-        color, sym, dash = cW.next()
+        color, sym, dash = next(cW)
         label = str(id)
         line = plot_func(traj.timepoints, traj.getVariableTrajectory(id),
                          color = color, mfc = color, marker=sym, linestyle=dash,
@@ -441,7 +446,7 @@ def plot_deriv_trajectory(traj, vars = None,
     lines, labels = [], []
     for id in vars:
         try:
-            color, sym, dash = cW.next()
+            color, sym, dash = next(cW)
             label = str(id)
             line = plot_func(traj.timepoints, traj.get_var_traj((id, 'time')),
                              color = color, mfc = color, marker=sym, linestyle=dash,
@@ -479,7 +484,7 @@ def plot_ensemble_trajs(best_traj=None, mean_traj=None,
     lines = []
     labels = []
     for var in vars:
-        color, sym, dash = cW.next()
+        color, sym, dash = next(cW)
         if best_traj is not None:
             l = plot(best_traj.timepoints, best_traj.getVariableTrajectory(var),
                      linestyle='-', color=color, linewidth=2)

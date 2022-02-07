@@ -5,7 +5,13 @@ Author @Keeyan
 
 Runs appropriate functions to test input data and model (XML edition
 """
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 
+from builtins import str
+from builtins import next
+from past.utils import old_div
 import logging
 from xml.etree import ElementTree as ET
 import os
@@ -15,7 +21,7 @@ from SloppyCell.ReactionNetworks import *
 from pylab import *
 import csv
 
-import Utility
+from . import Utility
 
 logger = logging.getLogger('TestConstruct_XML')
 logging.basicConfig()
@@ -56,7 +62,7 @@ def find_factors(x):
     n = math.floor(n)
     while x % n != 0:
         n -= 1
-    m = x/n
+    m = old_div(x,n)
     return m, n
 
 
@@ -130,7 +136,7 @@ def routine_dict_drier(routine_dict):
                             matches = next((x for x in a if x in parameter), False)
                             value = float(parameter.split(matches)[1])
                             b = {'!=': lambda x: x != value, '==': lambda x: x == value, '<': lambda x: x < value,
-                                 '>': lambda x: x > value, '*': lambda x: x*value, '/': lambda x: x/value}
+                                 '>': lambda x: x > value, '*': lambda x: x*value, '/': lambda x: old_div(x,value)}
                             parameter = b[matches]
 
         routine_dict_copy[key_r] = parameter
@@ -163,7 +169,7 @@ def set_typical(network, action_root, network_dictionary):
         attributes = child.attrib
         attributes = routine_dict_drier(attributes)
         if attributes['id'] == 'all':
-            variables = network.variables.keys()
+            variables = list(network.variables.keys())
             for variable in variables:
                 network.set_var_typical_val(variable, attributes['value'])
         else:
@@ -215,7 +221,7 @@ def set_initial(network, action_root, network_dictionary):
         except KeyError:
             condition = lambda x: True
         if attributes['id'] == 'all':
-            variables = network.variables.keys()
+            variables = list(network.variables.keys())
             for variable in variables:
                 alpha = condition(network.get_var_ic(variable))
                 if isinstance(alpha,bool):
@@ -223,7 +229,7 @@ def set_initial(network, action_root, network_dictionary):
                         network.set_var_ic(variable, attributes['value'])
                 else:
                     network.set_var_ic(variable, alpha)
-        elif attributes['id']=='traj' and 'point' in attributes.keys():
+        elif attributes['id']=='traj' and 'point' in list(attributes.keys()):
             point = int(attributes['point'])
             traj=Dynamics.integrate(network,[0,point])
             network.set_var_ics(traj.get_var_vals(point))
@@ -277,7 +283,7 @@ def add_parameter(network, action_root, network_dictionary):
         try:
             listed_network = attributes.pop('net')
             listed_network = network_dictionary[listed_network]
-            variables = listed_network.parameters.keys()
+            variables = list(listed_network.parameters.keys())
             for id in variables:
                 network.add_parameter(id, listed_network.get_var_ic(id), **attributes)
         except KeyError:
@@ -357,7 +363,7 @@ def prior_drier(root, model):
     """
     prior_dictionary = {}
     all_params = model.get_params()
-    all_params = all_params.items()
+    all_params = list(all_params.items())
 
     try:
         for child in root.iter('parameter'):
@@ -379,7 +385,7 @@ def prior_drier(root, model):
                     else:
                         # TODO: This needs to be fixed
                         param = all_params[all_params.index(parameter)]
-                        val_p = param.items()[1]
+                        val_p = list(param.items())[1]
                         x = width
                         model.AddResidual(Residuals.PriorInLog('prior_on_%s' % param_id, param_id, scipy.log(val_p),
                                                                scipy.log(x)))
@@ -389,7 +395,7 @@ def prior_drier(root, model):
                     upper = float(bounds['upper'])
 
                     val_p = sqrt(lower * upper)
-                    x = sqrt(upper / val_p)
+                    x = sqrt(old_div(upper, val_p))
                     # Just in case something goes wrong but doesn't cause any blatant errors
                     # assert (x == sqrt(val_p / lower))
                     model.AddResidual(Residuals.PriorInLog('prior_on_%s' % parameter, parameter, scipy.log(val_p),
@@ -508,8 +514,8 @@ def construct_ensemble(params, m, result_dictionary, autocorrelate=False, steps=
         csv_friendly_ens = asarray(pruned_ens)
         with open(dir_name+"/saved_files/Ensemble_ens_"+str(steps)+".csv", 'wb') as myfile:
             wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-            print(params.keys())
-            wr.writerow(params.keys())
+            print(list(params.keys()))
+            wr.writerow(list(params.keys()))
             for row in csv_friendly_ens:
                 wr.writerow(row)
     if only_pruned:
@@ -525,10 +531,10 @@ def construct_ensemble(params, m, result_dictionary, autocorrelate=False, steps=
 
 def plot_histograms(pruned_ens, keyed_list, id='all', bins=10, log=True):
     if id == 'all':
-        id = keyed_list.keys()
+        id = list(keyed_list.keys())
     if isinstance(id, list):
         for param in id:
-            if param in keyed_list.keys():
+            if param in list(keyed_list.keys()):
                 print("Plotting histogram for %s" % param)
                 param_index = keyed_list.index_by_key(param)
                 fig = figure()
@@ -628,7 +634,7 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
         plot_after = False
     if initial_cost:
         initial_cost = m.cost(params)
-        print('Initial Cost:', initial_cost)
+        print(('Initial Cost:', initial_cost))
         try:
             if kwargs.pop('plot_before'):
                 initial_plot = Plotting.figure()
@@ -650,14 +656,14 @@ def cost_lm(params, m, optimize=True, plot=False, initial_cost = False, order = 
             new_params = optimization_dictionary[opt_type](m, new_params, **routine_dict_n)
         optimized_cost = m.cost(new_params)
         params = new_params
-        print('Optimized cost:', optimized_cost)
+        print(('Optimized cost:', optimized_cost))
         # print 'Optimized parameters:', params
 
     if plot or plot_after:
         if not optimize:
             optimized_cost = m.cost(params)
-            print('Optimized cost:', optimized_cost)
-            print('Optimized parameters:', params)
+            print(('Optimized cost:', optimized_cost))
+            print(('Optimized parameters:', params))
         Plotting.figure()
         f=Plotting.plot_model_results(m)
         for thing in f[0]:
@@ -673,10 +679,10 @@ def time_extract(experiment_r):
     Goes through the experiment provided and finds the times
     """
     time_array = []
-    for experiment in experiment_r.values():
-        for key_t in experiment.data.keys():
-            for species_key in experiment.data[key_t].keys():
-                times = experiment.data[key_t][species_key].keys()
+    for experiment in list(experiment_r.values()):
+        for key_t in list(experiment.data.keys()):
+            for species_key in list(experiment.data[key_t].keys()):
+                times = list(experiment.data[key_t][species_key].keys())
                 # Experiments hold the time data as keys in a dictionary
                 time_array.append(max(times))
     return int(max(time_array)) + 5  # Arbitrary number added, still unsure how x-axis is calculated for plots
@@ -1032,7 +1038,7 @@ def ensemble_traj(current_root, routine_dict, result_dictionary, time_r, net, ne
                 # We do it here instead
                 attributes = variable.attrib
                 attributes = routine_dict_drier(attributes)
-                if 'color' not in attributes.keys():
+                if 'color' not in list(attributes.keys()):
                     attributes['color'] = color_array[index]
                     index += 1
                 # We have 8 colors to choose from
@@ -1281,7 +1287,7 @@ def hessian(routine_dict, result_dictionary, model, network_dictionary, **kwargs
     Plotting.plot_eigvals(evals)
     Plotting.figure()
     Plotting.title("Eigenvectors")
-    Plotting.plot_eigvect(evects[:,0], optimized_params.keys())
+    Plotting.plot_eigvect(evects[:,0], list(optimized_params.keys()))
     return hess
 
 
@@ -1340,7 +1346,7 @@ def scale_factors(scale_root,expts):
                 except Exception as e:
                     shared_dict[attrib['shared']] = []
                     shared_dict[attrib['shared']].append(attrib['id'])
-        current_expt.set_shared_sf(shared_dict.values())
+        current_expt.set_shared_sf(list(shared_dict.values()))
         current_expt.set_fixed_sf(scale_dict)
 def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference = None, output_location=None):
     result_dictionary = dict()
@@ -1416,8 +1422,8 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
             for network in network_dictionary:
                 network = network_dictionary[network]
                 set_ic(fit_root, network)
-                for param in network.parameters.keys():
-                    if param not in params.keys():
+                for param in list(network.parameters.keys()):
+                    if param not in list(params.keys()):
                         network.set_var_constant(param, False)
 
         except AttributeError:
@@ -1437,7 +1443,7 @@ def make_happen(root, experiment, xml_file=None, file_name=None, sbml_reference 
         else:
             # If undefined, we default to making a model out of all available experiments and networks
             if experiment is not None:
-                model = Model(experiment.values(), network_dictionary.values())
+                model = Model(list(experiment.values()), list(network_dictionary.values()))
             else:
                 # We can only make a model with an experiment defined
                 model = None

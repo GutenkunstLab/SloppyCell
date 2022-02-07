@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import logging
 logger = logging.getLogger('Collections')
 
@@ -10,8 +11,7 @@ import SloppyCell.Utility as Utility
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
-if SloppyCell.HAVE_PYPAR:
-    import pypar
+from SloppyCell import num_procs, my_rank, my_host, HAVE_MPI, comm
 
 class ExperimentCollection(dict):
     """
@@ -52,7 +52,6 @@ class ExperimentCollection(dict):
         varsByCalc = {}
         for expt in self.values():
             data = expt.GetData()
-
             for calc in data:
                 varsByCalc.setdefault(calc, {})
                 for depVar in data[calc]:
@@ -61,7 +60,6 @@ class ExperimentCollection(dict):
                     varsByCalc[calc].setdefault(depVar, set())
                     varsByCalc[calc][depVar].\
                             update(set(data[calc][depVar].keys()))
-
             for period in expt.GetPeriodChecks():
                 calc, depVar = period['calcKey'], period['depVarKey']
                 start, period = period['startTime'], period['period']
@@ -96,13 +94,11 @@ class ExperimentCollection(dict):
                 elif ds['type'] == 'min': 
                     called = ds['var'] + '_minimum'
                 varsByCalc[calc][called] = (ds['minTime'], ds['maxTime'])
-                
-        # But I convert the sets back to sorted lists before returning
+        import math
         for calc in varsByCalc:
             for depVar in varsByCalc[calc]:
                 varsByCalc[calc][depVar] = list(varsByCalc[calc][depVar])
-                varsByCalc[calc][depVar].sort()
-
+                varsByCalc[calc][depVar] = sorted(varsByCalc[calc][depVar], key=lambda x: x if x is not None else -math.inf)
         return varsByCalc
 
     def GetData(self):
@@ -418,7 +414,7 @@ class CalculationCollection(KeyedList):
 
         results = {}
 
-        calcs_to_do = varsByCalc.keys()
+        calcs_to_do = list(varsByCalc.keys())
         # Record which calculation each node is doing
         calc_assigned = {}
         while calcs_to_do:
@@ -434,21 +430,22 @@ class CalculationCollection(KeyedList):
                 command = 'Network.calculate(net, vars, params)'
                 args = {'net': self.get(calc), 'vars': varsByCalc[calc],
                         'params': self.params}
-                pypar.send((command, args), worker)
+                comm.send((command, args), dest=worker)
 
             # The master does his share here
             calc = calcs_to_do.pop()
+            # print
             # We use the finally statement because we want to ensure that we
             #  *always* wait for replies from the workers, even if the master
             #  encounters an exception in his evaluation.
             try:
-                results[calc] = self.get(calc).calculate(varsByCalc[calc], 
+                results[calc] = self.get(calc).calculate(varsByCalc[calc],
                                                          self.params)
             finally:
                 # Collect results from the workers
                 for worker in range(1, len_this_block):
                     logger.debug('Receiving result from worker %i.' % worker)
-                    results[calc_assigned[worker]] = pypar.receive(worker)
+                    results[calc_assigned[worker]] = comm.recv(source=worker)
                 # If the master encounts an exception, we'll break out of the
                 #  function ***here***
 
@@ -482,7 +479,6 @@ class CalculationCollection(KeyedList):
             calc.CalculateSensitivity(varsByCalc[calcName], self.params)
             calcSensVals[calcName] = calc.GetSensitivityResult(vars)
             calcVals[calcName] = calc.GetResult(vars)
-
         return calcVals, calcSensVals
 
     def GetParameters(self):

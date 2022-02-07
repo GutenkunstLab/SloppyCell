@@ -1,3 +1,7 @@
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import scipy
 
 try:
@@ -17,7 +21,7 @@ def normColumns(mat1):
     n = len(mat1[0])
     mat2 = mat1.copy()
     for ii in range(n):
-        mat2[:,ii] = mat2[:,ii]/scipy.sqrt(scipy.dot(mat2[:,ii],mat2[:,ii]))
+        mat2[:,ii] = old_div(mat2[:,ii],scipy.sqrt(scipy.dot(mat2[:,ii],mat2[:,ii])))
     return mat2
 
 def colorAlignColumns(mat1):
@@ -33,8 +37,8 @@ def calcCovarianceMat(origMat):
     n = len(covarMat)
     jaa = scipy.outer(scipy.diagonal(covarMat),scipy.ones(n,'d'))
     jbb = scipy.outer(scipy.ones(n,'d'),scipy.diagonal(covarMat))
-    covarMat = covarMat/scipy.sqrt(jaa)
-    covarMat = covarMat/scipy.sqrt(jbb)
+    covarMat = old_div(covarMat,scipy.sqrt(jaa))
+    covarMat = old_div(covarMat,scipy.sqrt(jbb))
     return covarMat
 
 def calcDmat(jtj):
@@ -61,49 +65,49 @@ def calcR2mat_3(jtj,Dmat):
     n = len(jtj)
     jaa = scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d'))
     jbb = scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj))
-    r2mat = (1./2.)*(-scipy.sqrt(Dmat)+4.*(jtj**2)/scipy.sqrt(Dmat) + (jaa - 4.*jtj*scipy.sqrt((jtj**2)/Dmat) + jbb))
+    r2mat = (1./2.)*(-scipy.sqrt(Dmat)+old_div(4.*(jtj**2),scipy.sqrt(Dmat)) + (jaa - 4.*jtj*scipy.sqrt(old_div((jtj**2),Dmat)) + jbb))
 #    r2mat = (lambdaMat**2.)*jaa + (1.-lambdaMat**2.)*jbb + 2.*lambdaMat*scipy.sqrt(1.-lambdaMat**2.)*jtj
     return r2mat
 
 def calcLambdaMat_3(jtj,Dmat):
     n = len(jtj)
-    lambdaMat = -(1./scipy.sqrt(2.))*scipy.sqrt(1.+(-scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d')) +  scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj)))/scipy.sqrt(Dmat))
+    lambdaMat = -(1./scipy.sqrt(2.))*scipy.sqrt(1.+old_div((-scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d')) +  scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj))),scipy.sqrt(Dmat)))
     return lambdaMat
 
 def calcR2mat_2(jtj,Dmat):
     n = len(jtj)
     jaa = scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d'))
     jbb = scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj))
-    r2mat = (1./2.)*(scipy.sqrt(Dmat)-4.*(jtj**2)/scipy.sqrt(Dmat) + (jaa + 4.*jtj*scipy.sqrt((jtj**2)/Dmat) + jbb))
+    r2mat = (1./2.)*(scipy.sqrt(Dmat)-old_div(4.*(jtj**2),scipy.sqrt(Dmat)) + (jaa + 4.*jtj*scipy.sqrt(old_div((jtj**2),Dmat)) + jbb))
     return r2mat
 
 def calcLambdaMat_2(jtj,Dmat):
     n = len(jtj)
-    lambdaMat = (1./scipy.sqrt(2.))*scipy.sqrt(1.+(scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d')) -  scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj)))/scipy.sqrt(Dmat))
+    lambdaMat = (1./scipy.sqrt(2.))*scipy.sqrt(1.+old_div((scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d')) -  scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj))),scipy.sqrt(Dmat)))
     return lambdaMat
 
 def calcR2mat_1(jtj,Dmat):
     n = len(jtj)
     jaa = scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d'))
     jbb = scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj))
-    r2mat = (1./2.)*(scipy.sqrt(Dmat)-4.*(jtj**2)/scipy.sqrt(Dmat) + (jaa - 4.*jtj*scipy.sqrt((jtj**2)/Dmat) + jbb))
+    r2mat = (1./2.)*(scipy.sqrt(Dmat)-old_div(4.*(jtj**2),scipy.sqrt(Dmat)) + (jaa - 4.*jtj*scipy.sqrt(old_div((jtj**2),Dmat)) + jbb))
     return r2mat
 
 def calcLambdaMat_1(jtj,Dmat):
     n = len(jtj)
-    lambdaMat = -(1./scipy.sqrt(2.))*scipy.sqrt(1.+(scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d')) -  scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj)))/scipy.sqrt(Dmat))
+    lambdaMat = -(1./scipy.sqrt(2.))*scipy.sqrt(1.+old_div((scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d')) -  scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj))),scipy.sqrt(Dmat)))
     return lambdaMat
 
 def calcR2mat_4(jtj,Dmat):
     n = len(jtj)
     jaa = scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d'))
     jbb = scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj))
-    r2mat = (1./2.)*(-scipy.sqrt(Dmat)+4.*(jtj**2)/scipy.sqrt(Dmat) + (jaa + 4.*jtj*scipy.sqrt((jtj**2)/Dmat) + jbb))
+    r2mat = (1./2.)*(-scipy.sqrt(Dmat)+old_div(4.*(jtj**2),scipy.sqrt(Dmat)) + (jaa + 4.*jtj*scipy.sqrt(old_div((jtj**2),Dmat)) + jbb))
     return r2mat
 
 def calcLambdaMat_4(jtj,Dmat):
     n = len(jtj)
-    lambdaMat = (1./scipy.sqrt(2.))*scipy.sqrt(1.+(-scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d')) +  scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj)))/scipy.sqrt(Dmat))
+    lambdaMat = (1./scipy.sqrt(2.))*scipy.sqrt(1.+old_div((-scipy.outer(scipy.diagonal(jtj),scipy.ones(n,'d')) +  scipy.outer(scipy.ones(n,'d'),scipy.diagonal(jtj))),scipy.sqrt(Dmat)))
     return lambdaMat
 
 def checkLambda(jtj,lMat,r2Mat,a,b):

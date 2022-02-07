@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from builtins import range
 import unittest
 import copy
 import scipy
@@ -19,7 +21,7 @@ class test_IntegrateWithoutDerivatives(unittest.TestCase):
 
         funcs_no_derivs = ['res_function', 'alg_deriv_func', 'alg_res_func',\
                            'integrate_stochastic_tidbit', 'root_func']
-        self.assertEqual(local_net._dynamic_funcs_python.keys(),
+        self.assertEqual(list(local_net._dynamic_funcs_python.keys()),
                          funcs_no_derivs)
         traj = Dynamics.integrate(local_net, tlist)
 

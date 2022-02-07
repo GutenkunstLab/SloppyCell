@@ -1,7 +1,7 @@
+from builtins import object
 import logging
 logger = logging.getLogger('ReactionNetworks.Components')
 
-import sets
 
 import SloppyCell.ExprManip as ExprManip
 
@@ -9,7 +9,7 @@ import SloppyCell.ExprManip as ExprManip
 # Containers for the more complex SBML entities.
 #
 
-class FunctionDefinition:
+class FunctionDefinition(object):
     def __init__(self, id, variables, math, name = ''):
         self.id = id
         self.variables = variables
@@ -23,7 +23,7 @@ class FunctionDefinition:
     def __ne__(self, other):
         return not (self == other)
     
-class Variable:
+class Variable(object):
     def __init__(self, id, value, 
                  name, typicalValue, 
                  is_constant, is_optimizable):
@@ -71,7 +71,7 @@ class Parameter(Variable):
                           name, typical_value,
                           is_constant, is_optimizable)
 
-class Event:
+class Event(object):
     def __init__(self, id, trigger, event_assignments, delay, name,
                  buffer):
         self.id, self.name = id, name
@@ -119,18 +119,17 @@ class Event:
 
         self.trigger = trigger
 
-        if ExprManip.extract_vars(trigger) == sets.Set(['time']):
+        if ExprManip.extract_vars(trigger) == set(['time']):
             self.timeTriggered = True
             ast = ExprManip.AST.strip_parse(trigger)
             firstArg = ExprManip.AST.ast2str(ast.args[0])
             secondArg = ExprManip.AST.ast2str(ast.args[1])
-
             if firstArg == 'time':
                 self.triggeringTime = eval(secondArg)
             elif secondArg == 'time':
                 self.triggeringTime = eval(firstArg)
             else:
-                raise 'Problem in time triggered events'
+                raise NameError('Problem in time triggered events')
 
 class ConstraintEvent(Event):
     def __init__(self, id, trigger, message, name):

@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import scipy
 
 from SloppyCell.ReactionNetworks import *
@@ -15,11 +17,11 @@ for spec_id in specs:
     if spec_id == 'MH':
         # It looks very much like the variation in MH was multiplied by 50 for
         #  plotting purposes
-        yy = 50*scipy.log(traj.get_var_traj(spec_id)/m0)
+        yy = 50*scipy.log(old_div(traj.get_var_traj(spec_id),m0))
     else:
         # Also, MF and MD seem to be compared against 1, which isn't their
         #  steady-state deterministic value.
-        yy = scipy.log(scipy.maximum(traj.get_var_traj(spec_id), 1)/max(m0, 1))
+        yy = scipy.log(old_div(scipy.maximum(traj.get_var_traj(spec_id), 1),max(m0, 1)))
     Plotting.plot(traj.get_times()/60., yy, label=spec_id)
 
 Plotting.legend()

@@ -1,15 +1,17 @@
-from compiler.ast import *
+from __future__ import absolute_import
+from builtins import str
+from ast import *
 import os
 
-import AST
+from SloppyCell.ExprManip  import AST
 
 # This is just and istance of Mul to use when we group numerators and 
 #  denominators
-_EMPTY_MUL = Mul((None, None))
+_EMPTY_MUL = BinOp(left=Constant(value=None), op=Mult(), right=Constant(value=None))
 
 def dict2TeX(d, name_dict, lhs_form='%s', split_terms=False, simpleTeX=False):
     lines = []
-    for lhs, rhs in d.items():
+    for lhs, rhs in list(d.items()):
         if split_terms:
             ast = AST.strip_parse(rhs)
             pos, neg = [], []
@@ -79,16 +81,16 @@ def _ast2TeX(ast, outer=AST._FARTHEST_OUT, name_dict={},
     if isinstance(ast, Name):
         # Try to get a value from the name_dict, defaulting to ast.name if
         #  ast.name isn't in name_dict
-        out = name_dict.get(ast.name, ast.name)
-    elif isinstance(ast, Const):
+        out = name_dict.get(ast.id, ast.id)
+    elif isinstance(ast, Constant):
         out = str(ast.value)
-    elif isinstance(ast, Add):
+    elif isinstance(ast, BinOp) and isinstance(ast.op, Add):
         out = '%s + %s' % (_ast2TeX(ast.left, ast, name_dict),
                            _ast2TeX(ast.right, ast, name_dict))
-    elif isinstance(ast, Sub):
+    elif isinstance(ast, BinOp) and isinstance(ast.op, Sub):
         out = '%s - %s' % (_ast2TeX(ast.left, ast, name_dict),
                            _ast2TeX(ast.right, ast, name_dict, adjust = 1))
-    elif isinstance(ast, Mul) or isinstance(ast, Div):
+    elif isinstance(ast, BinOp) and (isinstance(ast.op, Mult) or isinstance(ast.op, Div)):
         # We collect all terms numerator and denominator
         nums, denoms = [], []
         AST._collect_num_denom(ast, nums, denoms)
@@ -102,23 +104,23 @@ def _ast2TeX(ast, outer=AST._FARTHEST_OUT, name_dict={},
                                       r' \cdot '.join(denoms))
         else:
             out = r' \cdot '.join(nums)
-    elif isinstance(ast, Power):
+    elif isinstance(ast, BinOp) and isinstance(ast.op, Pow):
         out = '{%s}^{%s}' % (_ast2TeX(ast.left, ast, name_dict, adjust = 1),
                              _ast2TeX(ast.right, ast, name_dict))
-    elif isinstance(ast, UnarySub):
-        out = '-%s' % _ast2TeX(ast.expr, ast, name_dict)
-    elif isinstance(ast, UnaryAdd):
-        out = '+%s' % _ast2TeX(ast.expr, ast, name_dict)
-    elif isinstance(ast, CallFunc):
+    elif isinstance(ast, UnaryOp) and isinstance(ast.op, USub):
+        out = '-%s' % _ast2TeX(ast.operand, ast, name_dict)
+    elif isinstance(ast, UnaryOp) and isinstance(ast.op, UAdd):
+        out = '+%s' % _ast2TeX(ast.operand, ast, name_dict)
+    elif isinstance(ast, Call):
         lam_func = lambda arg: _ast2TeX(arg, name_dict=name_dict)
-        name = lam_func(ast.node)
+        name = lam_func(ast.func)
         args = [lam_func(arg) for arg in ast.args]
         if name == 'sqrt' and len(args) == 1:
             # Special case
             out = r'\sqrt{%s}' % args[0]
         else:
             out = r'\operatorname{%s}\left(%s\right)' % (name, r',\,'.join(args))
-    elif isinstance(ast, Or) or isinstance(ast, And):
+    elif isinstance(ast, BoolOp) and isinstance(ast.op, Or) or isinstance(ast.op, And):
         out = r'\operatorname{%s}' % (str(ast))
         
     if AST._need_parens(outer, ast, adjust):

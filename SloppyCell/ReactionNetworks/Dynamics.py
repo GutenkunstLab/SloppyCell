@@ -1,10 +1,14 @@
 """
 Methods for evaluating the dynamics of Network.
 """
+from __future__ import division
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __docformat__ = "restructuredtext en"
 
 import copy
-import sets
 import sys 
 import scipy
 import scipy.optimize
@@ -14,14 +18,12 @@ logger = logging.getLogger('ReactionNetworks.Dynamics')
 
 import SloppyCell.daskr as daskr
 daeint = daskr.daeint
-import Trajectory_mod
+from SloppyCell.ReactionNetworks import Trajectory_mod
 
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks.Components import event_info
-from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
-if HAVE_PYPAR:
-    import pypar
-
+from SloppyCell import HAVE_MPI, my_rank, my_host, num_procs, comm
+    
 _double_epsilon_ = scipy.finfo(scipy.float_).eps
 _double_tiny_ = scipy.finfo(scipy.float_).tiny
 
@@ -60,7 +62,7 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
     N_dyn_var = len(net.dynamicVars)
 
     if net.integrateWithLogs:
-        yp0 = yp0/IC
+        yp0 = old_div(yp0,IC)
         IC = scipy.log(IC)
 
         res_func = net.res_function_logdv
@@ -146,7 +148,7 @@ def generate_tolerances(net, rtol, atol=None):
     # typical values going negative.
     if (scipy.isscalar(atol) or atol==None):
         typ_vals = [abs(net.get_var_typical_val(id))
-                    for id in net.dynamicVars.keys()]
+                    for id in list(net.dynamicVars.keys())]
         atol = rtol * scipy.asarray(typ_vals)
         if global_atol:
             atol = scipy.minimum(atol, global_atol)
@@ -190,7 +192,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                        False at any time.
     """
     logger.debug('Integrating network %s.' % net.get_id())
-
     if params is not None:
         net.update_optimizable_vars(params)
     constants = net.constantVarValues
@@ -210,8 +211,10 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     # get the initial state, time, and derivative.
     start = times[0]
     IC = net.getDynamicVarValues()
+    
     # We start with ypIC equal to typ_vals so that we get the correct scale.
-    typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
+    
+    typ_vals = [net.get_var_typical_val(id) for id in list(net.dynamicVars.keys())]
     ypIC = scipy.array(typ_vals)
     # This calculates the yprime ICs and also ensures that values for our
     #  algebraic variables are all consistent.
@@ -233,8 +236,9 @@ or False), raise the exception.
     # check that constraints are not violated at t=0
     if use_constraints == True:
         net.updateVariablesFromDynamicVars(values=IC, time=start)
-        for con_id, constraint in net.constraints.items():
+        for con_id, constraint in list(net.constraints.items()):
             result = net.evaluate_expr(constraint.trigger)
+           
             if result == False:
                 raise Utility.ConstraintViolatedException(start,
                                                  constraint.trigger,
@@ -246,12 +250,10 @@ or False), raise the exception.
     yout = scipy.zeros((0, len(IC)), scipy.float_)
     youtdt = scipy.zeros((0, len(IC)), scipy.float_)
     tout = []
-
     # For some reason, the F2Py wrapper for ddaskr seems to fail if this
     #  isn't wrapped up in a lambda...
     res_func = net.res_function
     root_func = net.root_func
-
     # events_occured will hold event_info objects that describe the events
     #  in detail.
     # te, ye, and ie are the times, dynamic variable values, and indices
@@ -278,7 +280,7 @@ or False), raise the exception.
         if pendingEvents and min(pendingEvents.keys()) < start:
             raise ValueError('Missed an event!')
         event_buffer = 0
-        while pendingEvents.has_key(start):
+        while start in pendingEvents:
             execution_time = start
             # We need to backtrack to deal with this event...
             event_list = pendingEvents[execution_time]
@@ -328,13 +330,13 @@ or False), raise the exception.
                 holder.y_post_exec = copy.copy(IC)
                 holder.yp_post_exec = copy.copy(ypIC)
                 event_buffer = max(event_buffer, holder.event.buffer)
-
+               
             if event_buffer:
                 # Ensure that we don't event_buffer past any
                 # requested timepoints.
                 nextEventTime = scipy.inf
-                pendingEventTimes = pendingEvents.keys()
-                pendingEventTimes.remove(execution_time)
+                pendingEventTimes = list(pendingEvents.keys())
+                list(pendingEventTimes).remove(execution_time)
                 if pendingEventTimes:
                     nextEventTime = min(pendingEventTimes)
                 else:
@@ -358,10 +360,9 @@ or False), raise the exception.
                                            redirect_msgs=redirect_msgs,
                                            calculate_ic = False,
                                            var_types=net._dynamic_var_algebraic)
-
+                
                 exception_raised, yout_this, tout_this, youtdt_this,\
                       t_root_this, y_root_this, i_root_this = outputs
-
                 yout = scipy.concatenate((yout, yout_this))
                 youtdt = scipy.concatenate((youtdt, youtdt_this))
                 tout.extend(tout_this)
@@ -379,7 +380,6 @@ or False), raise the exception.
 
             # Update the root state after all listed events have excecuted.
             root_after = root_func(start, IC, ypIC, constants)
-
             # Check for chained events/constraints
             crossing_dirs = root_after - root_before
             event_just_fired = fired_events(net, start, IC, ypIC, 
@@ -421,7 +421,6 @@ or False), raise the exception.
         else:
             curTimes = scipy.compress(times > start, times)
             curTimes = scipy.concatenate(([start], curTimes))
-
         outputs = integrate_tidbit(net, res_func, _ddaskr_jac, 
                                    root_func=root_func, 
                                    IC=IC, yp0=ypIC, curTimes=curTimes, 
@@ -467,7 +466,7 @@ or False), raise the exception.
         # make sure we don't miss data times by adding them in.
         # The set usage ensures that we don't end up with duplicates
         filtered_times = [tout[i] for i in range(0,len(tout),reduce_space)]
-        filtered_times = sets.Set(filtered_times)
+        filtered_times = set(filtered_times)
         filtered_times.union_update(times)
         filtered_times = scipy.sort(list(filtered_times))
 
@@ -526,7 +525,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
     # results.
     # Note that we might have more than one event firing at the same time.
 
-    for event_index, dire_cross in zip(range(num_events), crossing_dirs):
+    for event_index, dire_cross in zip(list(range(num_events)), crossing_dirs):
         # dire_cross is the direction of the event crossing.  If it's
         # 1 that means Ri changed from negative to positive.  In that case
         # we need to record the event. Note that num_events runs over the
@@ -582,7 +581,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
 
             # Add this event to the list of events that are supposed to
             # execute.
-            if not pendingEvents.has_key(execution_time):
+            if not execution_time in pendingEvents:
                 pendingEvents[execution_time] = []
             pendingEvents[execution_time].append(holder)
 
@@ -678,7 +677,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     rtol_for_sens = scipy.concatenate((rtol, rtol))
     # Absolute tolerances depend on the typical value of the optimizable
     # variable
-    atol_for_sens = atol/abs(net.get_var_typical_val(opt_var))
+    atol_for_sens = old_div(atol,abs(net.get_var_typical_val(opt_var)))
     atol_for_sens = scipy.concatenate((atol, atol_for_sens))
 
     # The passed-in normal trajectory tells us what times we need to return,
@@ -706,7 +705,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     rpar = scipy.concatenate((net.constantVarValues, [opt_var_index+0.1]))
 
     # Our intial guess for ypIC will be based on the typical values
-    typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]*2
+    typ_vals = [net.get_var_typical_val(id) for id in list(net.dynamicVars.keys())]*2
     ypIC = scipy.array(typ_vals, dtype=float)
     ypIC[N_dyn_vars:] /= net.get_var_ic(opt_var)
 
@@ -733,7 +732,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         if executed_events and min(executed_events.keys()) < current_time:
             raise ValueError('Missed an event execution in sensitivity '
                              'integration!')
-        if executed_events.has_key(current_time):
+        if current_time in executed_events:
             event_list = executed_events[current_time]
             for holder in event_list:
                 logger.debug('Executing event at time %f.' % current_time)
@@ -818,7 +817,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
 
         if fired_events and min(fired_events.keys()) < current_time:
             raise ValueError('Missed event firing in sensitivity integration!')
-        if fired_events.has_key(current_time):
+        if current_time in fired_events:
             logger.debug('Firing event at time %f.' % current_time)
             event_list = fired_events[current_time]
             while event_list:
@@ -860,7 +859,6 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
                           fill_traj=False, return_derivs=False,
                           redirect_msgs=True):
     logger.debug('Entering integrate_sens on node %i' % my_rank)
-
     times = scipy.array(times)
     net.compile()
     if times[0] == 0:
@@ -870,7 +868,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         net.update_optimizable_vars(params)
 
     # Assigned variables to process on each node.
-    vars_assigned = dict([(node, net.optimizableVars.keys()[node::num_procs]) 
+    vars_assigned = dict([(node, list(net.optimizableVars.keys())[node::num_procs]) 
                             for node in range(num_procs)])
 
     # Send out jobs for workers
@@ -882,7 +880,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         args = {'net':net, 'times':times, 'rtol':rtol, 'fill_traj':fill_traj,
                 'opt_vars':vars_assigned[worker], 'return_derivs':return_derivs,
                 'redir': redirect_msgs}
-        pypar.send((command, args), worker)
+        comm.send((command, args), dest=worker)
 
     logger.debug('Master doing vars %s' % str(vars_assigned[0]))
     try:
@@ -894,7 +892,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         #  replies from all the workers (even if we do nothing with them) so 
         #  that communication stays synchronized.
         for worker in range(1, num_procs):
-            pypar.receive(worker)
+            comm.recv(source=worker)
         raise
 
     # Begin pulling results together...
@@ -923,19 +921,20 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
     #  return in exception_raised. We'll reraise that exception after getting
     #  replies from all the workers.
     exception_raised = None
+    
     for worker in range(1, num_procs):
         logger.debug('Receiving result from worker %i.' % worker)
-        result = pypar.receive(worker)
+        result = comm.recv(source=worker)
         if isinstance(result, Utility.SloppyCellException):
             exception_raised = result
             continue
         if vars_assigned[worker]:
-            _parse_sens_result(result, net, vars_assigned[worker], yout, youtdt, 
+            _parse_sens_result(result, net, vars_assigned[worker], yout, youtdt,
                                events_occurred)
 
     if exception_raised:
         raise exception_raised
-
+    
     ddv_dpTrajectory = Trajectory_mod.Trajectory(net, is_sens=True, 
                                                  holds_dt=return_derivs)
     if return_derivs:
@@ -1000,7 +999,7 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
         # To transform sigma_x to sigma_log_x, we divide by x. We can set
         #  our sigma_log_x use to be the mean of what our xtol would yield
         #  for each chemical.
-        xtol = scipy.mean(xtol/dv0)
+        xtol = scipy.mean(old_div(xtol,dv0))
     else:
         def func(y):
             return net.res_function(time, y, zeros, consts)
@@ -1097,7 +1096,7 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
     N_alg = scipy.sum(var_types == -1)
 
     dv_typ_vals = scipy.asarray([net.get_var_typical_val(id)
-                                 for id in net.dynamicVars.keys()])
+                                 for id in list(net.dynamicVars.keys())])
 
     if N_alg:
         # First we calculate a consistent set of algebraic variable values
@@ -1130,7 +1129,6 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
 
         # Now plug those values into the current y
         y[var_types == -1] = sln
-
     # The non-algebraic variable yprimes come straight from the residuals
     yp_non_alg = net.res_function(time, y, y*0, constants)[var_types == 1]
     yp[var_types == 1] = yp_non_alg

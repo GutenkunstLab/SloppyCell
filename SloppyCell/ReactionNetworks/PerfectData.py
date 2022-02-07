@@ -1,22 +1,21 @@
 """
 Methods for generating "perfect data" hessians.
 """
+from __future__ import division
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 __docformat__ = "restructuredtext en"
 
 import copy
 import logging
 logger = logging.getLogger('RxnNets.PerfectData')
 
-import sets
-
 import scipy
 import scipy.integrate
 
-import Dynamics
-
-from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
-if HAVE_PYPAR:
-    import pypar
+from SloppyCell.ReactionNetworks import Dynamics
+from SloppyCell import HAVE_MPI, my_rank, my_host, num_procs, comm
 
 def apply_func_to_traj(traj, func, only_nonderivs=False):
     """
@@ -24,13 +23,13 @@ def apply_func_to_traj(traj, func, only_nonderivs=False):
     trajectory
     """
     if only_nonderivs:
-        keys = [key for key in self.key_column.keys()
+        keys = [key for key in list(traj.key_column.keys())
                 if not isinstance(key, tuple)]
     else:
         keys = None
 
     ret_traj = traj.copy_subset(keys)
-    for var, col in traj.key_column.items():
+    for var, col in list(traj.key_column.items()):
         vals = func(traj, var)
         ret_traj.values[:,col] = vals
 
@@ -56,13 +55,13 @@ def update_typical_vals(networks, int_times, rtol = 1e-9, fraction=1.0,
     max_vals = {}
     for net, times in zip(networks, int_times):
         traj = Dynamics.integrate(net, times, rtol=rtol, fill_traj=True)
-        for var_id in net.variables.keys():
+        for var_id in list(net.variables.keys()):
             curr_max = max(traj.get_var_traj(var_id))
             max_vals[var_id] = max(curr_max, max_vals.get(var_id, 0))
 
-    for var_id, val in max_vals.items():
+    for var_id, val in list(max_vals.items()):
         for net in networks:
-            if net.variables.has_key(var_id):
+            if var_id in net.variables:
                 if val > cutoff:
                     net.set_var_typical_val(var_id, val*fraction)
                 else:
@@ -103,7 +102,7 @@ def discrete_data(net, params, pts, interval, vars=None, random=False,
     """
     # Default for vars
     if vars is None:
-        vars = net.species.keys()
+        vars = list(net.species.keys())
 
     # Assign observed times to each variable
     var_times = {}
@@ -114,7 +113,7 @@ def discrete_data(net, params, pts, interval, vars=None, random=False,
             var_times[var] = scipy.linspace(interval[0], interval[1], pts)
 
     # Create a sorted list of the unique times in the var_times dict
-    int_times = sets.Set(scipy.ravel(var_times.values()))
+    int_times = set(scipy.ravel(list(var_times.values())))
     int_times.add(0)
     int_times = list(int_times)
     int_times.sort()
@@ -124,7 +123,7 @@ def discrete_data(net, params, pts, interval, vars=None, random=False,
 
     # Build up our data dictionary
     data = {}
-    for var, times in var_times.items():
+    for var, times in list(var_times.items()):
         var_data = {}
         data[var] = var_data
 
@@ -181,7 +180,7 @@ def hessian_log_params(sens_traj, data_ids=None, opt_ids=None,
         # reduce the amount we have to pickle
         # The only things the worker needs in the sens_traj are those that
         #  refer to data_ids it has to deal with.
-        vars_needed = sets.Set(sens_traj.optimizableVarKeys)
+        vars_needed = set(sens_traj.optimizableVarKeys)
         vars_needed.union_update(vars_assigned[worker])
         for var in vars_assigned[worker]:
             vars_needed.union_update([(var, ov) for ov in opt_ids])
@@ -194,16 +193,16 @@ def hessian_log_params(sens_traj, data_ids=None, opt_ids=None,
         args = {'sens_traj': worker_traj, 'data_ids': vars_assigned[worker], 
                 'data_sigmas': worker_ds, 'opt_ids': opt_ids,
                 'fixed_sf': fixed_sf}
-        pypar.send((command, args), worker)
+        comm.send((command, args), dest=worker)
 
     hess_dict = compute_sf_LMHessian_conts(sens_traj, vars_assigned[0],
                                            data_sigmas, opt_ids, fixed_sf)
 
     for worker in range(1, num_procs):
         logger.debug('Receiving from worker %i.' % worker)
-        hess_dict.update(pypar.receive(worker))
+        hess_dict.update(comm.recv(source=worker))
 
-    hess = scipy.sum(hess_dict.values(), axis=0)
+    hess = scipy.sum(list(hess_dict.values()), axis=0)
     if return_dict:
         return hess, hess_dict
     else:
@@ -230,8 +229,8 @@ def get_intervals(traj):
     times = traj.get_times()
     eventIndices = scipy.compress(scipy.diff(times) == 0, 
                                   scipy.arange(len(times)))
-    intervals = zip([0] + list(eventIndices + 1), 
-                    list(eventIndices + 1) + [len(times)])
+    intervals = list(zip([0] + list(eventIndices + 1), 
+                    list(eventIndices + 1) + [len(times)]))
 
     return intervals
 
@@ -243,7 +242,7 @@ def get_sf_derivs(traj, dataId, data_sigma, optIds):
         times = traj.get_times()[start:end]
         sigma = data_sigma[start:end]
 
-        value = scipy.integrate.simps((y/sigma)**2, times, 
+        value = scipy.integrate.simps((old_div(y,sigma))**2, times, 
                                       even='last')
         intTheorySq += value
     
@@ -251,7 +250,7 @@ def get_sf_derivs(traj, dataId, data_sigma, optIds):
             optValue = abs(traj.get_var_traj(optId)[start:end])
             sens = traj.get_var_traj((dataId, optId))[start:end]*optValue
 
-            numerator = scipy.integrate.simps(sens*y/sigma**2, times, 
+            numerator = scipy.integrate.simps(old_div(sens*y,sigma**2), times, 
                                               even='last')
 
             scaleFactorDerivs.setdefault(optId, 0)
@@ -288,7 +287,7 @@ def computeLMHessianContribution(traj, dataId, data_sigma, optIds,
                 sens2 = traj.get_var_traj((dataId, optId2))[start:end]*optValue
                 dB2 = scaleFactorDerivs[optId2]
 
-                integrand = (sens1 + dB1 * y) * (sens2 + dB2 * y)/ sigma**2
+                integrand = old_div((sens1 + dB1 * y) * (sens2 + dB2 * y), sigma**2)
                 # We do the even='last' for speed. Otherwise, for an even number
                 #  of points, simps does twice as much work as for an odd
                 #  number.

@@ -4,6 +4,8 @@
 #PBS -M rng7@cornell.edu
 
 # For batch running
+from __future__ import division
+from past.utils import old_div
 import os
 if os.getenv('PBS_O_WORKDIR'):
     os.chdir(os.getenv('PBS_O_WORKDIR'))
@@ -34,8 +36,8 @@ net4.set_var_ic('k15', net3.get_var_ic('k15')*5)
 traj4 = Dynamics.integrate(net4, [0, 16*60])
 
 net5 = net3.copy('transient_c')
-net5.set_var_ic('v14', net3.get_var_ic('v14')/5)
-net5.set_var_ic('k15', net3.get_var_ic('k15')/5)
+net5.set_var_ic('v14', old_div(net3.get_var_ic('v14'),5))
+net5.set_var_ic('k15', old_div(net3.get_var_ic('k15'),5))
 traj5 = Dynamics.integrate(net5, [0, 16*60])
 
 fig2a = net1.copy('fig2a')

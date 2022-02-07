@@ -11,7 +11,7 @@ p0 = m.get_params().copy()
 # This is a prior that runs (with 95% probability) from value/prior_range to
 #  value*prior_range
 prior_range = 1e3
-for key, value in p0.items():
+for key, value in list(p0.items()):
     res = Residuals.PriorInLog('%s_prior' % key, key, numpy.log(value),
                                numpy.log(numpy.sqrt(prior_range)))
     m.AddResidual(res)

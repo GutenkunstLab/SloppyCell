@@ -1,6 +1,8 @@
 """
 Model class that unites theory with data.
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 import logging
 logger = logging.getLogger('Model_mod')
@@ -13,7 +15,7 @@ import SloppyCell
 import SloppyCell.Residuals as Residuals
 import SloppyCell.Collections as Collections
 import SloppyCell.Utility as Utility
-from . import KeyedList_mod as KeyedList_mod
+import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
 _double_epsilon_ = scipy.finfo(scipy.float_).eps
@@ -287,7 +289,6 @@ class Model:
         ReactionNetworks.
         """
         self.params.update(params)
-
         # The cost is 0.5 * sum(res**2), 
         # so the gradient is sum(res * dres_dp)
 
@@ -334,7 +335,7 @@ class Model:
 
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
         self.calcVals = self.GetCalculationCollection().Calculate(varsByCalc, 
-                                                                  params)
+                                                           params)
         return self.calcVals
 
     def CalculateSensitivitiesForAllDataPoints(self, params):
@@ -601,7 +602,6 @@ class Model:
             kl[resId] = [dres/dp1, dres/dp2...]
         """
         self.params.update(params)
-
         # Calculate sensitivities
         self.CalculateSensitivitiesForAllDataPoints(params)
         self.ComputeInternalVariables()
@@ -612,7 +612,6 @@ class Model:
                                 self.internalVars, self.internalVarsDerivs,
                                 self.params))
                  for (resId, res) in self.residuals.items()]
-
         return KeyedList(deriv)
 
     def jacobian_fd(self, params, eps, 
@@ -981,7 +980,7 @@ class Model:
             exptData = expt.GetData()
             for calcKey, calcData in exptData.items():
                 for depVarKey, depVarData in calcData.items():
-                    sortedData = depVarData.items()
+                    sortedData = list(depVarData.items())
                     sortedData.sort()
                     for indVar, (value, uncert) in sortedData:
                         resName = (exptKey, calcKey, depVarKey, indVar)

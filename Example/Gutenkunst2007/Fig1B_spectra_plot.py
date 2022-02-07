@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import os
 
 import scipy
@@ -16,8 +19,8 @@ for model_ii, (model, temp, temp) in enumerate(Common.model_list):
     e, v = Utility.eig(h)
     e = scipy.real(e)
 
-    width = (234/len(e))**0.25 * 0.25
-    l = Plotting.plot_eigval_spectrum(e/max(e), offset = 0.15+model_ii, 
+    width = (old_div(234,len(e)))**0.25 * 0.25
+    l = Plotting.plot_eigval_spectrum(old_div(e,max(e)), offset = 0.15+model_ii, 
                                       widths=0.7, lw=width)
 
 # Now a lot of fiddling to make the plot prettier
@@ -39,7 +42,7 @@ for l in ax.get_xticklines():
 ax.set_xlim(0, model_ii+1)
 
 ax.set_yscale('log',subsy=[])
-ticks = range(-6, 1)
+ticks = list(range(-6, 1))
 ax.set_yticks([10**ii for ii in ticks])
 import matplotlib.lines
 for l in ax.get_yticklines():

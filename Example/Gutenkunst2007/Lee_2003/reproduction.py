@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from SloppyCell.ReactionNetworks import *
 
 import Nets
@@ -10,7 +12,7 @@ traj2e = Dynamics.integrate(Nets.fig2e, [0, 3*60])
 
 Plotting.figure(2)
 for traj in [traj2a, traj2b, traj2c, traj2d, traj2e]:
-    percent = 100*traj.get_var_traj('BCatenin')/traj.get_var_val('BCatenin', 0)
+    percent = old_div(100*traj.get_var_traj('BCatenin'),traj.get_var_val('BCatenin', 0))
     Plotting.plot(traj.get_times()/60., percent, '-k')
     Plotting.axis([0, 3, 0, 105])
 

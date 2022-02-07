@@ -1,6 +1,8 @@
 """
 Tests for parallel code
 """
+from __future__ import print_function
+from __future__ import absolute_import
 import copy, scipy, unittest
 
 from SloppyCell.ReactionNetworks import *
@@ -48,4 +50,4 @@ if num_procs > 1:
 
 if __name__ == '__main__':
     if num_procs == 1:
-        print 'Only one processor detected! Not running in parallel!'
+        print('Only one processor detected! Not running in parallel!')

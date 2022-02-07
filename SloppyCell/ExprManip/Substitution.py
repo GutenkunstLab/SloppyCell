@@ -1,9 +1,12 @@
-from compiler.ast import *
+from __future__ import absolute_import
+from builtins import zip
+from builtins import str
+from ast import *
 import copy
 
-import AST
-from AST import strip_parse, ast2str
-import Simplify
+from SloppyCell.ExprManip  import AST
+from SloppyCell.ExprManip.AST import strip_parse, ast2str
+from SloppyCell.ExprManip  import Simplify
 
 def sub_for_comps(expr, mapping):
     """
@@ -15,7 +18,7 @@ def sub_for_comps(expr, mapping):
 
     ast = strip_parse(expr)
     ast_mapping = {}
-    for out_expr, in_expr in mapping.items():
+    for out_expr, in_expr in list(mapping.items()):
         out_ast = strip_parse(out_expr)
         if not isinstance(out_ast, Compare):
             raise ValueError('Expression %s to substitute for is not a '\
@@ -26,7 +29,7 @@ def sub_for_comps(expr, mapping):
     return ast2str(ast)
 
 def _sub_subtrees_for_comps(ast, ast_mappings):
-    if isinstance(ast, Compare) and ast_mappings.has_key(ast2str(ast)):
+    if isinstance(ast, Compare) and ast2str(ast) in ast_mappings:
         return ast_mappings[ast2str(ast)]
     ast = AST.recurse_down_tree(ast, _sub_subtrees_for_comps, (ast_mappings,))
     return ast
@@ -47,25 +50,23 @@ def sub_for_vars(expr, mapping):
     """
     if len(mapping) == 0:
         return expr
-
     ast = strip_parse(expr)
     ast_mapping = {}
-    for out_name, in_expr in mapping.items():
+    for out_name, in_expr in list(mapping.items()):
         out_ast = strip_parse(out_name)
         if not isinstance(out_ast, Name):
             raise ValueError('Expression %s to substitute for is not a '\
                              'variable name.' % out_name)
-        ast_mapping[str(out_ast.name)] = strip_parse(in_expr)
-
+        ast_mapping[str(out_ast.id)] = strip_parse(in_expr)
     ast = _sub_subtrees_for_vars(ast, ast_mapping)
     return ast2str(ast)
-
+    
 def _sub_subtrees_for_vars(ast, ast_mappings):
     """
     For each out_name, in_ast pair in mappings, substitute in_ast for all 
     occurances of the variable named out_name in ast
     """
-    if isinstance(ast, Name) and ast_mappings.has_key(ast2str(ast)):
+    if isinstance(ast, Name) and ast2str(ast) in ast_mappings:
         return ast_mappings[ast2str(ast)]
     ast = AST.recurse_down_tree(ast, _sub_subtrees_for_vars, (ast_mappings,))
     return ast
@@ -94,12 +95,12 @@ def sub_for_func(expr, func_name, func_vars, func_expr):
     func_name_ast = strip_parse(func_name)
     if not isinstance(func_name_ast, Name):
         raise ValueError('Function name is not a simple name.')
-    func_name = func_name_ast.name
+    func_name = func_name_ast.id
 
     func_expr_ast = strip_parse(func_expr)
     # We can strip_parse  the '*', so we special case it here.
     if func_vars == '*':
-        if not hasattr(func_expr_ast, 'nodes'):
+        if not hasattr(func_expr_ast, 'values'):
             raise ValueError("Top-level function in %s does not appear to "
                              "accept variable number of arguments. (It has no "
                              "'nodes' attribute.)" % func_expr)
@@ -110,7 +111,7 @@ def sub_for_func(expr, func_name, func_vars, func_expr):
         for var_ast in func_vars_ast:
             if not isinstance(var_ast, Name):
                 raise ValueError('Function variable is not a simple name.')
-        func_var_names = [getattr(var_ast, 'name') for var_ast in func_vars_ast]
+        func_var_names = [getattr(var_ast, 'id') for var_ast in func_vars_ast]
 
     ast = _sub_for_func_ast(ast, func_name, func_var_names, func_expr_ast)
     simple = Simplify._simplify_ast(ast)
@@ -120,15 +121,15 @@ def _sub_for_func_ast(ast, func_name, func_vars, func_expr_ast):
     """
     Return an ast with the function func_name substituted out.
     """
-    if isinstance(ast, CallFunc) and ast2str(ast.node) == func_name\
+    if isinstance(ast, Call) and ast2str(ast.func) == func_name\
        and func_vars == '*':
         working_ast = copy.deepcopy(func_expr_ast)
         new_args = [_sub_for_func_ast(arg_ast, func_name, func_vars, 
                                       func_expr_ast) for arg_ast in ast.args]
         # This subs out the arguments of the original function.
-        working_ast.nodes = new_args
+        working_ast.values = new_args
         return working_ast
-    if isinstance(ast, CallFunc) and ast2str(ast.node) == func_name\
+    if isinstance(ast, Call) and ast2str(ast.func) == func_name\
        and len(ast.args) == len(func_vars):
         # If our ast is the function we're looking for, we take the ast
         #  for the function expression, substitute for its arguments, and
@@ -158,12 +159,12 @@ def make_c_compatible(expr):
     ast = strip_parse(expr)
     ast = _make_c_compatible_ast(ast)
     return ast2str(ast)
-
+ 
 def _make_c_compatible_ast(ast):
-    if isinstance(ast, Power):
-        ast = CallFunc(Name('pow'), [ast.left, ast.right], None, None)
+    if isinstance(ast, BinOp) and isinstance(ast.op, Pow):
+        ast = Call(func=Name(id='pow', ctx=Load()), args=[ast.left, ast.right], keywords=[])
         ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
-    elif isinstance(ast, Const) and isinstance(ast.value, int):
+    elif isinstance(ast, Constant) and isinstance(ast.value, int):
         ast.value = float(ast.value)
     elif isinstance(ast, Subscript):
         # These asts correspond to array[blah] and we shouldn't convert these
@@ -172,17 +173,29 @@ def _make_c_compatible_ast(ast):
     # We need to subsitute the C logical operators. Unfortunately, they aren't
     # valid python syntax, so we have to cheat a little, using Compare and Name
     # nodes abusively. This abuse may not be future-proof... sigh...
-    elif isinstance(ast, And):
-        nodes = AST.recurse_down_tree(ast.nodes, _make_c_compatible_ast)
+    elif isinstance(ast, BoolOp) and isinstance(ast.op, And):
+        nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
         ops = [('&&', node) for node in nodes[1:]]
-        ast = AST.Compare(nodes[0], ops)
-    elif isinstance(ast, Or):
-        nodes = AST.recurse_down_tree(ast.nodes, _make_c_compatible_ast)
+        ops_1 = []
+        c = []
+        for k, v in ops:
+            ops_1.append(k)
+            c.append(v)
+            
+        ast = Compare(nodes[0], ops_1, c)
+    elif isinstance(ast, BoolOp) and isinstance(ast.op, Or):
+        nodes = AST.recurse_down_tree(ast.values, _make_c_compatible_ast)
         ops = [('||', node) for node in nodes[1:]]
-        ast = AST.Compare(nodes[0], ops)
-    elif isinstance(ast, Not):
-        expr = AST.recurse_down_tree(ast.expr, _make_c_compatible_ast)
-        ast = AST.Name('!(%s)' % ast2str(expr))
+        ops_1 = []
+        c = []
+        for k, v in ops:
+            ops_1.append(k)
+            c.append(v)
+            
+        ast = AST.Compare(nodes[0], ops_1, c)
+    elif isinstance(ast, UnaryOp) and isinstance(ast.op, Not):
+        expr = AST.recurse_down_tree(ast.operand, _make_c_compatible_ast)
+        ast = AST.Name(id='!(%s)' % ast2str(expr))
     else:
         ast = AST.recurse_down_tree(ast, _make_c_compatible_ast)
     return ast

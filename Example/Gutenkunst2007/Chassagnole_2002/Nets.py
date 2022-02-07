@@ -10,5 +10,5 @@ net.compile()
 long = net.copy('long')
 short = net.copy('short')
 
-networks = [long, short]
+networks = [int, short]
 int_times = [(0, 40), (0, 1)]
