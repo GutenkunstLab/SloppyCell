@@ -21,3 +21,4 @@ test/algebraic_net*.xml
 venv5
 venv3
 venv33
+*.bak
