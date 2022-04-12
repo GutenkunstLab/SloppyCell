@@ -22,3 +22,5 @@ venv5
 venv3
 venv33
 *.bak
+*.pyf
+test/*.c
