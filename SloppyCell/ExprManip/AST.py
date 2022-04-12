@@ -137,6 +137,8 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         if isinstance(node.slice, Tuple):
             subs = [ast2str(sub) for sub in node.slice.elts]
             out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
+        elif isinstance(node.slice, Slice):
+            out = '%s[%s]' % (ast2str(node.value),ast2str(node.slice))
         elif isinstance(node.slice, ExtSlice):
             print("slice errrorrrrrrrrrrrrrrrrrrrrrr", node.slice)
             # subs = ast2str(node.slice)
