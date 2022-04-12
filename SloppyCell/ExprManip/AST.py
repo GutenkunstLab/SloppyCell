@@ -2,7 +2,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from builtins import str
 from builtins import range
-from ast import parse, Name, Constant, Call, Subscript, Slice, Pow, USub, UAdd, Mult, Div, Sub, Add, Compare, Not, And, Or, BoolOp, UnaryOp, BinOp, Expr, ExtSlice, Num, Tuple
+from ast import parse, Name, Constant, Call, Subscript, Slice, Pow, USub, UAdd, Mult, Div, Sub, Add, Compare, Not, And, Or, BoolOp, UnaryOp, BinOp, Expr, ExtSlice, Num, Tuple, Index
 from typing import BinaryIO
 
 TINY = 1e-12
@@ -148,6 +148,8 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
                 out2 = out2[1:-1]
             out = '%s[%s]' % (out1, out2)
             print("finalllllllllllll",out1, out2,out)
+        elif isinstance(node.slice, Index):
+            out = '%s[%s]' % (ast2str(node.value), ast2str(node.slice.value))
         else:
             subs = ast2str(node.slice)
             print("subs",subs)
