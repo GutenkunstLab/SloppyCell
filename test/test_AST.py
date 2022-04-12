@@ -43,10 +43,16 @@ class test_AST(unittest.TestCase):
                  (strip_parse('1/2*3'), (['1', '3'], ['2'])),
                  (strip_parse('1/(2*3)'), (['1'], ['2', '3'])),
                  (strip_parse('1/(2/3)'), (['1', '3'], ['2'])),
+                 (strip_parse('(1*2)*(3*4)'),
+                  (['1', '2', '3', '4'], [])),
+                 (strip_parse('(1*2)*(3/4)'),
+                  (['1', '2', '3'], ['4'])),
+                 (strip_parse('(1/2)*(3/4)'),
+                  (['1', '3'], ['2', '4'])),
+                 (strip_parse('(1/2)/(3/4)'),
+                  (['1', '4'], ['2', '3'])),
                  ]
-        cases1 = [(strip_parse('x-x'), (['x - x'], [])),
-                 ]
-        for ast, (nums, denoms) in cases1: 
+        for ast, (nums, denoms) in cases:
             n, d = [], []
             AST._collect_num_denom(ast, n, d)
             n = [ast2str(term) for term in n]
@@ -61,6 +67,14 @@ class test_AST(unittest.TestCase):
                  (strip_parse('1-(2+3)'), (['1'], ['2', '3'])),
                  (strip_parse('1-(2-3)'), (['1', '3'], ['2'])),
                  (strip_parse('(1-2)-(3-4)'), (['1', '4'], ['2', '3'])),
+                 (strip_parse('(1+2)+(3+4)'),
+                  (['1', '2', '3', '4'], [])),
+                 (strip_parse('(1+2)+(3-4)'),
+                  (['1', '2', '3'], ['4'])),
+                 (strip_parse('(1-2)+(3-4)'),
+                  (['1', '3'], ['2', '4'])),
+                 (strip_parse('(1-2)-(3-4)'),
+                  (['1', '4'], ['2', '3'])),
                  ]
         for ast, (poss, negs) in cases: 
             p, n = [], []

@@ -39,10 +39,11 @@ def strip_parse(expr):
 # This defines the order of operations for the various node types, to determine
 #  whether or not parentheses are necessary.
 _OP_ORDER = {Name: 0,
-            Constant: 0,
+             Constant: 0,
              Call: 0,
              Subscript: 0,
              Slice: 0,
+             ExtSlice: 0,
              Pow: 3,
              USub: 4,
              UAdd: 4,
@@ -55,8 +56,6 @@ _OP_ORDER = {Name: 0,
              And: 11,
              Or: 11,
              Expr: 100,
-            #  BinOp: 0,
-            #  UnaryOp: 0,
             }
 
 # This is just an instance of Discard to use for the default
@@ -182,15 +181,21 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         out = ' or '.join(nodes)
     elif isinstance(node, UnaryOp) and isinstance(node.op, Not):
         out = 'not %s' % ast2str(node.operand, node, adjust=TINY)
-    else:
-        out = node
-        # print(node)
+    
     # Ensure parentheses by checking the _OP_ORDER of the outer and inner ASTs
     if _need_parens(outer, node, adjust):
         return out
     else:
         return '(%s)' % out
    
+def _class_type(node):
+    """
+    Returns the most specific type of a node.
+    """
+    if isinstance(node, UnaryOp) or isinstance(node, BinOp) or isinstance(node, BoolOp):
+        return node.op.__class__
+    else:
+        return node.__class__
 
 def _need_parens(outer, inner, adjust):
     """
@@ -201,12 +206,7 @@ def _need_parens(outer, inner, adjust):
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
-    try:
-        # print("outer", outer)
-        # print("inner", inner)
-        return _OP_ORDER[outer.__class__] >= _OP_ORDER[inner.__class__] + adjust
-    except Exception as e:
-        return False
+    return _OP_ORDER[_class_type(outer)] >= _OP_ORDER[_class_type(inner)] + adjust
         
 
 def _collect_num_denom(ast, nums, denoms):
