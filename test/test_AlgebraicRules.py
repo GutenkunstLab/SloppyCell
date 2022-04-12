@@ -20,10 +20,8 @@ tlist_algebraic_net = numpy.array([0] + [0.8*x for x in range(1, 51)])
 class test_AlgebraicRules(unittest.TestCase):
     def test_basic(self):
         """ Basic test of Algebraic Rules """
-        print("entered hereeeeeeeeeeeeeeeeeee")
         algebraic_traj = Dynamics.integrate(algebraic_net, tlist_algebraic_net)
-        print("alddddd", algebraic_net)
-        self.assertAlmostEqual(algebraic_traj.get_var_val('X0',4.8), 
+        self.assertAlmostEqual(algebraic_traj.get_var_val('X0',4.8),
                                0.618783392, 5)
         # self.assertAlmostEqual(algebraic_traj.get_var_val('X1',21.6), 
         #                        0.653837775, 5)

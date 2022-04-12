@@ -27,7 +27,6 @@ class test_Simplify(unittest.TestCase):
         # cases = ['-y + z']
         for expr in cases: 
             simplified = ExprManip.simplify_expr(expr)
-            print("simplified", simplified)
             orig = eval(expr)
             simp = eval(simplified)
             if orig != 0:

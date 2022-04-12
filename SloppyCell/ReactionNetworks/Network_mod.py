@@ -2368,7 +2368,6 @@ class Network(object):
             def __call__(slf,s,c=True):
                 if c: s = ExprManip.make_c_compatible(s)
                 ast = ExprManip.strip_parse(s)
-                print(ast)
                 ExprManip.AST.walk(ast)
                 return ExprManip.ast2str(ast)
 
@@ -3159,7 +3158,6 @@ class Network(object):
                                   self.get_var_ic(id))
             else:
                 var_struct[id] = (var.is_constant, var.is_optimizable)
-                print("var struct", var_struct)
 
         return structure
 
@@ -3399,7 +3397,6 @@ class Network(object):
         output = ExprManip.diff_expr(input, wrt)
         if vars_used is None:
             vars_used = ExprManip.extract_vars(input)
-            print("vars_used", vars_used)
 
         # What other assigned variables does input depend on?
         assigned_used = vars_used.difference(set([wrt]))
@@ -3407,11 +3404,9 @@ class Network(object):
         # Do the chain rule for those variables
         for id in assigned_used:
             rule = self.assignmentRules.getByKey(id)
-            print("rule", rule)
             d2 = self.takeDerivative(rule, wrt, simplify=False)
             if d2 != '0':
                 d = ExprManip.diff_expr(input, id)
-                print("diff",d)
                 output += ' + (%s) *(%s)' % (d, d2)
 
         # What other constant variables does input depend on?
@@ -3589,15 +3584,11 @@ def _exec_dynamic_func(obj, func, in_namespace={}, bind=True):
     """
     try:
         function_body = obj._dynamic_funcs_python.get(func)
-        # print("function body", function_body)
     except (KeyError, AttributeError):
         function_body = getattr(obj, '%s_functionBody' % func)
     # This exec gives the function access to everything defined in in_namespace
     #  and inserts the result into the locals namespace
     exec(function_body, in_namespace, locals())
-    # print("function_body", function_body)
-    # print("in_namespace", in_namespace)
-    # print("locals", locals())
     # The call to types.MethodType ensures that we can call the function
     #  as obj.f(...) and get the implicit 'self' argument.
     # locals()[func] just gets the actual function object the exec created.

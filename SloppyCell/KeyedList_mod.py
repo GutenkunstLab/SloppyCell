@@ -83,10 +83,6 @@ class KeyedList(list):
     # Methods for manipulating by key.
     #
     def set(self, key, value):
-        # print("keeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-        # print(key)
-        # print("valueeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-        # print(value)
         try:
             self[self.keyToIndex[key]] = value
         except KeyError:
@@ -153,7 +149,6 @@ class KeyedList(list):
         return new_kl
 
     def __iadd__(self, other):
-        print(("otheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeer", type(other)))
         if not isinstance(other, self.__class__):
             raise TypeError('Can only add another KeyedList to a KeyedList')
         for k,v in list(other.items()):

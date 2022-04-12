@@ -39,13 +39,10 @@ def _simplify_ast(ast):
         x - x = 0
         --x = x
     """
-    print("inside simplify", ast)
     if isinstance(ast, Name) or isinstance(ast, Constant):
-        print("name", ast)
         return ast
     elif isinstance(ast, BinOp) and (isinstance(ast.op, Add) or isinstance(ast.op, Sub)):
-        print("BinOp", ast)
-
+        
         # We collect positive and negative terms and simplify each of them
         pos, neg = [], []
         AST._collect_pos_neg(ast, pos, neg)
@@ -86,9 +83,6 @@ def _simplify_ast(ast):
         #         that have a total count of 0.
         term_counts = dict([(AST.ast2str(term), (term, count)) for term, count in 
                             term_counts])
-        print("negsssssssssssssssssssssssssssssssssssssssssssssssssssssssssss", neg)
-        print("posi", pos)
-        print("term_count", term_counts)
         # We find the first term with non-zero count.
         ii = 0
         for ii, term in enumerate(pos+neg):
@@ -184,16 +178,12 @@ def _simplify_ast(ast):
 
         if make_neg:
             out = UnaryOp(op=USub(), operand=out)
-        print("out value", out)
         return out
     elif isinstance(ast, BinOp) and isinstance(ast.op, Pow):
         # These cases all have a left and a right, so we group them just to
         #  avoid some code duplication.
-        print("left side", ast.left)
-        print("right side", ast.right)
         power = _simplify_ast(ast.right)
         base = _simplify_ast(ast.left)
-        print("ast left", ast.left)
         
         if power == _ZERO:
             # Anything, including 0, to the 0th power is 1, so this
@@ -204,9 +194,6 @@ def _simplify_ast(ast):
         elif isinstance(base, Constant) and\
                 isinstance(power, Constant):
             return Constant(value=base.value**power.value)
-        print("entered here in simplify astttttttttttttttttttttttttttttttttttttttttttttttt")
-        print("power", power)
-        print("vase", base)
         # Getting here implies that no simplifications are possible, so just
         #  return with simplified arguments
         return BinOp(left=base, op=Pow(), right=power)

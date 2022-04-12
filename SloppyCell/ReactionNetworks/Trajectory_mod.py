@@ -250,7 +250,6 @@ class Trajectory(object):
         stored time is greater than a fraction eps of the trajectory length.
         """
         index = self._get_time_index(time, eps)
-        print("index valllllllllllllll",index)
         return self.get_var_val_index(var_id, index)
 
     def get_var_vals_index(self, index):
@@ -266,23 +265,16 @@ class Trajectory(object):
         """
         Return the value of the given variable at the given index.
         """
-        print("varidddddddddddddddddddddddddddddd", var_id,index)
         if var_id in self.key_column:
-            print(1)
             col = self.key_column.get(var_id)
             return self.values[index, col]
         elif var_id in self.const_var_values:
-            print(1)
             return self.const_var_values.get(var_id)
         elif var_id == 'time':
-            print(3)
             return self.timepoints[index]
         elif len(var_id) == 2 and var_id[1] in list(self.const_var_values.keys()):
-            print(4)
             # Requesting sensitivity of a constant variable
             return 0
-        else:
-            print("h8")
 
     def get_dynvar_vals_index(self, index):
         """
@@ -306,8 +298,7 @@ class Trajectory(object):
 
     def _make__assignment(self, net):
         functionBody = ['def _assignment(self, values, times, start, end):']
-        print("functionbodyyyyyyyyyyyyyyyy", functionBody)
-
+        
         for id in list(self.const_var_values.keys()):
             functionBody.append("%s = self.const_var_values.get('%s')" % 
                                 (id, id))

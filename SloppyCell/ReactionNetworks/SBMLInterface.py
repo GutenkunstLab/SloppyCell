@@ -388,7 +388,6 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         math = f.getMath()
         variables = []
         for ii in range(math.getNumChildren() - 1):
-            print(ii, formula_to_py(math.getChild(ii)))
             variables.append(formula_to_py(math.getChild(ii)))
 
         math = formula_to_py(math.getRightChild())

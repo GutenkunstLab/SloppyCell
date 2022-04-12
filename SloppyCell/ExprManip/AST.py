@@ -33,7 +33,6 @@ def strip_parse(expr):
     """
     # The .strip() ignores leading and trailing whitespace, which would 
     #  otherwise give syntax errors.
-    print("entered here expression",expr)
     tree = parse(str(expr).strip())
     return  tree.body[0].value
 
@@ -102,7 +101,6 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
-    print("nodein ast2str yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy", node)
     if isinstance(node, Name):
         out = node.id
     elif isinstance(node, Constant):
@@ -140,14 +138,12 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         elif isinstance(node.slice, Slice):
             out = '%s[%s]' % (ast2str(node.value),ast2str(node.slice))
         elif isinstance(node.slice, ExtSlice):
-            print("slice errrorrrrrrrrrrrrrrrrrrrrrr", node.slice)
             # subs = ast2str(node.slice)
             out1 = ast2str(node.value)
             out2 = ast2str(node.slice)
             if out2[0] == '(':
                 out2 = out2[1:-1]
             out = '%s[%s]' % (out1, out2)
-            print("finalllllllllllll",out1, out2,out)
         elif isinstance(node.slice, Index):
             out = '%s[%s]' % (ast2str(node.value), ast2str(node.slice.value))
         else:
@@ -160,17 +156,12 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
     elif isinstance(node, ExtSlice):
         seq = iter(node.dims)
         nodes = []
-        # print("for companddddddddddddddddddddddddddddddddd", node)
         out1 = ast2str(next(seq))
         print(nodes)
         # out1 = ''.join(nodes)
         out2 = ast2str(next(seq).value)
-        
-        print("out1111111111111111111111111",out1)
-        print("out22222222222222222222222",out2)
         # out3 = ', '.join(out2)
         out = out1 + ',' + out2
-        print("oooooooooooooooo",out)
     elif isinstance(node, Compare):
         expr = ast2str(node.left, node, adjust=6+TINY)
         out_l = [expr]

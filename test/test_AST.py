@@ -28,16 +28,8 @@ class test_AST(unittest.TestCase):
                  'True and False or True', 'True or False', 
                  '(True and not False) or True', 'not (True and False)',
                  'x == x and y == y', 'x - x == 0 or y - x != 0']
-        start = 2
-        end = 3
-        # cases1 = ['x[start:end,4]']
         for expr in cases:
-            # print(expr)
-            p = parse(expr).body[0].value
-            print("ppppppp",p)
-            print("converted", ast2str(p))
-            print("original", expr)
-            run = ast2str(p)
+            run = ast2str(strip_parse(expr))
             orig = eval(expr)
             out = eval(run)
             if orig != 0:
@@ -59,9 +51,6 @@ class test_AST(unittest.TestCase):
             AST._collect_num_denom(ast, n, d)
             n = [ast2str(term) for term in n]
             d = [ast2str(term) for term in d]
-            print(ast)
-            print("numerator", nums,n)
-            print("denominator", denoms,d)
             assert set(nums) == set(n)
             assert set(denoms) == set(d)
 

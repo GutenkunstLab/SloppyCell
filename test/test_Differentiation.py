@@ -59,10 +59,8 @@ class test_Differentiation(unittest.TestCase):
         cases1 = [  ('x**y' ,'x')]
         for expr, wrt in cases1: 
             d = ExprManip.diff_expr(expr, wrt)
-            print("differen", d)
             ad = eval(d)
             fd = self._num_diff(expr, wrt, x=x, y=y, z=z)
-            print("fd", fd)
             # We test that our numeric and analytic derivatives differ by less
             #  than 0.1%
             if ad != 0:
