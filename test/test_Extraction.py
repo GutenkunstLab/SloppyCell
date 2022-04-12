@@ -19,7 +19,6 @@ class test_Extraction(unittest.TestCase):
                  ('x < y', ['x', 'y']),
                  ('(x < y) and (x == 2)', ['x', 'y']),
                  ]
-        cases1 = [('f(x)', ['x'])]
         for expr, vars in cases:
             assert ExprManip.extract_vars(expr) == set(vars)
 
@@ -38,7 +37,6 @@ class test_Extraction(unittest.TestCase):
                  ('g(x) and f(y)', [('f', 1), ('g', 1)]),
                  ('g(x) and not f(y)', [('f', 1), ('g', 1)])
                  ]
-        cases1 = [('g(x)', [('g', 1)])]
         for expr, funcs in cases:
             assert ExprManip.extract_funcs(expr) == set(funcs)
 
@@ -46,11 +44,10 @@ class test_Extraction(unittest.TestCase):
         cases = [('x == 3', ['x == 3']),
                  ('x == 3 and y == 4', ['x == 3', 'y == 4']),
                  ('x < 3 and not y > 4', ['x < 3', 'y > 4']),
-                 ('x < 3 + (y > 4)', ['x < 3 + (y > 4)', 'y > 4']),
+                 ('x < 3 + (y > 4)', ['x < (3 + (y > 4))', 'y > 4']),
                  ]
-        cases1 = [('x < 3 + (y > 4)', ['x < 3 + (y > 4)', 'y > 4'])]
         for expr, comps in cases:
-            result = ExprManip.extract_comps(expr) 
+            result = ExprManip.extract_comps(expr)
             assert result == set(comps)
 
 suite = unittest.makeSuite(test_Extraction)
