@@ -228,3 +228,6 @@ class KeyedList(list):
         sorted_keys = [k for (v,k) in decorated]
         self.set_order(sorted_keys)
     sort = sort_by_value
+    
+    def __contains__(self,key):
+        return key in self.keys()
