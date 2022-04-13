@@ -1,5 +1,5 @@
 import os, sys
-import scipy
+import numpy as np
 import unittest
 
 from SloppyCell.ReactionNetworks import *
@@ -17,7 +17,7 @@ base_net.addReaction('y->x', kineticLaw='B*y', stoichiometry={'y':-1, 'x':+1})
 
 base_net.add_event('event 0', 'gt(time, 5)', {'x': 0.0, 'y': 1000.0})
 
-times = scipy.arange(0., 10.05, .1)
+times = np.arange(0., 10.05, .1)
 params = [1., 1.]
 
 class test_Events(unittest.TestCase):
