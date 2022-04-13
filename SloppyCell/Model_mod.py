@@ -129,7 +129,7 @@ class Model:
         chisq = np.real_if_close(np.sum(np.asarray(resvals)**2),
                                     tol=self.imag_cutoff)
         if np.isnan(chisq):
-            logger.warn('Chi^2 is NaN, converting to Infinity.')
+            logger.warning('Chi^2 is NaN, converting to Infinity.')
             chisq = scipy.inf
         cost = 0.5 * chisq
 

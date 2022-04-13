@@ -334,7 +334,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             while (costmult > currentcost) and (NTrials < 10) :
                 num = -dot(grad,move)[0]
                 den = scipy.linalg.norm(grad)*scipy.linalg.norm(move)
-                gamma = scipy.arccos(num/den)
+                gamma = np.arccos(num/den)
                 NTrials = NTrials+1
                 # was (gamma>piOverFour) below but that doens't
                 # make much sense to me. I don't think you should
@@ -627,7 +627,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             while (costmult > currentcost) and (NTrials < 10) :
                 # num = -dot(transpose(asarray(grad)),asarray(moveold) )
                 # den = scipy.linalg.norm(grad)*scipy.linalg.norm(moveold)
-                gamma = .1 # scipy.arccos(num/den)
+                gamma = .1 # np.arccos(num/den)
                 NTrials = NTrials+1
                 if (gamma > 0) :
                     Lambdamult = Lambdamult*Mult

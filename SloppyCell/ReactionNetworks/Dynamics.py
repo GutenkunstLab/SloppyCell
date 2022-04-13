@@ -508,7 +508,7 @@ or False), raise the exception.
 
     # raise exception if exited integration loop prematurely
     if exception_raised:
-        logger.warn('Integration ended prematurely in network %s on node %i.'
+        logger.warning('Integration ended prematurely in network %s on node %i.'
                     % (net.id, my_rank))
         raise exception_raised
 
@@ -796,7 +796,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                                  hmax = global_hmax,
                                  max_timepoints = MAX_TIMEPOINTS)
         except Utility.SloppyCellException as X:
-            logger.warn('Sensitivity integration failed for network %s on '
+            logger.warning('Sensitivity integration failed for network %s on '
                         'node %i during optimizable variable %s.'
                         % (net.id, my_rank, opt_var))
             raise

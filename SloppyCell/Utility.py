@@ -3,6 +3,7 @@ import pickle
 import logging
 import smtplib
 import scipy
+import numpy as np
 
 from scipy import linspace, logspace
 
@@ -82,13 +83,13 @@ def disable_debugging_msgs():
     logging.basicConfig()
 
 def disable_warnings():
-    scipy.seterr(over='ignore', divide='ignore', invalid='ignore', 
+    np.seterr(over='ignore', divide='ignore', invalid='ignore',
                  under='ignore')
     logging.root.setLevel(logging.CRITICAL)
 
 def enable_warnings():
     logging.root.setLevel(logging.WARNING)
-    scipy.seterr(over='print', divide='print', invalid='print', 
+    np.seterr(over='print', divide='print', invalid='print',
                  under='ignore')
 
 class SloppyCellException(Exception):
@@ -130,7 +131,7 @@ def combine_hessians(hesses, key_sets):
 
     # Add all the appropriate hessian elements together
     key_to_index = dict(zip(tot_keys, range(len(tot_keys))))
-    tot_hess = scipy.zeros((len(tot_keys), len(tot_keys)), scipy.float_)
+    tot_hess = np.zeros((len(tot_keys), len(tot_keys)), scipy.float_)
     for hess, keys in zip(hesses, key_sets):
         for ii, id1 in enumerate(keys):
             tot_ii = key_to_index[id1]
