@@ -91,6 +91,7 @@ class Network(object):
                          'exponentiale': math.e,
                          'pi': math.pi,
                          'scipy': scipy,
+                         'np': np,
                          'operator': operator,
                          'min': scipy.minimum,
                          'max': scipy.maximum
@@ -1566,7 +1567,7 @@ class Network(object):
         py_body.append('yprime = np.asarray(yprime)')
         py_body.append('constants = np.asarray(constants)')
         py_body.append('')
-        py_body.append('residual = scipy.empty(%i, scipy.float_)'
+        py_body.append('residual = np.empty(%i, scipy.float_)'
                        % len(self.dynamicVars))
         py_body.append('')
         self._add_assignments_to_function_body(py_body)
@@ -1650,7 +1651,7 @@ class Network(object):
         py_body.append('')
         # We don't know the length of root_devs yet, so for now we'll
         #  just insert a placeholder line.
-        py_body.append('root_devs = scipy.empty(NEED_TO_FIX, scipy.float_)')
+        py_body.append('root_devs = np.empty(NEED_TO_FIX, scipy.float_)')
         py_body.append('')
         self._add_assignments_to_function_body(py_body, include_dts=self.deriv_funcs_enabled)
         py_body.append('')
@@ -1703,7 +1704,7 @@ class Network(object):
         self.len_root_func = len_root_func
         # Now that we know how many roots we're looking for, go back and
         #  insert the proper size for root_devs
-        py_body[5] = ('root_devs = scipy.empty(%i, scipy.float_)'
+        py_body[5] = ('root_devs = np.empty(%i, scipy.float_)'
                       % len_root_func)
         py_body.append('')
         py_body.append('return root_devs')
@@ -1736,7 +1737,7 @@ class Network(object):
         py_body.append('yp = np.asarray(yp)')
         py_body.append('constants = np.asarray(constants)')
         py_body.append('')
-        py_body.append('alg_derivs_res = scipy.empty(%i, scipy.float_)'
+        py_body.append('alg_derivs_res = np.empty(%i, scipy.float_)'
                        % len(self.algebraicRules))
         py_body.append('')
         self._add_assignments_to_function_body(py_body)
