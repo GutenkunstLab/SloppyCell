@@ -13,6 +13,7 @@ logger = logging.getLogger('RxnNets.PerfectData')
 
 import scipy
 import scipy.integrate
+import numpy as np
 
 from SloppyCell.ReactionNetworks import Dynamics
 from SloppyCell import HAVE_MPI, my_rank, my_host, num_procs, comm
@@ -108,12 +109,12 @@ def discrete_data(net, params, pts, interval, vars=None, random=False,
     var_times = {}
     for var in vars:
         if random:
-            var_times[var] = scipy.rand(pts) * (interval[1]-interval[0]) + interval[0]
+            var_times[var] = np.random.rand(pts) * (interval[1]-interval[0]) + interval[0]
         else:
-            var_times[var] = scipy.linspace(interval[0], interval[1], pts)
+            var_times[var] = np.linspace(interval[0], interval[1], pts)
 
     # Create a sorted list of the unique times in the var_times dict
-    int_times = set(scipy.ravel(list(var_times.values())))
+    int_times = set(np.ravel(list(var_times.values())))
     int_times.add(0)
     int_times = list(int_times)
     int_times.sort()
@@ -131,7 +132,7 @@ def discrete_data(net, params, pts, interval, vars=None, random=False,
         var_uncerts = uncert_func(traj, var)
         for time in times:
             val = traj.get_var_val(var, time)
-            if scipy.isscalar(var_uncerts):
+            if np.isscalar(var_uncerts):
                 uncert = var_uncerts
             else:
                 index = traj._get_time_index(time)
@@ -170,8 +171,8 @@ def hessian_log_params(sens_traj, data_ids=None, opt_ids=None,
     data_sigmas = {}
     for data_id in data_ids:
         ds = uncert_func(sens_traj, data_id)
-        if scipy.isscalar(ds):
-            ds = scipy.zeros(len(sens_traj), scipy.float_) + ds
+        if np.isscalar(ds):
+            ds = np.zeros(len(sens_traj), scipy.float_) + ds
         data_sigmas[data_id] = ds
 
     vars_assigned = [data_ids[node::num_procs] for node in range(num_procs)]
@@ -202,7 +203,7 @@ def hessian_log_params(sens_traj, data_ids=None, opt_ids=None,
         logger.debug('Receiving from worker %i.' % worker)
         hess_dict.update(comm.recv(source=worker))
 
-    hess = scipy.sum(list(hess_dict.values()), axis=0)
+    hess = np.sum(list(hess_dict.values()), axis=0)
     if return_dict:
         return hess, hess_dict
     else:
@@ -227,8 +228,8 @@ def get_intervals(traj):
     # We want to break up our integrals when events fire, so first we figure out
     #  when they fired by looking for duplicated times in the trajectory
     times = traj.get_times()
-    eventIndices = scipy.compress(scipy.diff(times) == 0, 
-                                  scipy.arange(len(times)))
+    eventIndices = np.compress(np.diff(times) == 0,
+                                  np.arange(len(times)))
     intervals = list(zip([0] + list(eventIndices + 1), 
                     list(eventIndices + 1) + [len(times)]))
 
@@ -266,7 +267,7 @@ def get_sf_derivs(traj, dataId, data_sigma, optIds):
 
 def computeLMHessianContribution(traj, dataId, data_sigma, optIds, 
                                  scaleFactorDerivs):
-    LMHessian = scipy.zeros((len(optIds), len(optIds)), scipy.float_)
+    LMHessian = np.zeros((len(optIds), len(optIds)), scipy.float_)
 
     # We break up our integral at event firings.
     for start, end in get_intervals(traj):

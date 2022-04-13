@@ -207,7 +207,7 @@ class Trajectory(object):
         if id in self.key_column:
             return self.values[:, self.key_column.get(id)]
         elif id in self.const_var_values:
-            return scipy.ones(len(self.timepoints), scipy.float_) *\
+            return np.ones(len(self.timepoints), scipy.float_) *\
                     self.const_var_values.get(id)
         elif id == 'time':
             return self.get_times()
@@ -645,7 +645,7 @@ class Trajectory(object):
         for var in out_vars:
             out_array.append(self.get_var_traj(var))
     
-        out_array = scipy.transpose(out_array)
+        out_array = np.transpose(out_array)
         scipy.savetxt(f, out_array, delimiter=separator)
         f.close()
 
