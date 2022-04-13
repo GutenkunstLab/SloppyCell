@@ -3,7 +3,6 @@ from builtins import range
 import unittest
 import os
 
-import scipy
 import numpy
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks import *
@@ -98,7 +97,7 @@ class test_AlgebraicRules(unittest.TestCase):
         """ Test that algebraic rules still work correctly when low tolerances
         are enforced"""
 
-        reltol = scipy.array([1e-10, 1e-10, 1e-10, 1e-10])
+        reltol = numpy.array([1e-10, 1e-10, 1e-10, 1e-10])
 
         algebraic_traj = Dynamics.integrate(algebraic_net, tlist_algebraic_net,
                                               reltol)
@@ -118,7 +117,7 @@ class test_AlgebraicRules(unittest.TestCase):
         """ Test that algebraic rules still work correctly when integration
         is done in terms of log chem values."""
 
-        reltol = scipy.array([1e-10, 1e-10, 1e-10, 1e-10])
+        reltol = numpy.array([1e-10, 1e-10, 1e-10, 1e-10])
 
         algebraic_traj = Dynamics.integrate(algebraic_net, tlist_algebraic_net,
                                             reltol, fill_traj=False)

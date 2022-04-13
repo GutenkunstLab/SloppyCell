@@ -3,6 +3,7 @@ import logging
 logger = logging.getLogger('daskr')
 
 import scipy
+import numpy as np
 
 import SloppyCell._daskr as _daskr
 import SloppyCell.Utility as Utility
@@ -201,12 +202,12 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
       
     """
 
-    if scipy.isscalar(rpar):
+    if np.isscalar(rpar):
         raise ValueError('rpar must be a sequence.')
 
     if rpar is None or len(rpar) == 0:
         # rpar needs to have at least length 1 or daskr will screw up arguments.
-        rpar = scipy.empty(1)
+        rpar = np.empty(1)
 
     y = y0
     yp = yp0
@@ -231,13 +232,13 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
 
     # Make the work arrays
     # Making these int32 and float64 avoids crashes on 64-bit.
-    rwork = scipy.zeros(LRW, scipy.float64)
-    iwork = scipy.zeros(LIW, scipy.int32)
+    rwork = np.zeros(LRW, scipy.float64)
+    iwork = np.zeros(LIW, scipy.int32)
 
     # The info array is used to give the daskr code more details about how we
     # want the problem solved.
     # Set all the options for info, as well as related options.
-    info = scipy.zeros(20, scipy.int32)
+    info = np.zeros(20, scipy.int32)
 
     # Now we go through the options one by one and set them according to the
     # inputs. Note that some options are not used and kept at '0'.
@@ -250,10 +251,10 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
     info[1] = 1
 
     # Now we take care of the tolerance settings
-    if scipy.isscalar(rtol) or len(rtol) != neq:
+    if np.isscalar(rtol) or len(rtol) != neq:
         raise ValueError('rtol must be an array or a vector with same length '
                          'as number of equations.')
-    if scipy.isscalar(atol) or len(atol) != neq:
+    if np.isscalar(atol) or len(atol) != neq:
         raise ValueError('atol must be an array or a vector with same length '
                          'as number of equations.')
 
@@ -443,11 +444,11 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
                     messages = redir.stop()
                     # report the error message
                     if messages is not None:
-                        logger.warn(messages)
+                        logger.warning(messages)
                     errMessage = "DASKR Error: Unrecoverable error: " + str(e)
-                    logger.warn(errMessage)
-                    outputs = (scipy.array(yout_l), scipy.array(tout_l),
-                         scipy.array(ypout_l),
+                    logger.warning(errMessage)
+                    outputs = (np.array(yout_l), np.array(tout_l),
+                         np.array(ypout_l),
                          t_root, y_root, i_root)
                     raise daeintException(errMessage, outputs)
 
@@ -461,8 +462,8 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
                     messages = redir.stop()
                     # The task was interrupted
                     if messages is not None:
-                        logger.warn(messages)
-                    logger.warn(_msgs[idid])
+                        logger.warning(messages)
+                    logger.warning(_msgs[idid])
                 # if idid=-1, 500 steps have been taken sine the last time
                 # idid=-1.
                 # Whether we should continue depends on the value of max_steps.
@@ -477,8 +478,8 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
                         messages = redir.stop()
                         # report the error message for idid = -1
                         if messages is not None:
-                            logger.warn(messages)
-                        logger.warn(_msgs[idid])
+                            logger.warning(messages)
+                        logger.warning(_msgs[idid])
 
                    
                 # send what output was obtained
@@ -489,10 +490,10 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
                 #  the proper number of columns, for consistency with
                 #  what we would get if it had succeeded.
                 if len(yout_l) == 0:
-                    yout_l = scipy.zeros((0, len(y0)), scipy.float_)
-                    ypout_l = scipy.zeros((0, len(y0)), scipy.float_)
-                outputs = (scipy.array(yout_l), scipy.array(tout_l),
-                           scipy.array(ypout_l),
+                    yout_l = np.zeros((0, len(y0)), scipy.float_)
+                    ypout_l = np.zeros((0, len(y0)), scipy.float_)
+                outputs = (np.array(yout_l), np.array(tout_l),
+                           np.array(ypout_l),
                            t_root, y_root, i_root)
                 raise daeintException(_msgs[idid], outputs)
             
@@ -546,20 +547,20 @@ def daeint(res, t, y0, yp0, rtol, atol, nrt = 0, rt = None, jac = None,
                     messages = redir.stop()
                     # report the error message
                     if messages is not None:
-                        logger.warn(messages)
+                        logger.warning(messages)
                     errMessage = "DASKR Error: max_timepoints ("+               \
                         str(int(max_timepoints))+") exceeded."
-                    logger.warn(errMessage)
-                    outputs = (scipy.array(yout_l), scipy.array(tout_l),
-                               scipy.array(ypout_l),
+                    logger.warning(errMessage)
+                    outputs = (np.array(yout_l), np.array(tout_l),
+                               np.array(ypout_l),
                                t_root, y_root, i_root)
                     raise daeintException(errMessage, outputs)
 
                     
         # format the output
-        tout_l = scipy.array(tout_l)
-        yout_l = scipy.array(yout_l)
-        ypout_l = scipy.array(ypout_l)
+        tout_l = np.array(tout_l)
+        yout_l = np.array(yout_l)
+        ypout_l = np.array(ypout_l)
 
         # Process outputs
         outputs = (yout_l, tout_l, ypout_l, t_root, y_root, i_root)

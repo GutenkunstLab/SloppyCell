@@ -7,6 +7,7 @@ import copy
 import unittest
 
 import scipy
+import numpy as np
 
 from SloppyCell.ReactionNetworks import *
 import SloppyCell
@@ -17,7 +18,7 @@ m = copy.deepcopy(TestNetwork.m)
 # the following is useful to see if prior derivatives are computed
 # correctly
 m.AddResidual(Residuals.PriorInLog('priorOnA', 'A',
-                                   scipy.log(1.1),scipy.log(2.0) ) )
+                                   np.log(1.1),np.log(2.0) ) )
 
 class test_DerivativeCalculators(unittest.TestCase):
     def test_jacobian_sens(self):
@@ -62,13 +63,13 @@ class test_DerivativeCalculators(unittest.TestCase):
         """
         params = m.get_params()
 
-        grad_sens = m.gradient_log_params_sens(scipy.log(params))
+        grad_sens = m.gradient_log_params_sens(np.log(params))
 
         c0 = m.cost(params)
         eps = 1e-6
         for p_key, p_val in list(params.items()):
             pplus = params.copy()
-            pplus.set(p_key, scipy.exp(scipy.log(p_val) + eps))
+            pplus.set(p_key, np.exp(np.log(p_val) + eps))
             cplus = m.cost(pplus)
             deriv = old_div((cplus - c0),eps)
             self.assertAlmostEqual(deriv, grad_sens.get(p_key), 2)

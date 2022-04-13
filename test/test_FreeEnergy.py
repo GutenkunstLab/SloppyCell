@@ -3,6 +3,7 @@ from past.utils import old_div
 import unittest
 
 import scipy
+import numpy as np
 
 from SloppyCell.ReactionNetworks import *
 
@@ -27,7 +28,7 @@ class test_FreeEnergy(unittest.TestCase):
         ak = old_div(1.0**2,0.5**2) + old_div(1.0**2,1.0**2)
 
         for T in [1, 0.137]:
-            entropy = scipy.log(scipy.sqrt(old_div(2*scipy.pi*T,ak)))
+            entropy = np.log(np.sqrt(old_div(2*scipy.pi*T,ak)))
             self.assertAlmostEqual(m.free_energy([], T), c-T*entropy, 4,
                                    'Failed on T=%f free energy' % T)
 
@@ -70,7 +71,7 @@ class test_FreeEnergy(unittest.TestCase):
                                'calc.')
 
         for T in [1, 0.137]:
-            entropy = scipy.log(scipy.sqrt(old_div(2*scipy.pi*T,ak)))
+            entropy = np.log(np.sqrt(old_div(2*scipy.pi*T,ak)))
             self.assertAlmostEqual(m.free_energy([], T), c-T*entropy, 4,
                                    'Failed on T=%f free energy' % T)
 
@@ -84,7 +85,7 @@ class test_FreeEnergy(unittest.TestCase):
         expt.set_data({'test': {'X': {1.0: (4.0, 0.5),
                                       2.0: (5.0, 1.0)}}})
         expt.set_sf_prior('X', 'gaussian in log sf', 
-                          (scipy.log(2.0), scipy.log(1e3)))
+                          (np.log(2.0), np.log(1e3)))
         m = Model([expt], [net])
 
         # ak is sum(y**2/sigma**2)
@@ -143,12 +144,12 @@ class test_FreeEnergy(unittest.TestCase):
         ent_Y_uniform = old_div((m.cost([]) - m.free_energy([], T)),T)
 
         expt.set_sf_prior('X', 'gaussian in log sf', 
-                          (scipy.log(2.0), scipy.log(1e3)))
+                          (np.log(2.0), np.log(1e3)))
         expt.set_fixed_sf({'Y': 1.0})
         ent_X_log = old_div((m.cost([]) - m.free_energy([], T)),T)
 
         expt.set_sf_prior('Y', 'gaussian in log sf', 
-                          (scipy.log(2.0), scipy.log(1e3)))
+                          (np.log(2.0), np.log(1e3)))
         expt.set_fixed_sf({'X': 1.0})
         ent_Y_log = old_div((m.cost([]) - m.free_energy([], T)),T)
 

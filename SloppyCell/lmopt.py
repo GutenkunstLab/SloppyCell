@@ -12,7 +12,8 @@ fmin_lm_scale : scale invariant Levenberg Marquardt
 
 """
 import scipy
-from scipy import absolute, sqrt, asarray, zeros, mat, transpose, ones, dot, sum
+from numpy import absolute, sqrt, asarray, zeros, mat, transpose, ones, dot, sum
+import numpy as np
 import scipy.linalg
 import copy
 import SloppyCell.Utility
@@ -98,7 +99,7 @@ def safe_res(f,x,args):
     except (SloppyCell.Utility.SloppyCellException,OverflowError):
         res = None
         cost = scipy.inf
-    if scipy.isnan(cost): cost = scipy.inf
+    if np.isnan(cost): cost = scipy.inf
     return res, cost
 
 def safe_fprime(fprime,x,args):
@@ -117,7 +118,7 @@ def safe_fprime(fprime,x,args):
         j = None
         err = 4
     if j is not None:
-      if ( scipy.isnan(j).any() or scipy.isinf(j).any() ):
+      if ( np.isnan(j).any() or np.isinf(j).any() ):
         j = None
         err = 3
     return j, err
@@ -231,7 +232,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
         rhsvect = -mat(vt)*mat(transpose(grad))
         rhsvect = asarray(rhsvect)[:,0]
-        move = abs(rhsvect)/(s+Lambda*scipy.ones(n)+1.0e-30*scipy.ones(n))
+        move = abs(rhsvect)/(s+Lambda*np.ones(n)+1.0e-30*np.ones(n))
         move = list(move)
         maxindex = move.index(max(move))
         move = asarray(move)
@@ -331,7 +332,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             NTrials2 = 0
             move = moveold[:]
             while (costmult > currentcost) and (NTrials < 10) :
-                num = -scipy.dot(grad,move)[0]
+                num = -dot(grad,move)[0]
                 den = scipy.linalg.norm(grad)*scipy.linalg.norm(move)
                 gamma = scipy.arccos(num/den)
                 NTrials = NTrials+1
@@ -527,7 +528,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
         oldlmh = lmh[:,:]
         oldgrad = grad[:]
 
-        rhsvect = -scipy.dot(transpose(u),grad)
+        rhsvect = -dot(transpose(u),grad)
         # rhsvect = asarray(rhsvect)[:,0]
         move = abs(rhsvect)/(s+Lambda*ones(n)+1.0e-30*ones(n))
         move = list(move)
@@ -539,7 +540,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
 
         ## lmhreg = lmh + Lambda*eye(n,n,typecode=scipy.float_)
         ## [u,s,v] = scipy.linalg.svd(lmhreg)
-        rhsvect = -scipy.dot(transpose(u),grad)
+        rhsvect = -dot(transpose(u),grad)
         # rhsvect = asarray(rhsvect)[:,0]
 
         for i in range(0,len(s)) :
@@ -673,8 +674,8 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
 
         # see if we need to reduce the trust region, compare the actual change in
         # cost to the linear and quadratic change in cost
-        model_change = scipy.dot(scipy.transpose(oldgrad),move) + \
-        .5*scipy.dot(scipy.transpose(move),scipy.dot(oldlmh,move) )
+        model_change = dot(np.transpose(oldgrad),move) + \
+        .5*dot(np.transpose(move),dot(oldlmh,move) )
         #print oldcost-sum(newmodelval**2)
         #print trustradius
         if model_change>1.0e-16 :

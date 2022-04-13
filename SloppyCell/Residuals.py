@@ -3,6 +3,7 @@ from builtins import range
 from past.utils import old_div
 from builtins import object
 import scipy
+import numpy as np
 
 class Residual(object):
     def __init__(self, key):
@@ -143,7 +144,7 @@ class PriorInLog(Residual):
         self.sigmaLogPVal = sigmaLogPVal
 
     def GetValue(self, predictions, internalVars, params):
-        return old_div((scipy.log(params.get(self.pKey)) - self.logPVal), self.sigmaLogPVal)
+        return old_div((np.log(params.get(self.pKey)) - self.logPVal), self.sigmaLogPVal)
 
     def dp(self, predictions, internalVars, params):
         return {self.pKey: 1./(params.get(self.pKey) * self.sigmaLogPVal)}
@@ -282,7 +283,7 @@ class IntegralDataResidual(Residual):
                                           self.interval[0], self.interval[1],
                                           limit = int(1e5))
         T = self.interval[1] - self.interval[0]
-        return scipy.sqrt(old_div(val,T))
+        return np.sqrt(old_div(val,T))
 
 class ScaledExtremum(Residual):
     def __init__(self, key, var, calcKey, val,

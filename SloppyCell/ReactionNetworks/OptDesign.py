@@ -3,6 +3,7 @@ from __future__ import division
 from builtins import range
 from past.utils import old_div
 import scipy, copy
+import numpy as np
 import SloppyCell.Utility
 load = SloppyCell.Utility.load
 save = SloppyCell.Utility.save
@@ -46,7 +47,7 @@ def setup(paramfile,calcobject,senstrajfile,jtjfile) :
             v.jtjdict[(pname1,pname2)] = v.jtj[pindex1][pindex2]
 
     v.ovvarnames = list(v.clc.optimizableVars.keys()) 
-    v.jtjtrunc = scipy.zeros((len(v.ovvarnames),len(v.ovvarnames)),scipy.float_)
+    v.jtjtrunc = np.zeros((len(v.ovvarnames),len(v.ovvarnames)),scipy.float_)
 
     # The number of optimizable variables for the calculation we are 
     # considering might be less than the number of parameters for the 
@@ -83,7 +84,7 @@ def design_over_chems(chemnames,designchemnames,logprior=1.0e20) :
     best time point, that most reduces the integrated variance
     over designchemnames """
     times = design_senstraj.timepoints    
-    trunc_times = [times[i] for i in scipy.arange(0,len(times),1)]    
+    trunc_times = [times[i] for i in np.arange(0,len(times),1)]
     best_change = 0.0 # the change should always be negative    
     best_chem = "None"
     best_time = "None"
@@ -117,7 +118,7 @@ def design_over_single_variance(sensvect,designchemnames,logprior=1.0e20) :
     case we are designing over the species variance at that single point
     """
     times = senstraj.timepoints    
-    trunc_times = [times[i] for i in scipy.arange(0,len(times),5)]    
+    trunc_times = [times[i] for i in np.arange(0,len(times),5)]
     best_change = 0.0 # the change should always be negative    
     best_chem = "None"
     best_time = "None"
@@ -143,7 +144,7 @@ def variances(chemnames,logprior=1.0e20) :
     """
     #senstraj = load('EndogenousEGFR3T3sensNoPriors')
     times = senstraj.timepoints    
-    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*scipy.eye(
+    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*np.eye(
         len(jtjtrunc),len(jtjtrunc)))    
     var = {}
     bestfit = {}    
@@ -161,12 +162,12 @@ def variances(chemnames,logprior=1.0e20) :
         for j, pname in enumerate(ovvarnames) :
             sensarray_this_chem[:,j] = sensarray_this_chem[:,j]*curp.get(pname)
         
-        tmp = scipy.dot(sensarray_this_chem,jtjinv)
+        tmp = np.dot(sensarray_this_chem,jtjinv)
         for i in range(len(tmp[:,0])) :
-            var[name].append(scipy.dot(tmp[i,:],sensarray_this_chem[i,:]))
+            var[name].append(np.dot(tmp[i,:],sensarray_this_chem[i,:]))
             
         bestfit[name] = senstraj.values[:,chemindex]
-        var[name] = scipy.asarray(var[name])    
+        var[name] = np.asarray(var[name])
     return times, bestfit, var
 
 def variances_log_chems(chemnames,logprior=1.0e20) :
@@ -175,7 +176,7 @@ def variances_log_chems(chemnames,logprior=1.0e20) :
     """
     #senstraj = load('EndogenousEGFR3T3sensNoPriors')
     times = senstraj.timepoints    
-    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*scipy.eye(
+    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*np.eye(
         len(jtjtrunc),len(jtjtrunc)))    
     var = {}
     bestfit = {}    
@@ -197,12 +198,12 @@ def variances_log_chems(chemnames,logprior=1.0e20) :
         for i in range(len(times)) :
             sensarray_this_chem[i,:] = old_div(sensarray_this_chem[i,:],(traj_this_chem[i]+1.0e-6))
 
-        tmp = scipy.dot(sensarray_this_chem,jtjinv)
+        tmp = np.dot(sensarray_this_chem,jtjinv)
         for i in range(len(tmp[:,0])) :
-            var[name].append(scipy.dot(tmp[i,:],sensarray_this_chem[i,:]))
+            var[name].append(np.dot(tmp[i,:],sensarray_this_chem[i,:]))
             
         bestfit[name] = senstraj.values[:,chemindex]
-        var[name] = scipy.asarray(var[name])    
+        var[name] = np.asarray(var[name])
     return times,bestfit,var
 
 def single_variance(sensvect,logprior=1.0e20) :
@@ -212,10 +213,10 @@ def single_variance(sensvect,logprior=1.0e20) :
     parameters. Note that if we are concerned with ratios and 
     products of parameters, it's often best to consider sensvect
     as a sensitivity w.r.t. log parameters """
-    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*scipy.eye(
+    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*np.eye(
         len(jtjtrunc),len(jtjtrunc)))    
-    tmp = scipy.dot(jtjinv,sensvect)
-    var = scipy.dot(sensvect,tmp)
+    tmp = np.dot(jtjinv,sensvect)
+    var = np.dot(sensvect,tmp)
     return var
 
 def variance_change(chemnames,sensvect_design,logprior=1.0e20) :
@@ -232,13 +233,13 @@ def variance_change(chemnames,sensvect_design,logprior=1.0e20) :
     """
     times = senstraj.timepoints    
     n = len(jtjtrunc)    
-    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*scipy.eye(n,n))
+    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*np.eye(n,n))
 
     #sensvect_design = scipy.resize(sensvect_design,(n,1))
-    jtjinv_design = scipy.dot(jtjinv,sensvect_design)
+    jtjinv_design = np.dot(jtjinv,sensvect_design)
     #jtjinv_design = scipy.resize(jtjinv_design,(n,1))     # want a column vector    
 
-    denominator = 1.0 + scipy.dot(sensvect_design,jtjinv_design)
+    denominator = 1.0 + np.dot(sensvect_design,jtjinv_design)
     
     varchange = {}
     optvarkeys = list(clc.optimizableVars.keys())
@@ -253,10 +254,10 @@ def variance_change(chemnames,sensvect_design,logprior=1.0e20) :
         for j, pname in enumerate(ovvarnames) :
             sensarray_this_chem[:,j] = sensarray_this_chem[:,j]*curp.get(pname)
         
-        product = scipy.dot(sensarray_this_chem,jtjinv_design)
+        product = np.dot(sensarray_this_chem,jtjinv_design)
         # this product is a number of timepoints by one vector, we need to 
         # square each element for the final formula
-        varchange[name] = -scipy.asarray(old_div(product**2,denominator))
+        varchange[name] = -np.asarray(old_div(product**2,denominator))
 
     return times, varchange
 
@@ -271,11 +272,11 @@ def single_variance_change(sensvect,sensvect_design,logprior=1.0e20) :
     addition of the new data point, with sensitivity vector sensvect_design.
     """
     n = len(jtjtrunc)    
-    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*scipy.eye(n,n))
+    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*np.eye(n,n))
 
-    jtjinv_design = scipy.dot(jtjinv,sensvect_design)
-    denominator = 1.0 + scipy.dot(sensvect_design,jtjinv_design)
-    product = scipy.dot(sensvect,jtjinv_design)
+    jtjinv_design = np.dot(jtjinv,sensvect_design)
+    denominator = 1.0 + np.dot(sensvect_design,jtjinv_design)
+    product = np.dot(sensvect,jtjinv_design)
     return old_div(-product**2,denominator)
 
 def get_sens_vect(chemname,time) :
@@ -328,15 +329,15 @@ def var_change_weighted(weights,chemnames,sensarray_design,logprior=1.0e20) :
     times = senstraj.timepoints    
     ntimes = len(times)    
     k,n = sensarray_design.shape    
-    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*scipy.eye(n,n))
-    Vt = scipy.zeros((k,n),scipy.float_)
+    jtjinv = scipy.linalg.inv(jtjtrunc+1.0/logprior**2*np.eye(n,n))
+    Vt = np.zeros((k,n),scipy.float_)
     for i in range(k) :
-        Vt[i,:] = scipy.sqrt(weights[i])*sensarray_design[i,:]
-    design_jtjinv = scipy.dot(Vt,jtjinv)
+        Vt[i,:] = np.sqrt(weights[i])*sensarray_design[i,:]
+    design_jtjinv = np.dot(Vt,jtjinv)
     #jtjinv_design = scipy.resize(jtjinv_design,(n,1))     # want a column vector    
 
-    denominator = scipy.eye(k,k) + \
-            scipy.dot(design_jtjinv,scipy.transpose(Vt))
+    denominator = np.eye(k,k) + \
+            np.dot(design_jtjinv,scipy.transpose(Vt))
     inv_denom = scipy.linalg.inv(denominator)
 
     varchange = {}
@@ -352,15 +353,15 @@ def var_change_weighted(weights,chemnames,sensarray_design,logprior=1.0e20) :
         for j, pname in enumerate(ovvarnames) :
             sensarray_this_chem[:,j] = sensarray_this_chem[:,j]*curp.get(pname)
         
-        product = scipy.dot(design_jtjinv,
+        product = np.dot(design_jtjinv,
                 scipy.transpose(sensarray_this_chem))
         # each column vector of this matrix has to be dotted through the
         # denominator matrix --- each column is a different time point
         for j in range(ntimes) :    
-            quadprod = scipy.dot(product[:,j],inv_denom)    
-            quadprod = scipy.dot(quadprod,product[:,j])    
+            quadprod = np.dot(product[:,j],inv_denom)
+            quadprod = np.dot(quadprod,product[:,j])
             varchange[name].append(-quadprod)
-        varchange[name] = scipy.asarray(varchange[name])
+        varchange[name] = np.asarray(varchange[name])
     
     return times, varchange
 
@@ -425,8 +426,8 @@ def plot_variances(chemnames,logprior,scale=1.0,return_var = False) :
         Plotting.figure()    
         Plotting.plot(times,old_div(bestfit[key],scale))
         Plotting.hold(True)    
-        Plotting.plot(times,old_div(bestfit[key],scale) + old_div(scipy.sqrt(var[key]),scale),'r--')
-        Plotting.plot(times,old_div(bestfit[key],scale) - old_div(scipy.sqrt(var[key]),scale),'r--')
+        Plotting.plot(times,old_div(bestfit[key],scale) + old_div(np.sqrt(var[key]),scale),'r--')
+        Plotting.plot(times,old_div(bestfit[key],scale) - old_div(np.sqrt(var[key]),scale),'r--')
         Plotting.title(key,fontsize=16)
         Plotting.xlabel('time (minutes)',fontsize=16)
         Plotting.ylabel('number of molecules',fontsize=16)
@@ -452,8 +453,8 @@ def plot_variances_log_chems(chemnames,logprior) :
         Plotting.figure()    
         Plotting.plot(times,bestfit[key])
         Plotting.hold(True)    
-        Plotting.plot(times,bestfit[key]*scipy.exp(scipy.sqrt(var[key])),'r-')
-        Plotting.plot(times,bestfit[key]*scipy.exp(-scipy.sqrt(var[key])),'r-')
+        Plotting.plot(times,bestfit[key]*scipy.exp(np.sqrt(var[key])),'r-')
+        Plotting.plot(times,bestfit[key]*scipy.exp(-np.sqrt(var[key])),'r-')
         Plotting.title(key,fontsize=14)
         Plotting.xlabel('time')
         Plotting.ylabel('arb. units')
@@ -477,11 +478,11 @@ def plot_variance_newpoint(chemnames,sensvect_design,logprior=1.0e20,
         Plotting.figure()    
         Plotting.plot(times,bestfit[key])
         Plotting.hold(True)    
-        Plotting.plot(times,bestfit[key] + scipy.sqrt(var[key]),'r-')
-        Plotting.plot(times,bestfit[key] - scipy.sqrt(var[key]),'r-')
+        Plotting.plot(times,bestfit[key] + np.sqrt(var[key]),'r-')
+        Plotting.plot(times,bestfit[key] - np.sqrt(var[key]),'r-')
     
-        Plotting.plot(times,bestfit[key] + scipy.sqrt(var[key]+varchange[key]),'k--')
-        Plotting.plot(times,bestfit[key] - scipy.sqrt(var[key]+varchange[key]),'k--')
+        Plotting.plot(times,bestfit[key] + np.sqrt(var[key]+varchange[key]),'k--')
+        Plotting.plot(times,bestfit[key] - np.sqrt(var[key]+varchange[key]),'k--')
         
         Plotting.title(key,fontsize=14)
         Plotting.xlabel('time')
@@ -516,11 +517,11 @@ def plot_variance_newweights(weights,chemnames,sensarray_design,logprior=1.0e20,
         Plotting.figure()    
         Plotting.plot(times,scale*bestfit[key])
         Plotting.hold(True)    
-        Plotting.plot(times,scale*bestfit[key] + scale*scipy.sqrt(var[key]),'r-')
-        Plotting.plot(times,scale*bestfit[key] - scale*scipy.sqrt(var[key]),'r-')
+        Plotting.plot(times,scale*bestfit[key] + scale*np.sqrt(var[key]),'r-')
+        Plotting.plot(times,scale*bestfit[key] - scale*np.sqrt(var[key]),'r-')
     
-        Plotting.plot(times,scale*bestfit[key] + scale*scipy.sqrt(var[key]+varchange[key]),'k--')
-        Plotting.plot(times,scale*bestfit[key] - scale*scipy.sqrt(var[key]+varchange[key]),'k--')
+        Plotting.plot(times,scale*bestfit[key] + scale*np.sqrt(var[key]+varchange[key]),'k--')
+        Plotting.plot(times,scale*bestfit[key] - scale*np.sqrt(var[key]+varchange[key]),'k--')
         
         Plotting.title(key,fontsize=14)
         Plotting.xlabel('time')
@@ -547,9 +548,9 @@ def plot_variances_subplot(chemnames,logprior) :
             Plotting.plot(times,bestfit[chemnames[chemind]])
             Plotting.hold(True)
             Plotting.plot(times,bestfit[chemnames[chemind]] 
-                    + scipy.sqrt(var[chemnames[chemind]]),'r-')
+                    + np.sqrt(var[chemnames[chemind]]),'r-')
             Plotting.plot(times,bestfit[chemnames[chemind]] 
-                    - scipy.sqrt(var[chemnames[chemind]]),'r-')
+                    - np.sqrt(var[chemnames[chemind]]),'r-')
             
             yt = Plotting.yticks()
             Plotting.axis([0,100.0,yt[0],yt[-1]])    
@@ -579,14 +580,14 @@ def reduce_size(array,skipsize) :
     returns an array with every skipsize row sampled.
     """
     size = array.shape
-    newsize = len(scipy.arange(0,size[0],skipsize))    
+    newsize = len(np.arange(0,size[0],skipsize))
     if len(size) == 1 : # a vector 
-        newvect = scipy.zeros((newsize,),scipy.float_)
-        for iind,i in enumerate(scipy.arange(0,size[0],skipsize)) :
+        newvect = np.zeros((newsize,),scipy.float_)
+        for iind,i in enumerate(np.arange(0,size[0],skipsize)) :
             newvect[iind] = array[i]
         return newvect
     elif len(size) == 2 : # an array
-        newarray = scipy.zeros((newsize,size[1]),scipy.float_)
-        for iind,i in enumerate(scipy.arange(0,size[0],skipsize)) :
+        newarray = np.zeros((newsize,size[1]),scipy.float_)
+        for iind,i in enumerate(np.arange(0,size[0],skipsize)) :
             newarray[iind] = array[i]
         return newarray

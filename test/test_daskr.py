@@ -4,6 +4,7 @@ from past.utils import old_div
 import unittest 
 
 import scipy
+import numpy as np
 import SloppyCell.Utility as Utility
 import SloppyCell.daskr
 from SloppyCell.daskr import daeint
@@ -15,7 +16,7 @@ redir = Utility.Redirector()
 # Van Der Pol oscillator equations
 # This test problem is from the daskr documentation.
 def vdp_func(y, t):
-    ydot = scipy.zeros(2, scipy.float_)
+    ydot = np.zeros(2, scipy.float_)
     ydot[0] = y[1]
     ydot[1] = 100*(1-y[0]**2)*y[1] - y[0]
     return ydot
@@ -25,7 +26,7 @@ def vdp_res_func(t, y, yprime, rpar):
 
 
 def vdp_Dfun(t, y, yprime, cj, rpar):
-    pd = scipy.zeros((2,2), scipy.float_)
+    pd = np.zeros((2,2), scipy.float_)
     pd[0,0] = -cj
     pd[0,1] = 1
     pd[1,0] = -2*100*y[0]*y[1]-1
@@ -34,16 +35,16 @@ def vdp_Dfun(t, y, yprime, cj, rpar):
 
 def vdp_rt_func(t, y, yp, rpar):
     trigger = y[0]
-    return scipy.asarray([trigger])
+    return np.asarray([trigger])
 
 # initial settings for vdp system
-y0_vdp = scipy.array([2.0, 0])
-tlist_vdp = scipy.array([0] + [20*x for x in range(1, 11)])
+y0_vdp = np.array([2.0, 0])
+tlist_vdp = np.array([0] + [20*x for x in range(1, 11)])
 t0_vdp = tlist_vdp[0]
 yp0_vdp = vdp_func(y0_vdp, t0_vdp)
 num_events_vdp = 1
-abstol_vdp = scipy.array([0.1e-5, 0.1e-3])
-reltol_vdp = scipy.array([0.1e-5, 0.1e-5])
+abstol_vdp = np.array([0.1e-5, 0.1e-3])
+reltol_vdp = np.array([0.1e-5, 0.1e-5])
 
 ################################################################################
 
@@ -51,12 +52,12 @@ reltol_vdp = scipy.array([0.1e-5, 0.1e-5])
 # Variables x, y
 
 def algExampleBasic_func(y,t):
-    ydot = scipy.zeros(3, scipy.float_)
+    ydot = np.zeros(3, scipy.float_)
     ydot[0] = 1*y[1]
     return ydot
 
 def algExampleBasic_res_func(t, y, yprime, rpar):
-    res = scipy.zeros(3, scipy.float_)
+    res = np.zeros(3, scipy.float_)
     ypcalc = algExampleBasic_func(y,t)
     res[0] = ypcalc[0] - yprime[0]
     res[1] = -y[2]+y[0]+y[1]
@@ -64,13 +65,13 @@ def algExampleBasic_res_func(t, y, yprime, rpar):
     return res
 
 # initial settings for basic algebraic system
-y0_algBasic = scipy.array([0.5, 0.5, 1])
-tlist_algBasic = scipy.array([0] + [0.2*x for x in range(1, 51)])
+y0_algBasic = np.array([0.5, 0.5, 1])
+tlist_algBasic = np.array([0] + [0.2*x for x in range(1, 51)])
 t0_algBasic = tlist_algBasic[0]
 yp0_algBasic = algExampleBasic_func(y0_algBasic, t0_algBasic)
 
-abstol_algBasic = scipy.array([0.1e-8, 0.1e-8, 0.1e-8])
-reltol_algBasic = scipy.array([0.1e-5, 0.1e-5, 0.1e-5])
+abstol_algBasic = np.array([0.1e-8, 0.1e-8, 0.1e-8])
+reltol_algBasic = np.array([0.1e-5, 0.1e-5, 0.1e-5])
 
 
 ################################################################################
@@ -85,14 +86,14 @@ k1 = 0.1
 k2 = 0.15
 
 def algExample_func(y,t):
-    ydot = scipy.zeros(5, scipy.float_)
+    ydot = np.zeros(5, scipy.float_)
     ydot[0] = -k1*y[0]
     ydot[1] = k2*y[4]
     ydot[2] = k1*y[0] - k2*y[4]
     return ydot
 
 def algExample_res_func(t, y, yprime, ires):
-    res = scipy.zeros(5, scipy.float_)
+    res = np.zeros(5, scipy.float_)
     ypcalc = algExample_func(y,t)
     res[0] = ypcalc[0] - yprime[0]
     res[1] = ypcalc[1] - yprime[1]
@@ -102,14 +103,14 @@ def algExample_res_func(t, y, yprime, ires):
     return res
 
 # initial settings for algebraic fast reaction system
-y0_alg = scipy.array([1.0, 0, 0, 0, 0])
-tlist_alg = scipy.array([0] + [0.8*x for x in range(1, 51)])
+y0_alg = np.array([1.0, 0, 0, 0, 0])
+tlist_alg = np.array([0] + [0.8*x for x in range(1, 51)])
 t0_alg = tlist_alg[0]
 yp0_alg = algExample_func(y0_alg, t0_alg)
 
 num_events = 1
-abstol_alg = scipy.array([0.1e-5, 0.1e-5, 0.1e-5, 0.1e-5, 0.1e-5])
-reltol_alg = scipy.array([0.1e-5, 0.1e-5, 0.1e-5, 0.1e-5, 0.1e-5])
+abstol_alg = np.array([0.1e-5, 0.1e-5, 0.1e-5, 0.1e-5, 0.1e-5])
+reltol_alg = np.array([0.1e-5, 0.1e-5, 0.1e-5, 0.1e-5, 0.1e-5])
 
 
 ################################################################################
@@ -120,7 +121,7 @@ reltol_alg = scipy.array([0.1e-5, 0.1e-5, 0.1e-5, 0.1e-5, 0.1e-5])
 # encountered.
 
 def linear_func(y, t):
-    ydot = scipy.zeros(1, scipy.float_)
+    ydot = np.zeros(1, scipy.float_)
     ydot[0] = -5
     return ydot
     
@@ -128,12 +129,12 @@ def linear_res_func(t, y, yprime, ires):
     return linear_func(y, t) - yprime 
 
 # initial settings for simple linear system
-y0_linear = scipy.array([100])
-tlist_linear = scipy.array([0] + [20*x for x in range(1, 11)])
+y0_linear = np.array([100])
+tlist_linear = np.array([0] + [20*x for x in range(1, 11)])
 t0_linear = tlist_linear[0]
 yp0_linear = linear_func(y0_linear, t0_linear)
-abstol_linear = scipy.array([0.1e-5])
-reltol_linear = scipy.array([0.1e-5])
+abstol_linear = np.array([0.1e-5])
+reltol_linear = np.array([0.1e-5])
 tstop_linear = 201
 
 
@@ -147,25 +148,25 @@ tstop_linear = 201
 k = 1e-12
 
 def non_neg_func(y,t):
-    ydot = scipy.zeros(1, scipy.float_)
+    ydot = np.zeros(1, scipy.float_)
     ydot[0] = old_div(-y[0],(k+y[0]))
     return ydot
 
 def non_neg_res_func(t, y, yprime, ires):
-    res = scipy.zeros(1, scipy.float_)
+    res = np.zeros(1, scipy.float_)
     ypcalc = non_neg_func(y,t)
     res[0] = ypcalc[0] - yprime[0]
     return res
 
 
 # initial settings for basic non negative system
-y0_non_neg = scipy.array([1.0])
-tlist_non_neg = scipy.array([0] + [0.04*x for x in range(1, 51)])
+y0_non_neg = np.array([1.0])
+tlist_non_neg = np.array([0] + [0.04*x for x in range(1, 51)])
 t0_non_neg = tlist_non_neg[0]
 yp0_non_neg = non_neg_func(y0_non_neg, t0_non_neg)
 
-abstol_non_neg = scipy.array([0.1e-5])
-reltol_non_neg = scipy.array([0.1e-5])
+abstol_non_neg = np.array([0.1e-5])
+reltol_non_neg = np.array([0.1e-5])
 
 ################################################################################
 
@@ -175,20 +176,20 @@ reltol_non_neg = scipy.array([0.1e-5])
 # encountered.
 
 def trig_func(y, t):
-    ydot = scipy.zeros(1, scipy.float_)
-    ydot[0] = scipy.cos(t)
+    ydot = np.zeros(1, scipy.float_)
+    ydot[0] = np.cos(t)
     return ydot
     
 def trig_res_func(t, y, yprime, ires):
     return trig_func(y, t) - yprime 
 
 # initial settings for simple linear system
-y0_trig = scipy.array([0])
-tlist_trig = scipy.array([0] + [1000*x for x in range(1, 3)])
+y0_trig = np.array([0])
+tlist_trig = np.array([0] + [1000*x for x in range(1, 3)])
 t0_trig = tlist_trig[0]
 yp0_trig = trig_func(y0_linear, t0_linear)
-abstol_trig = scipy.array([0.1e-5])
-reltol_trig = scipy.array([0.1e-5])
+abstol_trig = np.array([0.1e-5])
+reltol_trig = np.array([0.1e-5])
 
 
 ################################################################################
@@ -337,9 +338,9 @@ if max_steps is not set """
 
         # pass an inconsistent set of initial conditions to the fast reaction
         # example
-        y0_inconsistent = scipy.array([1.0, 0, 0, 1500, 15])
+        y0_inconsistent = np.array([1.0, 0, 0, 1500, 15])
         yp0_inconsistent = algExample_func(y0_inconsistent, t0_alg)
-        var_types_inconsistent = scipy.array([1, 1, 1, -1, -1])
+        var_types_inconsistent = np.array([1, 1, 1, -1, -1])
         
         y, t, ypout, t_root, y_root, i_root = daeint(algExample_res_func, 
                                                      tlist_alg,

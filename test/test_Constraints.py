@@ -4,13 +4,13 @@ from builtins import range
 import unittest
 import os
 
-import scipy
+import numpy as np
 
 from SloppyCell.ReactionNetworks import *
 
 from AlgTestNets import algebraic_net_constraints
 base_net = algebraic_net_constraints.copy()
-tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
+tlist_algebraic_net = np.array([0] + [0.8*x for x in range(1, 51)])
 
 class test_Constraints(unittest.TestCase):
     def test_contraint_fire(self):

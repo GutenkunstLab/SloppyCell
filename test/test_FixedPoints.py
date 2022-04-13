@@ -1,6 +1,7 @@
 import unittest
 
 import scipy
+import numpy as np
 
 from SloppyCell.ReactionNetworks import *
 
@@ -22,8 +23,8 @@ class test_fixedpoints(unittest.TestCase):
         net = lorenz.copy('test')
         fp = Dynamics.dyn_var_fixed_point(net, dv0=[1,1,1], with_logs=False)
         # This should find the fixed-point [sqrt(2), sqrt(2), 1]
-        self.assertAlmostEqual(fp[0], scipy.sqrt(2), 6, 'Failed on basic 1,0.')
-        self.assertAlmostEqual(fp[1], scipy.sqrt(2), 6, 'Failed on basic 1,1.')
+        self.assertAlmostEqual(fp[0], np.sqrt(2), 6, 'Failed on basic 1,0.')
+        self.assertAlmostEqual(fp[1], np.sqrt(2), 6, 'Failed on basic 1,1.')
         self.assertAlmostEqual(fp[2], 1, 6, 'Failed on basic 1,2.')
 
         fp = Dynamics.dyn_var_fixed_point(net, dv0=[-0.1,-0.1,-0.1], 
@@ -38,8 +39,8 @@ class test_fixedpoints(unittest.TestCase):
         net = lorenz.copy('test')
         fp = Dynamics.dyn_var_fixed_point(net, dv0=[1,1,1], with_logs=True)
         # This should find the fixed-point [sqrt(2), sqrt(2), 1]
-        self.assertAlmostEqual(fp[0], scipy.sqrt(2), 6, 'Failed on logs 1,0.')
-        self.assertAlmostEqual(fp[1], scipy.sqrt(2), 6, 'Failed on logs 1,1.')
+        self.assertAlmostEqual(fp[0], np.sqrt(2), 6, 'Failed on logs 1,0.')
+        self.assertAlmostEqual(fp[1], np.sqrt(2), 6, 'Failed on logs 1,1.')
         self.assertAlmostEqual(fp[2], 1, 6, 'Failed on logs 1,2.')
 
         fp = Dynamics.dyn_var_fixed_point(net, dv0=[0.1,0.1,0.1], 

@@ -3,6 +3,7 @@ import copy
 import unittest
 
 import scipy
+import numpy as np
 
 from TestNetwork import net
 net = copy.deepcopy(net)
@@ -13,7 +14,7 @@ class test_ics(unittest.TestCase):
     def test_default_initial_conditions(self):
         """Test that default ICs are handled correctly"""
         test_net = net.copy()
-        traj = test_net.integrate(scipy.linspace(0, 5, 5))
+        traj = test_net.integrate(np.linspace(0, 5, 5))
         ICx = traj.getVariableTrajectory('x')[0]
         ICy = traj.getVariableTrajectory('y')[0]
         self.assertAlmostEqual(ICx, 1.0, 6, 'Failed on default IC')
@@ -23,7 +24,7 @@ class test_ics(unittest.TestCase):
         """Test resetting of ICs"""
         test_net = net.copy()
         test_net.set_initial_var_value('x', 0.5)
-        traj = test_net.integrate(scipy.linspace(0, 5, 5))
+        traj = test_net.integrate(np.linspace(0, 5, 5))
         ICx = traj.getVariableTrajectory('x')[0]
         self.assertAlmostEqual(ICx, 0.5, 6, 'Failed on resetting IC')
 
@@ -31,7 +32,7 @@ class test_ics(unittest.TestCase):
         """Test parameters as ICs"""
         test_net = net.copy()
         test_net.set_initial_var_value('x', 'A')
-        traj = test_net.integrate(scipy.linspace(0, 5, 5))
+        traj = test_net.integrate(np.linspace(0, 5, 5))
         ICx = traj.getVariableTrajectory('x')[0]
         self.assertAlmostEqual(ICx, 1.0, 6, 'Failed on parameter IC')
 
@@ -40,7 +41,7 @@ class test_ics(unittest.TestCase):
         test_net = net.copy()
         test_net.set_initial_var_value('x', 'A')
         test_net.set_initial_var_value('A', 0.9)
-        traj = test_net.integrate(scipy.linspace(0, 5, 5))
+        traj = test_net.integrate(np.linspace(0, 5, 5))
         ICx = traj.getVariableTrajectory('x')[0]
         self.assertAlmostEqual(ICx, 0.9, 6, 'Failed on changing parameter IC')
 
@@ -48,7 +49,7 @@ class test_ics(unittest.TestCase):
         """Test math expression as IC"""
         test_net = net.copy()
         test_net.set_initial_var_value('x', 'A + 1.5*B')
-        traj = test_net.integrate(scipy.linspace(0, 5, 5))
+        traj = test_net.integrate(np.linspace(0, 5, 5))
         ICx = traj.getVariableTrajectory('x')[0]
         self.assertAlmostEqual(ICx, 4.0, 6, 'Failed on changing parameter IC')
 

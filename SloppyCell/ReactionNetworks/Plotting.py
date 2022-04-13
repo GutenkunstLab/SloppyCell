@@ -6,6 +6,7 @@ from builtins import str
 from builtins import range
 from past.utils import old_div
 import scipy
+import numpy as np
 
 import SloppyCell.Plotting
 from SloppyCell.Plotting import *
@@ -92,7 +93,7 @@ def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=
 
     lines = []
     legend = []
-    times = scipy.linspace(0, maxTime*(1 + overlap), plotPts)
+    times = np.linspace(0, maxTime*(1 + overlap), plotPts)
     varsByCalc = {}
     for calc in chemsNeededByCalc:
         varsByCalc[calc] = {}
@@ -115,7 +116,7 @@ def PlotTrajectoriesForExperiments(model, experiments, params = None, with_data=
                                  mfc = color, marker=sym,
                                  ecolor=color, capsize=6)
 
-                predicted = scipy.array(list(calcVals[calc][chem].items()))
+                predicted = np.array(list(calcVals[calc][chem].items()))
                 order = scipy.argsort(predicted[:,0])
                 predicted = scipy.take(predicted, order)
                 predicted[:,1] = predicted[:,1] *\
@@ -244,7 +245,7 @@ def plot_model_results(model, expts = None, style='errorbars',
 
                 if plot_data and dataDict:
                     # Pull the data out of the dictionary and into an array
-                    d = scipy.array([[t, v, e] for (t, (v, e))
+                    d = np.array([[t, v, e] for (t, (v, e))
                                      in list(dataDict.items())])
                     if style is 'errorbars':
                         l = errorbar(d[:,0], d[:,1], yerr=d[:,2], color=color,
@@ -322,7 +323,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
     for netId, net in list(nets.items()):
         traj = getattr(net, 'trajectory', None)
         if traj is not None:
-            net.times_to_add = scipy.linspace(traj.timepoints[0], 
+            net.times_to_add = np.linspace(traj.timepoints[0], 
                                               traj.timepoints[-1], 1000)
 
     Network_mod.Network.full_speed()
@@ -359,7 +360,7 @@ def plot_ensemble_results(model, ensemble, expts = None,
 
                 if plot_data:
                     # Pull the data out of the dictionary and into an array
-                    d = scipy.array([[t, v, e] for (t, (v, e))
+                    d = np.array([[t, v, e] for (t, (v, e))
                                      in list(dataDict.items())])
                     if style is 'errorbars':
                         l = errorbar(d[:,0], d[:,1], yerr=d[:,2], fmt='o', 

@@ -4,6 +4,7 @@ from past.utils import old_div
 import unittest
 
 import scipy
+import numpy as np
 from SloppyCell.ReactionNetworks import *
 
 from TestNetwork import net
@@ -22,17 +23,17 @@ class test_TimeDerivs(unittest.TestCase):
         net.add_int_times = False
         # need really finely spaced time points for the finite differencing to
         # work
-        times = scipy.linspace(0.0,.001,1000)
+        times = np.linspace(0.0,.001,1000)
         Traj = Dynamics.integrate(net, times, return_derivs=True)
         sensTraj = Dynamics.integrate_sensitivity(net, times, 
                                                   return_derivs=True)
 
         x_vals = Traj.get_var_traj('x')
-        x_vals_deriv = old_div(scipy.diff(x_vals),scipy.diff(Traj.get_times()))
+        x_vals_deriv = old_div(np.diff(x_vals),np.diff(Traj.get_times()))
         relerror = old_div(scipy.linalg.norm(x_vals_deriv-Traj.get_var_traj(('x','time'))[:-1]),scipy.linalg.norm(x_vals_deriv))
 
         x_vals_wrtA = sensTraj.get_var_traj(('x','A'))
-        x_vals_wrtA_deriv = old_div(scipy.diff(x_vals_wrtA),scipy.diff(sensTraj.get_times()))
+        x_vals_wrtA_deriv = old_div(np.diff(x_vals_wrtA),np.diff(sensTraj.get_times()))
 
         relerror2 = old_div(scipy.linalg.norm(x_vals_wrtA_deriv-sensTraj.get_var_traj(('x','A','time'))[:-1]),scipy.linalg.norm(x_vals_wrtA_deriv))
 

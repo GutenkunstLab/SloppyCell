@@ -5,6 +5,7 @@ logger = logging.getLogger('Collections')
 import copy
 
 import scipy
+import numpy as np
 
 import SloppyCell
 import SloppyCell.Utility as Utility
@@ -218,7 +219,7 @@ class Experiment:
 
         if prior_type == 'uniform in sf':
             if theoryDotTheory != 0:
-                entropy = scipy.log(scipy.sqrt(2*scipy.pi*T/theoryDotTheory))
+                entropy = np.log(np.sqrt(2*scipy.pi*T/theoryDotTheory))
             else:
                 entropy = 0
         elif prior_type == 'gaussian in log sf':
@@ -241,19 +242,19 @@ class Experiment:
 
             mulB, siglB = prior_params
             B_best = theoryDotData/theoryDotTheory
-            lB_best = scipy.log(B_best)
+            lB_best = np.log(B_best)
 
             # Often we get overflow errors in the integration, but they
             #  don't actually cause a problem. (exp(-inf) is still 0.) This
             #  prevents scipy from printing annoying error messages in this
             #  case.
-            prev_err = scipy.seterr(over='ignore')
+            prev_err = np.seterr(over='ignore')
             int_args = (theoryDotTheory, theoryDotData, mulB, siglB, T, B_best,
                         lB_best)
             ans, temp = scipy.integrate.quad(integrand, -scipy.inf, scipy.inf, 
                                              args = int_args, limit=1000)
-            scipy.seterr(**prev_err)
-            entropy = scipy.log(ans)
+            np.seterr(**prev_err)
+            entropy = np.log(ans)
         else:
             raise ValueError('Unrecognized prior type: %s.' % prior_type)
 

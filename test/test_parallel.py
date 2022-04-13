@@ -3,7 +3,8 @@ Tests for parallel code
 """
 from __future__ import print_function
 from __future__ import absolute_import
-import copy, scipy, unittest
+import copy, unittest
+from numpy.lib.scimath import log
 
 from SloppyCell.ReactionNetworks import *
 
@@ -43,7 +44,7 @@ class test_parallel(unittest.TestCase):
 
     def test_JtJ(self):
         """ Test that JtJ calculation doesn't crash """
-        jtj = m2.GetJandJtJInLogParameters(scipy.log(params))
+        jtj = m2.GetJandJtJInLogParameters(log(params))
 
 if num_procs > 1:
     suite = unittest.makeSuite(test_parallel)

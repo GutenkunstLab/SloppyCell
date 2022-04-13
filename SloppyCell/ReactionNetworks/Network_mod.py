@@ -21,6 +21,7 @@ logger = logging.getLogger('ReactionNetworks.Network_mod')
 
 import scipy
 import math
+import numpy as np
 
 import SloppyCell
 import SloppyCell.Utility as Utility
@@ -68,8 +69,8 @@ class Network(object):
     _dynamic_event_methods = ['_make_root_func']
     
     # These are-predefined functions we want in our working namespace
-    _common_namespace = {'log': scipy.log,
-                         'log10': scipy.log10,
+    _common_namespace = {'log': np.log,
+                         'log10': np.log10,
                          'exp': math.exp,
                          'cos': math.cos,
                          'sin': math.sin,
@@ -691,16 +692,16 @@ class Network(object):
         """
         if self.periodic['rel']:
             rmsd = lambda _s1, _s2: \
-                   scipy.sqrt(scipy.average(((_s1-_s2) / \
+                   np.sqrt(scipy.average(((_s1-_s2) / \
                                              scipy.minimum(_s1,_s2))**2))
         elif self.periodic['log']:
             rmsd = lambda _s1, _s2: \
-                   scipy.sqrt(scipy.average((scipy.log(_s1/_s2)**2)))
+                   np.sqrt(scipy.average((np.log(_s1/_s2)**2)))
         else:
-            rmsd = lambda _s1, _s2: scipy.sqrt(scipy.average((_s1-_s2)**2))
+            rmsd = lambda _s1, _s2: np.sqrt(scipy.average((_s1-_s2)**2))
 
         # Set the initial condition
-        s0 = scipy.array(s0)
+        s0 = np.array(s0)
         tau0, x0 = s0[0], s0[1:]
         for name, value in zip(varNames, x0):
             self.set_var_ic(name, value)
@@ -710,7 +711,7 @@ class Network(object):
         # 2) Lower bound < 0.5*tau0 (to possibly detect double periods)
         # 3) Upper bound < 2.0*tau0 (to prevent double periods)
         a = 0.475
-        b = a + (1.0-a)/(0.5*(3.0-scipy.sqrt(5.0))) # ~1.85
+        b = a + (1.0-a)/(0.5*(3.0-np.sqrt(5.0))) # ~1.85
         
         # Find the trajectory
         max_time = b * tau0 * float(self.periodic['level'])
@@ -721,15 +722,15 @@ class Network(object):
         # Find the period between 1/2*tau0 and 3/2*tau0
         # Without the squeeze, this failed on some versions of numpy when 
         # t = array([0.2])
-        s = lambda t: scipy.array([scipy.squeeze(t)] + \
+        s = lambda t: np.array([scipy.squeeze(t)] + \
                                   [ev_inter_traj(name, t) for name in varNames])
         
         def __iter_cost(t):
             t = scipy.squeeze(abs(t))
-            res = scipy.array([t], scipy.float_)
+            res = np.array([t], scipy.float_)
             for lvl in range(1, self.periodic['level']+1):
-                res = scipy.concatenate((res, s(t*float(lvl))[1:]))
-            res0 = scipy.concatenate(([tau0], list(x0)*self.periodic['level']))
+                res = np.concatenate((res, s(t*float(lvl))[1:]))
+            res0 = np.concatenate(([tau0], list(x0)*self.periodic['level']))
             return rmsd(res, res0)
 
         tau1 = scipy.optimize.fminbound(__iter_cost, a * tau0, b * tau0)
@@ -772,7 +773,7 @@ class Network(object):
         x0, x1, x2 = s0[1:], s1[1:], s2[1:]
         lambda_1  = sum( (x2-x1) * (x1-x0) ) / sum( (x1-x0)**2 )
         vector_1 = (x2-x1)/(lambda_1 * (lambda_1-1.))
-        s = scipy.array(s2) # make a copy of s2
+        s = np.array(s2) # make a copy of s2
         s[1:] -= lambda_1*lambda_1*vector_1
         return s
 
@@ -801,7 +802,7 @@ class Network(object):
         tau0 = self.periodic['period']
         x0 = [self.periodic['stableIC'].get(name, self.get_var_ic(name))
               for name in varNames]
-        s0 = scipy.array([tau0]+x0)
+        s0 = np.array([tau0]+x0)
 
         while not self.periodic['stable'] and \
                   self.periodic['feval'] < self.periodic['maxfun']:
@@ -819,7 +820,7 @@ class Network(object):
                 break
 
             if self.periodic['log']:
-                ls0, ls1, ls2 = scipy.log(s0), scipy.log(s1), scipy.log(s2)
+                ls0, ls1, ls2 = np.log(s0), np.log(s1), np.log(s2)
                 s_star = scipy.exp(self._eliminate_slowest_mode(ls0, ls1, ls2))
             else:
                 s_star = self._eliminate_slowest_mode(s0, s1, s2)
@@ -1127,7 +1128,7 @@ class Network(object):
     def integrate(self, times, params=None, returnEvents=False, addTimes=True,
                   rtol = None):
         if self.add_tail_times or addTimes:
-            times = scipy.concatenate((times, [1.05*times[-1]]))
+            times = np.concatenate((times, [1.05*times[-1]]))
         return Dynamics.integrate(self, times, params=params, 
                                   fill_traj=(self.add_int_times or addTimes))
 
@@ -1135,7 +1136,7 @@ class Network(object):
                              returnEvents = False, addTimes = True,
                              rtol=None):
         if self.add_tail_times:
-            times = scipy.concatenate((times, [1.05*times[-1]]))
+            times = np.concatenate((times, [1.05*times[-1]]))
         
         return Dynamics.integrate_sensitivity(self, times, params, rtol,
                                               fill_traj=self.add_int_times)
@@ -1172,11 +1173,11 @@ class Network(object):
                 body.splitlines()[1:-1])
             raise RuntimeError(err_body)
         
-        dv=scipy.array([self.get_var_val(_) for _ in list(self.dynamicVars.keys())])
+        dv=np.array([self.get_var_val(_) for _ in list(self.dynamicVars.keys())])
         cv = self.constantVarValues
 
         trajectory = Trajectory_mod.Trajectory(self, holds_dt=0, const_vals=cv)
-        trajectory.appendFromODEINT(scipy.array([0.0]), scipy.array([dv]))
+        trajectory.appendFromODEINT(np.array([0.0]), np.array([dv]))
 
         # VERY simple event handling...
         events_occurred = []
@@ -1201,8 +1202,8 @@ class Network(object):
                     dvout = trajectory.values[-1]+(dv-trajectory.values[-1])/\
                             dt*(times[tInd] - trajectory.timepoints[-1])
 
-                trajectory.appendFromODEINT(scipy.array([times[tInd]]),
-                                            scipy.array([dvout]))
+                trajectory.appendFromODEINT(np.array([times[tInd]]),
+                                            np.array([dvout]))
 
                 # Is this where an event fires?
                 if times[tInd] in list(pendingEvents.keys()):
@@ -1219,14 +1220,14 @@ class Network(object):
                         events_occurred.append(event)
                         logger.debug('Executed event %s in net %s at t=%s'%\
                                      (event.id, self.id, t))
-                    trajectory.appendFromODEINT(scipy.array([times[tInd]]),
-                                                scipy.array([dvout]))
+                    trajectory.appendFromODEINT(np.array([times[tInd]]),
+                                                np.array([dvout]))
                     
                 tInd += 1
 
             if trajectory.timepoints[-1]<t:
-                trajectory.appendFromODEINT(scipy.array([t]),
-                                            scipy.array([dv]))
+                trajectory.appendFromODEINT(np.array([t]),
+                                            np.array([dv]))
 
         return trajectory
     
@@ -1340,7 +1341,7 @@ class Network(object):
             if update_constants:
                 self.constantVarValues = [self.evaluate_expr(var.value) for var
                                           in list(self.constantVars.values())]
-                self.constantVarValues = scipy.array(self.constantVarValues)
+                self.constantVarValues = np.array(self.constantVarValues)
 
     def get_var_ic(self, id):
         """
@@ -1457,14 +1458,14 @@ class Network(object):
 
         self.constantVarValues = [self.evaluate_expr(var.value) for var in
                                   list(self.constantVars.values())]
-        self.constantVarValues = scipy.array(self.constantVarValues)
+        self.constantVarValues = np.array(self.constantVarValues)
 
     getInitialVariableValue = get_var_ic
 
     def getDynamicVarValues(self):
         # We need to evaluate_expr here to handle ones that are assigned to
         #  parameters
-        return scipy.array([self.evaluate_expr(var.value) 
+        return np.array([self.evaluate_expr(var.value)
                             for var in list(self.dynamicVars.values())])
 
     def resetDynamicVariables(self):
@@ -1561,9 +1562,9 @@ class Network(object):
         py_body = []
         py_body.append('def res_function(time, dynamicVars, yprime, '
                        'constants):')
-        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
-        py_body.append('yprime = scipy.asarray(yprime)')
-        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('dynamicVars = np.asarray(dynamicVars)')
+        py_body.append('yprime = np.asarray(yprime)')
+        py_body.append('constants = np.asarray(constants)')
         py_body.append('')
         py_body.append('residual = scipy.empty(%i, scipy.float_)'
                        % len(self.dynamicVars))
@@ -1643,9 +1644,9 @@ class Network(object):
 
         py_body = []
         py_body.append('def root_func(time, dynamicVars, yprime, constants):')
-        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
-        py_body.append('yprime = scipy.asarray(yprime)')
-        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('dynamicVars = np.asarray(dynamicVars)')
+        py_body.append('yprime = np.asarray(yprime)')
+        py_body.append('constants = np.asarray(constants)')
         py_body.append('')
         # We don't know the length of root_devs yet, so for now we'll
         #  just insert a placeholder line.
@@ -1730,10 +1731,10 @@ class Network(object):
         py_body = []
         py_body.append('def alg_deriv_func(alg_yp, dynamicVars, yp, time, '
                        'constants):')
-        py_body.append('alg_yp = scipy.asarray(alg_yp)')
-        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
-        py_body.append('yp = scipy.asarray(yp)')
-        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('alg_yp = np.asarray(alg_yp)')
+        py_body.append('dynamicVars = np.asarray(dynamicVars)')
+        py_body.append('yp = np.asarray(yp)')
+        py_body.append('constants = np.asarray(constants)')
         py_body.append('')
         py_body.append('alg_derivs_res = scipy.empty(%i, scipy.float_)'
                        % len(self.algebraicRules))
@@ -1793,9 +1794,9 @@ class Network(object):
         py_body = []
         py_body.append('def alg_res_func(alg_vals, dynamicVars, '
                        'time, constants):')
-        py_body.append('alg_vals = scipy.asarray(alg_vals)')
-        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
-        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('alg_vals = np.asarray(alg_vals)')
+        py_body.append('dynamicVars = np.asarray(dynamicVars)')
+        py_body.append('constants = np.asarray(constants)')
         py_body.append('')
         py_body.append('residual = scipy.zeros(%i, scipy.float_)'
                        % len(self.algebraicVars))
@@ -1854,9 +1855,9 @@ class Network(object):
         py_body = []
         py_body.append('def dres_dc_function(time, dynamicVars, yprime, '
                        'constants):')
-        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
-        py_body.append('yprime = scipy.asarray(yprime)')
-        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('dynamicVars = np.asarray(dynamicVars)')
+        py_body.append('yprime = np.asarray(yprime)')
+        py_body.append('constants = np.asarray(constants)')
         py_body.append('')
         py_body.append('pd = scipy.zeros((%i, %i), scipy.float_)'
                        %(len(self.dynamicVars), len(self.dynamicVars)))
@@ -1905,9 +1906,9 @@ class Network(object):
         py_body = []
         py_body.append('def dres_dcdot_function(time, dynamicVars, yprime, '
                        'constants):')
-        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
-        py_body.append('yprime = scipy.asarray(yprime)')
-        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('dynamicVars = np.asarray(dynamicVars)')
+        py_body.append('yprime = np.asarray(yprime)')
+        py_body.append('constants = np.asarray(constants)')
         py_body.append('')
         py_body.append('pd = scipy.zeros((%i, %i), scipy.float_)'
                        %(len(self.dynamicVars), len(self.dynamicVars)))
@@ -1950,9 +1951,9 @@ class Network(object):
         py_body = []
         py_body.append('def ddaskr_jac(time, dynamicVars, yprime, cj, '
                        'constants):')
-        py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
-        py_body.append('yprime = scipy.asarray(yprime)')
-        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('dynamicVars = np.asarray(dynamicVars)')
+        py_body.append('yprime = np.asarray(yprime)')
+        py_body.append('constants = np.asarray(constants)')
         py_body.append('')
         py_body.append('local_dres_dc = dres_dc_function(time, dynamicVars, '
                        'yprime, constants)')
@@ -1999,8 +2000,8 @@ class Network(object):
             py_body = []
             py_body.append('def ' + func_name + '(time, dynamicVars, '
                            'yprime, constants):')
-            py_body.append('dynamicVars = scipy.asarray(dynamicVars)')
-            py_body.append('constants = scipy.asarray(constants)')
+            py_body.append('dynamicVars = np.asarray(dynamicVars)')
+            py_body.append('constants = np.asarray(constants)')
             py_body.append('')
             py_body.append('pd = scipy.zeros(%i, scipy.float_)'
                            % len(self.dynamicVars))
@@ -2056,9 +2057,9 @@ class Network(object):
     def _make_sens_rhs(self):
         py_body = []
         py_body.append('def sens_rhs(time, sens_y, sens_yp, constants):')
-        py_body.append('sens_y = scipy.asarray(sens_y)')
-        py_body.append('sens_yp = scipy.asarray(sens_yp)')
-        py_body.append('constants = scipy.asarray(constants)')
+        py_body.append('sens_y = np.asarray(sens_y)')
+        py_body.append('sens_yp = np.asarray(sens_yp)')
+        py_body.append('constants = np.asarray(constants)')
         py_body.append('')
         py_body.append('sens_res = scipy.zeros(%i, scipy.float_)'
                        % (2*len(self.dynamicVars)))
@@ -2178,8 +2179,8 @@ class Network(object):
         py_body = []
         py_body.append('def res_function_logdv(time, log_dv, log_yp, '
                        'constants):')
-        py_body.append('log_dv = scipy.asarray(log_dv)')
-        py_body.append('log_yp = scipy.asarray(log_yp)')
+        py_body.append('log_dv = np.asarray(log_dv)')
+        py_body.append('log_yp = np.asarray(log_yp)')
         py_body.append('dynamicVars = scipy.exp(log_dv)')
         py_body.append('dynamicVars = scipy.maximum(dynamicVars, %g)' 
                        % _double_tiny_)
@@ -2210,8 +2211,8 @@ class Network(object):
 
         py_body = []
         py_body.append('def root_func_logdv(time, log_dv, log_yp, constants):')
-        py_body.append('log_dv = scipy.asarray(log_dv)')
-        py_body.append('log_yp = scipy.asarray(log_yp)')
+        py_body.append('log_dv = np.asarray(log_dv)')
+        py_body.append('log_yp = np.asarray(log_yp)')
         py_body.append('dynamicVars = scipy.exp(log_dv)')
         py_body.append('dynamicVars = scipy.maximum(dynamicVars, %g)'
                        % _double_tiny_)
@@ -2245,8 +2246,8 @@ class Network(object):
         py_body.append('def sens_rhs_logdv(time, sens_y, sens_yp, constants):')
         # We need to copy sens_y and sens_yp here, since we aren't allowed to
         # change their values.
-        py_body.append('sens_y = scipy.array(sens_y)')
-        py_body.append('sens_yp = scipy.array(sens_yp)')
+        py_body.append('sens_y = np.array(sens_y)')
+        py_body.append('sens_yp = np.array(sens_yp)')
         py_body.append('sens_y[:%i] = scipy.exp(sens_y[:%i])' % (N_dyn, N_dyn))
         py_body.append('sens_y[:%i] = scipy.maximum(sens_y[:%i], %g)'
                        % (N_dyn, N_dyn, _double_tiny_))
@@ -2954,7 +2955,7 @@ class Network(object):
 
         self.constantVarValues = [self.evaluate_expr(var.value) for var in 
                                   list(self.constantVars.values())]
-        self.constantVarValues = scipy.array(self.constantVarValues)
+        self.constantVarValues = np.array(self.constantVarValues)
 
         # Collect all variables that are explicitly in algebraic rules
         vars_in_alg_rules = set()

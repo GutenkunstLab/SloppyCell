@@ -2,12 +2,12 @@ from __future__ import absolute_import
 from builtins import range
 import unittest
 import copy
-import scipy
+import numpy as np
 
 from SloppyCell.ReactionNetworks import *
 
 from AlgTestNets import algebraic_net
-tlist = scipy.array([0] + [0.8*x for x in range(1, 51)])
+tlist = np.array([0] + [0.8*x for x in range(1, 51)])
 
 class test_IntegrateWithoutDerivatives(unittest.TestCase):
     def test_basic(self):
