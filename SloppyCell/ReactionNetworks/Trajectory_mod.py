@@ -10,7 +10,7 @@ logger = logging.getLogger('RxnNets.Trajectory_mod')
 import os
 import copy
 import types
-import numpy
+import numpy as np
 import scipy
 import scipy.interpolate
 
@@ -24,27 +24,27 @@ class Trajectory(object):
     _known_function_bodies = []
     _dynamic_funcs = ['_assignment', '_sens_assignment']
     # These are-predefined functions we want in our working namespace
-    _common_namespace = {'log': numpy.log,
-                         'log10': numpy.log10,
-                         'exp': numpy.exp,
-                         'cos': numpy.cos,
-                         'sin': numpy.sin,
-                         'tan': numpy.tan,
-                         'acos': numpy.arccos,
-                         'asin': numpy.arcsin,
-                         'atan': numpy.arctan,
-                         'cosh': numpy.cosh,
-                         'sinh': numpy.sinh,
-                         'tanh': numpy.tanh,
-                         'arccosh': numpy.arccosh,
-                         'arcsinh': numpy.arcsinh,
-                         'arctanh': numpy.arctanh,
-                         'pow': numpy.power,
-                         'sqrt': numpy.sqrt,
-                         'exponentiale': numpy.e,
-                         'pi': numpy.pi,
-                         'min': numpy.minimum,
-                         'max': numpy.maximum
+    _common_namespace = {'log': np.log,
+                         'log10': np.log10,
+                         'exp': np.exp,
+                         'cos': np.cos,
+                         'sin': np.sin,
+                         'tan': np.tan,
+                         'acos': np.arccos,
+                         'asin': np.arcsin,
+                         'atan': np.arctan,
+                         'cosh': np.cosh,
+                         'sinh': np.sinh,
+                         'tanh': np.tanh,
+                         'arccosh': np.arccosh,
+                         'arcsinh': np.arcsinh,
+                         'arctanh': np.arctanh,
+                         'pow': np.power,
+                         'sqrt': np.sqrt,
+                         'exponentiale': np.e,
+                         'pi': np.pi,
+                         'min': np.minimum,
+                         'max': np.maximum
                          }
 
     def __init__(self, net, key_column=None, is_sens=False, holds_dt=False,
@@ -68,8 +68,8 @@ class Trajectory(object):
             self.key_column = KeyedList(list(zip(keys, list(range(len(keys))))))
 
         # These are the main storage
-        self.timepoints = numpy.zeros(0, scipy.float_)
-        self.values = numpy.zeros((0, len(self.key_column)), scipy.float_)
+        self.timepoints = np.zeros(0, scipy.float_)
+        self.values = np.zeros((0, len(self.key_column)), scipy.float_)
 
         self.var_keys = list(net.variables.keys())
         self.dynamicVarKeys = list(net.dynamicVars.keys())
@@ -197,8 +197,8 @@ class Trajectory(object):
         if self.timepoints[-1] > other.timepoints[0]:
             logger.warn('Appending trajectory with earlier timepoints!')
 
-        self.timepoints = numpy.concatenate((self.timepoints, other.timepoints))
-        self.values = numpy.concatenate((self.values, other.values))
+        self.timepoints = np.concatenate((self.timepoints, other.timepoints))
+        self.values = np.concatenate((self.values, other.values))
 
     def get_var_typical_val(self, id):
         return self.typical_var_values.get(id)
@@ -224,7 +224,7 @@ class Trajectory(object):
         Prints a warning if the difference between the requested time and the
         stored time is greater than a fraction eps of the trajectory length.
         """
-        index = numpy.argmin(abs(self.timepoints - time))
+        index = np.argmin(abs(self.timepoints - time))
         time_range = self.timepoints[-1] - self.timepoints[0]
         if abs(self.timepoints[index] - time)/time_range > eps:
             logger.warn('Time %f requested, closest time stored in trajectory '
@@ -359,11 +359,11 @@ class Trajectory(object):
                                            self.namespace, bind=False)
 
         numAdded = odeint_array.shape[0]
-        addedValues = numpy.zeros((numAdded, len(self.key_column)),
+        addedValues = np.zeros((numAdded, len(self.key_column)),
                                   scipy.float_)
 
-        self.values = numpy.concatenate((self.values, addedValues))
-        self.timepoints = numpy.concatenate((self.timepoints, timepoints))
+        self.values = np.concatenate((self.values, addedValues))
+        self.timepoints = np.concatenate((self.timepoints, timepoints))
 
         for ii, id in enumerate(self.dynamicVarKeys):
             self.values[-numAdded:, self.key_column.get(id)] =\
@@ -384,11 +384,11 @@ class Trajectory(object):
                                            self.namespace, bind=False)
 
         numAdded = odeint_array.shape[0]
-        addedValues = numpy.zeros((numAdded, len(self.key_column)),
+        addedValues = np.zeros((numAdded, len(self.key_column)),
                                   scipy.float_)
 
-        self.values = numpy.concatenate((self.values, addedValues))
-        self.timepoints = numpy.concatenate((self.timepoints, timepoints))
+        self.values = np.concatenate((self.values, addedValues))
+        self.timepoints = np.concatenate((self.timepoints, timepoints))
 
         nDv = len(self.dynamicVarKeys)
         nOv = len(self.optimizableVarKeys)
@@ -437,7 +437,7 @@ class Trajectory(object):
         new_key_column = KeyedList(list(zip(keys, list(range(len(keys))))))
         state['key_column'] = new_key_column
 
-        new_values = numpy.zeros((len(self.values), len(new_key_column)),
+        new_values = np.zeros((len(self.values), len(new_key_column)),
                                  scipy.float_)
         for key, new_col in list(new_key_column.items()):
             old_col = self.values[:, self.key_column.get(key)]
@@ -510,7 +510,7 @@ class Trajectory(object):
             last_t = -1
             for tevent in te :
                 if tevent != last_t:
-                    teIndices.append(numpy.nonzero(self.timepoints==tevent)[0][1])
+                    teIndices.append(np.nonzero(self.timepoints==tevent)[0][1])
                     last_t = tevent                 
 
             # don't expect there to be an event at 0, if there is this will be
@@ -532,7 +532,7 @@ class Trajectory(object):
             ys = [self.get_var_traj(dv_id)[start_ind:end_ind]
                     for dv_id in list(self.key_column.keys())]
 
-            self.tcks[(start_time,end_time)] = [scipy.interpolate.splrep(curTimes,numpy.asarray(y),k=k,s=0) for y in ys]
+            self.tcks[(start_time,end_time)] = [scipy.interpolate.splrep(curTimes,np.asarray(y),k=k,s=0) for y in ys]
 
         #return self.tcks # do we want to return this?
 
@@ -576,12 +576,12 @@ class Trajectory(object):
               to an event time, which often has two trajectory values associated
               with it.
         """
-        if numpy.isscalar(time) :
-            time = numpy.asarray([time]) # if a scalar was passed in, convert to an array
+        if np.isscalar(time) :
+            time = np.asarray([time]) # if a scalar was passed in, convert to an array
         else :
-            time = numpy.asarray(time)
+            time = np.asarray(time)
         local_tcks = self.tcks
-        sorted_intervals = numpy.sort(list(local_tcks.keys()),axis=0)
+        sorted_intervals = np.sort(list(local_tcks.keys()),axis=0)
 
         if subinterval is not None : # confine things to just one interval
             if subinterval not in list(local_tcks.keys()) :
@@ -604,7 +604,7 @@ class Trajectory(object):
         returned_times = []
         dv_ind = self.key_column.keyToIndex[dv_id]
         for interval in sorted_intervals[interval_start_ind:(interval_end_ind+1)] :
-            currTimes = numpy.compress( numpy.logical_and((time>=interval[0]),(time<=interval[1])) , time )
+            currTimes = np.compress( np.logical_and((time>=interval[0]),(time<=interval[1])) , time )
             startslice, endslice = 0, None
             if len(currTimes) > 1 :
                 if (currTimes[0]==currTimes[1]) :
@@ -659,18 +659,18 @@ class Trajectory(object):
             if self.key_column.get(traj_key) != traj_index:
                 raise ValueError('Trajectories are not mergeable')
 
-        self.values = numpy.array(list(self.values)+list(traj.values))
+        self.values = np.array(list(self.values)+list(traj.values))
         last_time = self.timepoints[-1]
         updated_times = traj.timepoints
-        self.timepoints = numpy.array(list(self.timepoints)+list(updated_times))
+        self.timepoints = np.array(list(self.timepoints)+list(updated_times))
         
         (te,ye,ie) = traj.event_info
         updated_event_times = te
         (self_te,self_ye,self_ie) = traj.event_info        
 
-        self.event_info = (numpy.array(list(self_te)+list(updated_event_times)),
-                           numpy.array(list(self_ye)+list(ye)),
-                           numpy.array(list(self_ie)+list(ie)))
+        self.event_info = (np.array(list(self_te)+list(updated_event_times)),
+                           np.array(list(self_ye)+list(ye)),
+                           np.array(list(self_ie)+list(ie)))
 
         self.const_var_values = traj.const_var_values
 
