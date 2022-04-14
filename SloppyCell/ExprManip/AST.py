@@ -147,7 +147,6 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
             out = '%s[%s]' % (ast2str(node.value), ast2str(node.slice.value))
         else:
             subs = ast2str(node.slice)
-            print("subs",subs)
             out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
     elif isinstance(node, Slice):
         out = '%s:%s' % (ast2str(node.lower), 
@@ -156,7 +155,6 @@ def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
         seq = iter(node.dims)
         nodes = []
         out1 = ast2str(next(seq))
-        print(nodes)
         # out1 = ''.join(nodes)
         out2 = ast2str(next(seq).value)
         # out3 = ', '.join(out2)
