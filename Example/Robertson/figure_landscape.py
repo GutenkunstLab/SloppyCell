@@ -1,6 +1,8 @@
 """
 Plots Fig. 2
 """
+from __future__ import division
+from past.utils import old_div
 from SloppyCell.ReactionNetworks import *
 import scipy.stats
 from numpy import *
@@ -69,8 +71,8 @@ net = example_model.m.calcColl[0]
 traj = Dynamics.integrate(net, [0, 45], params=example_model.popt)
 for var, color, factor in [('A','r',1),('B_scaled','g',1),('C','b',1)]:
     ax_traj.plot(traj.get_times(), traj.get_var_traj(var)*factor, color)
-    expt = example_model.m.exptColl.values()[0]
-    tt = expt.data['example'][var].keys()
+    expt = list(example_model.m.exptColl.values())[0]
+    tt = list(expt.data['example'][var].keys())
     yy = [expt.data['example'][var][t][0]*factor for t in tt]
     yerr = [expt.data['example'][var][t][1]*factor for t in tt]
     ax_traj.errorbar(tt, yy, yerr, linestyle='o', color='k')
@@ -118,7 +120,7 @@ def contour_top_bottom(h, delC=1, Npts=100):
 
     Note that these are countours in delta X and delta Y.
     """
-    delx = sqrt(delC*h[1,1]/(h[1,1]*h[0,0] - h[0,1]**2))
+    delx = sqrt(old_div(delC*h[1,1],(h[1,1]*h[0,0] - h[0,1]**2)))
     xx = linspace(-delx, delx, Npts)
 
     a = h[1,1]
@@ -129,8 +131,8 @@ def contour_top_bottom(h, delC=1, Npts=100):
     inner = b**2 - 4*a*c
     inner = maximum(inner, 0)
 
-    top = (-b + sqrt(inner))/(2*a)
-    bottom = (-b - sqrt(inner))/(2*a)
+    top = old_div((-b + sqrt(inner)),(2*a))
+    bottom = old_div((-b - sqrt(inner)),(2*a))
     
     return xx, top, bottom
 

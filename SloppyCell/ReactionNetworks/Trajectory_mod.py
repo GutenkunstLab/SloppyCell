@@ -1,60 +1,63 @@
 from __future__ import division
 
+from builtins import str
+from builtins import zip
+from builtins import range
+from builtins import object
 import logging
 logger = logging.getLogger('RxnNets.Trajectory_mod')
 
 import os
 import copy
 import types
-
+import numpy as np
 import scipy
 import scipy.interpolate
 
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
-import Network_mod
+from SloppyCell.ReactionNetworks import Network_mod
 import SloppyCell.ExprManip as ExprManip
 
-class Trajectory:
+class Trajectory(object):
     _known_structures = []
     _known_function_bodies = []
     _dynamic_funcs = ['_assignment', '_sens_assignment']
     # These are-predefined functions we want in our working namespace
-    _common_namespace = {'log': scipy.log,
-                         'log10': scipy.log10,
-                         'exp': scipy.exp,
-                         'cos': scipy.cos,
-                         'sin': scipy.sin,
-                         'tan': scipy.tan,
-                         'acos': scipy.arccos,
-                         'asin': scipy.arcsin,
-                         'atan': scipy.arctan,
-                         'cosh': scipy.cosh,
-                         'sinh': scipy.sinh,
-                         'tanh': scipy.tanh,
-                         'arccosh': scipy.arccosh,
-                         'arcsinh': scipy.arcsinh,
-                         'arctanh': scipy.arctanh,
-                         'pow': scipy.power,
-                         'sqrt': scipy.sqrt,
-                         'exponentiale': scipy.e,
-                         'pi': scipy.pi,
-                         'min': scipy.minimum,
-                         'max': scipy.maximum
+    _common_namespace = {'log': np.log,
+                         'log10': np.log10,
+                         'exp': np.exp,
+                         'cos': np.cos,
+                         'sin': np.sin,
+                         'tan': np.tan,
+                         'acos': np.arccos,
+                         'asin': np.arcsin,
+                         'atan': np.arctan,
+                         'cosh': np.cosh,
+                         'sinh': np.sinh,
+                         'tanh': np.tanh,
+                         'arccosh': np.arccosh,
+                         'arcsinh': np.arcsinh,
+                         'arctanh': np.arctanh,
+                         'pow': np.power,
+                         'sqrt': np.sqrt,
+                         'exponentiale': np.e,
+                         'pi': np.pi,
+                         'min': np.minimum,
+                         'max': np.maximum
                          }
 
     def __init__(self, net, key_column=None, is_sens=False, holds_dt=False,
                  empty=False, const_vals=None):
         if empty:
             return
-
         if key_column is not None:
             self.key_column = key_column
         else:
-            keys = net.dynamicVars.keys() + net.assignedVars.keys()
+            keys = list(net.dynamicVars.keys()) + list(net.assignedVars.keys())
             if is_sens:
                 keys.extend([(cname, pname) for cname in keys
-                             for pname in net.optimizableVars.keys()])
+                             for pname in list(net.optimizableVars.keys())])
             if holds_dt:
                 for keyname in copy.copy(keys):
                     if isinstance(keyname,str):
@@ -62,29 +65,29 @@ class Trajectory:
                     else: # key is a tuple
                         keys.append(keyname + ('time',))
 
-            self.key_column = KeyedList(zip(keys, range(len(keys))))
+            self.key_column = KeyedList(list(zip(keys, list(range(len(keys))))))
 
         # These are the main storage
-        self.timepoints = scipy.zeros(0, scipy.float_)
-	self.values = scipy.zeros((0, len(self.key_column)), scipy.float_)
+        self.timepoints = np.zeros(0, scipy.float_)
+        self.values = np.zeros((0, len(self.key_column)), scipy.float_)
 
-        self.var_keys = net.variables.keys()
-        self.dynamicVarKeys = net.dynamicVars.keys()
-        self.assignedVarKeys = net.assignedVars.keys()
-        self.optimizableVarKeys = net.optimizableVars.keys()
+        self.var_keys = list(net.variables.keys())
+        self.dynamicVarKeys = list(net.dynamicVars.keys())
+        self.assignedVarKeys = list(net.assignedVars.keys())
+        self.optimizableVarKeys = list(net.optimizableVars.keys())
 
         # We do an 'evaluate_expr' here to take care of constant variables that 
         #  are initialized by other variables
         if const_vals is None:
             self.const_var_values = KeyedList([(id, net.evaluate_expr(id)) for 
-                                               id in net.constantVars.keys()])
+                                               id in list(net.constantVars.keys())])
         else:
-            self.const_var_values = KeyedList(zip(net.constantVars.keys(), 
-                                                  const_vals))
+            self.const_var_values = KeyedList(list(zip(list(net.constantVars.keys()), 
+                                                  const_vals)))
 
         self.typical_var_values = KeyedList([(id, var.typicalValue)
                                              for (id, var)
-                                             in net.variables.items()])
+                                             in list(net.variables.items())])
         self.event_info = None
         self.tcks = {} # need this to store the interpolation information
         self.dytcks = {} # to store interpolated vector field info
@@ -92,7 +95,8 @@ class Trajectory:
         # We make a copy of the Network's namespace.
         self._func_strs = copy.copy(net._func_strs)
         self.namespace = copy.copy(self._common_namespace)
-        for func_id, func_str in self._func_strs.items():
+       
+        for func_id, func_str in list(self._func_strs.items()):
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
         # To avoid generating our function bodies every Trajectory creation, we
@@ -170,10 +174,10 @@ class Trajectory:
             prev_vals = net.get_var_vals()
             for t, y, ii in zip(te, ye_pre, ie):
                 net.updateVariablesFromDynamicVars(y, t)
-                a_ids = [id for id in net.assignedVars.keys()]
-                a_vals = [net.get_var_val(id) for id in net.assignedVars.keys()]
+                a_ids = [id for id in list(net.assignedVars.keys())]
+                a_vals = [net.get_var_val(id) for id in list(net.assignedVars.keys())]
                 # we store the assigned variables in a dictionary for easy retrieval later
-                a_state = dict(zip(a_ids,a_vals))
+                a_state = dict(list(zip(a_ids,a_vals)))
                 assigned_states.append(a_state)
             net.set_var_vals(prev_vals, time_traj_ended)
             eventinfo = (te,ye_pre,ye_post,ie,assigned_states)
@@ -193,21 +197,21 @@ class Trajectory:
         if self.timepoints[-1] > other.timepoints[0]:
             logger.warn('Appending trajectory with earlier timepoints!')
 
-        self.timepoints = scipy.concatenate((self.timepoints, other.timepoints))
-        self.values = scipy.concatenate((self.values, other.values))
+        self.timepoints = np.concatenate((self.timepoints, other.timepoints))
+        self.values = np.concatenate((self.values, other.values))
 
     def get_var_typical_val(self, id):
         return self.typical_var_values.get(id)
 
     def get_var_traj(self, id):
-        if self.key_column.has_key(id):
+        if id in self.key_column:
             return self.values[:, self.key_column.get(id)]
-        elif self.const_var_values.has_key(id):
-            return scipy.ones(len(self.timepoints), scipy.float_) *\
+        elif id in self.const_var_values:
+            return np.ones(len(self.timepoints), scipy.float_) *\
                     self.const_var_values.get(id)
         elif id == 'time':
             return self.get_times()
-        elif len(id) == 2 and id[0] in self.const_var_values.keys():
+        elif len(id) == 2 and id[0] in list(self.const_var_values.keys()):
             # Requesting sensitivity of a constant variable.
             return 0*self.get_times()
         else:
@@ -220,7 +224,7 @@ class Trajectory:
         Prints a warning if the difference between the requested time and the
         stored time is greater than a fraction eps of the trajectory length.
         """
-        index = scipy.argmin(abs(self.timepoints - time))
+        index = np.argmin(abs(self.timepoints - time))
         time_range = self.timepoints[-1] - self.timepoints[0]
         if abs(self.timepoints[index] - time)/time_range > eps:
             logger.warn('Time %f requested, closest time stored in trajectory '
@@ -254,21 +258,21 @@ class Trajectory:
         given index.
         """
         out = KeyedList([(key, self.get_var_val_index(key, index)) for
-                          key in ['time'] + self.keys()])
+                          key in ['time'] + list(self.keys())])
         return out
 
     def get_var_val_index(self, var_id, index):
         """
         Return the value of the given variable at the given index.
         """
-        if self.key_column.has_key(var_id):
+        if var_id in self.key_column:
             col = self.key_column.get(var_id)
             return self.values[index, col]
-        elif self.const_var_values.has_key(var_id):
+        elif var_id in self.const_var_values:
             return self.const_var_values.get(var_id)
         elif var_id == 'time':
             return self.timepoints[index]
-        elif len(var_id) == 2 and var_id[1] in self.const_var_values.keys():
+        elif len(var_id) == 2 and var_id[1] in list(self.const_var_values.keys()):
             # Requesting sensitivity of a constant variable
             return 0
 
@@ -294,13 +298,13 @@ class Trajectory:
 
     def _make__assignment(self, net):
         functionBody = ['def _assignment(self, values, times, start, end):']
-
-        for id in self.const_var_values.keys():
+        
+        for id in list(self.const_var_values.keys()):
             functionBody.append("%s = self.const_var_values.get('%s')" % 
                                 (id, id))
 
         if len(net.assignmentRules) > 0:
-            for id, rule in net.assignmentRules.items():
+            for id, rule in list(net.assignmentRules.items()):
                 lhs = self._sub_var_names(id)
                 #rhs = net.substituteFunctionDefinitions(rule)
                 rhs = self._sub_var_names(rule)
@@ -308,39 +312,37 @@ class Trajectory:
                 functionBody.append('%s = %s' % (lhs, rhs))
         else:
             functionBody.append('pass')
-
         return '\n\t'.join(functionBody) + '\n'
 
     def _make__sens_assignment(self, net):
         functionBody = ['def _sens_assignment(self, values, times, start, end):'
                         ]
 
-        for id in self.const_var_values.keys():
+        for id in list(self.const_var_values.keys()):
             functionBody.append("%s = self.const_var_values.get('%s')" % 
                                 (id, id))
 
         if len(net.assignmentRules) > 0:
-	    for id, rule in net.assignmentRules.items():
+            for id, rule in list(net.assignmentRules.items()):
                 #rule = net.substituteFunctionDefinitions(rule)
                 derivWRTdv = {}
-                for wrtId in net.dynamicVars.keys():
+                for wrtId in list(net.dynamicVars.keys()):
                     deriv = net.takeDerivative(rule, wrtId)
                     if deriv != '0':
                         derivWRTdv[wrtId] = deriv
+            for optId in list(net.optimizableVars.keys()):
+                lhs = self._sub_var_names('%s__derivWRT__%s' % (id,optId))
+                rhs = []
+                # get derivative of assigned variable w.r.t.
+                #  dynamic variables
+                for wrtId, deriv in list(derivWRTdv.items()):
+                    rhs.append('(%s) * %s__derivWRT__%s' %
+                                (deriv, wrtId, optId))
 
-		for optId in net.optimizableVars.keys():
-                    lhs = self._sub_var_names('%s__derivWRT__%s' % (id,optId))
-                    rhs = []
-                    # get derivative of assigned variable w.r.t.
-                    #  dynamic variables
-                    for wrtId, deriv in derivWRTdv.items():
-                        rhs.append('(%s) * %s__derivWRT__%s' %
-                                   (deriv, wrtId, optId))
-
-		    # now partial derivative w.r.t. optId
-		    derivWRTp = net.takeDerivative(rule, optId)
-		    if derivWRTp != '0':
-			rhs.append(derivWRTp)
+                # now partial derivative w.r.t. optId
+                derivWRTp = net.takeDerivative(rule, optId)
+                if derivWRTp != '0':
+                    rhs.append(derivWRTp)
 
                     if rhs:
                         rhs = ' + '.join(rhs)
@@ -357,19 +359,18 @@ class Trajectory:
                                            self.namespace, bind=False)
 
         numAdded = odeint_array.shape[0]
-        addedValues = scipy.zeros((numAdded, len(self.key_column)),
+        addedValues = np.zeros((numAdded, len(self.key_column)),
                                   scipy.float_)
 
-        self.values = scipy.concatenate((self.values, addedValues))
-        self.timepoints = scipy.concatenate((self.timepoints, timepoints))
+        self.values = np.concatenate((self.values, addedValues))
+        self.timepoints = np.concatenate((self.timepoints, timepoints))
 
         for ii, id in enumerate(self.dynamicVarKeys):
             self.values[-numAdded:, self.key_column.get(id)] =\
                     odeint_array[:, ii]
-
         self._assignment(self.values, self.timepoints, -numAdded, None)
         if holds_dt :
-            for ii, id in enumerate(self.dynamicVarKeys) :
+            for ii, id in enumerate(self.dynamicVarKeys):
                 self.values[-numAdded:, self.key_column.get((id,'time'))] = \
                     odeint_array[:,ii+len(self.dynamicVarKeys)]
 
@@ -383,11 +384,11 @@ class Trajectory:
                                            self.namespace, bind=False)
 
         numAdded = odeint_array.shape[0]
-        addedValues = scipy.zeros((numAdded, len(self.key_column)),
+        addedValues = np.zeros((numAdded, len(self.key_column)),
                                   scipy.float_)
 
-        self.values = scipy.concatenate((self.values, addedValues))
-        self.timepoints = scipy.concatenate((self.timepoints, timepoints))
+        self.values = np.concatenate((self.values, addedValues))
+        self.timepoints = np.concatenate((self.timepoints, timepoints))
 
         nDv = len(self.dynamicVarKeys)
         nOv = len(self.optimizableVarKeys)
@@ -426,19 +427,19 @@ class Trajectory:
         If keys is None, all variables are included.
         """
         if keys is None:
-            keys = self.key_column.keys()
+            keys = list(self.key_column.keys())
 
         state = self.__getstate__()
 
         # Only need those keys that are stored in the values array. The
         #  rest will be copied easily.
-        keys = [key for key in keys if self.key_column.has_key(key)]
-        new_key_column = KeyedList(zip(keys, range(len(keys))))
+        keys = [key for key in keys if key in self.key_column]
+        new_key_column = KeyedList(list(zip(keys, list(range(len(keys))))))
         state['key_column'] = new_key_column
 
-        new_values = scipy.zeros((len(self.values), len(new_key_column)), 
+        new_values = np.zeros((len(self.values), len(new_key_column)),
                                  scipy.float_)
-        for key, new_col in new_key_column.items():
+        for key, new_col in list(new_key_column.items()):
             old_col = self.values[:, self.key_column.get(key)]
             new_values[:, new_col] = old_col.copy()
         state['values'] = new_values
@@ -458,27 +459,27 @@ class Trajectory:
         self.__dict__.update(newdict)
         # Remake our namespace
         self.namespace = copy.copy(self._common_namespace)
-        for func_id, func_str in self._func_strs.items():
+        for func_id, func_str in list(self._func_strs.items()):
             self.namespace[func_id] = eval(func_str, self.namespace, {})
 
     def _sub_var_names(self, input):
         mapping_dict = {}
-	for id in ExprManip.extract_vars(input):
-            # convert it back to something key_column will recognize
-	    # had to use a form  dynVarName__derivWRT__optParamName for the
-	    # sensitivity variable because otherwise,
-            # extract_vars gets confused
+        for id in ExprManip.extract_vars(input):
+                # convert it back to something key_column will recognize
+            # had to use a form  dynVarName__derivWRT__optParamName for the
+            # sensitivity variable because otherwise,
+                # extract_vars gets confused
             splitId = id.split('__derivWRT__')
             if len(splitId) == 1:
-	    	idname = splitId[0]
-	    elif len(splitId) == 2:
-	    	idname = tuple(splitId)
+                idname = splitId[0]
+            elif len(splitId) == 2:
+                idname = tuple(splitId)
             else:
                 raise 'Problem with id %s in Trajectory._sub_var_names' % id
 
-	    if idname in self.key_column.keys():
-                mapping = 'values[start:end, %i]' % self.key_column.get(idname)
-            elif idname in self.const_var_values.keys():
+            if idname in list(self.key_column.keys()):
+                    mapping = 'values[start:end, %i]' % self.key_column.get(idname)
+            elif idname in list(self.const_var_values.keys()):
                 # Don't substitute for constant variable names. Those will
                 #  be taken care of earlier in the method.
                 continue
@@ -509,7 +510,7 @@ class Trajectory:
             last_t = -1
             for tevent in te :
                 if tevent != last_t:
-                    teIndices.append(scipy.nonzero(self.timepoints==tevent)[0][1])
+                    teIndices.append(np.nonzero(self.timepoints==tevent)[0][1])
                     last_t = tevent                 
 
             # don't expect there to be an event at 0, if there is this will be
@@ -519,7 +520,7 @@ class Trajectory:
             # put in the last time point as well, again a problem if there's an
             # event at the last time
             teIndices.extend([len(self.timepoints)])
-            intervals = zip(teIndicesWith0,teIndices)
+            intervals = list(zip(teIndicesWith0,teIndices))
 
         self.tcks = {}
 
@@ -529,9 +530,9 @@ class Trajectory:
             curTimes = self.timepoints[start_ind:end_ind]
             k = min(5,end_ind-start_ind-1)
             ys = [self.get_var_traj(dv_id)[start_ind:end_ind]
-                    for dv_id in self.key_column.keys()]
+                    for dv_id in list(self.key_column.keys())]
 
-            self.tcks[(start_time,end_time)] = [scipy.interpolate.splrep(curTimes,scipy.asarray(y),k=k,s=0) for y in ys]
+            self.tcks[(start_time,end_time)] = [scipy.interpolate.splrep(curTimes,np.asarray(y),k=k,s=0) for y in ys]
 
         #return self.tcks # do we want to return this?
 
@@ -575,16 +576,16 @@ class Trajectory:
               to an event time, which often has two trajectory values associated
               with it.
         """
-        if scipy.isscalar(time) :
-            time = scipy.asarray([time]) # if a scalar was passed in, convert to an array
+        if np.isscalar(time) :
+            time = np.asarray([time]) # if a scalar was passed in, convert to an array
         else :
-            time = scipy.asarray(time)
+            time = np.asarray(time)
         local_tcks = self.tcks
-        sorted_intervals = scipy.sort(local_tcks.keys(),axis=0)
+        sorted_intervals = np.sort(list(local_tcks.keys()),axis=0)
 
         if subinterval is not None : # confine things to just one interval
-            if subinterval not in local_tcks.keys() :
-                raise "Not a valid subinterval (not in Trajectory.tcks.keys())"
+            if subinterval not in list(local_tcks.keys()) :
+                raise NameError("Not a valid subinterval (not in Trajectory.tcks.keys())")
             else :
                 sorted_intervals = [[subinterval[0],subinterval[1]]]
                 interval_start_ind = 0
@@ -603,7 +604,7 @@ class Trajectory:
         returned_times = []
         dv_ind = self.key_column.keyToIndex[dv_id]
         for interval in sorted_intervals[interval_start_ind:(interval_end_ind+1)] :
-            currTimes = scipy.compress( scipy.logical_and((time>=interval[0]),(time<=interval[1])) , time )
+            currTimes = np.compress( np.logical_and((time>=interval[0]),(time<=interval[1])) , time )
             startslice, endslice = 0, None
             if len(currTimes) > 1 :
                 if (currTimes[0]==currTimes[1]) :
@@ -644,7 +645,7 @@ class Trajectory:
         for var in out_vars:
             out_array.append(self.get_var_traj(var))
     
-        out_array = scipy.transpose(out_array)
+        out_array = np.transpose(out_array)
         scipy.savetxt(f, out_array, delimiter=separator)
         f.close()
 
@@ -654,22 +655,22 @@ class Trajectory:
         """
 
         # Verify that both trajectories had the same keys in the same order
-        for traj_key, traj_index in traj.key_column.items():
+        for traj_key, traj_index in list(traj.key_column.items()):
             if self.key_column.get(traj_key) != traj_index:
                 raise ValueError('Trajectories are not mergeable')
 
-        self.values = scipy.array(list(self.values)+list(traj.values))
+        self.values = np.array(list(self.values)+list(traj.values))
         last_time = self.timepoints[-1]
         updated_times = traj.timepoints
-        self.timepoints = scipy.array(list(self.timepoints)+list(updated_times))
+        self.timepoints = np.array(list(self.timepoints)+list(updated_times))
         
         (te,ye,ie) = traj.event_info
         updated_event_times = te
         (self_te,self_ye,self_ie) = traj.event_info        
 
-        self.event_info = (scipy.array(list(self_te)+list(updated_event_times)),
-                           scipy.array(list(self_ye)+list(ye)),
-                           scipy.array(list(self_ie)+list(ie)))
+        self.event_info = (np.array(list(self_te)+list(updated_event_times)),
+                           np.array(list(self_ye)+list(ye)),
+                           np.array(list(self_ie)+list(ie)))
 
         self.const_var_values = traj.const_var_values
 

@@ -1,27 +1,30 @@
-import compiler
-from compiler.ast import *
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from ast import parse, Name, Constant, Call, Subscript, Slice, Pow, USub, UAdd, Mult, Div, Sub, Add, Compare, Not, And, Or, BoolOp, UnaryOp, BinOp, Expr, ExtSlice, Num, Tuple, Index
+from typing import BinaryIO
 
 TINY = 1e-12
 
-def _node_equal(self, other):
-    """
-    Return whether self and other represent the same expressions.
-
-    Unfortunately, the Node class in Python 2.3 doesn't define ==, so
-    we need to write our own.
-    """
-    # We're not equal if other isn't a Node, or if other is a different class.
-    if not isinstance(other, Node) or not isinstance(other, self.__class__):
-        return False
-    # Loop through all children, checking whether they are equal
-    for self_child, other_child in zip(self.getChildren(), other.getChildren()):
-        if not self_child == other_child:
-            return False
-    # If we get here, our two nodes much be equal
-    return True
-# Add our new equality tester to the Node class.
-Node.__eq__ = _node_equal
-
+# def _node_equal(self, other):
+#     """
+#     Return whether self and other represent the same expressions.
+#     Unfortunately, the Node class in Python 2.3 doesn't define ==, so
+#     we need to write our own.
+#     """
+#     # We're not equal if other isn't a Node, or if other is a different class.
+#     if not isinstance(other, Node) or not isinstance(other, self.__class__):
+#         return False
+#     # Loop through all children, checking whether they are equal
+#     for self_child, other_child in zip(self.getChildren(), other.getChildren()):
+#         if not self_child == other_child:
+#             return False
+#     # If we get here, our two nodes much be equal
+#     return True
+# Node = AST
+# Node.__eq__ = _node_equal
+ 
 def strip_parse(expr):
     """
     Return an abstract syntax tree (AST) for an expression.
@@ -30,21 +33,21 @@ def strip_parse(expr):
     """
     # The .strip() ignores leading and trailing whitespace, which would 
     #  otherwise give syntax errors.
-    ast = compiler.parse(str(expr).strip())
-    return ast.node.nodes[0].expr
+    tree = parse(str(expr).strip())
+    return  tree.body[0].value
 
 # This defines the order of operations for the various node types, to determine
 #  whether or not parentheses are necessary.
 _OP_ORDER = {Name: 0,
-             Const: 0,
-             CallFunc: 0,
+             Constant: 0,
+             Call: 0,
              Subscript: 0,
              Slice: 0,
-             Sliceobj: 0,
-             Power: 3,
-             UnarySub: 4,
-             UnaryAdd: 4,
-             Mul: 5,
+             ExtSlice: 0,
+             Pow: 3,
+             USub: 4,
+             UAdd: 4,
+             Mult: 5,
              Div: 5,
              Sub: 10,
              Add: 10,
@@ -52,102 +55,145 @@ _OP_ORDER = {Name: 0,
              Not: 11,
              And: 11,
              Or: 11,
-             Discard: 100}
+             Expr: 100,
+            }
 
 # This is just an instance of Discard to use for the default
-_FARTHEST_OUT = Discard(None)
+_FARTHEST_OUT = Expr(None)
 
 # These are the attributes of each node type that are other nodes.
 _node_attrs = {Name: (),
-               Const: (),
-               Add: ('left', 'right'),
-               Sub: ('left', 'right'),
-               Mul: ('left', 'right'),
-               Div: ('left', 'right'),
-               CallFunc: ('args',),
-               Power: ('left', 'right'),
-               UnarySub: ('expr',),
-               UnaryAdd: ('expr',),
+               Add: (),
+               Sub: (),
+               Mult: (),
+               Div: (),
+               Call: ('args', 'keywords'),
+               Pow: (),
+               USub: (),
+               UAdd: (),
                Slice: ('lower', 'upper'),
-               Sliceobj: ('nodes',),
+               Slice: ('nodes',),
                Subscript: ('subs',),
-               Compare: ('expr', 'ops'),
-               Not: ('expr',),
-               Or: ('nodes',),
-               And: ('nodes',),
+               Subscript: ('value', 'slice', 'ctx',),
+               Compare: ('left', 'ops', 'comparators'),
+               Not: (),
+               Or: (),
+               And: (),
+               BoolOp: ('op', 'values'),
+               UnaryOp: ('op', 'operand'),
+               BinOp: ('left', 'op', 'right'),
                }
 
-
-def ast2str(ast, outer = _FARTHEST_OUT, adjust = 0):
+# def ast2str(ast):
+#     """
+#     Return the string representation of an AST.
+#     """
+#     return unparse(ast)
+ 
+def ast2str(node, outer = _FARTHEST_OUT , adjust = 0):
     """
     Return the string representation of an AST.
-
     outer: The AST's 'parent' node, used to determine whether or not to 
         enclose the result in parentheses. The default of _FARTHEST_OUT will
         never enclose the result in parentheses.
-
     adjust: A numerical value to adjust the priority of this ast for
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
-    if isinstance(ast, Name):
-        out = ast.name
-    elif isinstance(ast, Const):
-        out = str(ast.value)
-    elif isinstance(ast, Add):
-        out = '%s + %s' % (ast2str(ast.left, ast),
-                           ast2str(ast.right, ast))
-    elif isinstance(ast, Sub):
-        out = '%s - %s' % (ast2str(ast.left, ast),
-                           ast2str(ast.right, ast, adjust = TINY))
-    elif isinstance(ast, Mul):
-        out = '%s*%s' % (ast2str(ast.left, ast),
-                           ast2str(ast.right, ast))
-    elif isinstance(ast, Div):
+    if isinstance(node, Name):
+        out = node.id
+    elif isinstance(node, Constant):
+        out = str(node.value)
+    elif isinstance(node, Num):
+        out = str(node.n)
+    elif isinstance(node, BinOp) and isinstance(node.op, Add):
+        out = '%s + %s' % (ast2str(node.left, node),
+                           ast2str(node.right, node))
+    elif isinstance(node, BinOp) and isinstance(node.op, Sub):
+        out = '%s - %s' % (ast2str(node.left, node),
+                           ast2str(node.right, node, adjust = TINY))
+    elif isinstance(node, BinOp) and isinstance(node.op, Mult):
+        out = '%s*%s' % (ast2str(node.left, node),
+                           ast2str(node.right, node))
+    elif isinstance(node, BinOp) and isinstance(node.op, Div):
         # The adjust ensures proper parentheses for x/(y*z)
-        out = '%s/%s' % (ast2str(ast.left, ast),
-                           ast2str(ast.right, ast, adjust = TINY))
-    elif isinstance(ast, Power):
+        out = '%s/%s' % (ast2str(node.left, node),
+                           ast2str(node.right, node, adjust = TINY))
+    elif isinstance(node, BinOp) and isinstance(node.op, Pow):
         # The adjust ensures proper parentheses for (x**y)**z
-        out = '%s**%s' % (ast2str(ast.left, ast, adjust = TINY),
-                          ast2str(ast.right, ast))
-    elif isinstance(ast, UnarySub):
-        out = '-%s' % ast2str(ast.expr, ast)
-    elif isinstance(ast, UnaryAdd):
-        out = '+%s' % ast2str(ast.expr, ast)
-    elif isinstance(ast, CallFunc):
-        args = [ast2str(arg) for arg in ast.args]
-        out = '%s(%s)' % (ast2str(ast.node), ', '.join(args))
-    elif isinstance(ast, Subscript):
-        subs = [ast2str(sub) for sub in ast.subs]
-        out = '%s[%s]' % (ast2str(ast.expr), ', '.join(subs))
-    elif isinstance(ast, Slice):
-        out = '%s[%s:%s]' % (ast2str(ast.expr), ast2str(ast.lower), 
-                             ast2str(ast.upper))
-    elif isinstance(ast, Sliceobj):
-        nodes = [ast2str(node) for node in ast.nodes]
-        out = ':'.join(nodes)
-    elif isinstance(ast, Compare):
-        expr = ast2str(ast.expr, ast, adjust=6+TINY)
+        out = '%s**%s' % (ast2str(node.left, node, adjust = TINY),
+                          ast2str(node.right, node))
+    elif isinstance(node, UnaryOp) and isinstance(node.op, USub):
+        out = '-%s' % ast2str(node.operand, node)
+    elif isinstance(node, UnaryOp) and isinstance(node.op, UAdd):
+        out = '+%s' % ast2str(node.operand, node)
+    elif isinstance(node, Call):
+        args = [ast2str(arg) for arg in node.args]
+        out = '%s(%s)' % (ast2str(node.func), ', '.join(args))
+    elif isinstance(node, Subscript):
+        if isinstance(node.slice, Tuple):
+            subs = [ast2str(sub) for sub in node.slice.elts]
+            out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
+        elif isinstance(node.slice, Slice):
+            out = '%s[%s]' % (ast2str(node.value),ast2str(node.slice))
+        elif isinstance(node.slice, ExtSlice):
+            # subs = ast2str(node.slice)
+            out1 = ast2str(node.value)
+            out2 = ast2str(node.slice)
+            if out2[0] == '(':
+                out2 = out2[1:-1]
+            out = '%s[%s]' % (out1, out2)
+        elif isinstance(node.slice, Index):
+            out = '%s[%s]' % (ast2str(node.value), ast2str(node.slice.value))
+        else:
+            subs = ast2str(node.slice)
+            out = '%s[%s]' % (ast2str(node.value), ', '.join(subs))
+    elif isinstance(node, Slice):
+        out = '%s:%s' % (ast2str(node.lower), 
+                             ast2str(node.upper))
+    elif isinstance(node, ExtSlice):
+        seq = iter(node.dims)
+        nodes = []
+        out1 = ast2str(next(seq))
+        # out1 = ''.join(nodes)
+        out2 = ast2str(next(seq).value)
+        # out3 = ', '.join(out2)
+        out = out1 + ',' + out2
+    elif isinstance(node, Compare):
+        expr = ast2str(node.left, node, adjust=6+TINY)
         out_l = [expr]
-        for op, val in ast.ops:
-            out_l.append(op)
-            out_l.append(ast2str(val, ast, adjust=6+TINY))
+        q= {"Eq": "==", "NotEq": "!=", "Lt": "<", "Gt": ">", "GtE": ">=", "LtE": "<="}
+        for i in range(len(node.ops)):
+            if isinstance(node.ops[i], str):
+                out_l.append((node.ops[i]))
+            else:
+                out_l.append(q[node.ops[i].__class__.__name__])
+                
+            out_l.append(ast2str(node.comparators[i], node, adjust=6+TINY))
         out = ' '.join(out_l)
-    elif isinstance(ast, And):
-        nodes = [ast2str(node, ast, adjust=TINY) for node in ast.nodes]
+    elif isinstance(node, BoolOp) and isinstance(node.op, And):
+        nodes = [ast2str(node, node, adjust=TINY) for node in node.values]
         out = ' and '.join(nodes)
-    elif isinstance(ast, Or):
-        nodes = [ast2str(node, ast, adjust=TINY) for node in ast.nodes]
+    elif isinstance(node, BoolOp) and  isinstance(node.op, Or):
+        nodes = [ast2str(node, node, adjust=TINY) for node in node.values]
         out = ' or '.join(nodes)
-    elif isinstance(ast, Not):
-        out = 'not %s' % ast2str(ast.expr, ast, adjust=TINY)
-
+    elif isinstance(node, UnaryOp) and isinstance(node.op, Not):
+        out = 'not %s' % ast2str(node.operand, node, adjust=TINY)
+    
     # Ensure parentheses by checking the _OP_ORDER of the outer and inner ASTs
-    if _need_parens(outer, ast, adjust):
+    if _need_parens(outer, node, adjust):
         return out
     else:
         return '(%s)' % out
+   
+def _class_type(node):
+    """
+    Returns the most specific type of a node.
+    """
+    if isinstance(node, UnaryOp) or isinstance(node, BinOp) or isinstance(node, BoolOp):
+        return node.op.__class__
+    else:
+        return node.__class__
 
 def _need_parens(outer, inner, adjust):
     """
@@ -158,39 +204,33 @@ def _need_parens(outer, inner, adjust):
         particular cases. For example, the denominator of a '/' needs 
         parentheses in more cases than does the numerator.
     """
-    return _OP_ORDER[outer.__class__] >= _OP_ORDER[inner.__class__] + adjust
+    return _OP_ORDER[_class_type(outer)] >= _OP_ORDER[_class_type(inner)] + adjust
+        
 
 def _collect_num_denom(ast, nums, denoms):
     """
     Append to nums and denoms, respectively, the nodes in the numerator and 
     denominator of an AST.
     """
-    if not (isinstance(ast, Mul) or isinstance(ast, Div)):
-        # If ast is not multiplication or division, just put it in nums.
+    if not (isinstance(ast, BinOp) and  (isinstance(ast.op, Mult) or isinstance(ast.op, Div))):
         nums.append(ast)
         return
-
-    if isinstance(ast.left, Div) or isinstance(ast.left, Mul):
-        # If the left argument is a multiplication or division, descend into
-        #  it, otherwise it is in the numerator.
+    
+    if isinstance(ast.left, BinOp) and (isinstance(ast.left.op, Div) or isinstance(ast.left.op, Mult)):
         _collect_num_denom(ast.left, nums, denoms)
     else:
         nums.append(ast.left)
-
-    if isinstance(ast.right, Div) or isinstance(ast.right, Mul):
-        # If the left argument is a multiplication or division, descend into
-        #  it, otherwise it is in the denominator.
-        if isinstance(ast, Mul):
-            _collect_num_denom(ast.right, nums, denoms)
-        elif isinstance(ast, Div):
-            # Note that when we descend into the denominator of a Div, we want 
-            #  to swap our nums and denoms lists
+    if isinstance(ast.right, BinOp) and (isinstance(ast.right.op, Div) or isinstance(ast.right.op, Mult)):
+        if isinstance(ast.op, Div):
             _collect_num_denom(ast.right, denoms, nums)
+        elif isinstance(ast.op, Mult):
+            _collect_num_denom(ast.right, nums, denoms)
     else:
-        if isinstance(ast, Mul):
-            nums.append(ast.right)
-        elif isinstance(ast, Div):
+        if isinstance(ast.op, Div):
             denoms.append(ast.right)
+        elif isinstance(ast.op, Mult):
+            nums.append(ast.right)
+    
 
 def _collect_pos_neg(ast, poss, negs):
     """
@@ -201,25 +241,41 @@ def _collect_pos_neg(ast, poss, negs):
     # This code is almost duplicated from _collect_num_denom. 
     # The additional twist is handling UnarySubs.
     #
-    if not (isinstance(ast, Add) or isinstance(ast, Sub)):
+    
+    if not ((isinstance(ast, BinOp) and  (isinstance(ast.op, Sub) or isinstance(ast.op, Add))) or (isinstance(ast, UnaryOp) and (isinstance(ast.op,USub) or isinstance(ast.op, UAdd) ))):
         poss.append(ast)
         return
+    if (isinstance(ast.op, Sub) or isinstance(ast.op, Add)) and isinstance(ast, BinOp):
+        if isinstance(ast.left, BinOp) and (isinstance(ast.left.op, Add) or isinstance(ast.left.op, Sub)):
+            _collect_pos_neg(ast.left, poss, negs)
+        elif isinstance(ast.left, UnaryOp):
+            _collect_pos_neg(ast.left, poss, negs) 
+        else:
+            poss.append(ast.left)
+            
+        if isinstance(ast.right, BinOp) and (isinstance(ast.right.op, Add) or isinstance(ast.right.op, Sub)):
+            if isinstance(ast.op, Add):
+                _collect_pos_neg(ast.right, poss, negs)
+            elif isinstance(ast.op, Sub):
+                _collect_pos_neg(ast.right, negs, poss)
+        elif isinstance(ast.right, UnaryOp):
+             _collect_pos_neg(ast.right, negs, poss)      
+        else:
+            if isinstance(ast.op, Add):
+                poss.append(ast.right)
+            elif isinstance(ast.op, Sub):
+                negs.append(ast.right)
+                
+    if isinstance(ast, UnaryOp) and (isinstance(ast.op, USub) or isinstance(ast.op, UAdd)):
+        if isinstance(ast.operand, Constant) or isinstance(ast.operand, Name):
+            if isinstance(ast.op, USub):
+                negs.append(ast.operand)
+            if isinstance(ast.op, UAdd):
+                poss.append(ast.operand)
+            return
+        else:
+            _collect_pos_neg(ast.operand, poss, negs)
 
-    if isinstance(ast.left, Sub) or isinstance(ast.left, Add):
-        _collect_pos_neg(ast.left, poss, negs)
-    else:
-        poss.append(ast.left)
-
-    if isinstance(ast.right, Sub) or isinstance(ast.right, Add):
-        if isinstance(ast, Add):
-            _collect_pos_neg(ast.right, poss, negs)
-        elif isinstance(ast, Sub):
-            _collect_pos_neg(ast.right, negs, poss)
-    else:
-        if isinstance(ast, Add):
-            poss.append(ast.right)
-        elif isinstance(ast, Sub):
-            negs.append(ast.right)
 
 def _make_product(terms):
     """
@@ -228,10 +284,11 @@ def _make_product(terms):
     if terms:
         product = terms[0]
         for term in terms[1:]:
-            product = Mul((product, term))
+            product = BinOp(left=product, op=Mult(), right=term)
         return product 
     else:
-        return Const(1)
+        return Constant(value=1)
+
 
 def recurse_down_tree(ast, func, args=()):
     if isinstance(ast, list):
@@ -239,11 +296,10 @@ def recurse_down_tree(ast, func, args=()):
             ast[ii] = func(elem, *args)
     elif isinstance(ast, tuple):
         ast = tuple(func(list(ast), *args))
-    elif _node_attrs.has_key(ast.__class__):
+    elif ast.__class__ in _node_attrs:
         for attr_name in _node_attrs[ast.__class__]:
             attr = getattr(ast, attr_name)
             attr_mod = func(attr, *args)
             setattr(ast, attr_name, attr_mod)
 
     return ast
-

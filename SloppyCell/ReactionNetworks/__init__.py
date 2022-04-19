@@ -13,18 +13,18 @@ import SloppyCell.Collections as Collections
 Experiment = Collections.Experiment
 
 try:
-    from . import Dynamics
+    from SloppyCell.ReactionNetworks import Dynamics
 except ImportError:
     pass
 
-from . import IO
+from SloppyCell.ReactionNetworks import IO
 
 try:
     from . import Plotting
 except ImportError:
     pass
 
-from . import Reactions, PerfectData, Network_mod
+from SloppyCell.ReactionNetworks import Reactions, PerfectData, Network_mod
 Network = Network_mod.Network
 
-from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
+from SloppyCell import HAVE_MPI, my_rank, my_host, num_procs

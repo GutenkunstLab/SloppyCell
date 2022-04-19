@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import scipy
 import scipy.io
 
@@ -10,12 +12,12 @@ h_a1 = scipy.io.read_array('Brown_2004_All_One/hessian.dat')
 Plotting.figure(figsize=(4,3))
 u, v = Utility.eig(h)
 #l = Plotting.plot_eigvals(u/max(u), join=True)
-Plotting.plot_eigval_spectrum(u/max(u), lw=1)
+Plotting.plot_eigval_spectrum(old_div(u,max(u)), lw=1)
 u, v = Utility.eig(h_rs)
 #l_rs = Plotting.plot_eigvals(u/max(u), join=True)
-Plotting.plot_eigval_spectrum(u/max(u), offset=1.2, lw=1)
+Plotting.plot_eigval_spectrum(old_div(u,max(u)), offset=1.2, lw=1)
 u, v = Utility.eig(h_a1)
-Plotting.plot_eigval_spectrum(u/max(u), offset=2.4, lw=1)
+Plotting.plot_eigval_spectrum(old_div(u,max(u)), offset=2.4, lw=1)
 #l_a1 = Plotting.plot_eigvals(u/max(u), join=True)
 
 Plotting.gca().set_xlim(-.2, 3.6)

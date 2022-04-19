@@ -13,7 +13,7 @@ int_times = [(0, 50), (0, 100)]
 
 reduced = Network('reduced')
 reduced.add_compartment('base')
-for id in net.parameters.keys():
+for id in list(net.parameters.keys()):
     reduced.add_parameter(id, net.get_var_ic(id))
 
 reduced.add_species('R', 'base', 0)

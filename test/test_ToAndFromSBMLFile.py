@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import copy
 import os
 import unittest
@@ -14,9 +16,9 @@ class test_SBMLFunctions(unittest.TestCase):
     def test_ToAndFromSBMLFile(self):
         """Testing the reading and writing of an SBML file from and to a network"""
         filename = 'net.sbml'
-	IO.to_SBML_file(net, filename)
-	netread = IO.from_SBML_file(filename)
-	os.remove(filename)	
+        IO.to_SBML_file(net, filename)
+        netread = IO.from_SBML_file(filename)
+        os.remove(filename)	
 
 no_libsbml_msg = 'libsbml not installed. SBML import and export will not be available!'
 if _HAVE_SBML:
@@ -28,4 +30,4 @@ if __name__ == '__main__':
     if _HAVE_SBML:
         unittest.main()
     else:
-        print no_libsbml_msg
+        print(no_libsbml_msg)

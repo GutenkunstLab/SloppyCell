@@ -1,17 +1,18 @@
+from __future__ import absolute_import
 import logging
 logger = logging.getLogger('Collections')
 
 import copy
 
 import scipy
+import numpy as np
 
 import SloppyCell
 import SloppyCell.Utility as Utility
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
-if SloppyCell.HAVE_PYPAR:
-    import pypar
+from SloppyCell import num_procs, my_rank, my_host, HAVE_MPI, comm
 
 class ExperimentCollection(dict):
     """
@@ -52,7 +53,6 @@ class ExperimentCollection(dict):
         varsByCalc = {}
         for expt in self.values():
             data = expt.GetData()
-
             for calc in data:
                 varsByCalc.setdefault(calc, {})
                 for depVar in data[calc]:
@@ -61,7 +61,6 @@ class ExperimentCollection(dict):
                     varsByCalc[calc].setdefault(depVar, set())
                     varsByCalc[calc][depVar].\
                             update(set(data[calc][depVar].keys()))
-
             for period in expt.GetPeriodChecks():
                 calc, depVar = period['calcKey'], period['depVarKey']
                 start, period = period['startTime'], period['period']
@@ -96,13 +95,11 @@ class ExperimentCollection(dict):
                 elif ds['type'] == 'min': 
                     called = ds['var'] + '_minimum'
                 varsByCalc[calc][called] = (ds['minTime'], ds['maxTime'])
-                
-        # But I convert the sets back to sorted lists before returning
+        import math
         for calc in varsByCalc:
             for depVar in varsByCalc[calc]:
                 varsByCalc[calc][depVar] = list(varsByCalc[calc][depVar])
-                varsByCalc[calc][depVar].sort()
-
+                varsByCalc[calc][depVar] = sorted(varsByCalc[calc][depVar], key=lambda x: x if x is not None else -math.inf)
         return varsByCalc
 
     def GetData(self):
@@ -222,7 +219,7 @@ class Experiment:
 
         if prior_type == 'uniform in sf':
             if theoryDotTheory != 0:
-                entropy = scipy.log(scipy.sqrt(2*scipy.pi*T/theoryDotTheory))
+                entropy = np.log(np.sqrt(2*scipy.pi*T/theoryDotTheory))
             else:
                 entropy = 0
         elif prior_type == 'gaussian in log sf':
@@ -245,19 +242,19 @@ class Experiment:
 
             mulB, siglB = prior_params
             B_best = theoryDotData/theoryDotTheory
-            lB_best = scipy.log(B_best)
+            lB_best = np.log(B_best)
 
             # Often we get overflow errors in the integration, but they
             #  don't actually cause a problem. (exp(-inf) is still 0.) This
             #  prevents scipy from printing annoying error messages in this
             #  case.
-            prev_err = scipy.seterr(over='ignore')
+            prev_err = np.seterr(over='ignore')
             int_args = (theoryDotTheory, theoryDotData, mulB, siglB, T, B_best,
                         lB_best)
             ans, temp = scipy.integrate.quad(integrand, -scipy.inf, scipy.inf, 
                                              args = int_args, limit=1000)
-            scipy.seterr(**prev_err)
-            entropy = scipy.log(ans)
+            np.seterr(**prev_err)
+            entropy = np.log(ans)
         else:
             raise ValueError('Unrecognized prior type: %s.' % prior_type)
 
@@ -418,7 +415,7 @@ class CalculationCollection(KeyedList):
 
         results = {}
 
-        calcs_to_do = varsByCalc.keys()
+        calcs_to_do = list(varsByCalc.keys())
         # Record which calculation each node is doing
         calc_assigned = {}
         while calcs_to_do:
@@ -434,21 +431,22 @@ class CalculationCollection(KeyedList):
                 command = 'Network.calculate(net, vars, params)'
                 args = {'net': self.get(calc), 'vars': varsByCalc[calc],
                         'params': self.params}
-                pypar.send((command, args), worker)
+                comm.send((command, args), dest=worker)
 
             # The master does his share here
             calc = calcs_to_do.pop()
+            # print
             # We use the finally statement because we want to ensure that we
             #  *always* wait for replies from the workers, even if the master
             #  encounters an exception in his evaluation.
             try:
-                results[calc] = self.get(calc).calculate(varsByCalc[calc], 
+                results[calc] = self.get(calc).calculate(varsByCalc[calc],
                                                          self.params)
             finally:
                 # Collect results from the workers
                 for worker in range(1, len_this_block):
                     logger.debug('Receiving result from worker %i.' % worker)
-                    results[calc_assigned[worker]] = pypar.receive(worker)
+                    results[calc_assigned[worker]] = comm.recv(source=worker)
                 # If the master encounts an exception, we'll break out of the
                 #  function ***here***
 
@@ -482,7 +480,6 @@ class CalculationCollection(KeyedList):
             calc.CalculateSensitivity(varsByCalc[calcName], self.params)
             calcSensVals[calcName] = calc.GetSensitivityResult(vars)
             calcVals[calcName] = calc.GetResult(vars)
-
         return calcVals, calcSensVals
 
     def GetParameters(self):

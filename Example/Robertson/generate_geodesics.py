@@ -1,6 +1,7 @@
 """
 Calculate geodesics for our example model
 """
+from __future__ import print_function
 from SloppyCell.ReactionNetworks import *
 from numpy import *
 import geodesics
@@ -12,7 +13,7 @@ tmax = 10
 Avv = None
 
 func = lambda logp: array(example_model.m.res_log_params(logp))
-jacobian = lambda logp: array(example_model.m.jacobian_log_params_sens(logp).values())
+jacobian = lambda logp: array(list(example_model.m.jacobian_log_params_sens(logp).values()))
 
 u, vects = Utility.eig(example_model.jtj)
 # Draw geodesics on equally spaced angles coming out from optimal parameter

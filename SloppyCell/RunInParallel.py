@@ -1,18 +1,19 @@
+from __future__ import absolute_import
+from builtins import range
+from builtins import object
 import logging
 logger = logging.getLogger('Parallel')
 
 import sys, traceback
 
 import SloppyCell
-import Collections
+from . import Collections
 
-from SloppyCell import num_procs, my_rank, my_host, HAVE_PYPAR
-if HAVE_PYPAR:
-    import pypar
+from SloppyCell import num_procs, my_rank, my_host, HAVE_MPI, comm
 
 import SloppyCell.Utility as Utility
 
-class Statement:
+class Statement(object):
     """
     Class for sending Python statements to workers.
     """
@@ -22,7 +23,7 @@ class Statement:
 
 while my_rank != 0:
     # Wait for a message
-    message = pypar.receive(source=0)
+    message = comm.recv(source=0)
 
     # If the message is a SystemExit exception, exit the code.
     if isinstance(message, SystemExit):
@@ -46,13 +47,13 @@ while my_rank != 0:
             locals().update(msg_locals)
             try:
                 result = eval(command)
-                pypar.send(result, 0)
+                comm.send(result, dest=0)
             except Utility.SloppyCellException as X:
-                pypar.send(X, 0)
+                comm.send(X, dest=0)
     except:
         # Assemble and print a nice traceback
-        tb = traceback.format_exception(sys.exc_type, sys.exc_value, 
-                                        sys.exc_traceback)
+        tb = traceback.format_exception(sys.exc_info()[0], sys.exc_info()[1], 
+                                        sys.exc_info()[2])
         logger.critical(('node %i:'%my_rank).join(tb))
         save_to = '.SloppyCell/node_%i_crash.bp' % my_rank
         logger.critical("node %i: Command being run was: %s."
@@ -67,7 +68,7 @@ def stop_workers():
     Send all workers the command to exit the program.
     """
     for worker in range(1, num_procs):
-        pypar.send(SystemExit(), worker)
+        comm.send(SystemExit(), dest=worker)
 
 if my_rank == 0:
     import atexit
@@ -78,4 +79,4 @@ def statement_to_all_workers(statement, locals={}):
     Send a Python statement to all workers for execution.
     """
     for worker in range(1, num_procs):
-        pypar.send(Statement(statement, locals), worker)
+        comm.send(Statement(statement, locals), dest=worker)

@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from scipy import *
 import scipy.io as io
 
@@ -18,10 +20,10 @@ heme_chi2_hess, temp, temp = Utility.load('Brodersen_1987/hess_dict.hemeglobin.b
 uh2, vh2 = Utility.eig(heme_chi2_hess)
 
 Plotting.figure(figsize=(6,3))
-Plotting.plot_eigval_spectrum(ua/ua[0], widths=0.8)
-Plotting.plot_eigval_spectrum(ua2/ua2[0], widths=0.8, offset=1.0)
-Plotting.plot_eigval_spectrum(uh/uh[0], widths=0.8, offset=2.0)
-Plotting.plot_eigval_spectrum(uh2/uh2[0], widths=0.8, offset=3.0)
+Plotting.plot_eigval_spectrum(old_div(ua,ua[0]), widths=0.8)
+Plotting.plot_eigval_spectrum(old_div(ua2,ua2[0]), widths=0.8, offset=1.0)
+Plotting.plot_eigval_spectrum(old_div(uh,uh[0]), widths=0.8, offset=2.0)
+Plotting.plot_eigval_spectrum(old_div(uh2,uh2[0]), widths=0.8, offset=3.0)
 Plotting.gca().set_xlim(-0.1, 3.9)
 Plotting.gca().set_ylim(0.5e-6, 2)
 Plotting.ylabel(r'$\lambda/\lambda_0$', fontsize='large')

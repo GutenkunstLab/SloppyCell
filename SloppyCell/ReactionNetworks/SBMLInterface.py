@@ -1,6 +1,10 @@
 """
 Methods for loading from and saving to SBML files.
 """
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
 __docformat__ = "restructuredtext en"
 
 import os
@@ -10,7 +14,7 @@ logger = logging.getLogger('RxnNets.SBMLInterface')
 
 import libsbml
 
-import Network_mod
+from . import Network_mod
 import SloppyCell.ExprManip as ExprManip
 import SloppyCell.KeyedList_mod
 KeyedList = SloppyCell.KeyedList_mod.KeyedList
@@ -27,7 +31,7 @@ def toSBMLFile(net, fileName):
     f.close()
 
 def SBMLtoDOT(sbmlFileName, dotFileName):
-    raise DeprecationWarning, 'SBMLtoDOT has been deprecated. Instead, use IO.net_DOT_file(net, filename)'
+    raise DeprecationWarning('SBMLtoDOT has been deprecated. Instead, use IO.net_DOT_file(net, filename')
 
 def formula_to_py(ast):
     formula = libsbml.formulaToString(ast)
@@ -97,7 +101,7 @@ def toSBMLString(net):
     m.setMetaId('SloppyCell_{0:05d}'.format(metaId))
     metaId += 1
 
-    for id, fd in net.functionDefinitions.items():
+    for id, fd in list(net.functionDefinitions.items()):
         try:
             sfd = libsbml.FunctionDefinition(id)
         except:
@@ -112,7 +116,7 @@ def toSBMLString(net):
         metaId += 1
         m.addFunctionDefinition(sfd)
 
-    for id, c in net.compartments.items():
+    for id, c in list(net.compartments.items()):
         try:
             sc = libsbml.Compartment(id)
         except NotImplementedError:
@@ -125,7 +129,7 @@ def toSBMLString(net):
         metaId += 1
         m.addCompartment(sc)
 
-    for id, s in net.species.items():
+    for id, s in list(net.species.items()):
         try:
             ss = libsbml.Species(id)
         except NotImplementedError:
@@ -140,7 +144,7 @@ def toSBMLString(net):
         metaId += 1
         m.addSpecies(ss)
 
-    for id, p in net.parameters.items():
+    for id, p in list(net.parameters.items()):
         try:
             sp = libsbml.Parameter(id)
         except NotImplementedError:
@@ -154,7 +158,7 @@ def toSBMLString(net):
         metaId += 1
         m.addParameter(sp)
 
-    for id, r in net.rateRules.items():
+    for id, r in list(net.rateRules.items()):
         try:
             sr = libsbml.RateRule()
         except NotImplementedError:
@@ -166,7 +170,7 @@ def toSBMLString(net):
         metaId += 1
         m.addRule(sr)
 
-    for id, r in net.assignmentRules.items():
+    for id, r in list(net.assignmentRules.items()):
         try:
             sr = libsbml.AssignmentRule()
         except NotImplementedError:
@@ -178,7 +182,7 @@ def toSBMLString(net):
         metaId += 1
         m.addRule(sr)
 
-    for r, r in net.algebraicRules.items():
+    for r, r in list(net.algebraicRules.items()):
         try:
             sr = libsbml.AlgebraicRule()
         except NotImplementedError:
@@ -189,13 +193,13 @@ def toSBMLString(net):
         metaId += 1
         m.addRule(sr)
 
-    for id, rxn in net.reactions.items():
+    for id, rxn in list(net.reactions.items()):
         # Need to identify modifiers in kinetic law and add them to
         # stoichiometry
         kl_vars = ExprManip.extract_vars(rxn.kineticLaw)
-        species_in_kl = kl_vars.intersection(net.species.keys())
+        species_in_kl = kl_vars.intersection(list(net.species.keys()))
         for s in species_in_kl:
-            if not rxn.stoichiometry.has_key(s):
+            if s not in rxn.stoichiometry:
                 rxn.stoichiometry[s] = 0
 
         try:
@@ -209,17 +213,17 @@ def toSBMLString(net):
         # object are explicitly set.
         if rxn.reactant_stoichiometry != None and \
             rxn.product_stoichiometry != None:
-            for rid, stoich_list in rxn.reactant_stoichiometry.items():
+            for rid, stoich_list in list(rxn.reactant_stoichiometry.items()):
                 for stoich in stoich_list:
                     rxn_add_stoich(srxn, rid, -float(stoich), is_product=False)
-            for rid, stoich_list in rxn.product_stoichiometry.items():
+            for rid, stoich_list in list(rxn.product_stoichiometry.items()):
                 for stoich in stoich_list:
                     rxn_add_stoich(srxn, rid, stoich, is_product=True)
         # Handle the case where the model was created using the SloppyCell
         # API, in which case reactants and products are inferred from their
         # stoichiometries
         else:
-            for rid, stoich in rxn.stoichiometry.items():
+            for rid, stoich in list(rxn.stoichiometry.items()):
                 rxn_add_stoich(srxn, rid, stoich)
 
         formula = rxn.kineticLaw.replace('**', '^')
@@ -233,7 +237,7 @@ def toSBMLString(net):
         metaId += 1
         m.addReaction(srxn)
 
-    for id, e in net.events.items():
+    for id, e in list(net.events.items()):
         try:
             se = libsbml.Event(id)
         except NotImplementedError:
@@ -269,7 +273,7 @@ def toSBMLString(net):
                 delay = libsbml.Delay(sbml_level, sbml_version)
                 delay.setMath(libsbml.parseFormula(formula))
                 se.setDelay(delay)
-        for varId, formula in e.event_assignments.items():
+        for varId, formula in list(e.event_assignments.items()):
             try:
                 sea = libsbml.EventAssignment()
             except NotImplementedError:
@@ -286,7 +290,7 @@ def toSBMLString(net):
         metaId += 1
         m.addEvent(se)
 
-    for id, con in net.constraints.items():
+    for id, con in list(net.constraints.items()):
         try:
             scon = libsbml.Constraint()
         except NotImplementedError:
@@ -414,7 +418,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
         uniprot_ids = set([entry[1:].split('"')[0]
                            for entry in xml_text.split('uniprot')[1:]])
 
-	rn.addSpecies(id = id, compartment = compartment,
+    rn.addSpecies(id = id, compartment = compartment,
                       initialConcentration = iC,
                       isConstant = isConstant,
                       is_boundary_condition = isBC,
@@ -437,7 +441,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             # different value than this parameter** we rename this parameter
             # instance by prefixing it with the rxn name so there isn't a
             # clash.
-            if parameter.id in rn.variables.keys():
+            if parameter.id in list(rn.variables.keys()):
                 logger.warn('Parameter %s appears in two different reactions '
                             'in SBML file.' % parameter.id)
                 if parameter.value != rn.variables.get(parameter.id).value or\
@@ -454,7 +458,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
                                 'This behavior can be changed with the option '
                                 'duplicate_rxn_params = True' % (parameter.id))
 
-            if parameter.id not in rn.variables.keys():
+            if parameter.id not in list(rn.variables.keys()):
                 rn.addVariable(parameter)
         kLFormula = ExprManip.sub_for_vars(kLFormula, substitution_dict)
 
@@ -488,7 +492,7 @@ def fromSBMLString(sbmlStr, id = None, duplicate_rxn_params=False):
             else:
                 product_stoichiometry[species] = [stoich]
 
-        for species, stoich in stoichiometry.items():
+        for species, stoich in list(stoichiometry.items()):
             stoich = ExprManip.simplify_expr(stoich)
             try:
                 # Try converting the string to a float.

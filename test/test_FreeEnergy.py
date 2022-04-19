@@ -1,6 +1,9 @@
+from __future__ import division
+from past.utils import old_div
 import unittest
 
 import scipy
+import numpy as np
 
 from SloppyCell.ReactionNetworks import *
 
@@ -22,10 +25,10 @@ class test_FreeEnergy(unittest.TestCase):
         self.assertEqual(c, 0, 'Failed on zero-cost integration.')
 
         # ak is sum(y**2/sigma**2)
-        ak = 1.0**2/0.5**2 + 1.0**2/1.0**2
+        ak = old_div(1.0**2,0.5**2) + old_div(1.0**2,1.0**2)
 
         for T in [1, 0.137]:
-            entropy = scipy.log(scipy.sqrt(2*scipy.pi*T/ak))
+            entropy = np.log(np.sqrt(old_div(2*scipy.pi*T,ak)))
             self.assertAlmostEqual(m.free_energy([], T), c-T*entropy, 4,
                                    'Failed on T=%f free energy' % T)
 
@@ -57,10 +60,10 @@ class test_FreeEnergy(unittest.TestCase):
         m = Model([expt], [net])
 
         # ak is sum(y**2/sigma**2)
-        ak = 1.0**2/0.5**2 + 1.0**2/1.0**2 + 0.5**2/0.25**2
+        ak = old_div(1.0**2,0.5**2) + old_div(1.0**2,1.0**2) + old_div(0.5**2,0.25**2)
         # bk is sum(y*d/sigma**2)
         bk = 1.0*4.0/0.5**2 + 1.0*5.0/1.0**2 + 0.5*3.0/0.25**2
-        B = bk/ak
+        B = old_div(bk,ak)
 
         c = 0.5*(((B*1.0 - 4.0)/0.5)**2 + ((B*1.0 - 5.0)/1.0)**2
                  + ((B*0.5 - 3.0)/0.25)**2)
@@ -68,7 +71,7 @@ class test_FreeEnergy(unittest.TestCase):
                                'calc.')
 
         for T in [1, 0.137]:
-            entropy = scipy.log(scipy.sqrt(2*scipy.pi*T/ak))
+            entropy = np.log(np.sqrt(old_div(2*scipy.pi*T,ak)))
             self.assertAlmostEqual(m.free_energy([], T), c-T*entropy, 4,
                                    'Failed on T=%f free energy' % T)
 
@@ -82,11 +85,11 @@ class test_FreeEnergy(unittest.TestCase):
         expt.set_data({'test': {'X': {1.0: (4.0, 0.5),
                                       2.0: (5.0, 1.0)}}})
         expt.set_sf_prior('X', 'gaussian in log sf', 
-                          (scipy.log(2.0), scipy.log(1e3)))
+                          (np.log(2.0), np.log(1e3)))
         m = Model([expt], [net])
 
         # ak is sum(y**2/sigma**2)
-        ak = 1.0**2/0.5**2 + 1.0**2/1.0**2
+        ak = old_div(1.0**2,0.5**2) + old_div(1.0**2,1.0**2)
         # bk is sum(y*d/sigma**2)
         bk = 1.0*4.0/0.5**2 + 1.0*5.0/1.0**2
 
@@ -94,12 +97,12 @@ class test_FreeEnergy(unittest.TestCase):
 
         # The comparison entropies were calculated in Mathematica.
         T = 1.0
-        entropy = (c - m.free_energy([],T))/T
+        entropy = old_div((c - m.free_energy([],T)),T)
         self.assertAlmostEqual(entropy, -1.31481, 4,
                                'Failed on T = 1 entropy')
 
         T = 0.137
-        entropy = (c - m.free_energy([],T))/T
+        entropy = old_div((c - m.free_energy([],T)),T)
         self.assertAlmostEqual(entropy, -2.31894, 4,
                                'Failed on T = 0.137 entropy')
 
@@ -135,32 +138,32 @@ class test_FreeEnergy(unittest.TestCase):
         # First we calculate the entropies for various individual scale
         # factors. We do this by fixing the other scale factor.
         expt.set_fixed_sf({'Y': 1.0})
-        ent_X_uniform = (m.cost([]) - m.free_energy([], T))/T
+        ent_X_uniform = old_div((m.cost([]) - m.free_energy([], T)),T)
 
         expt.set_fixed_sf({'X': 1.0})
-        ent_Y_uniform = (m.cost([]) - m.free_energy([], T))/T
+        ent_Y_uniform = old_div((m.cost([]) - m.free_energy([], T)),T)
 
         expt.set_sf_prior('X', 'gaussian in log sf', 
-                          (scipy.log(2.0), scipy.log(1e3)))
+                          (np.log(2.0), np.log(1e3)))
         expt.set_fixed_sf({'Y': 1.0})
-        ent_X_log = (m.cost([]) - m.free_energy([], T))/T
+        ent_X_log = old_div((m.cost([]) - m.free_energy([], T)),T)
 
         expt.set_sf_prior('Y', 'gaussian in log sf', 
-                          (scipy.log(2.0), scipy.log(1e3)))
+                          (np.log(2.0), np.log(1e3)))
         expt.set_fixed_sf({'X': 1.0})
-        ent_Y_log = (m.cost([]) - m.free_energy([], T))/T
+        ent_Y_log = old_div((m.cost([]) - m.free_energy([], T)),T)
 
         # Now we try various combinations.
         expt.set_fixed_sf({})
-        ent_both_log = (m.cost([]) - m.free_energy([], T))/T
+        ent_both_log = old_div((m.cost([]) - m.free_energy([], T)),T)
         self.assertAlmostEqual(ent_both_log, ent_X_log+ent_Y_log, 6)
 
         expt.set_sf_prior('Y', 'uniform in sf', None)
-        ent_this = (m.cost([]) - m.free_energy([], T))/T
+        ent_this = old_div((m.cost([]) - m.free_energy([], T)),T)
         self.assertAlmostEqual(ent_this, ent_X_log+ent_Y_uniform, 6)
 
         expt.set_sf_prior('X', 'uniform in sf', None)
-        ent_this = (m.cost([]) - m.free_energy([], T))/T
+        ent_this = old_div((m.cost([]) - m.free_energy([], T)),T)
         self.assertAlmostEqual(ent_this, ent_X_uniform+ent_Y_uniform, 6)
 
 suite = unittest.makeSuite(test_FreeEnergy)

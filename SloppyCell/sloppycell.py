@@ -5,6 +5,8 @@ Author @Keeyan <keeyan.ghoreshi@uconn.edu>
 
 Controls command line options, input acceptance and output
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 import os
 import sys
@@ -12,7 +14,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # Adds root directory to path
 import argparse
-import SloppyCell.ScellParser
+from . import SloppyCell.ScellParser
 import logging
 logger = logging.getLogger('Command')
 
@@ -40,6 +42,6 @@ parser.add_argument('-o', type=str, dest='output_file', action='store', help='Sp
 
 input_v = parser.parse_args().input_file
 output_v = parser.parse_args().output_file
-print(input_v)
+# print(input_v)
 if input_v is not 'unspecified':
     SloppyCell.ScellParser.read_from_file(input_v, output_location=output_v)

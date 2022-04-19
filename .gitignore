@@ -18,3 +18,9 @@ diff.pickle
 Example/Tyson_1991/*.png
 Example/Tyson_1991/*.tex
 test/algebraic_net*.xml
+venv5
+venv3
+venv33
+*.bak
+*.pyf
+test/*.c

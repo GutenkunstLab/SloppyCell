@@ -1,10 +1,12 @@
+from __future__ import print_function
 import glob
 import unittest
 import sys
+from SloppyCell import ReactionNetworks
+from SloppyCell import Utility
+from SloppyCell import disable_c
 
-import SloppyCell
-import SloppyCell.Utility
-import SloppyCell.ReactionNetworks.Network_mod 
+from SloppyCell.ReactionNetworks  import Network_mod 
 
 def run_all_tests():
     all_tests = unittest.TestSuite()
@@ -16,17 +18,19 @@ def run_all_tests():
         module = file[:-3]
         mod = __import__(module)
         all_test_mods.append(mod)
+        print("all tests", all_test_mods)
         if hasattr(mod, 'suite'):
             all_tests.addTest(mod.suite)
+    print(all_tests)
 
     if not '-v' in sys.argv:
-        SloppyCell.Utility.disable_warnings()
-    if not SloppyCell.disable_c:
+        Utility.disable_warnings()
+    if not disable_c:
         print('*' * 80)
         print('Running tests with C compilation enabled.')
         print('*' * 80)
         unittest.TextTestRunner(verbosity=2).run(all_tests)
-    SloppyCell.ReactionNetworks.Network_mod.Network.disable_c = True
+    ReactionNetworks.Network_mod.Network.disable_c = True
     print('*' * 80)
     print('Running tests with C compilation disabled.')
     print('*' * 80)

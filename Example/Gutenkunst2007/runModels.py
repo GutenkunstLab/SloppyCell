@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import zip
 import os
 
 import scipy
@@ -20,11 +22,11 @@ def run_for_model(model):
     key_sets = []
 
     for net, times in zip(Nets.networks, Nets.int_times):
-        print 'Running for network %s.' % net.get_id()
+        print('Running for network %s.' % net.get_id())
 
         # A sensitivity with respect to log X doesn't make sens if X == 0, so
         # we don't calculate for those cases.
-        for id in net.optimizableVars.keys():
+        for id in list(net.optimizableVars.keys()):
             if net.get_var_ic(id) == 0:
                 net.set_var_optimizable(id, False)
 
@@ -40,7 +42,7 @@ def run_for_model(model):
         # machines and not others.
         if model == 'von_Dassow_2000':
             net.integrateWithLogs = True
-            for id in net.dynamicVars.keys():
+            for id in list(net.dynamicVars.keys()):
                 if net.get_var_ic(id) <= 0:
                     net.set_var_ic(id, scipy.misc.limits.double_resolution)
 
@@ -60,7 +62,7 @@ def run_for_model(model):
             sens_traj.timepoints = scipy.log10(sens_traj.get_times())
 
         # We have 'data' on all species that aren't assigned constants.
-        data_ids = [id for id in net.species.keys()
+        data_ids = [id for id in list(net.species.keys())
                     if not net.get_var_constant(id)]
 
         h, h_d = PerfectData.hessian_log_params(sens_traj, fixed_sf=True,
@@ -99,5 +101,5 @@ if __name__ == '__main__':
         directories = [item[0] for item in Common.model_list]
 
     for dir in directories:
-        print 'Running for model %s.' % dir
+        print('Running for model %s.' % dir)
         run_for_model(dir)

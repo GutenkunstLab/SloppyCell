@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import scipy
 
 # see VdmPairwise for definition of r2PC12 and dtMatPC12
@@ -70,7 +73,7 @@ def normColumns(mat1):
     n = len(mat1[0])
     mat2 = mat1.copy()
     for ii in range(n):
-        mat2[:,ii] = mat2[:,ii]/scipy.sqrt(scipy.dot(mat2[:,ii],mat2[:,ii]))
+        mat2[:,ii] = old_div(mat2[:,ii],scipy.sqrt(scipy.dot(mat2[:,ii],mat2[:,ii])))
     return mat2
 
 def colorAlignColumns(mat1):

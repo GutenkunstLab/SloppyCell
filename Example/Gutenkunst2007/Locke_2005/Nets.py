@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from SloppyCell.ReactionNetworks import *
 
 # Modifications to SBML...
@@ -16,7 +18,7 @@ net1212.add_parameter('turntime', 12, is_constant=False)
 net1212.add_event('light_switch', 'gt(time, turntime)', {'light': '1-light',
                                                          'turntime': '12+time'})
 mutant_net = net1212.copy('cca1lhy')
-mutant_net.set_var_ic('p1', net.get_var_ic('p1')/1000)
+mutant_net.set_var_ic('p1', old_div(net.get_var_ic('p1'),1000))
 
 # Run to the limit cycle 
 traj = Dynamics.integrate(net1212, [0, 24*10])

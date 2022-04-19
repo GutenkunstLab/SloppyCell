@@ -1,4 +1,6 @@
 from __future__ import nested_scopes
+from __future__ import print_function
+from __future__ import absolute_import
 # Levenberg Marquardt minimization routines
 """
 fmin_lm  : standard Levenberg Marquardt
@@ -10,7 +12,8 @@ fmin_lm_scale : scale invariant Levenberg Marquardt
 
 """
 import scipy
-from scipy import absolute, sqrt, asarray, zeros, mat, transpose, ones, dot, sum
+from numpy import absolute, sqrt, asarray, zeros, mat, transpose, ones, dot, sum
+import numpy as np
 import scipy.linalg
 import copy
 import SloppyCell.Utility
@@ -24,12 +27,12 @@ _epsilon = sqrt(scipy.finfo(scipy.float_).eps)
 
         
 def approx_fprime(xk,f,epsilon,*args):
-    f0 = apply(f,(xk,)+args)
+    f0 = f(*(xk,)+args)
     grad = scipy.zeros((len(xk),),scipy.float_)
     ei = scipy.zeros((len(xk),),scipy.float_)
     for k in range(len(xk)):
         ei[k] = epsilon
-        grad[k] = (apply(f,(xk+ei,)+args) - f0)/epsilon
+        grad[k] = (f(*(xk+ei,)+args) - f0)/epsilon
         ei[k] = 0.0
     return grad
 
@@ -41,7 +44,7 @@ def approx_fprime1(xk,f,epsilon,*args):
     epsilon = (epsilon**2.0)**(1.0/3.0)  # should be macheps^(1/3)
     for k in range(len(xk)):
         ei[k] = epsilon
-        grad[k] = (apply(f,(xk+ei,)+args) - apply(f,(xk-ei,)+args))/(2.0*epsilon)
+        grad[k] = (f(*(xk+ei,)+args) - f(*(xk-ei,)+args))/(2.0*epsilon)
         ei[k] = 0.0
     return grad
 
@@ -53,16 +56,16 @@ def approx_fprime2(xk,f,epsilon,*args):
     ei = scipy.zeros((len(xk),),scipy.float_)
     epsilon = (epsilon**2.0)**(1.0/3.0)  # should be macheps^(1/3)
     ei[0] = epsilon
-    resminus = asarray(apply(f,(xk-ei,)+args))
-    resplus = asarray(apply(f,(xk+ei,)+args))
+    resminus = asarray(f(*(xk-ei,)+args))
+    resplus = asarray(f(*(xk+ei,)+args))
     m = len(resminus)
     jac = scipy.zeros((m,len(xk)),scipy.float_)
     jac[:,0] = (resplus-resminus)/(2.0*epsilon)
     ei[0] = 0.0
     for k in range(1,len(xk)):
         ei[k] = epsilon
-        resplus = asarray(apply(f,(xk+ei,)+args))
-        resminus = asarray(apply(f,(xk-ei,)+args))
+        resplus = asarray(f(*(xk+ei,)+args))
+        resminus = asarray(f(*(xk-ei,)+args))
         jac[:,k] = (resplus-resminus)/(2.0*epsilon)
     #jac[k,:] = mat(transpose(mat(apply(f,(xk+ei,)+args) - apply(f,(xk-ei,)+args))))/(2.0*epsilon)
         ei[k] = 0.0
@@ -70,16 +73,16 @@ def approx_fprime2(xk,f,epsilon,*args):
 
 def check_grad(func, grad, x0, *args):
     approx_grad = approx_fprime(x0,func,_epsilon,*args)
-    print("Finite difference gradient ", approx_grad)
+    print(("Finite difference gradient ", approx_grad))
     analytic_grad = grad(x0,*args)
-    print("Analytic gradient ", analytic_grad)
+    print(("Analytic gradient ", analytic_grad))
     differencenorm = sqrt(sum(approx_grad-analytic_grad)**2)
-    print("Norm of difference is ", differencenorm)
+    print(("Norm of difference is ", differencenorm))
     return differencenorm 
 
 def approx_fhess_p(x0,p,fprime,epsilon,*args):
-    f2 = apply(fprime,(x0+epsilon*p,)+args)
-    f1 = apply(fprime,(x0,)+args)
+    f2 = fprime(*(x0+epsilon*p,)+args)
+    f1 = fprime(*(x0,)+args)
     return (f2 - f1)/epsilon
 
 def safe_res(f,x,args):
@@ -91,12 +94,12 @@ def safe_res(f,x,args):
     In the case of an exception, returns res = None, cost = inf.
     """
     try:
-        res = asarray(apply(f,(x,)+args))
+        res = asarray(f(*(x,)+args))
         cost = sum(res**2)
     except (SloppyCell.Utility.SloppyCellException,OverflowError):
         res = None
         cost = scipy.inf
-    if scipy.isnan(cost): cost = scipy.inf
+    if np.isnan(cost): cost = scipy.inf
     return res, cost
 
 def safe_fprime(fprime,x,args):
@@ -109,13 +112,13 @@ def safe_fprime(fprime,x,args):
     Exit code 4: Exception in Jacobian calculation.
     """
     try:
-        j = asarray(apply(fprime,(x,)+args))
+        j = asarray(fprime(*(x,)+args))
         err = 0
     except SloppyCell.Utility.SloppyCellException:
         j = None
         err = 4
     if j is not None:
-      if ( scipy.isnan(j).any() or scipy.isinf(j).any() ):
+      if ( np.isnan(j).any() or np.isinf(j).any() ):
         j = None
         err = 3
     return j, err
@@ -193,7 +196,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         j = jinit
     else :
         if app_fprime :
-            j = asarray(apply(approx_fprime2,(x,f,epsilon)+args))
+            j = asarray(approx_fprime2(*(x,f,epsilon)+args))
             func_calls = func_calls + 2*len(x)
         else :
             j,err = safe_fprime(fprime,x,args)
@@ -229,7 +232,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
         rhsvect = -mat(vt)*mat(transpose(grad))
         rhsvect = asarray(rhsvect)[:,0]
-        move = abs(rhsvect)/(s+Lambda*scipy.ones(n)+1.0e-30*scipy.ones(n))
+        move = abs(rhsvect)/(s+Lambda*np.ones(n)+1.0e-30*np.ones(n))
         move = list(move)
         maxindex = move.index(max(move))
         move = asarray(move)
@@ -268,10 +271,10 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         res1,costlambda = safe_res(f,x1,args)
         func_calls+=1
         if disp :
-            print('Iteration number', niters)
-            print('Current cost', currentcost)
-            print("Move 1 gives cost of" , costlambda)
-            print("Move 2 gives cost of ", costlambdasmaller)
+            print(('Iteration number', niters))
+            print(('Current cost', currentcost))
+            print(("Move 1 gives cost of" , costlambda))
+            print(("Move 2 gives cost of ", costlambdasmaller))
             #fp = open('LMoutfile','a')
             #fp.write('Iteration number ' + niters.__str__() + '\n')
             #fp.write('Current cost ' + currentcost.__str__() + '\n')
@@ -291,7 +294,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                 allvecs.append(x)
             currentcost = costlambdasmaller
             if app_fprime :
-                j = asarray(apply(approx_fprime2,(x2,f,epsilon)+args))
+                j = asarray(approx_fprime2(*(x2,f,epsilon)+args))
                 func_calls = func_calls + 2*len(x2)
             else :
                 j,err = safe_fprime(fprime,x2,args)
@@ -310,7 +313,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             if retall:
                 allvecs.append(x)
             if app_fprime :
-                j = asarray(apply(approx_fprime2,(x1,f,epsilon)+args))
+                j = asarray(approx_fprime2(*(x1,f,epsilon)+args))
                 func_calls = func_calls + 2*len(x1)
             else :
                 j,err = safe_fprime(fprime,x1,args)
@@ -329,9 +332,9 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             NTrials2 = 0
             move = moveold[:]
             while (costmult > currentcost) and (NTrials < 10) :
-                num = -scipy.dot(grad,move)[0]
+                num = -dot(grad,move)[0]
                 den = scipy.linalg.norm(grad)*scipy.linalg.norm(move)
-                gamma = scipy.arccos(num/den)
+                gamma = np.arccos(num/den)
                 NTrials = NTrials+1
                 # was (gamma>piOverFour) below but that doens't
                 # make much sense to me. I don't think you should
@@ -372,7 +375,7 @@ def fmin_lm(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                     allvecs.append(x)
                 Lambda = Lambdamult
                 if app_fprime :
-                    j = asarray(apply(approx_fprime2,(x,f,epsilon)+args))
+                    j = asarray(approx_fprime2(*(x,f,epsilon)+args))
                     func_calls = func_calls + 2*len(x)
                 else :
                     j,err = safe_fprime(fprime,x,args)
@@ -510,7 +513,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
     move = zeros(n,scipy.float_)
     finish = 0
 
-    grad, lmh = apply(fjtj,(x,))
+    grad, lmh = fjtj(*(x,))
     grad_calls+=1
 
 
@@ -525,7 +528,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
         oldlmh = lmh[:,:]
         oldgrad = grad[:]
 
-        rhsvect = -scipy.dot(transpose(u),grad)
+        rhsvect = -dot(transpose(u),grad)
         # rhsvect = asarray(rhsvect)[:,0]
         move = abs(rhsvect)/(s+Lambda*ones(n)+1.0e-30*ones(n))
         move = list(move)
@@ -537,7 +540,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
 
         ## lmhreg = lmh + Lambda*eye(n,n,typecode=scipy.float_)
         ## [u,s,v] = scipy.linalg.svd(lmhreg)
-        rhsvect = -scipy.dot(transpose(u),grad)
+        rhsvect = -dot(transpose(u),grad)
         # rhsvect = asarray(rhsvect)[:,0]
 
         for i in range(0,len(s)) :
@@ -562,26 +565,26 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
         move = dot(asarray(u),move)
         x2 = x + asarray(move)
 
-        currentcost = apply(fcost,(x,))
+        currentcost = fcost(*(x,))
         oldcost = currentcost
         func_calls+=1
 
         try:
-            costlambdasmaller = apply(fcost,(x2,))
+            costlambdasmaller = fcost(*(x2,))
         except SloppyCell.Utility.SloppyCellException:
             costlambdasmaller = scipy.inf
         func_calls+=1
 
         try:
-            costlambda = apply(fcost,(x1,))
+            costlambda = fcost(*(x1,))
         except SloppyCell.Utility.SloppyCellException:
             costlambda = scipy.inf
         func_calls+=1
         if disp :
-            print('Iteration number', niters)
-            print('Current cost', currentcost)
-            print("Move 1 gives cost of" , costlambda)
-            print("Move 2 gives cost of ", costlambdasmaller)
+            print(('Iteration number', niters))
+            print(('Current cost', currentcost))
+            print(("Move 1 gives cost of" , costlambda))
+            print(("Move 2 gives cost of ", costlambdasmaller))
 
             #fp = open('LMoutfile','a')
             #fp.write('Iteration number ' + niters.__str__() + '\n')
@@ -596,7 +599,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             if retall:
                 allvecs.append(x)
             currentcost = costlambdasmaller
-            grad, lmh = apply(fjtj,(x2,))
+            grad, lmh = fjtj(*(x2,))
             grad_calls+=1
 
             #if scipy.linalg.norm(asarray(grad)) < avegtol :
@@ -608,7 +611,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             x = x1[:]
             if retall:
                 allvecs.append(x)
-            grad, lmh = apply(fjtj,(x1,))
+            grad, lmh = fjtj(*(x1,))
             grad_calls+=1
 
             # if scipy.linalg.norm(asarray(grad)) < avegtol :
@@ -624,7 +627,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
             while (costmult > currentcost) and (NTrials < 10) :
                 # num = -dot(transpose(asarray(grad)),asarray(moveold) )
                 # den = scipy.linalg.norm(grad)*scipy.linalg.norm(moveold)
-                gamma = .1 # scipy.arccos(num/den)
+                gamma = .1 # np.arccos(num/den)
                 NTrials = NTrials+1
                 if (gamma > 0) :
                     Lambdamult = Lambdamult*Mult
@@ -640,7 +643,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
                     x1 = x + asarray(move)
 
                     func_calls+=1
-                    costmult = apply(fcost,(x1,))
+                    costmult = fcost(*(x1,))
                 else :
                     NTrials2 = 0
                     while (costmult > currentcost) and (NTrials2 < 10) :
@@ -650,7 +653,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
                         move = (.5)**NTrials2*moveold
                         x1 = x + asarray(moveold)
                         func_calls+=1
-                        costmult = apply(fcost,(x1,))
+                        costmult = fcost(*(x1,))
 
             if (NTrials==10) or (NTrials2==10) :
                 if disp :
@@ -661,7 +664,7 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
                 if retall:
                     allvecs.append(x)
                 Lambda = Lambdamult
-                grad, lmh = apply(fjtj,(x1,))
+                grad, lmh = fjtj(*(x1,))
                 grad_calls+=1
                 currentcost = costmult
                 # if scipy.linalg.norm(grad) < avegtol :
@@ -671,8 +674,8 @@ def fmin_lmNoJ(fcost, x0, fjtj, args=(), avegtol=1e-5, epsilon=_epsilon,
 
         # see if we need to reduce the trust region, compare the actual change in
         # cost to the linear and quadratic change in cost
-        model_change = scipy.dot(scipy.transpose(oldgrad),move) + \
-        .5*scipy.dot(scipy.transpose(move),scipy.dot(oldlmh,move) )
+        model_change = dot(np.transpose(oldgrad),move) + \
+        .5*dot(np.transpose(move),dot(oldlmh,move) )
         #print oldcost-sum(newmodelval**2)
         #print trustradius
         if model_change>1.0e-16 :
@@ -779,7 +782,7 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
     n = len(x0)
     func_calls = 0
     grad_calls = 0
-    res = asarray(apply(f,(x0,)))
+    res = asarray(f(*(x0,)))
     m = res.shape[0]
     if maxiter is None :
         maxiter = 200*n
@@ -797,12 +800,12 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
     finish = 0
 
     if app_fprime :
-        j = asarray(apply(approx_fprime2,(x,f,epsilon)+args))
+        j = asarray(approx_fprime2(*(x,f,epsilon)+args))
         func_calls = func_calls + 2*len(x)
     else :
-        j = asarray(apply(fprime,(x,)))
+        j = asarray(fprime(*(x,)))
         grad_calls+=1
-    res = asarray(apply(f,(x,)))
+    res = asarray(f(*(x,)))
     func_calls+=1
     grad = mat(res)*mat(j)
 
@@ -827,7 +830,7 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         rhsvect = asarray(rhsvect)[:,0]
 
 
-        currentcost = sum(asarray(apply(f,(x,)))**2)
+        currentcost = sum(asarray(f(*(x,)))**2)
         g = asarray(grad)[0,:]
         Lambda = 0
         move = solve_lmsys(Lambda,s,g,rhsvect,currentcost,n)
@@ -845,20 +848,20 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
         func_calls+=1
         try:
-            res2 = asarray(apply(f,(x2,)))
+            res2 = asarray(f(*(x2,)))
             costlambdasmaller = sum(res2**2)
         except SloppyCell.Utility.SloppyCellException:
             costlambdasmaller = scipy.inf
         func_calls+=1
         try:
-            res1 = asarray(apply(f,(x1,)))
+            res1 = asarray(f(*(x1,)))
             costlambda = sum(res1**2)
         except SloppyCell.Utility.SloppyCellException:
             costlambda = scipy.inf
         func_calls+=1
         if disp :    
-            print("Cost is ", currentcost)
-            print("Iteration is", niters)
+            print(("Cost is ", currentcost))
+            print(("Iteration is", niters))
 
         oldcost = currentcost
         oldres = res
@@ -871,10 +874,10 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                 allvecs.append(x)
             currentcost = costlambdasmaller
             if app_fprime :
-                j = asarray(apply(approx_fprime2,(x2,f,epsilon)+args))
+                j = asarray(approx_fprime2(*(x2,f,epsilon)+args))
                 func_calls = func_calls + 2*len(x2)
             else :
-                j = asarray(apply(fprime,(x2,)))
+                j = asarray(fprime(*(x2,)))
                 grad_calls+=1
             grad = mat(res2)*mat(j)
             if sum(abs(2.0*grad), axis=None) < gtol :
@@ -886,10 +889,10 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
             if retall:
                 allvecs.append(x)
             if app_fprime :
-                j = asarray(apply(approx_fprime2,(x1,f,epsilon)+args))
+                j = asarray(approx_fprime2(*(x1,f,epsilon)+args))
                 func_calls = func_calls + 2*len(x1)
             else :
-                j = asarray(apply(fprime,(x1,)))
+                j = asarray(fprime(*(x1,)))
                 grad_calls+=1
 
             grad = mat(res1)*mat(j)
@@ -908,7 +911,7 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                     trustradmult = trustradmult/2.0
                     move = move*trustradmult
                     x1 = x + asarray(move)
-                    res1 = asarray(apply(f,(x1,)))
+                    res1 = asarray(f(*(x1,)))
                     func_calls+=1
                     costmult = sum(res1**2)
 
@@ -922,10 +925,10 @@ def fmin_lm_scale(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
                     allvecs.append(x)
                 trustradius = trustradmult
                 if app_fprime :
-                    j = asarray(apply(approx_fprime2,(x,f,epsilon)+args))
+                    j = asarray(approx_fprime2(*(x,f,epsilon)+args))
                     func_calls = func_calls + 2*len(x)
                 else :
-                    j = asarray(apply(fprime,(x,)))
+                    j = asarray(fprime(*(x,)))
                     grad_calls+=1
 
                 grad = mat(res1)*mat(j)

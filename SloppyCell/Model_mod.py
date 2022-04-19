@@ -1,6 +1,8 @@
 """
 Model class that unites theory with data.
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 import logging
 logger = logging.getLogger('Model_mod')
@@ -8,12 +10,13 @@ logger = logging.getLogger('Model_mod')
 import copy
 
 import scipy
+import numpy as np
 
 import SloppyCell
 import SloppyCell.Residuals as Residuals
 import SloppyCell.Collections as Collections
 import SloppyCell.Utility as Utility
-from . import KeyedList_mod as KeyedList_mod
+import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 
 _double_epsilon_ = scipy.finfo(scipy.float_).eps
@@ -123,10 +126,10 @@ class Model:
         # Occasionally it's useful to use residuals with a sqrt(-1) in them,
         #  to get negative squares. Then, however, we might get small imaginary
         #  parts in our results, which this shaves off.
-        chisq = scipy.real_if_close(scipy.sum(scipy.asarray(resvals)**2), 
+        chisq = np.real_if_close(np.sum(np.asarray(resvals)**2),
                                     tol=self.imag_cutoff)
-        if scipy.isnan(chisq):
-            logger.warn('Chi^2 is NaN, converting to Infinity.')
+        if np.isnan(chisq):
+            logger.warning('Chi^2 is NaN, converting to Infinity.')
             chisq = scipy.inf
         cost = 0.5 * chisq
 
@@ -156,7 +159,7 @@ class Model:
         """
         Return the residual values given the logarithm of the parameters
         """
-        return self.res(scipy.exp(log_params))
+        return self.res(np.exp(log_params))
 
     def res_dict(self, params):
         """
@@ -190,7 +193,7 @@ class Model:
         """
         Return the cost given the logarithm of the input parameters
         """
-        return self.cost(scipy.exp(log_params))
+        return self.cost(np.exp(log_params))
 
     def free_energy(self, params, T):
         temp, temp, c, entropy = self._evaluate(params, T=T)
@@ -252,15 +255,15 @@ class Model:
         """
 
         force = []
-        params = scipy.array(params)
+        params = np.array(params)
         
         if stepSizeCutoff==None:
-            stepSizeCutoff = scipy.sqrt(_double_epsilon_)
+            stepSizeCutoff = np.sqrt(_double_epsilon_)
             
         if relativeScale is True:
             eps = epsf * abs(params)
         else:
-            eps = epsf * scipy.ones(len(params),scipy.float_)
+            eps = epsf * np.ones(len(params),scipy.float_)
 
         for i in range(0,len(eps)):
             if eps[i] < stepSizeCutoff:
@@ -287,17 +290,16 @@ class Model:
         ReactionNetworks.
         """
         self.params.update(params)
-
         # The cost is 0.5 * sum(res**2), 
         # so the gradient is sum(res * dres_dp)
 
         jac_dict = self.jacobian_sens(params)
         res_dict = self.res_dict(params)
 
-        force = scipy.zeros(len(params), scipy.float_)
+        force = np.zeros(len(params), scipy.float_)
         for res_key, res_val in res_dict.items():
             res_derivs = jac_dict.get(res_key)
-            force += res_val * scipy.asarray(res_derivs)
+            force += res_val * np.asarray(res_derivs)
 
         gradient = self.params.copy()
         gradient.update(force)
@@ -313,10 +315,10 @@ class Model:
         ReactionNetworks.
         """
         # We just need to multiply dcost_dp by p.
-        params = scipy.exp(log_params)
+        params = np.exp(log_params)
         gradient = self.gradient_sens(params)
         gradient_log = gradient.copy()
-        gradient_log.update(scipy.asarray(gradient) * scipy.asarray(params))
+        gradient_log.update(np.asarray(gradient) * np.asarray(params))
 
         return gradient_log
 
@@ -334,7 +336,7 @@ class Model:
 
         varsByCalc = self.GetExperimentCollection().GetVarsByCalc()
         self.calcVals = self.GetCalculationCollection().Calculate(varsByCalc, 
-                                                                  params)
+                                                           params)
         return self.calcVals
 
     def CalculateSensitivitiesForAllDataPoints(self, params):
@@ -582,10 +584,10 @@ class Model:
         The KeyedList is of the form:
             kl.get(resId) = [dres/dlogp1, dres/dlogp2...]
         """
-        params = scipy.exp(log_params)
+        params = np.exp(log_params)
         j = self.jacobian_sens(params)
         j_log = j.copy()
-        j_log.update(scipy.asarray(j) * scipy.asarray(params))
+        j_log.update(np.asarray(j) * np.asarray(params))
 
         return j_log
 
@@ -601,7 +603,6 @@ class Model:
             kl[resId] = [dres/dp1, dres/dp2...]
         """
         self.params.update(params)
-
         # Calculate sensitivities
         self.CalculateSensitivitiesForAllDataPoints(params)
         self.ComputeInternalVariables()
@@ -612,7 +613,6 @@ class Model:
                                 self.internalVars, self.internalVarsDerivs,
                                 self.params))
                  for (resId, res) in self.residuals.items()]
-
         return KeyedList(deriv)
 
     def jacobian_fd(self, params, eps, 
@@ -632,15 +632,15 @@ class Model:
         """
         res = self.resDict(params)
 
-        orig_vals = scipy.array(params)
+        orig_vals = np.array(params)
 
         if stepSizeCutoff is None:
-            stepSizeCutoff = scipy.sqrt(_double_epsilon_)
+            stepSizeCutoff = np.sqrt(_double_epsilon_)
             
         if relativeScale:
-            eps_l = scipy.maximum(eps * abs(params), stepSizeCutoff)
+            eps_l = np.maximum(eps * abs(params), stepSizeCutoff)
         else:
-            eps_l = scipy.maximum(eps * scipy.ones(len(params),scipy.float_),
+            eps_l = np.maximum(eps * np.ones(len(params),scipy.float_),
                                   stepSizeCutoff)
 
         J = KeyedList() # will hold the result
@@ -698,7 +698,7 @@ class Model:
 
     def GetJandJtJ(self,params):
         j = self.GetJacobian(params)
-        mn = scipy.zeros((len(params),len(params)),scipy.float_)
+        mn = np.zeros((len(params),len(params)),scipy.float_)
 
         for paramind in range(0,len(params)):
             for paramind1 in range(0,len(params)):
@@ -717,7 +717,7 @@ class Model:
         # but can be ignored when residuals are zeros, and maybe should be
         # ignored altogether because it can make the Hessian approximation 
         # non-positive definite
-        pnolog = scipy.exp(params)
+        pnolog = np.exp(params)
         jac, jtj = self.GetJandJtJ(pnolog)
         for i in range(len(params)):
             for j in range(len(params)):
@@ -748,7 +748,7 @@ class Model:
         if relativeScale:
             # Steps sizes are given by eps*the value of the parameter,
             #  but the minimum step size is stepSizeCutoff
-            hi, hj = scipy.maximum((epsi*abs(origPi), epsj*abs(origPj)), 
+            hi, hj = np.maximum((epsi*abs(origPi), epsj*abs(origPj)),
                                    (stepSizeCutoff, stepSizeCutoff))
         else:
             hi, hj = epsi, epsj
@@ -811,30 +811,30 @@ class Model:
 
         nOv = len(params)
         if stepSizeCutoff is None:
-            stepSizeCutoff = scipy.sqrt(_double_epsilon_)
+            stepSizeCutoff = np.sqrt(_double_epsilon_)
             
-        params = scipy.asarray(params)
+        params = np.asarray(params)
         if relativeScale:
             eps = epsf * abs(params)
         else:
-            eps = epsf * scipy.ones(len(params),scipy.float_)
+            eps = epsf * np.ones(len(params),scipy.float_)
 
         # Make sure we don't take steps smaller than stepSizeCutoff
-        eps = scipy.maximum(eps, stepSizeCutoff)
+        eps = np.maximum(eps, stepSizeCutoff)
 
         if jacobian is not None:
             # Turn off the relative scaling since that would overwrite all this
             relativeScale = False
 
-            jacobian = scipy.asarray(jacobian)
+            jacobian = np.asarray(jacobian)
             if len(jacobian.shape) == 0:
                 resDict = self.resDict(params)
-                new_jacobian = scipy.zeros(len(params),scipy.float_)
+                new_jacobian = np.zeros(len(params),scipy.float_)
                 for key, value in resDict.items():
-                    new_jacobian += 2.0*value*scipy.array(jacobian[0][key])
+                    new_jacobian += 2.0*value*np.array(jacobian[0][key])
                 jacobian = new_jacobian
             elif len(jacobian.shape) == 2: # Need to sum up the total jacobian
-                residuals = scipy.asarray(self.res(params))
+                residuals = np.asarray(self.res(params))
                 # Changed by rng7. I'm not sure what is meant by "sum up the
                 # total jacobian". The following line failed due to shape
                 # mismatch. From the context below, it seems that the dot
@@ -844,7 +844,7 @@ class Model:
 
             # If parameters are independent, then
             #  epsilon should be (sqrt(2)*J[i])^-1
-            factor = 1.0/scipy.sqrt(2)
+            factor = 1.0/np.sqrt(2)
             for i in range(nOv):
                 if jacobian[i] == 0.0:
                     eps[i] = 0.5*abs(params[i])
@@ -857,7 +857,7 @@ class Model:
         ## compute cost at f(x)
         f0 = self.cost(params)
 
-        hess = scipy.zeros((nOv, nOv), scipy.float_)
+        hess = np.zeros((nOv, nOv), scipy.float_)
 
         ## compute all (numParams*(numParams + 1))/2 unique hessian elements
         for i in range(nOv):
@@ -885,19 +885,19 @@ class Model:
                 calculated
         """
         nOv = len(params)
-        if scipy.isscalar(eps):
-            eps = scipy.ones(len(params), scipy.float_) * eps
+        if np.isscalar(eps):
+            eps = np.ones(len(params), scipy.float_) * eps
 
         ## compute cost at f(x)
-        f0 = self.cost_log_params(scipy.log(params))
+        f0 = self.cost_log_params(np.log(params))
 
-        hess = scipy.zeros((nOv, nOv), scipy.float_)
+        hess = np.zeros((nOv, nOv), scipy.float_)
 
         ## compute all (numParams*(numParams + 1))/2 unique hessian elements
         for i in range(nOv):
             for j in range(i, nOv):
                 hess[i][j] = self.hessian_elem(self.cost_log_params, f0,
-                                               scipy.log(params), 
+                                               np.log(params),
                                                i, j, eps[i], eps[j], 
                                                relativeScale, stepSizeCutoff,
                                                verbose)
@@ -938,9 +938,9 @@ class Model:
         Outputs:
         response -- The response array
         """
-        j,h = scipy.asarray(j), scipy.asarray(h)
+        j,h = np.asarray(j), np.asarray(h)
         [m,n] = j.shape
-        response = scipy.zeros((m,m),scipy.float_)
+        response = np.zeros((m,m),scipy.float_)
         ident = scipy.eye(m,typecode=scipy.float_)
         hinv = scipy.linalg.pinv2(h,1e-40)
         tmp = scipy.dot(hinv,scipy.transpose(j))
@@ -963,9 +963,9 @@ class Model:
         Outputs:
         response -- The response array
         """
-        j,h = scipy.asarray(j), scipy.asarray(h)
+        j,h = np.asarray(j), np.asarray(h)
         [m,n] = j.shape
-        response = scipy.zeros((n,m),scipy.float_)
+        response = np.zeros((n,m),scipy.float_)
         hinv = scipy.linalg.pinv2(h,1e-40)
         response = -scipy.dot(hinv,scipy.transpose(j))
         
@@ -981,7 +981,7 @@ class Model:
             exptData = expt.GetData()
             for calcKey, calcData in exptData.items():
                 for depVarKey, depVarData in calcData.items():
-                    sortedData = depVarData.items()
+                    sortedData = list(depVarData.items())
                     sortedData.sort()
                     for indVar, (value, uncert) in sortedData:
                         resName = (exptKey, calcKey, depVarKey, indVar)

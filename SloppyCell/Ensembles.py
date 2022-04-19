@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import logging
 logger = logging.getLogger('Ensembles')
 import copy
@@ -9,14 +10,13 @@ import scipy
 import scipy.linalg
 import scipy.stats
 import scipy.fftpack
+import numpy as np
 
 import SloppyCell.KeyedList_mod as KeyedList_mod
 KeyedList = KeyedList_mod.KeyedList
 import SloppyCell.Utility as Utility
 
-from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
-if HAVE_PYPAR:
-    import pypar
+from SloppyCell import HAVE_MPI, my_rank, my_host, num_procs, comm
 
 def autocorrelation(series):
     """
@@ -24,7 +24,7 @@ def autocorrelation(series):
     """
     # We need to de-mean the series. Also, we want to pad with zeros to avoid
     #  assuming our series is periodic.
-    f = scipy.fftpack.rfft(scipy.asarray(series)-scipy.mean(series), 
+    f = scipy.fftpack.rfft(np.asarray(series)-scipy.mean(series),
                            n = 2*len(series))
     # The inverse fft of |f|**2 is the autocorrelation
     ac = scipy.fftpack.irfft(abs(f)**2)
@@ -116,8 +116,8 @@ def ensemble_log_params(m, params, hess=None,
      Chib and Greenberg. "Understanding the Metropolis-Hastings Algorithm" 
      _The_American_Statistician_ 49(4), 327-335
     """
-    if scipy.isinf(steps) and scipy.isinf(max_run_hours):
-        logger.warn('Both steps and max_run_hours are infinite! '
+    if np.isinf(steps) and np.isinf(max_run_hours):
+        logger.warning('Both steps and max_run_hours are infinite! '
                     'Code will not stop by itself!')
 
     if seeds is None:
@@ -135,10 +135,10 @@ def ensemble_log_params(m, params, hess=None,
     ens_scale_factors = [curr_sf]
 
     # We work with arrays of params through the rest of the code
-    curr_params = scipy.array(curr_params)
+    curr_params = np.array(curr_params)
 
     if recalc_func is None and log_params:
-        recalc_func = lambda p: m.GetJandJtJInLogParameters(scipy.log(p))[1]
+        recalc_func = lambda p: m.GetJandJtJInLogParameters(np.log(p))[1]
     else:
         recalc_func = lambda p: m.GetJandJtJ(p)[1]
 
@@ -160,30 +160,30 @@ def ensemble_log_params(m, params, hess=None,
         # Generate the trial move from the quadratic approximation
         deltaParams = _trial_move(samp_mat)
         # Scale the trial move by the step_scale and the temperature
-        #scaled_step = step_scale * scipy.sqrt(temperature) * deltaParams
+        #scaled_step = step_scale * np.sqrt(temperature) * deltaParams
         scaled_step = deltaParams
 
         if log_params:
-            next_params = curr_params * scipy.exp(scaled_step)
+            next_params = curr_params * np.exp(scaled_step)
         else:
             next_params = curr_params + scaled_step
 
         try:
             next_F = m.free_energy(next_params, temperature)
         except Utility.SloppyCellException as X:
-            logger.warn('SloppyCellException in free energy evaluation at step '
+            logger.warning('SloppyCellException in free energy evaluation at step '
                         '%i, free energy set to infinity.' % len(ens))
-            logger.warn('Parameters tried: %s.' % str(next_params))
+            logger.warning('Parameters tried: %s.' % str(next_params))
             attempt_exceptions += 1
             next_F = scipy.inf
         except Utility.ConstraintViolatedException as X:
-            logger.warn('ConstraintViolatedException in free energy evaluation '
+            logger.warning('ConstraintViolatedException in free energy evaluation '
                         'at step %i, free energy set to infinity.' % len(ens))
-            logger.warn('Parameters tried: %s.' % str(next_params))
+            logger.warning('Parameters tried: %s.' % str(next_params))
             attempt_exceptions += 1
             next_F = scipy.inf
 
-        if recalc_hess_alg and not scipy.isinf(next_F):
+        if recalc_hess_alg and not np.isinf(next_F):
             try:
                 next_hess = recalc_func(next_params)
                 next_samp_mat = _sampling_matrix(next_hess, sing_val_cutoff,
@@ -192,9 +192,9 @@ def ensemble_log_params(m, params, hess=None,
                                                    next_F, next_samp_mat, 
                                                    deltaParams, temperature)
             except Utility.SloppyCellException as X:
-                logger.warn('SloppyCellException in JtJ evaluation at step '
+                logger.warning('SloppyCellException in JtJ evaluation at step '
                             '%i, move not accepted.' % len(ens))
-                logger.warn('Parameters tried: %s.' % str(next_params))
+                logger.warning('Parameters tried: %s.' % str(next_params))
                 attempt_exceptions += 1
                 next_F = scipy.inf
                 accepted = False
@@ -256,29 +256,29 @@ def _accept_move(delta_F, temperature):
     """
     Basic Metropolis accept/reject step.
     """
-    p = scipy.rand()
-    return (p < scipy.exp(-delta_F/temperature))
+    p = np.random.rand()
+    return (p < np.exp(-delta_F/temperature))
 
 def _accept_move_recalc_alg(curr_F, curr_samp_mat, next_F, next_samp_mat, 
                             step, T):
     """
     Accept/reject when each the sampling matrix is recalculated each step.
     """
-    pi_x = scipy.exp(-curr_F/T)
+    pi_x = np.exp(-curr_F/T)
     # This is the current location's covariance sampling matrix
-    sigma_curr = scipy.dot(curr_samp_mat, scipy.transpose(curr_samp_mat))
+    sigma_curr = np.dot(curr_samp_mat, np.transpose(curr_samp_mat))
     sigma_curr_inv = scipy.linalg.inv(sigma_curr)
     # This is the transition probability from the current point to the next.
-    q_x_to_y = scipy.exp(-_quadratic_cost(step, sigma_curr_inv))\
-            / scipy.sqrt(scipy.linalg.det(sigma_curr))
+    q_x_to_y = np.exp(-_quadratic_cost(step, sigma_curr_inv))\
+            / np.sqrt(scipy.linalg.det(sigma_curr))
 
-    pi_y = scipy.exp(-next_F/T)
-    sigma_next = scipy.dot(next_samp_mat, scipy.transpose(next_samp_mat))
+    pi_y = np.exp(-next_F/T)
+    sigma_next = np.dot(next_samp_mat, np.transpose(next_samp_mat))
     sigma_next_inv = scipy.linalg.inv(sigma_next)
-    q_y_to_x = scipy.exp(-_quadratic_cost(-step, sigma_next_inv))\
-            / scipy.sqrt(scipy.linalg.det(sigma_next))
+    q_y_to_x = np.exp(-_quadratic_cost(-step, sigma_next_inv))\
+            / np.sqrt(scipy.linalg.det(sigma_next))
 
-    p = scipy.rand()
+    p = np.random.rand()
     accepted = (pi_y*q_y_to_x)/(pi_x*q_x_to_y)
     did_accepted = p<accepted
 
@@ -297,31 +297,31 @@ def _sampling_matrix(hessian, cutoff=0, temperature=1, step_scale=1):
     # double cutoff = _.singVals[0]*1.0e-02
     cutoff_sing_val = cutoff * max(sing_vals)
 
-    D = 1.0/scipy.maximum(sing_vals, cutoff_sing_val)
+    D = 1.0/np.maximum(sing_vals, cutoff_sing_val)
 
     ## now fill in the sampling matrix ("square root" of the Hessian)
     ## note that sqrt(D[i]) is taken here whereas Kevin took sqrt(D[j])
     ## this is because vh is the transpose of his PT -JJW
-    samp_mat = scipy.transpose(vh) * scipy.sqrt(D)
+    samp_mat = np.transpose(vh) * np.sqrt(D)
 
     # Divide the sampling matrix by an additional factor such
     # that the expected quadratic increase in cost will be about 1.
-    cutoff_vals = scipy.compress(sing_vals < cutoff_sing_val, sing_vals)
+    cutoff_vals = np.compress(sing_vals < cutoff_sing_val, sing_vals)
     if len(cutoff_vals):
-        scale = scipy.sqrt(len(sing_vals) - len(cutoff_vals)
+        scale = np.sqrt(len(sing_vals) - len(cutoff_vals)
                            + sum(cutoff_vals)/cutoff_sing_val)
     else:
-        scale = scipy.sqrt(len(sing_vals))
+        scale = np.sqrt(len(sing_vals))
 
     samp_mat /= scale
     samp_mat *= step_scale
-    samp_mat *= scipy.sqrt(temperature)
+    samp_mat *= np.sqrt(temperature)
 
     return samp_mat
 
 def _trial_move(sampling_mat):
-    randVec = scipy.randn(len(sampling_mat))
-    trialMove = scipy.dot(sampling_mat, randVec)
+    randVec = np.random.randn(len(sampling_mat))
+    trialMove = np.dot(sampling_mat, randVec)
 
     return trialMove
 
@@ -332,8 +332,8 @@ def _quadratic_cost(trialMove, hessian):
     (Note: the hessian here is assumed to be the second derivative matrix of the
      cost, without an additional factor of 1/2.)
     """
-    quadratic = 0.5*scipy.dot(scipy.transpose(trialMove), 
-                              scipy.dot(hessian, trialMove))
+    quadratic = 0.5*np.dot(np.transpose(trialMove),
+                              np.dot(hessian, trialMove))
     return quadratic
 
 def traj_ensemble_stats(traj_set):
@@ -364,7 +364,7 @@ def few_ensemble_trajs(net, times, elements):
             if not scipy.any(scipy.isnan(traj.values)):
                 traj_set.append(traj)
         except Utility.SloppyCellException:
-            logger.warn('Exception in network integration on node %i.'
+            logger.warning('Exception in network integration on node %i.'
                         % my_rank)
 
     return traj_set
@@ -379,12 +379,12 @@ def ensemble_trajs(net, times, ensemble):
     for worker in range(1, num_procs):
         command = 'Ensembles.few_ensemble_trajs(net, times, elements)'
         args = {'net': net, 'times': times, 'elements': elems_assigned[worker]}
-        pypar.send((command, args), worker)
+        comm.send((command, args), dest=worker)
 
     traj_set = few_ensemble_trajs(net, times, elems_assigned[0])
 
     for worker in range(1, num_procs):
-        traj_set.extend(pypar.receive(worker))
+        traj_set.extend(comm.recv(source=worker))
 
     return traj_set
 
@@ -399,7 +399,7 @@ def traj_ensemble_quantiles(traj_set, quantiles=(0.025, 0.5, 0.975)):
     Return a list of trajectories, each one corresponding the a given passed-in
     quantile.
     """
-    all_values = scipy.array([traj.values for traj in traj_set])
+    all_values = np.array([traj.values for traj in traj_set])
     sorted_values = scipy.sort(all_values, 0)
                    
     q_trajs = []
@@ -427,17 +427,17 @@ def PCA_eig_log_params(ens):
     Return the Principle Component Analysis eigenvalues and eigenvectors (in 
      log parameters) of an ensemble. (This function takes the logs for you.)
     """
-    return PCA_eig(scipy.log(scipy.asarray(ens)))
+    return PCA_eig(np.log(np.asarray(ens)))
 
 def PCA_eig(ens):
     """
     Return the Principle Component Analysis eigenvalues and eigenvectors 
      of an ensemble.
     """
-    X = scipy.asarray(ens)
+    X = np.asarray(ens)
     mean_vals = scipy.mean(X, 0)
     X -= mean_vals
-    u, s, vh = scipy.linalg.svd(scipy.transpose(X))
+    u, s, vh = scipy.linalg.svd(np.transpose(X))
     # This return adjusts things so that can be easily compared with the JtJ
     #  eigensystem.
     X += mean_vals

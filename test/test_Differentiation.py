@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import random
 import unittest
 
@@ -54,15 +56,15 @@ class test_Differentiation(unittest.TestCase):
                  ('g(x - y*x + cos(x*z), y, x)' ,'y'),
                  ('g(x*y, x*y**2, y)', 'z')
                  ]
-
-        for expr, wrt in cases: 
+        cases1 = [  ('x**y' ,'x')]
+        for expr, wrt in cases1: 
             d = ExprManip.diff_expr(expr, wrt)
             ad = eval(d)
             fd = self._num_diff(expr, wrt, x=x, y=y, z=z)
             # We test that our numeric and analytic derivatives differ by less
             #  than 0.1%
             if ad != 0:
-                assert abs(fd - ad)/(0.5*(ad + fd)) < 1e-3
+                assert old_div(abs(fd - ad),(0.5*(ad + fd))) < 1e-3
             else:
                 assert ad == fd
 
@@ -79,7 +81,7 @@ class test_Differentiation(unittest.TestCase):
         args[wrt] = wrt_val*(1+delta/2.0)
         fplus = eval(expr, globals(), args)
     
-        return (fplus - fmin)/(wrt_val * delta)
+        return old_div((fplus - fmin),(wrt_val * delta))
 
 suite = unittest.makeSuite(test_Differentiation)
 

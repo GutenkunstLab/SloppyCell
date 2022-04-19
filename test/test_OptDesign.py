@@ -1,11 +1,14 @@
+from __future__ import absolute_import
 import copy
 import unittest
 
 import scipy
+import numpy as np
 
-from SloppyCell.ReactionNetworks import *
-import SloppyCell
+# from SloppyCell.ReactionNetworks import *
+# import SloppyCell
 import TestNetwork
+# from SloppyCell.ReactionNetworks import OptDesign as OD
 import SloppyCell.ReactionNetworks.OptDesign as OD
 import os
 import SloppyCell.Utility
@@ -24,15 +27,15 @@ class test_OptDesign(unittest.TestCase):
         save(jtj,'TNjtj')
         # Make the nensitivity trajectory for this network and save
         # it in 'TNsenstraj'
-        times = scipy.linspace(0, 2.6, 100)
-        times = scipy.append(times, 1.1)
+        times = np.linspace(0, 2.6, 100)
+        times = np.append(times, 1.1)
         times.sort()
         OD.make_sens_traj(net,p,times,'TNsenstraj')
         OD.setup('TNparams',net,'TNsenstraj','TNjtj')
         best_change,best_chem,best_time = OD.design_over_chems(['x'],['y'],
-                scipy.log(1000.0))
-        times, bestfit, var = OD.variances(['x','y'],scipy.log(1000.0))
-        times, bestfit, var = OD.variances_log_chems(['x','y'],scipy.log(1000.0))
+                np.log(1000.0))
+        times, bestfit, var = OD.variances(['x','y'],np.log(1000.0))
+        times, bestfit, var = OD.variances_log_chems(['x','y'],np.log(1000.0))
         sens_vect = OD.get_sens_vect('x',1.1)
         sens_array = OD.get_sens_array('x')
         # tidy up

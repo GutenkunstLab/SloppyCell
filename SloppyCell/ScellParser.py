@@ -5,12 +5,16 @@ Author @Keeyan
 
 Parses XML file, creates experiment
 """
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import zip
+from builtins import object
 import os
 import csv
 import logging
 from xml.etree import ElementTree as ET
 import pandas as pd
-import TestConstruct_XML
+from . import TestConstruct_XML
 from SloppyCell.ReactionNetworks import *
 
 logger = logging.getLogger('ScellParser')
@@ -19,7 +23,7 @@ logging.basicConfig()
 
 
 
-class GraphHandler:
+class GraphHandler(object):
     def __init__(self, graph_root):
         self.graph_root = graph_root
 

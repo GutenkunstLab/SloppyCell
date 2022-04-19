@@ -1,11 +1,13 @@
+from __future__ import absolute_import
+from builtins import range
 import unittest
 import copy
-import scipy
+import numpy as np
 
 from SloppyCell.ReactionNetworks import *
 
 from AlgTestNets import algebraic_net
-tlist = scipy.array([0] + [0.8*x for x in range(1, 51)])
+tlist = np.array([0] + [0.8*x for x in range(1, 51)])
 
 class test_IntegrateWithoutDerivatives(unittest.TestCase):
     def test_basic(self):
@@ -19,7 +21,7 @@ class test_IntegrateWithoutDerivatives(unittest.TestCase):
 
         funcs_no_derivs = ['res_function', 'alg_deriv_func', 'alg_res_func',\
                            'integrate_stochastic_tidbit', 'root_func']
-        self.assertEqual(local_net._dynamic_funcs_python.keys(),
+        self.assertEqual(list(local_net._dynamic_funcs_python.keys()),
                          funcs_no_derivs)
         traj = Dynamics.integrate(local_net, tlist)
 

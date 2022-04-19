@@ -1,7 +1,9 @@
+from __future__ import absolute_import
+from builtins import range
 import unittest
 import os
 
-import scipy
+import numpy as np
 
 from SloppyCell.ReactionNetworks import *
 
@@ -15,7 +17,7 @@ class test_Trajectory(unittest.TestCase):
         net = base_net.copy('test')        
         traj = Dynamics.integrate(net, [0, 5.5, 15])
         traj.build_interpolated_traj()
-        tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 15)])
+        tlist_algebraic_net = np.array([0] + [0.8*x for x in range(1, 15)])
         times, interp_traj =  traj.evaluate_interpolated_traj('X0', tlist_algebraic_net)
 
         self.assertAlmostEqual(interp_traj[1], 0.923116346390738, 5)
@@ -35,7 +37,7 @@ class test_Trajectory(unittest.TestCase):
         self.assertAlmostEqual(traj.get_var_val('k1', 10), 4.0)
         
         traj.build_interpolated_traj()
-        tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 15)])
+        tlist_algebraic_net = np.array([0] + [0.8*x for x in range(1, 15)])
         times, interp_traj =  traj.evaluate_interpolated_traj('X0', tlist_algebraic_net)
 
         self.assertAlmostEqual(interp_traj[1], 0.923116346390738, 5)
@@ -71,8 +73,8 @@ class test_Trajectory(unittest.TestCase):
     def test_trajectory_merge(self):
         """ Test basic trajectory merging """
         net = base_net.copy('test')
-        times1 = scipy.linspace(0, 15, 100)
-        times2 = scipy.linspace(15, 25, 100)        
+        times1 = np.linspace(0, 15, 100)
+        times2 = np.linspace(15, 25, 100)
         traj1 = Dynamics.integrate(net, times1, fill_traj=False)
         traj2 = Dynamics.integrate(net, times2, fill_traj=False)
 
@@ -88,8 +90,8 @@ class test_Trajectory(unittest.TestCase):
         net1 = algebraic_net.copy()
         net2 = algebraic_net_assignment.copy()
         
-        times1 = scipy.linspace(0, 15, 100)
-        times2 = scipy.linspace(15, 25, 100)
+        times1 = np.linspace(0, 15, 100)
+        times2 = np.linspace(15, 25, 100)
         
         traj1 = Dynamics.integrate(net1, times1, fill_traj=False)
         traj2 = Dynamics.integrate(net2, times2, fill_traj=False)

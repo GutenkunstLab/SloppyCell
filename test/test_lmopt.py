@@ -1,7 +1,9 @@
+from __future__ import absolute_import
 import copy
 import unittest
 
 import scipy
+import numpy as np
 
 from SloppyCell.ReactionNetworks import *
 import SloppyCell
@@ -21,16 +23,16 @@ class test_lmopt(unittest.TestCase):
         res_func = m.res_log_params
         def res_func_prime(x) :
             j,jtj = m.GetJandJtJInLogParameters(x)
-            jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.float_)
+            jarray = np.zeros((len(list(j.keys())),len(m.params)),scipy.float_)
             for resind, resname in enumerate(m.residuals.keys()) :
                 jarray[resind,:] = j.get(resname)
             return jarray
         
         #print "\n Initial cost", m.cost(m.params)
         pbest = lmopt.fmin_lm(res_func,
-                scipy.log(p),res_func_prime,maxiter=20,disp=0,
+                np.log(p),res_func_prime,maxiter=20,disp=0,
                 full_output=1) 
-        m.params.update(scipy.exp(pbest[0]))
+        m.params.update(np.exp(pbest[0]))
         newcost = m.cost(m.params) 
         #print "Cost after 20 iterations", newcost
         # The intial cost is about 25, the final cost should be 
@@ -45,18 +47,18 @@ class test_lmopt(unittest.TestCase):
         cost_func = m.cost_log_params
         def grad_and_lmhess_func(x) :
             j,jtj = m.GetJandJtJInLogParameters(x)
-            jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.float_)
+            jarray = np.zeros((len(list(j.keys())),len(m.params)),scipy.float_)
             for resind, resname in enumerate(m.residuals.keys()) :
                 jarray[resind,:] = j.get(resname)
             resvals = m.res_log_params(x)
-            grad = scipy.dot(scipy.transpose(jarray),resvals)
+            grad = np.dot(np.transpose(jarray),resvals)
             return grad,jtj
         
         #print "\n Initial cost", m.cost(p)
         pbest = lmopt.fmin_lmNoJ(cost_func,
-                scipy.log(p),grad_and_lmhess_func,maxiter=20,disp=0,
+                np.log(p),grad_and_lmhess_func,maxiter=20,disp=0,
                 full_output=1) 
-        m.params.update(scipy.exp(pbest[0]))
+        m.params.update(np.exp(pbest[0]))
         newcost = m.cost(m.params) 
         #print "Cost after 20 iterations", newcost
         # The intial cost is about 25, the final cost should be 
@@ -71,16 +73,16 @@ class test_lmopt(unittest.TestCase):
         res_func = m.res_log_params
         def res_func_prime(x) :
             j,jtj = m.GetJandJtJInLogParameters(x)
-            jarray = scipy.zeros((len(j.keys()),len(m.params)),scipy.float_)
+            jarray = np.zeros((len(list(j.keys())),len(m.params)),scipy.float_)
             for resind, resname in enumerate(m.residuals.keys()) :
                 jarray[resind,:] = j.get(resname)
             return jarray
         
         #print "\n Initial cost", m.cost(m.params)
         pbest = lmopt.fmin_lm_scale(res_func,
-                scipy.log(p),res_func_prime,maxiter=20,disp=0,
+                np.log(p),res_func_prime,maxiter=20,disp=0,
                 full_output=1) 
-        m.params.update(scipy.exp(pbest[0]))
+        m.params.update(np.exp(pbest[0]))
         newcost = m.cost(m.params) 
         #print "Cost after 20 iterations", newcost
         # The intial cost is about 25, the final cost should be 

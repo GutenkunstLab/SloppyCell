@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import scipy
 import time
 try:
@@ -21,7 +25,7 @@ def C(p, origMatrix, weightsRDP=0.,weights2D=0.,weightsLS=0.,weightPR=0.,weightP
     if weightsLS > 0.:
         cost += weightsLS*sumLogSpacings(newMat)
     if weightPR>0.:
-        cost += weightPR/(ParticipationRatio(OrthMatrix)**2.)
+        cost += old_div(weightPR,(ParticipationRatio(OrthMatrix)**2.))
 ##         cost += weightPR*(1.-ParticipationRatio(OrthMatrix)/n)
     if weightPriors>0.:
         cost +=weightPR*calcPriors(p)
@@ -30,7 +34,7 @@ def C(p, origMatrix, weightsRDP=0.,weights2D=0.,weightsLS=0.,weightPR=0.,weightP
 def calcPriors(paramsList, pOpt=0.,pSigma=10.):
     priorCost=0.
     for param in paramsList:
-        priorCost += ((param-pOpt)/pSigma)**2.
+        priorCost += (old_div((param-pOpt),pSigma))**2.
     return priorCost
 
 def sumRowDotProdsOLD(origMatrix):
@@ -49,7 +53,7 @@ def sumRowDotProdsNEW(origMatrix):
     """
     rowNormalized = normRows(origMatrix)
     n = rowNormalized.shape[0]
-    sumDotProds = sumAllDotProds(rowNormalized[0:n/2]) + sumAllDotProds(rowNormalized[n/2:n])
+    sumDotProds = sumAllDotProds(rowNormalized[0:old_div(n,2)]) + sumAllDotProds(rowNormalized[old_div(n,2):n])
     return sumDotProds
 
 def sumAllDotProds(origMatrix):
@@ -61,16 +65,16 @@ def sumAllDotProds(origMatrix):
     return sumDotProds
 
 def sum2Determinants(matrixToSum):
-    n = matrixToSum.shape[0]/2
+    n = old_div(matrixToSum.shape[0],2)
     det1 = scipy.linalg.det(matrixToSum[0:n,0:n])
     det2 = scipy.linalg.det(matrixToSum[n:n*2,n:n*2])
     return scipy.absolute(det1)+scipy.absolute(det2)
 
 def sumLogSpacings(matrixToSum):
-    n = matrixToSum.shape[0]/2
+    n = old_div(matrixToSum.shape[0],2)
     sv1 = scipy.linalg.svdvals(matrixToSum[0:n,0:n])
     sv2 = scipy.linalg.svdvals(matrixToSum[n:n*2,n:n*2])
-    return sum(sv1[1:n]/sv1[0:n-1])+sum(sv2[1:n]/sv2[0:n-1])
+    return sum(old_div(sv1[1:n],sv1[0:n-1]))+sum(old_div(sv2[1:n],sv2[0:n-1]))
 
 def ParticipationRatio(origMatrix):
     return scipy.sum(scipy.sum(origMatrix**4))
@@ -117,7 +121,7 @@ def BestMatrix(origMatrix, p=None, weightsRDP=1., weights2D=0., weightsLS=0., we
         scipy.random.seed(seed)
     n = origMatrix.shape[0]
     if p is None:
-        p = (scipy.random.random(n*(n-1)/2)-0.5)
+        p = (scipy.random.random(old_div(n*(n-1),2))-0.5)
     pOpt = scipy.optimize.fmin(C, p, args=(origMatrix,weightsRDP, weights2D, weightsLS, weightPR, weightPriors), *args, **kwargs)
     return C(pOpt, origMatrix, weightsRDP, weights2D, weightsLS, weightPR, weightPriors), pOpt
 
@@ -161,13 +165,13 @@ def getHessFull(gammas=None,amounts=None,numExps=3):
     denomAg1 = scipy.outer(scipy.ones(numExps),gammas)
     denomAg2 = scipy.transpose(denomAg1)+denomAg1
     denomAg3 = denomAg2*denomAg2
-    hessAg = numerAg1/denomAg3
+    hessAg = old_div(numerAg1,denomAg3)
 
     numergA1 = -scipy.outer(amounts*gammas,amounts)
     denomgA1 = scipy.outer(gammas,scipy.ones(numExps))
     denomgA2 = scipy.transpose(denomgA1)+denomgA1
     denomgA3 = denomgA2*denomgA2
-    hessgA = numergA1/denomgA3
+    hessgA = old_div(numergA1,denomgA3)
 
     hessFull = scipy.bmat([[hessAA,hessAg],[hessgA,hessgg]])
 
@@ -194,7 +198,7 @@ def getHessFullLogTime(gammas=None,amounts=None,numExps=3):
     denomAg2 = scipy.array(scipy.outer(scipy.ones(numExps-1),gammas))
     denomAg3 = scipy.array(denomAg1+denomAg2)
     denomAg4 = denomAg2+gammas[-1]
-    hessAg = scipy.array(numerAg1/denomAg3)-scipy.array(numerAg1/denomAg4)
+    hessAg = scipy.array(old_div(numerAg1,denomAg3))-scipy.array(old_div(numerAg1,denomAg4))
 
     hessgA = scipy.transpose(hessAg)
 
@@ -212,7 +216,7 @@ def getHessGG(gammas=None,numExps=3):
     denomgg1 = scipy.outer(scipy.ones(numExps),gammas)
     denomgg2 = scipy.transpose(denomgg1)+denomgg1
     denomgg3 = denomgg2*denomgg2*denomgg2
-    hessgg = numergg1/denomgg3
+    hessgg = old_div(numergg1,denomgg3)
 
     return hessgg
 
@@ -229,7 +233,7 @@ def getHessGGLogTime(gammas=None,amounts=None,numExps=3):
     denomgg1 = scipy.array(scipy.outer(scipy.ones(numExps),gammas))
     denomgg2 = scipy.array(scipy.transpose(denomgg1)+denomgg1)
     denomgg3 = scipy.array(denomgg2*denomgg2)
-    hessgg = scipy.array(numergg1/denomgg3)
+    hessgg = scipy.array(old_div(numergg1,denomgg3))
 
     return hessgg
 
@@ -244,7 +248,7 @@ def getHessAA(amounts=None,gammas=None,numExps=3):
     numerAA1 = scipy.outer(amounts,amounts)
     denomAA1 = scipy.outer(scipy.ones(numExps),gammas)
     denomAA2 = scipy.transpose(denomAA1)+denomAA1
-    hessAA = numerAA1/denomAA2
+    hessAA = old_div(numerAA1,denomAA2)
 
     return hessAA
 
@@ -264,7 +268,7 @@ def getHessAALogTime(amounts=None,gammas=None,numExps=3):
     numerAA3 = scipy.array(scipy.outer(scipy.ones(numExps-1),gammasLess1+gammas[-1]))
     denomAA1 = scipy.array(scipy.outer(scipy.ones(numExps-1),2*gammas[-1]*gammasLess1))
     denomAA2 = scipy.array(scipy.transpose(denomAA1)+denomAA1)
-    hessAA = 2.*scipy.array(numerAA1*scipy.log(numerAA2*numerAA3/denomAA2))
+    hessAA = 2.*scipy.array(numerAA1*scipy.log(old_div(numerAA2*numerAA3,denomAA2)))
 
     return hessAA
 
@@ -348,7 +352,7 @@ def getJacobianALogTime(times,amounts,gammas=None):
     numAmounts = scipy.size(amounts)
     if gammas is None:
         gammas = scipy.zeros(numAmounts,'d')
-    JacobianALogTime = scipy.array([(amounts[i]/scipy.sqrt(times))*scipy.exp(-gammas[i]*times) for i in range(numAmounts)])
+    JacobianALogTime = scipy.array([(old_div(amounts[i],scipy.sqrt(times)))*scipy.exp(-gammas[i]*times) for i in range(numAmounts)])
     return JacobianALogTime
 
 def normRows(matrixToPlot):
@@ -356,7 +360,7 @@ def normRows(matrixToPlot):
     Useful for plotting and otherwise comparing alignment of rows of matrices.
     Be careful that if vec[1] is zero, entire row gets zerod.
     """
-    return scipy.array([scipy.sign(vec[1])*vec/scipy.sqrt(scipy.dot(vec,vec)) for vec in matrixToPlot])
+    return scipy.array([old_div(scipy.sign(vec[1])*vec,scipy.sqrt(scipy.dot(vec,vec))) for vec in matrixToPlot])
 
 def transformMatrix(origMatrix, transformation):
     n, m =origMatrix.shape
@@ -395,15 +399,15 @@ def timeCostEval(mat, p, numEvals=100):
     for ii in range(numEvals):
         Cost = C(p,mat)
     stop = time.time()
-    print("time per eval:", (stop-start)/numEvals)
-    return (stop-start)/numEvals
+    print(("time per eval:", old_div((stop-start),numEvals)))
+    return old_div((stop-start),numEvals)
 
 def timeGammas(listNumGammas, numEvals=1000):
     timesToCalc = []
     for numGammas in listNumGammas:
         gammas = getGammas(numGammas)
         jac = getJacobianG(gammas=gammas,times=scipy.arange(500.))
-        p = scipy.random.random(numGammas*(numGammas-1)/2)-0.5
+        p = scipy.random.random(old_div(numGammas*(numGammas-1),2))-0.5
         timePerEval = timeCostEval(jac,p,numEvals)
         timesToCalc.append(timePerEval)
     return timesToCalc
@@ -420,17 +424,17 @@ def eVec(k,n):
     return eVec
 
 def sLSAlongP(origMatrix,params,k,deltaP):
-    sLSList = [sumLogSpacings(transformMatrix(origMatrix,ProcessHalfMatrix(params+x*params[k]*eVec(k,len(params))))) for x in scipy.arange(-deltaP,deltaP,deltaP/1000)]
+    sLSList = [sumLogSpacings(transformMatrix(origMatrix,ProcessHalfMatrix(params+x*params[k]*eVec(k,len(params))))) for x in scipy.arange(-deltaP,deltaP,old_div(deltaP,1000))]
     return sLSList
 
 def PRAlongP(params,k,deltaP):
     n = len(params)
-    PRList = [1./ParticipationRatio(ProcessHalfMatrix(params+x*params[k]*eVec(k,n))) for x in scipy.arange(-deltaP,deltaP,deltaP/1000)]
+    PRList = [1./ParticipationRatio(ProcessHalfMatrix(params+x*params[k]*eVec(k,n))) for x in scipy.arange(-deltaP,deltaP,old_div(deltaP,1000))]
 ##    PRList = [1./ParticipationRatio(transformMatrix(origMatrix,ProcessHalfMatrix(params+x*params[k]*eVec(k,n)))) for x in scipy.arange(-deltaP,deltaP,deltaP/100)]
 ##     PRList = [1.-ParticipationRatio(transformMatrix(origMatrix,ProcessHalfMatrix(params+x*params[k]*eVec(k,n))))/n for x in scipy.arange(-deltaP,deltaP,deltaP/100)]
     return PRList
 
 def CostAlongP(origMatrix,params,k,deltaP,weightsRDP=0.,weights2D=0.,weightsLS=0.,weightPR=0.,weightPriors=0.):
     n = len(params)
-    CostList = [C(params+x*params[k]*eVec(k,n),origMatrix, weightsRDP,weights2D,weightsLS,weightPR,weightPriors) for x in scipy.arange(-deltaP,deltaP,deltaP/100)]
+    CostList = [C(params+x*params[k]*eVec(k,n),origMatrix, weightsRDP,weights2D,weightsLS,weightPR,weightPriors) for x in scipy.arange(-deltaP,deltaP,old_div(deltaP,100))]
     return CostList

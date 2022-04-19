@@ -1,27 +1,30 @@
 """
 Methods for evaluating the dynamics of Network.
 """
+from __future__ import division
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __docformat__ = "restructuredtext en"
 
 import copy
-import sets
 import sys 
 import scipy
 import scipy.optimize
+import numpy as np
 
 import logging
 logger = logging.getLogger('ReactionNetworks.Dynamics')
 
 import SloppyCell.daskr as daskr
 daeint = daskr.daeint
-import Trajectory_mod
+from SloppyCell.ReactionNetworks import Trajectory_mod
 
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks.Components import event_info
-from SloppyCell import HAVE_PYPAR, my_rank, my_host, num_procs
-if HAVE_PYPAR:
-    import pypar
-
+from SloppyCell import HAVE_MPI, my_rank, my_host, num_procs, comm
+    
 _double_epsilon_ = scipy.finfo(scipy.float_).eps
 _double_tiny_ = scipy.finfo(scipy.float_).tiny
 
@@ -60,8 +63,8 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
     N_dyn_var = len(net.dynamicVars)
 
     if net.integrateWithLogs:
-        yp0 = yp0/IC
-        IC = scipy.log(IC)
+        yp0 = old_div(yp0,IC)
+        IC = np.log(IC)
 
         res_func = net.res_function_logdv
         Dfun = None
@@ -129,9 +132,9 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
 
     # Deal with integrateWithLogs
     if net.integrateWithLogs:
-        y_this = scipy.exp(y_this)
+        y_this = np.exp(y_this)
         ydt_this = ydt_this * y_this
-        y_root_this = scipy.exp(y_root_this)
+        y_root_this = np.exp(y_root_this)
 
     return exception_raised, y_this, t_this, ydt_this,\
             t_root_this, y_root_this, i_root_this
@@ -139,15 +142,15 @@ def integrate_tidbit(net, res_func, Dfun, root_func, IC, yp0, curTimes,
 def generate_tolerances(net, rtol, atol=None):
     if rtol is None:
         rtol = global_rtol
-    if scipy.isscalar(rtol):
-        rtol = scipy.ones(len(net.dynamicVars)) * rtol
+    if np.isscalar(rtol):
+        rtol = np.ones(len(net.dynamicVars)) * rtol
 
     # We set atol to be a minimum of global_atol to avoid variables with large
     # typical values going negative.
-    if (scipy.isscalar(atol) or atol==None):
+    if (np.isscalar(atol) or atol==None):
         typ_vals = [abs(net.get_var_typical_val(id))
-                    for id in net.dynamicVars.keys()]
-        atol = rtol * scipy.asarray(typ_vals)
+                    for id in list(net.dynamicVars.keys())]
+        atol = rtol * np.asarray(typ_vals)
         if global_atol:
             atol = scipy.minimum(atol, global_atol)
     return rtol, atol
@@ -190,7 +193,6 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
                        False at any time.
     """
     logger.debug('Integrating network %s.' % net.get_id())
-
     if params is not None:
         net.update_optimizable_vars(params)
     constants = net.constantVarValues
@@ -199,7 +201,7 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
         constants = [0]
     # If you ask for time = 0, we'll assume you want dynamic variable values
     # reset.
-    times = scipy.asarray(times)
+    times = np.asarray(times)
     if times[0] == 0:
         net.resetDynamicVariables()
     net.compile()
@@ -210,9 +212,11 @@ def integrate(net, times, rtol=None, atol=None, params=None, fill_traj=True,
     # get the initial state, time, and derivative.
     start = times[0]
     IC = net.getDynamicVarValues()
+    
     # We start with ypIC equal to typ_vals so that we get the correct scale.
-    typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]
-    ypIC = scipy.array(typ_vals)
+    
+    typ_vals = [net.get_var_typical_val(id) for id in list(net.dynamicVars.keys())]
+    ypIC = np.array(typ_vals)
     # This calculates the yprime ICs and also ensures that values for our
     #  algebraic variables are all consistent.
     IC, ypIC = find_ics(IC, ypIC, start,
@@ -233,8 +237,9 @@ or False), raise the exception.
     # check that constraints are not violated at t=0
     if use_constraints == True:
         net.updateVariablesFromDynamicVars(values=IC, time=start)
-        for con_id, constraint in net.constraints.items():
+        for con_id, constraint in list(net.constraints.items()):
             result = net.evaluate_expr(constraint.trigger)
+           
             if result == False:
                 raise Utility.ConstraintViolatedException(start,
                                                  constraint.trigger,
@@ -243,15 +248,13 @@ or False), raise the exception.
             
     
     # start variables for output storage 
-    yout = scipy.zeros((0, len(IC)), scipy.float_)
-    youtdt = scipy.zeros((0, len(IC)), scipy.float_)
+    yout = np.zeros((0, len(IC)), scipy.float_)
+    youtdt = np.zeros((0, len(IC)), scipy.float_)
     tout = []
-
     # For some reason, the F2Py wrapper for ddaskr seems to fail if this
     #  isn't wrapped up in a lambda...
     res_func = net.res_function
     root_func = net.root_func
-
     # events_occured will hold event_info objects that describe the events
     #  in detail.
     # te, ye, and ie are the times, dynamic variable values, and indices
@@ -278,7 +281,7 @@ or False), raise the exception.
         if pendingEvents and min(pendingEvents.keys()) < start:
             raise ValueError('Missed an event!')
         event_buffer = 0
-        while pendingEvents.has_key(start):
+        while start in pendingEvents:
             execution_time = start
             # We need to backtrack to deal with this event...
             event_list = pendingEvents[execution_time]
@@ -328,26 +331,26 @@ or False), raise the exception.
                 holder.y_post_exec = copy.copy(IC)
                 holder.yp_post_exec = copy.copy(ypIC)
                 event_buffer = max(event_buffer, holder.event.buffer)
-
+               
             if event_buffer:
                 # Ensure that we don't event_buffer past any
                 # requested timepoints.
                 nextEventTime = scipy.inf
-                pendingEventTimes = pendingEvents.keys()
-                pendingEventTimes.remove(execution_time)
+                pendingEventTimes = list(pendingEvents.keys())
+                list(pendingEventTimes).remove(execution_time)
                 if pendingEventTimes:
                     nextEventTime = min(pendingEventTimes)
                 else:
                     nextEventTime = scipy.inf
                 nextEventTime = min([nextEventTime, start+event_buffer])
                 if nextEventTime < times[-1]:
-                    curTimes = scipy.compress((times > start) 
+                    curTimes = np.compress((times > start)
                                               & (times < nextEventTime), times)
-                    curTimes = scipy.concatenate(([start], curTimes, 
+                    curTimes = np.concatenate(([start], curTimes,
                                                   [nextEventTime]))
                 else:
-                    curTimes = scipy.compress(times > start, times)
-                    curTimes = scipy.concatenate(([start], curTimes))
+                    curTimes = np.compress(times > start, times)
+                    curTimes = np.concatenate(([start], curTimes))
                 outputs = integrate_tidbit(net, res_func, _ddaskr_jac, 
                                            root_func=None, 
                                            IC=IC, yp0=ypIC, 
@@ -358,12 +361,11 @@ or False), raise the exception.
                                            redirect_msgs=redirect_msgs,
                                            calculate_ic = False,
                                            var_types=net._dynamic_var_algebraic)
-
+                
                 exception_raised, yout_this, tout_this, youtdt_this,\
                       t_root_this, y_root_this, i_root_this = outputs
-
-                yout = scipy.concatenate((yout, yout_this))
-                youtdt = scipy.concatenate((youtdt, youtdt_this))
+                yout = np.concatenate((yout, yout_this))
+                youtdt = np.concatenate((youtdt, youtdt_this))
                 tout.extend(tout_this)
 
                 if exception_raised:
@@ -379,7 +381,6 @@ or False), raise the exception.
 
             # Update the root state after all listed events have excecuted.
             root_after = root_func(start, IC, ypIC, constants)
-
             # Check for chained events/constraints
             crossing_dirs = root_after - root_before
             event_just_fired = fired_events(net, start, IC, ypIC, 
@@ -415,13 +416,12 @@ or False), raise the exception.
 
         # If we have pending events, only integrate until the next one.
         if nextEventTime < times[-1]:
-            curTimes = scipy.compress((times > start) & (times < nextEventTime),
+            curTimes = np.compress((times > start) & (times < nextEventTime),
                                       times)
-            curTimes = scipy.concatenate(([start], curTimes, [nextEventTime]))
+            curTimes = np.concatenate(([start], curTimes, [nextEventTime]))
         else:
-            curTimes = scipy.compress(times > start, times)
-            curTimes = scipy.concatenate(([start], curTimes))
-
+            curTimes = np.compress(times > start, times)
+            curTimes = np.concatenate(([start], curTimes))
         outputs = integrate_tidbit(net, res_func, _ddaskr_jac, 
                                    root_func=root_func, 
                                    IC=IC, yp0=ypIC, curTimes=curTimes, 
@@ -435,8 +435,8 @@ or False), raise the exception.
         exception_raised, yout_this, tout_this, youtdt_this,\
               t_root_this, y_root_this, i_root_this = outputs
 
-        yout = scipy.concatenate((yout, yout_this))
-        youtdt = scipy.concatenate((youtdt, youtdt_this))
+        yout = np.concatenate((yout, yout_this))
+        youtdt = np.concatenate((youtdt, youtdt_this))
         tout.extend(tout_this)
 
         if exception_raised:
@@ -467,9 +467,9 @@ or False), raise the exception.
         # make sure we don't miss data times by adding them in.
         # The set usage ensures that we don't end up with duplicates
         filtered_times = [tout[i] for i in range(0,len(tout),reduce_space)]
-        filtered_times = sets.Set(filtered_times)
+        filtered_times = set(filtered_times)
         filtered_times.union_update(times)
-        filtered_times = scipy.sort(list(filtered_times))
+        filtered_times = np.sort(list(filtered_times))
 
         yout = _reduce_times(yout, tout, filtered_times)
         if return_derivs :
@@ -479,7 +479,7 @@ or False), raise the exception.
     trajectory = Trajectory_mod.Trajectory(net, holds_dt=return_derivs,
                                            const_vals=net.constantVarValues)
     if return_derivs :
-        yout = scipy.concatenate((yout,youtdt),axis=1) # join columnwise
+        yout = np.concatenate((yout,youtdt),axis=1) # join columnwise
 
     trajectory.appendFromODEINT(tout, yout, holds_dt=return_derivs)
     # Fill in the historical te, ye, ie lists
@@ -508,7 +508,7 @@ or False), raise the exception.
 
     # raise exception if exited integration loop prematurely
     if exception_raised:
-        logger.warn('Integration ended prematurely in network %s on node %i.'
+        logger.warning('Integration ended prematurely in network %s on node %i.'
                     % (net.id, my_rank))
         raise exception_raised
 
@@ -526,7 +526,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
     # results.
     # Note that we might have more than one event firing at the same time.
 
-    for event_index, dire_cross in zip(range(num_events), crossing_dirs):
+    for event_index, dire_cross in zip(list(range(num_events)), crossing_dirs):
         # dire_cross is the direction of the event crossing.  If it's
         # 1 that means Ri changed from negative to positive.  In that case
         # we need to record the event. Note that num_events runs over the
@@ -543,7 +543,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
             # These are the crossing_dirs's corresponding to the subclauses
             sub_clause_dirs = crossing_dirs[num_events:]
             # We need to add back in num_events for counting purposes
-            sub_clauses_fired = scipy.nonzero(sub_clause_dirs > 0)[0]\
+            sub_clauses_fired = np.nonzero(sub_clause_dirs > 0)[0]\
                     + num_events
             # Now we check which, if any, of these sub_clauses actually
             #  belong to this event. This is only necessary because events
@@ -582,7 +582,7 @@ def fired_events(net, time, y, yp, crossing_dirs,
 
             # Add this event to the list of events that are supposed to
             # execute.
-            if not pendingEvents.has_key(execution_time):
+            if not execution_time in pendingEvents:
                 pendingEvents[execution_time] = []
             pendingEvents[execution_time].append(holder)
 
@@ -615,7 +615,7 @@ def integrate_sens_subset(net, times, rtol=None,
     N_dyn_vars = len(net.dynamicVars)
     # Create the array that will hold all our sensitivities
     out_size = (len(traj.get_times()), N_dyn_vars + N_dyn_vars*len(opt_vars))
-    all_yout = scipy.zeros(out_size, scipy.float_)
+    all_yout = np.zeros(out_size, scipy.float_)
 
     # Copy the values from the trajectory into this array
     for ii, dyn_var in enumerate(net.dynamicVars.keys()):
@@ -623,7 +623,7 @@ def integrate_sens_subset(net, times, rtol=None,
 
     # Similarly for the derivative outputs
     if return_derivs:
-        all_youtdt = scipy.zeros(out_size, scipy.float_)
+        all_youtdt = np.zeros(out_size, scipy.float_)
         for ii, dyn_var in enumerate(net.dynamicVars.keys()):
             all_youtdt[:, ii] = traj.get_var_traj((dyn_var, 'time'))
 
@@ -650,9 +650,9 @@ def integrate_sens_subset(net, times, rtol=None,
                 e.ysens_post_exec = single_out[-1][eii].ysens_post_exec
                 e.ysens_pre_exec = single_out[-1][eii].ysens_pre_exec
             else:
-                e.ysens_fired = scipy.concatenate((e.ysens_fired, single_out[-1][eii].ysens_fired[N_dyn_vars:]))
-                e.ysens_post_exec = scipy.concatenate((e.ysens_post_exec, single_out[-1][eii].ysens_post_exec[N_dyn_vars:]))
-                e.ysens_pre_exec = scipy.concatenate((e.ysens_pre_exec, single_out[-1][eii].ysens_pre_exec[N_dyn_vars:]))
+                e.ysens_fired = np.concatenate((e.ysens_fired, single_out[-1][eii].ysens_fired[N_dyn_vars:]))
+                e.ysens_post_exec = np.concatenate((e.ysens_post_exec, single_out[-1][eii].ysens_post_exec[N_dyn_vars:]))
+                e.ysens_pre_exec = np.concatenate((e.ysens_pre_exec, single_out[-1][eii].ysens_pre_exec[N_dyn_vars:]))
 
     if not return_derivs:
         return traj.get_times(), all_yout, traj.event_info, traj.events_occurred
@@ -675,22 +675,22 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         rtol = [0] * len(net.dynamicVars)
     # We set the same rtol for sensitivity variables as for the normal
     # variables.
-    rtol_for_sens = scipy.concatenate((rtol, rtol))
+    rtol_for_sens = np.concatenate((rtol, rtol))
     # Absolute tolerances depend on the typical value of the optimizable
     # variable
-    atol_for_sens = atol/abs(net.get_var_typical_val(opt_var))
-    atol_for_sens = scipy.concatenate((atol, atol_for_sens))
+    atol_for_sens = old_div(atol,abs(net.get_var_typical_val(opt_var)))
+    atol_for_sens = np.concatenate((atol, atol_for_sens))
 
     # The passed-in normal trajectory tells us what times we need to return,
     #  and what events will happen.
     times = traj.get_times()
-    times = scipy.asarray(times)
+    times = np.asarray(times)
     events_occurred = copy.deepcopy(traj.events_occurred)
 
     current_time = times[0]
 
     # Initial conditions
-    IC = scipy.zeros(2*N_dyn_vars, scipy.float_)
+    IC = np.zeros(2*N_dyn_vars, scipy.float_)
     for dvInd, (id, var) in enumerate(net.dynamicVars.items()):
         # For normal integration
         IC[dvInd] = traj.get_var_val(id, current_time)
@@ -703,16 +703,16 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
     # The index of the variable to calculate sensitivity wrt is passed in
     # the last element of rpar. It is obtained by an (int) cast, so we add
     # a small amount to make sure the cast doesn't round down stupidly.
-    rpar = scipy.concatenate((net.constantVarValues, [opt_var_index+0.1]))
+    rpar = np.concatenate((net.constantVarValues, [opt_var_index+0.1]))
 
     # Our intial guess for ypIC will be based on the typical values
-    typ_vals = [net.get_var_typical_val(id) for id in net.dynamicVars.keys()]*2
-    ypIC = scipy.array(typ_vals, dtype=float)
+    typ_vals = [net.get_var_typical_val(id) for id in list(net.dynamicVars.keys())]*2
+    ypIC = np.array(typ_vals, dtype=float)
     ypIC[N_dyn_vars:] /= net.get_var_ic(opt_var)
 
     tout = []
-    sens_out = scipy.zeros((0, N_dyn_vars), scipy.float_)
-    sensdt_out = scipy.zeros((0, N_dyn_vars), scipy.float_)
+    sens_out = np.zeros((0, N_dyn_vars), scipy.float_)
+    sensdt_out = np.zeros((0, N_dyn_vars), scipy.float_)
 
     fired_events = {}
     executed_events = {}
@@ -733,7 +733,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         if executed_events and min(executed_events.keys()) < current_time:
             raise ValueError('Missed an event execution in sensitivity '
                              'integration!')
-        if executed_events.has_key(current_time):
+        if current_time in executed_events:
             event_list = executed_events[current_time]
             for holder in event_list:
                 logger.debug('Executing event at time %f.' % current_time)
@@ -757,14 +757,14 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
 
         # The the list of times in this part of the integration
         if integrate_until < times[-1]:
-            int_times = scipy.compress((times > current_time)
+            int_times = np.compress((times > current_time)
                                       & (times < integrate_until),
                                       times)
-            int_times = scipy.concatenate(([current_time], int_times, 
+            int_times = np.concatenate(([current_time], int_times,
                                           [integrate_until]))
         else:
-            int_times = scipy.compress(times > current_time, times)
-            int_times = scipy.concatenate(([current_time], int_times))
+            int_times = np.compress(times > current_time, times)
+            int_times = np.concatenate(([current_time], int_times))
 
         ypIC = find_ypic_sens(IC, ypIC, current_time, 
                               net._dynamic_var_algebraic,
@@ -773,7 +773,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         sens_rhs = net.sens_rhs
         if net.integrateWithLogs:
             ypIC[:N_dyn_vars] *= IC[:N_dyn_vars]
-            IC[:N_dyn_vars] = scipy.log(IC[:N_dyn_vars])
+            IC[:N_dyn_vars] = np.log(IC[:N_dyn_vars])
             sens_rhs = net.sens_rhs_logdv
 
         # Note that IC is not necessarily correct for the sensitivities of
@@ -782,7 +782,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         # They will be correct in the returned trajectory. For now, we don't
         # use d/dt of sensitivities, so it doesn't matter if those are wrong
         # at single points in the trajectory.
-        var_types = scipy.concatenate((net._dynamic_var_algebraic,
+        var_types = np.concatenate((net._dynamic_var_algebraic,
                                        net._dynamic_var_algebraic))
         try:
             int_outputs = daeint(sens_rhs, int_times,
@@ -796,7 +796,7 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
                                  hmax = global_hmax,
                                  max_timepoints = MAX_TIMEPOINTS)
         except Utility.SloppyCellException as X:
-            logger.warn('Sensitivity integration failed for network %s on '
+            logger.warning('Sensitivity integration failed for network %s on '
                         'node %i during optimizable variable %s.'
                         % (net.id, my_rank, opt_var))
             raise
@@ -804,21 +804,21 @@ def integrate_sens_single(net, traj, rtol, opt_var, return_derivs,
         # Copy out the sensitivity values
         yout_this = int_outputs[0]
         youtdt_this = int_outputs[2]
-        sens_out = scipy.concatenate((sens_out, 
+        sens_out = np.concatenate((sens_out,
                                       yout_this[:,N_dyn_vars:].copy()))
-        sensdt_out = scipy.concatenate((sensdt_out,
+        sensdt_out = np.concatenate((sensdt_out,
                                         youtdt_this[:,N_dyn_vars:].copy()))
         tout.extend(int_times)
 
         current_time, IC = tout[-1], yout_this[-1].copy()
         ypIC = youtdt_this[-1]
         if net.integrateWithLogs:
-            IC[:N_dyn_vars] = scipy.exp(IC[:N_dyn_vars])
+            IC[:N_dyn_vars] = np.exp(IC[:N_dyn_vars])
             ypIC[:N_dyn_vars] *= IC[:N_dyn_vars]
 
         if fired_events and min(fired_events.keys()) < current_time:
             raise ValueError('Missed event firing in sensitivity integration!')
-        if fired_events.has_key(current_time):
+        if current_time in fired_events:
             logger.debug('Firing event at time %f.' % current_time)
             event_list = fired_events[current_time]
             while event_list:
@@ -852,16 +852,15 @@ def _parse_sens_result(result, net, opt_vars, yout, youtdt=None, events_occurred
                     result[2][:, work_start:work_end]
     if events_occurred is not None:
         for eii,e in enumerate(events_occurred):
-            e.ysens_fired = scipy.concatenate((e.ysens_fired, result[-1][eii].ysens_fired[n_dyn:]))
-            e.ysens_post_exec = scipy.concatenate((e.ysens_post_exec, result[-1][eii].ysens_post_exec[n_dyn:]))
-            e.ysens_pre_exec = scipy.concatenate((e.ysens_pre_exec, result[-1][eii].ysens_pre_exec[n_dyn:]))
+            e.ysens_fired = np.concatenate((e.ysens_fired, result[-1][eii].ysens_fired[n_dyn:]))
+            e.ysens_post_exec = np.concatenate((e.ysens_post_exec, result[-1][eii].ysens_post_exec[n_dyn:]))
+            e.ysens_pre_exec = np.concatenate((e.ysens_pre_exec, result[-1][eii].ysens_pre_exec[n_dyn:]))
 
 def integrate_sensitivity(net, times, params=None, rtol=None, 
                           fill_traj=False, return_derivs=False,
                           redirect_msgs=True):
     logger.debug('Entering integrate_sens on node %i' % my_rank)
-
-    times = scipy.array(times)
+    times = np.array(times)
     net.compile()
     if times[0] == 0:
         net.resetDynamicVariables()
@@ -870,7 +869,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         net.update_optimizable_vars(params)
 
     # Assigned variables to process on each node.
-    vars_assigned = dict([(node, net.optimizableVars.keys()[node::num_procs]) 
+    vars_assigned = dict([(node, list(net.optimizableVars.keys())[node::num_procs]) 
                             for node in range(num_procs)])
 
     # Send out jobs for workers
@@ -882,7 +881,7 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         args = {'net':net, 'times':times, 'rtol':rtol, 'fill_traj':fill_traj,
                 'opt_vars':vars_assigned[worker], 'return_derivs':return_derivs,
                 'redir': redirect_msgs}
-        pypar.send((command, args), worker)
+        comm.send((command, args), dest=worker)
 
     logger.debug('Master doing vars %s' % str(vars_assigned[0]))
     try:
@@ -894,19 +893,19 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
         #  replies from all the workers (even if we do nothing with them) so 
         #  that communication stays synchronized.
         for worker in range(1, num_procs):
-            pypar.receive(worker)
+            comm.recv(source=worker)
         raise
 
     # Begin pulling results together...
     tout = result[0]
     # Build the yout array
     n_dyn, n_opt = len(net.dynamicVars), len(net.optimizableVars)
-    yout = scipy.zeros((len(tout), n_dyn * (n_opt+ 1)), scipy.float_)
+    yout = np.zeros((len(tout), n_dyn * (n_opt+ 1)), scipy.float_)
 
     # We use the master's result for the non-sensitivity values
     yout[:, :n_dyn] = result[1][:, :n_dyn]
     if return_derivs:
-        youtdt = scipy.zeros((len(tout), n_dyn * (n_opt+ 1)), scipy.float_)
+        youtdt = np.zeros((len(tout), n_dyn * (n_opt+ 1)), scipy.float_)
         youtdt[:, :n_dyn] = result[2][:, :n_dyn]
     else:
         youtdt = None
@@ -923,23 +922,24 @@ def integrate_sensitivity(net, times, params=None, rtol=None,
     #  return in exception_raised. We'll reraise that exception after getting
     #  replies from all the workers.
     exception_raised = None
+    
     for worker in range(1, num_procs):
         logger.debug('Receiving result from worker %i.' % worker)
-        result = pypar.receive(worker)
+        result = comm.recv(source=worker)
         if isinstance(result, Utility.SloppyCellException):
             exception_raised = result
             continue
         if vars_assigned[worker]:
-            _parse_sens_result(result, net, vars_assigned[worker], yout, youtdt, 
+            _parse_sens_result(result, net, vars_assigned[worker], yout, youtdt,
                                events_occurred)
 
     if exception_raised:
         raise exception_raised
-
+    
     ddv_dpTrajectory = Trajectory_mod.Trajectory(net, is_sens=True, 
                                                  holds_dt=return_derivs)
     if return_derivs:
-        yout = scipy.concatenate((yout, youtdt), axis=1)
+        yout = np.concatenate((yout, youtdt), axis=1)
     ddv_dpTrajectory.appendSensFromODEINT(tout, yout, holds_dt = return_derivs)
     ddv_dpTrajectory.events_occurred = events_occurred
     ddv_dpTrajectory.event_info = event_info
@@ -970,37 +970,37 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
     net.compile()
 
     if dv0 is None:
-        dv0 = scipy.array(net.getDynamicVarValues())
+        dv0 = np.array(net.getDynamicVarValues())
     else:
-        dv0 = scipy.asarray(dv0)
+        dv0 = np.asarray(dv0)
 
     consts = net.constantVarValues
 
-    zeros = scipy.zeros(len(dv0), scipy.float_)
+    zeros = np.zeros(len(dv0), scipy.float_)
     if with_logs:
         # We take the absolute value of dv0 to avoid problems from small 
         #  numerical noise negative values.
-        if scipy.any(dv0 <= 0):
+        if np.any(dv0 <= 0):
             logger.warning('Non-positive values in initial guess for fixed '
                            'point and with_logs = True. Rounding them up to '
                            'double_tiny. The most negative value was %g.' 
                            % min(dv0))
-            dv0 = scipy.maximum(dv0, _double_tiny_)
+            dv0 = np.maximum(dv0, _double_tiny_)
 
         # XXX: Would like to replace these with C'd versions, if it's holding
         #      any of our users up.
         def func(logy):
             return net.res_function_logdv(time, logy, zeros, consts)
         def fprime(logy):
-            y = scipy.exp(logy)
-            y = scipy.maximum(y, _double_tiny_)
+            y = np.exp(logy)
+            y = np.maximum(y, _double_tiny_)
             return net.dres_dc_function(time, y, zeros, consts)
 
-        x0 = scipy.log(dv0)
+        x0 = np.log(dv0)
         # To transform sigma_x to sigma_log_x, we divide by x. We can set
         #  our sigma_log_x use to be the mean of what our xtol would yield
         #  for each chemical.
-        xtol = scipy.mean(xtol/dv0)
+        xtol = np.mean(old_div(xtol,dv0))
     else:
         def func(y):
             return net.res_function(time, y, zeros, consts)
@@ -1020,10 +1020,10 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
     tiny = _double_epsilon_
 
     if with_logs:
-        dvFixed = scipy.exp(dvFixed)
+        dvFixed = np.exp(dvFixed)
 
     if ier != 1:
-        if scipy.all(abs(dvFixed) < tiny) and not scipy.all(abs(x0) < 1e6*tiny):
+        if np.all(abs(dvFixed) < tiny) and not np.all(abs(x0) < 1e6*tiny):
             # This is the case where the answer is zero, and our initial guess
             # was reasonably large. In this case, the solver fails because
             # it's looking at a relative tolerance, but it's not really a
@@ -1037,10 +1037,10 @@ def dyn_var_fixed_point(net, dv0=None, with_logs=True, xtol=1e-6, time=0,
     else:
         jac = net.dres_dc_function(time, dvFixed, zeros, consts)
         u = scipy.linalg.eigvals(jac)
-        u = scipy.real_if_close(u)
-        if scipy.all(u < 0):
+        u = np.real_if_close(u)
+        if np.all(u < 0):
             stable = -1
-        elif scipy.all(u > 0):
+        elif np.all(u > 0):
             stable = 1
         else:
             stable = 0
@@ -1051,10 +1051,10 @@ def find_ypic_sens(y, yp, time, var_types, rtol, atol_for_sens, constants,
     # On some systems, the f2py'd functions don't like len(constants)=0.
     if len(constants) == 0:
         constants = [0]
-    var_types = scipy.asarray(var_types)
-    y = scipy.asarray(y, scipy.float_)
-    yp = scipy.asarray(yp, scipy.float_)
-    atol_for_sens = scipy.asarray(atol_for_sens)
+    var_types = np.asarray(var_types)
+    y = np.asarray(y, scipy.float_)
+    yp = np.asarray(yp, scipy.float_)
+    atol_for_sens = np.asarray(atol_for_sens)
 
     N_dyn = len(var_types)
     y = copy.copy(y)
@@ -1087,24 +1087,24 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
     # On some systems, the f2py'd functions don't like len(constants)=0.
     if len(constants) == 0:
         constants = [0]
-    var_types = scipy.asarray(var_types)
-    atol = scipy.asarray(atol)
-    rtol = scipy.asarray(rtol)
+    var_types = np.asarray(var_types)
+    atol = np.asarray(atol)
+    rtol = np.asarray(rtol)
     # Note that we're copying y and yprime
-    y = scipy.array(y, scipy.float_)
-    yp = scipy.array(yp, scipy.float_)
+    y = np.array(y, scipy.float_)
+    yp = np.array(yp, scipy.float_)
 
-    N_alg = scipy.sum(var_types == -1)
+    N_alg = np.sum(var_types == -1)
 
-    dv_typ_vals = scipy.asarray([net.get_var_typical_val(id)
-                                 for id in net.dynamicVars.keys()])
+    dv_typ_vals = np.asarray([net.get_var_typical_val(id)
+                                 for id in list(net.dynamicVars.keys())])
 
     if N_alg:
         # First we calculate a consistent set of algebraic variable values
         alg_vars_guess = y[var_types == -1]
         alg_typ_vals = dv_typ_vals[var_types == -1]
         possible_guesses = [alg_vars_guess, alg_typ_vals, 
-                            scipy.ones(N_alg, scipy.float_)]
+                            np.ones(N_alg, scipy.float_)]
         redir = Utility.Redirector()
         if redirect_msgs:
             redir.start()
@@ -1115,9 +1115,9 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
                                               xtol = min(rtol), 
                                               args = (y, time, constants),
                                               full_output=True)
-                sln = scipy.atleast_1d(sln)
+                sln = np.atleast_1d(sln)
                 final_residuals = net.alg_res_func(sln, y, time, constants)
-                if not scipy.any(abs(final_residuals) 
+                if not np.any(abs(final_residuals)
                                  > abs(atol[var_types == -1])):
                     # This is success.
                     break
@@ -1130,7 +1130,6 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
 
         # Now plug those values into the current y
         y[var_types == -1] = sln
-
     # The non-algebraic variable yprimes come straight from the residuals
     yp_non_alg = net.res_function(time, y, y*0, constants)[var_types == 1]
     yp[var_types == 1] = yp_non_alg
@@ -1140,15 +1139,15 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
 
     # Now we need to figure out yprime for the algebraic vars
     curr_alg_yp = yp[var_types == -1]
-    ones_arr = scipy.ones(N_alg, scipy.float_)
+    ones_arr = np.ones(N_alg, scipy.float_)
     # We try a range of possible guesses. Note that this is really just
     # a linear system, so we continue to have difficulties with this part of
     # the calculation, or if it becomes a slow-down, we should consider doing
     # it by a linear solve, rather than using fsolve.
     possible_guesses = [curr_alg_yp, alg_typ_vals, 
                         ones_arr,
-                        scipy.mean(abs(yp)) * ones_arr, 
-                        -scipy.mean(abs(yp)) * ones_arr,
+                        np.mean(abs(yp)) * ones_arr,
+                        -np.mean(abs(yp)) * ones_arr,
                         max(abs(yp)) * ones_arr, 
                         -max(abs(yp)) * ones_arr]
     if redirect_msgs:
@@ -1160,9 +1159,9 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
                                           xtol = min(rtol),
                                           args = (y, yp, time, constants),
                                           full_output=True)
-            sln = scipy.atleast_1d(sln)
+            sln = np.atleast_1d(sln)
             final_residuals = net.alg_deriv_func(sln, y, yp, time, constants)
-            if not scipy.any(abs(final_residuals) > abs(atol[var_types == -1])):
+            if not np.any(abs(final_residuals) > abs(atol[var_types == -1])):
                 break
         else:
             raise Utility.SloppyCellException('Failed to calculate alg var '\
@@ -1170,7 +1169,7 @@ def find_ics(y, yp, time, var_types, rtol, atol, constants, net,
                                               % net.get_id())
     finally:
         messages=redir.stop()
-    sln = scipy.atleast_1d(sln)
+    sln = np.atleast_1d(sln)
     yp[var_types == -1] = sln
 
     return y, yp

@@ -1,8 +1,10 @@
+from __future__ import absolute_import
+from builtins import range
 import unittest
 import os
 import copy
 
-import scipy
+import numpy as np
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks import *
 import SloppyCell.daskr
@@ -13,7 +15,7 @@ from SloppyCell.daskr import daeint
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
 from AlgTestNets import algebraic_net, algebraic_net_manual
 
-tlist_algebraic_net = scipy.array([0] + [0.8*x for x in range(1, 51)])
+tlist_algebraic_net = np.array([0] + [0.8*x for x in range(1, 51)])
 
 class test_crossReferences(unittest.TestCase):
 

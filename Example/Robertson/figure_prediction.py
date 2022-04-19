@@ -1,6 +1,7 @@
 """
 Plot Fig. 4
 """
+from builtins import zip
 import string
 from SloppyCell.ReactionNetworks import *
 from numpy import *

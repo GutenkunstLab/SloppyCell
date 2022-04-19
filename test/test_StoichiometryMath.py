@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+from builtins import range
 import unittest
 import os
 
 import scipy
+import numpy as np
 import SloppyCell.Utility as Utility
 from SloppyCell.ReactionNetworks import *
 
@@ -11,13 +14,13 @@ redir=Utility.Redirector()
 # To avoid extra dependencies on libsbml, we use verions built by SloppyCell.
 from StoichTestNets import stoichMath_net
 
-tlist_stoichMath_net = scipy.array([0] + [0.04*x for x in range(1, 51)])
+tlist_stoichMath_net = np.array([0] + [0.04*x for x in range(1, 51)])
 
 class test_StoichiometryMath(unittest.TestCase):
     def test_basic(self):
         """ Basic test of stoichiometry math """
         stoichMath_traj = Dynamics.integrate(stoichMath_net, tlist_stoichMath_net,
-                                             rtol=scipy.array([1e-7,1e-7]))
+                                             rtol=np.array([1e-7,1e-7]))
 
         self.assertAlmostEqual(stoichMath_traj.get_var_val('A',0.32), 
                                0.62283185811441, 6)
